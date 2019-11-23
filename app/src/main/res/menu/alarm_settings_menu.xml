@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+      xmlns:app="http://schemas.android.com/apk/res-auto">
+
+    <item
+        android:id="@+id/fragment_settings_delete"
+        android:icon="@drawable/ic_action_delete"
+        android:title="@string/menu_settings_delete"
+        app:showAsAction="ifRoom|withText" />
+
+    <item
+        android:id="@+id/fragment_settings_done"
+        android:icon="@drawable/ic_action_done"
+        android:title="@string/menu_settings_done"
+        app:showAsAction="ifRoom|withText" />
+
+</menu>

@@ -1,0 +1,66 @@
+<resources>
+    <string name="app_name">Math Alarm</string>
+
+    <string name="time_picker_title">Set Alarm Time:</string>
+
+    <string name="settings_time_title">Set Alarm Time</string>
+
+    <string name="settings_day_title">Set On</string>
+
+    <string name="settings_repeat_title">Repeat</string>
+    <string name="settings_repeat_text">Repeat Weekly</string>
+    <string name="settings_setting_title">Alarm Settings</string>
+    <string name="settings_vibrate_text">Vibrate</string>
+    <string name="settings_tone_text">Alarm Tone</string>
+    <string name="settings_snooze_text">Snooze (0 = OFF)</string>
+    <string name="minutes">minute(s)</string>
+    <string name="settings_math_difficulty_text">Math Difficulty</string>
+    <string name="settings_test">Test Alarm</string>
+
+    <string name="menu_add_alarm">Add Alarm</string>
+    <string name="menu_settings_done">Set</string>
+    <string name="menu_settings_delete">Delete</string>
+
+    <string name="mon">MON</string>
+    <string name="tue">TUE</string>
+    <string name="wed">WED</string>
+    <string name="thu">THU</string>
+    <string name="fri">FRI</string>
+    <string name="sat">SAT</string>
+    <string name="sun">SUN</string>
+
+    <string name="zero">0</string>
+    <string name="one">1</string>
+    <string name="two">2</string>
+    <string name="three">3</string>
+    <string name="four">4</string>
+    <string name="five">5</string>
+    <string name="six">6</string>
+    <string name="seven">7</string>
+    <string name="eight">8</string>
+    <string name="nine">9</string>
+    <string name="delete">DEL</string>
+    <string name="clear">CLEAR</string>
+    <string name="set">DISMISS</string>
+    <string name="snooze">SNOOZE</string>
+
+    <string name="snooze_off">No snooze allowed</string>
+
+    <string name="empty">Empty!</string>
+    <string name="add_alarm">\nTap to\n add an\n alarm</string>
+
+    <string name="android_cd">Android</string>
+    <string name="bubble_cd">Speech Bubble</string>
+    <string name="message_cd">Message</string>
+
+    <string name="alarm_duplicate_toast_text">Duplicate alarm detected</string>
+    <string name="alarm_set_begin_msg">Alarm set for</string>
+    <string name="alarm_set_end_msg">from now.</string>
+    <string name="alarm_minute">minute</string>
+    <string name="alarm_minutes">minutes</string>
+    <string name="alarm_hour">hour,</string>
+    <string name="alarm_hours">hours,</string>
+    <string name="alarm_day">day,</string>
+    <string name="alarm_days">days,</string>
+    <string name="tone_not_available">Alarm tone not available.</string>
+</resources>

@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main_navigation"
+    app:startDestination="@id/alarmFragment">
+    <fragment
+        android:id="@+id/alarmFragment"
+        android:name="com.android.example.mathalarm.screens.AlarmFragment"
+        android:label="AlarmFragment"
+        tools:layout="@layout/fragment_alarm_list">
+        <action
+            android:id="@+id/action_alarmFragment_to_alarmSettingsFragment"
+            app:destination="@id/alarmSettingsFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/alarmSettingsFragment"
+        android:name="com.android.example.mathalarm.screens.AlarmSettingsFragment"
+        android:label="AlarmSettingsFragment"
+        tools:layout="@layout/fragment_alarm_settings">
+        <action
+            android:id="@+id/action_alarmSettingsFragment_to_alarmMathFragment"
+            app:destination="@id/alarmMathFragment" />
+    </fragment>
+    <fragment
+        android:id="@+id/alarmMathFragment"
+        android:name="com.android.example.mathalarm.screens.AlarmMathFragment"
+        android:label="AlarmMathFragment"
+        tools:layout="@layout/fragment_alarm_math"/>
+</navigation>

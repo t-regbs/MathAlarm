@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:id="@+id/list_item"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="7dp" >
+
+    <Switch
+        android:id="@+id/alarm_switch_button"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentTop="true"
+        android:padding="4dp"
+        android:gravity="center"
+        android:layout_above="@+id/linearLayout"/>
+
+    <TextView
+        android:id="@+id/alarm_time"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textStyle="bold"
+        android:textSize="40sp"
+        android:padding="4dp"
+        tools:text="Alarm Time"/>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_below="@id/alarm_time"
+        android:padding="4dp"
+        android:orientation="horizontal"
+        android:id="@+id/linearLayout">
+
+        <TextView
+            android:id="@+id/alarm_repeat_sun"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="@string/sun"/>
+
+        <TextView
+            android:id="@+id/alarm_repeat_mon"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/mon"
+            android:gravity="center"
+            android:layout_weight="1"/>
+
+        <TextView
+            android:id="@+id/alarm_repeat_tue"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/tue"
+            android:gravity="center"
+            android:layout_weight="1"/>
+
+        <TextView
+            android:id="@+id/alarm_repeat_wed"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/wed"
+            android:gravity="center"
+            android:layout_weight="1"/>
+
+        <TextView
+            android:id="@+id/alarm_repeat_thu"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/thu"
+            android:gravity="center"
+            android:layout_weight="1"/>
+
+        <TextView
+            android:id="@+id/alarm_repeat_fri"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/fri"
+            android:gravity="center"
+            android:layout_weight="1"/>
+
+        <TextView
+            android:id="@+id/alarm_repeat_sat"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/sat"
+            android:gravity="center"
+            android:layout_weight="1"/>
+
+    </LinearLayout>
+</RelativeLayout>
