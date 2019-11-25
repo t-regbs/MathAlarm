@@ -8,7 +8,7 @@ import androidx.room.RoomDatabase
 @Database(entities = [Alarm::class], version = 1, exportSchema = false)
 abstract class AlarmDatabase: RoomDatabase() {
 
-    abstract val sleepDatabaseDao: AlarmDao
+    abstract val alarmDatabaseDao: AlarmDao
     companion object {
         @Volatile
         private var INSTANCE: AlarmDatabase? = null
@@ -20,7 +20,7 @@ abstract class AlarmDatabase: RoomDatabase() {
                 if (instance == null) {
                     instance = Room.databaseBuilder(context.applicationContext,
                         AlarmDatabase::class.java,
-                        "sleep_history_database")
+                        "alarm_history_database")
                         .fallbackToDestructiveMigration()
                         .build()
                     INSTANCE = instance
