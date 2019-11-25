@@ -29,7 +29,7 @@ class AlarmMathFragment: Fragment() {
     fun showCalc() {
         //Initialize the buttons and the on click actions
         sb = StringBuilder("")
-        binding.mathQuestion.setText(getMathString())
+//        binding.mathQuestion.setText(getMathString())
         binding.mathBtn1.setOnClickListener(View.OnClickListener {
             sb!!.append(1)
             binding.mathAnswer.text = sb
@@ -80,31 +80,31 @@ class AlarmMathFragment: Fragment() {
             sb!!.delete(0, sb!!.length)
             binding.mathAnswer.setText(sb)
         })
-        binding.mathBtnSet.setOnClickListener(View.OnClickListener {
-            if (sb.toString().toInt() != ans) {
-                Toast.makeText(activity, "Incorrect!", Toast.LENGTH_SHORT).show()
-                sb!!.setLength(0)
-                binding.mathAnswer.text = ""
-            } else {
-                mp.stop()
-                vibrateRunning = false
-                activity!!.setResult(Activity.RESULT_OK)
-                activity!!.finish()
-            }
-        })
-        binding.mathBtnSnooze.setOnClickListener(View.OnClickListener {
-            if (alarm.getSnooze() === 0) {
-                Toast.makeText(
-                    activity,
-                    getString(R.string.snooze_off), Toast.LENGTH_SHORT
-                ).show()
-            } else {
-                mp.stop()
-                vibrateRunning = false
-                alarm.scheduleSnooze(activity)
-                activity!!.finish()
-            }
-        })
+//        binding.mathBtnSet.setOnClickListener(View.OnClickListener {
+//            if (sb.toString().toInt() != ans) {
+//                Toast.makeText(activity, "Incorrect!", Toast.LENGTH_SHORT).show()
+//                sb!!.setLength(0)
+//                binding.mathAnswer.text = ""
+//            } else {
+//                mp.stop()
+//                vibrateRunning = false
+//                activity!!.setResult(Activity.RESULT_OK)
+//                activity!!.finish()
+//            }
+//        })
+//        binding.mathBtnSnooze.setOnClickListener(View.OnClickListener {
+//            if (alarm.getSnooze() === 0) {
+//                Toast.makeText(
+//                    activity,
+//                    getString(R.string.snooze_off), Toast.LENGTH_SHORT
+//                ).show()
+//            } else {
+//                mp.stop()
+//                vibrateRunning = false
+//                alarm.scheduleSnooze(activity)
+//                activity!!.finish()
+//            }
+//        })
     }
 
 }

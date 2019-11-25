@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.*
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
+import androidx.navigation.fragment.findNavController
 import com.android.example.mathalarm.R
 import com.android.example.mathalarm.databinding.FragmentAlarmListBinding
 
@@ -33,7 +34,9 @@ class AlarmFragment: Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.fragment_add_alarm_menu -> {
-
+                findNavController().navigate(
+                    AlarmFragmentDirections.actionAlarmFragmentToAlarmSettingsFragment())
+                true
             }
             else -> super.onOptionsItemSelected(item)
         }
