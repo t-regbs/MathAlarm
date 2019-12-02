@@ -3,12 +3,12 @@ package com.android.example.mathalarm.database
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import java.util.*
 
 @Entity(tableName = "alarms")
 data class Alarm (
     @PrimaryKey(autoGenerate = true)
-    @ColumnInfo(name = "alarmid")
-    var nightId: Long = 0L,
+    var alarmId: Long = 0L,
 
     @ColumnInfo(name = "hour")
     var hour: Int = -1,
@@ -20,13 +20,13 @@ data class Alarm (
     var repeat: Boolean = false,
 
     @ColumnInfo(name = "daysoftheweek")
-    var repeatDays: String = "",
+    var repeatDays: String = "FFFFFFF",
 
     @ColumnInfo(name = "ison")
     var isOn: Boolean = false,
 
     @ColumnInfo(name = "difficulty")
-    var difficulty: String = "",
+    var difficulty: Int = 0,
 
     @ColumnInfo(name = "tone")
     var alarmTone: String = "",
@@ -35,6 +35,6 @@ data class Alarm (
     var vibrate: Boolean = false,
 
     @ColumnInfo(name = "snooze")
-    var snooze: Int = 0
+    var snooze: Int = 5
 
 )

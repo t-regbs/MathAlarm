@@ -63,4 +63,5 @@
     <string name="alarm_day">day,</string>
     <string name="alarm_days">days,</string>
     <string name="tone_not_available">Alarm tone not available.</string>
+    <string name="ok">OK</string>
 </resources>

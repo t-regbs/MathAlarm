@@ -1,4 +1,4 @@
-package com.android.example.mathalarm.screens
+package com.android.example.mathalarm.screens.alarmlist
 
 import android.app.Application
 import androidx.lifecycle.ViewModel
@@ -10,7 +10,10 @@ class AlarmListViewModelFactory(
     private val application: Application): ViewModelProvider.Factory {
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(AlarmListViewModel::class.java)){
-            return AlarmListViewModel(dataSource, application) as T
+            return AlarmListViewModel(
+                dataSource,
+                application
+            ) as T
         }
         throw IllegalArgumentException("Unknown ViewModel Class")
     }
