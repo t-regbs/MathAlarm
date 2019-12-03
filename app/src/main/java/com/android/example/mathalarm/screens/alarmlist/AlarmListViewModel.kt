@@ -22,6 +22,10 @@ class AlarmListViewModel(
 
     val alarms = database.getAlarms()
 
+    private val _navigateToAlarmSettings = MutableLiveData<Long>()
+    val navigateToAlarmSettings
+        get() = _navigateToAlarmSettings
+
     init {
         initializeCurrentAlarm()
     }
@@ -100,6 +104,14 @@ class AlarmListViewModel(
             size = getListSize()
         }
         return size
+    }
+
+    fun onAlarmClicked(id: Long){
+        _navigateToAlarmSettings.value = id
+    }
+
+    fun onAlarmSettingsNavigated(){
+        _navigateToAlarmSettings.value = null
     }
 
     override fun onCleared() {

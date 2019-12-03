@@ -6,15 +6,12 @@ import androidx.lifecycle.ViewModelProvider
 import com.android.example.mathalarm.database.AlarmDao
 
 class AlarmSettingsViewFactory(
-    private val dataSource: AlarmDao,
-    private val application: Application
+    private val alarmKey: Long,
+    private val dataSource: AlarmDao
 ): ViewModelProvider.Factory {
     override fun <T : ViewModel?> create(modelClass: Class<T>): T {
         if (modelClass.isAssignableFrom(AlarmSettingsViewModel::class.java)){
-            return AlarmSettingsViewModel(
-                dataSource,
-                application
-            ) as T
+            return AlarmSettingsViewModel(alarmKey, dataSource) as T
         }
         throw IllegalArgumentException("Unknown ViewModel Class")
     }

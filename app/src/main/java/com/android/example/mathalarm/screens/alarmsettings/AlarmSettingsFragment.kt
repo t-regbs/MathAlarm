@@ -54,12 +54,14 @@ class AlarmSettingsFragment: Fragment() {
 
         val application = requireNotNull(this.activity).application
 
+        val args = AlarmSettingsFragmentArgs.fromBundle(arguments!!)
+
         //Creating an instance of the ViewModel Factory
         val dataSource = AlarmDatabase.getInstance(application).alarmDatabaseDao
         val viewModelFactory =
             AlarmSettingsViewFactory(
-                dataSource,
-                application
+                args.alarmKey,
+                dataSource
             )
 
         alarmSettingsViewModel = ViewModelProviders.of(
@@ -68,24 +70,26 @@ class AlarmSettingsFragment: Fragment() {
         binding.alarmSettingsViewModel = alarmSettingsViewModel
 
 
-        val args = AlarmSettingsFragmentArgs.fromBundle(arguments!!)
-        if (args.toString() == "add"){
-//            alarmSettingsViewModel.createAlarm()
-        }
+
+//        if (args.alarmKey == (alarmSettingsViewModel.currentAlarm.value!!.alarmId)){
+//            alarmSettingsViewModel.activeAlarm = alarmSettingsViewModel.currentAlarm
+//        } else {
+//            alarmSettingsViewModel.alarmm.value!!.hour =
+//        }
 
 //        mRepeat = mAlarm!!.repeatDays
 
 
-        alarmSettingsViewModel.currentAlarm.observe(this, Observer {
+        alarmSettingsViewModel.alarmm.observe(this, Observer {
             if (it != null){
-                var mAlarm = alarmSettingsViewModel.currentAlarm.value!!
-                var mRepeat = alarmSettingsViewModel.currentAlarm.value!!.repeatDays
+                var mAlarm = alarmSettingsViewModel.alarmm.value!!
+                var mRepeat = alarmSettingsViewModel.alarmm.value!!.repeatDays
 
                 binding.settingsTime.text = getFormatTime(mAlarm)
                 binding.settingsTime.setOnClickListener(View.OnClickListener {
                     val manager = fragmentManager
                     val dialog: TimePickerFragment = TimePickerFragment
-                        .newInstance(alarmSettingsViewModel.currentAlarm.value!!.hour, alarmSettingsViewModel.currentAlarm.value!!.minute)
+                        .newInstance(alarmSettingsViewModel.alarmm.value!!.hour, alarmSettingsViewModel.alarmm.value!!.minute)
                     dialog.setTargetFragment(
                         this@AlarmSettingsFragment,
                         REQUEST_TIME
@@ -346,12 +350,12 @@ class AlarmSettingsFragment: Fragment() {
             val hour = data?.getIntExtra(TimePickerFragment.EXTRA_HOUR, 0)
             val min = data?.getIntExtra(TimePickerFragment.EXTRA_MIN, 0)
             if (hour != null) {
-                alarmSettingsViewModel.currentAlarm.value!!.hour = hour
+                alarmSettingsViewModel.alarmm.value!!.hour = hour
             }
             if (min != null) {
-                alarmSettingsViewModel.currentAlarm.value!!.minute = min
+                alarmSettingsViewModel.alarmm.value!!.minute = min
             }
-            binding.settingsTime.text = getFormatTime(alarmSettingsViewModel.currentAlarm.value!!)
+            binding.settingsTime.text = getFormatTime(alarmSettingsViewModel.alarmm.value!!)
         } else {
             if (requestCode == REQUEST_TEST) {
 //                alarmSettingsViewModel.onDelete(mTestAlarm)
@@ -369,14 +373,14 @@ class AlarmSettingsFragment: Fragment() {
         return when (item.itemId) {
             R.id.fragment_settings_done -> {
                 //Setting difficulty + alarm tone
-                alarmSettingsViewModel.currentAlarm.value!!.difficulty =(binding.settingsMathDifficultySpinner.selectedItemPosition)
+                alarmSettingsViewModel.alarmm.value!!.difficulty =(binding.settingsMathDifficultySpinner.selectedItemPosition)
                 if (mAlarmTones.isNotEmpty()) {
-                    alarmSettingsViewModel.currentAlarm.value!!.alarmTone = (
+                    alarmSettingsViewModel.alarmm.value!!.alarmTone = (
                         mAlarmTones[binding.settingsToneSpinner
                             .selectedItemPosition].toString()
                     )
                 }
-                alarmSettingsViewModel.onUpdate(alarmSettingsViewModel.currentAlarm.value!!)
+                alarmSettingsViewModel.onUpdate(alarmSettingsViewModel.alarmm.value!!)
                 //schedule alarm, update to database and close settings
 //                if (mAdd) {
 //                    scheduleAndMessage()
@@ -397,17 +401,17 @@ class AlarmSettingsFragment: Fragment() {
 //                        })
 //                    //                    Alarm oldAlarm = AlarmRepository.getInstance(getActivity()).getAlarm(mAlarm.getId());
 //                }
-                activity!!.finish()
+                activity!!.onBackPressed()
                 true
             }
             R.id.fragment_settings_delete -> {
-                if (alarmSettingsViewModel.currentAlarm.value!!.isOn) {
+                if (alarmSettingsViewModel.alarmm.value!!.isOn) {
                     alarmSettingsViewModel.cancelAlarm(context)
                 }
-                alarmSettingsViewModel.onDelete(alarmSettingsViewModel.currentAlarm.value!!)
+                alarmSettingsViewModel.onDelete(alarmSettingsViewModel.alarmm.value!!)
                 //AlarmViewModel.get(getActivity()).deleteAlarm(mAlarm);
 
-                activity!!.finish()
+                activity!!.onBackPressed()
                 true
             }
             else -> super.onOptionsItemSelected(item)

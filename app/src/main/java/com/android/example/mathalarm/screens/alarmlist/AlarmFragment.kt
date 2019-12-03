@@ -3,6 +3,7 @@ package com.android.example.mathalarm.screens.alarmlist
 import android.os.Bundle
 import android.view.*
 import android.widget.RelativeLayout
+import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -15,6 +16,8 @@ import com.android.example.mathalarm.databinding.FragmentAlarmListBinding
 class AlarmFragment: Fragment() {
 
     private lateinit var binding: FragmentAlarmListBinding
+
+    private lateinit var alarmListViewModel: AlarmListViewModel
     val sourceAdd = "add"
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -39,12 +42,15 @@ class AlarmFragment: Fragment() {
                 application
             )
 
-        val alarmListViewModel = ViewModelProviders.of(
+        alarmListViewModel = ViewModelProviders.of(
             this, viewModelFactory).get(AlarmListViewModel::class.java)
 
         binding.alarmListViewModel = alarmListViewModel
 
-        val adapter = AlarmListAdapter()
+        val adapter = AlarmListAdapter(AlarmListener {alarmId ->
+//            Toast.makeText(context, "$alarmId", Toast.LENGTH_LONG).show()
+            alarmListViewModel.onAlarmClicked(alarmId)
+        })
         binding.alarmRecyclerView.adapter = adapter
 
         binding.lifecycleOwner = this
@@ -63,6 +69,14 @@ class AlarmFragment: Fragment() {
 
         })
 
+        alarmListViewModel.navigateToAlarmSettings.observe(this, Observer { alarm ->
+            alarm?.let {
+                this.findNavController().navigate(AlarmFragmentDirections
+                    .actionAlarmFragmentToAlarmSettingsFragment(alarm))
+                alarmListViewModel.onAlarmSettingsNavigated()
+            }
+        })
+
         return binding.root
     }
 
@@ -76,7 +90,8 @@ class AlarmFragment: Fragment() {
             R.id.fragment_add_alarm_menu -> {
                 binding.alarmListViewModel!!.onAdd()
                 findNavController().navigate(
-                    AlarmFragmentDirections.actionAlarmFragmentToAlarmSettingsFragment(sourceAdd)
+                    AlarmFragmentDirections.actionAlarmFragmentToAlarmSettingsFragment(
+                        alarmListViewModel.currentAlarm.value!!.alarmId)
                 )
                 true
             }

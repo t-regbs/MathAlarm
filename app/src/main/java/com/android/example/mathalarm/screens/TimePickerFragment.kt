@@ -32,7 +32,7 @@ class TimePickerFragment : DialogFragment() {
             .setView(v)
             .setTitle(R.string.time_picker_title).setPositiveButton(
                 getString(R.string.ok),
-                DialogInterface.OnClickListener { dialog, which ->
+                DialogInterface.OnClickListener { _, which ->
                     val hour: Int
                     val minute: Int
                     if (Build.VERSION.SDK_INT < 23) {

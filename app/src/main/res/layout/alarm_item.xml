@@ -6,19 +6,23 @@
         <variable
             name="alarm"
             type="com.android.example.mathalarm.database.Alarm" />
+        <variable
+            name="clickListener"
+            type="com.android.example.mathalarm.screens.alarmlist.AlarmListener" />
     </data>
 
     <RelativeLayout
         android:id="@+id/list_item"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:onClick="@{()-> clickListener.onclick(alarm)}"
         android:padding="7dp">
 
         <Switch
             android:id="@+id/alarm_switch_button"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"
-            android:layout_alignParentRight="true"
+            android:layout_alignParentEnd="true"
             android:layout_alignParentTop="true"
             android:padding="4dp"
             android:gravity="center"

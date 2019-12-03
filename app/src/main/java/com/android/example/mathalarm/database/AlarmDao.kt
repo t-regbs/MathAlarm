@@ -18,7 +18,7 @@ interface AlarmDao {
     fun clear()
 
     @Query("SELECT * FROM alarms WHERE alarmid = :alarmUid LIMIT 1")
-    fun getAlarm(alarmUid: Long?): Alarm?
+    fun getAlarm(alarmUid: Long?): LiveData<Alarm>
 
     @Query("SELECT * FROM alarms ORDER BY alarmid DESC LIMIT 1")
     fun getLastAlarm(): Alarm?

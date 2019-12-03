@@ -15,8 +15,8 @@ import kotlinx.coroutines.*
 import java.util.*
 
 class AlarmSettingsViewModel(
-    dataSource: AlarmDao,
-    application: Application): ViewModel() {
+    private val alarmKey:Long = 0L,
+    dataSource: AlarmDao): ViewModel() {
 
     val database = dataSource
 
@@ -25,6 +25,12 @@ class AlarmSettingsViewModel(
 
     private var viewModelJob = Job()
 
+    private val alarm: LiveData<Alarm>
+    val alarmm: LiveData<Alarm>
+        get() = alarm
+
+    fun getAlarm() = alarm
+
     private val uiScope = CoroutineScope(Dispatchers.Main + viewModelJob)
 
     private var _currentAlarm = MutableLiveData<Alarm?>()
@@ -32,9 +38,14 @@ class AlarmSettingsViewModel(
     val currentAlarm: LiveData<Alarm?>
         get() = _currentAlarm
 
+    var activeAlarm: LiveData<Alarm?> = currentAlarm
+
+
+
     val alarms = database.getAlarms()
 
     init {
+        alarm = database.getAlarm(alarmKey)
         initializeCurrentAlarm()
     }
 
@@ -67,22 +78,6 @@ class AlarmSettingsViewModel(
         }
     }
 
-//    private suspend fun repeatDays(): String? {
-//        return withContext(Dispatchers.IO) {
-//            _currentAlarm.value?.repeatDays
-//        }
-//    }
-//
-//    fun getRepeatDays(): String {
-//        var rp = ""
-//        uiScope.launch {
-//            rp = repeatDays().toString()
-//        }
-//        return rp
-//    }
-//
-//
-//    var mRepeat = getRepeatDays()
 
     //Cancels an alarm - Called when an alarm is turned off, deleted, and rescheduled
     fun cancelAlarm(context: Context?) {
@@ -121,6 +116,7 @@ class AlarmSettingsViewModel(
             database.addAlarm(alarm)
         }
     }
+
 
     private suspend fun getListSize(): Int{
         var size = 0

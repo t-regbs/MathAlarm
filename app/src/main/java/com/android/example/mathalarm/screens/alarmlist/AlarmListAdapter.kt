@@ -9,20 +9,9 @@ import androidx.recyclerview.widget.RecyclerView
 import com.android.example.mathalarm.*
 import com.android.example.mathalarm.database.Alarm
 import com.android.example.mathalarm.databinding.AlarmItemBinding
-import java.security.AccessController.getContext
 
-class AlarmListAdapter: ListAdapter<Alarm, AlarmListAdapter.ViewHolder>(AlarmDiffCallback()) {
-
-    class AlarmDiffCallback: DiffUtil.ItemCallback<Alarm>(){
-        override fun areItemsTheSame(oldItem: Alarm, newItem: Alarm): Boolean {
-            return oldItem.alarmId == newItem.alarmId
-        }
-
-        override fun areContentsTheSame(oldItem: Alarm, newItem: Alarm): Boolean {
-            return oldItem == newItem
-        }
-
-    }
+class AlarmListAdapter(val clickListener: AlarmListener):
+    ListAdapter<Alarm, AlarmListAdapter.ViewHolder>(AlarmDiffCallback()) {
 
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -30,15 +19,19 @@ class AlarmListAdapter: ListAdapter<Alarm, AlarmListAdapter.ViewHolder>(AlarmDif
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-        val item = getItem(position)
-        holder.bind(item)
+
+        holder.bind(getItem(position)!!, clickListener)
     }
 
     class ViewHolder private constructor(val binding: AlarmItemBinding): RecyclerView.ViewHolder(binding.root) {
 
 
-        fun bind(item: Alarm) {
+        fun bind(
+            item: Alarm,
+            clickListener: AlarmListener
+        ) {
             binding.alarm = item
+            binding.clickListener = clickListener
             var repeat: String = item.repeatDays
             val hour: Int = item.hour
             if (hour < 12) {
@@ -182,4 +175,20 @@ class AlarmListAdapter: ListAdapter<Alarm, AlarmListAdapter.ViewHolder>(AlarmDif
             }
         }
     }
+}
+
+class AlarmDiffCallback: DiffUtil.ItemCallback<Alarm>(){
+    override fun areItemsTheSame(oldItem: Alarm, newItem: Alarm): Boolean {
+        return oldItem.alarmId == newItem.alarmId
+    }
+
+    override fun areContentsTheSame(oldItem: Alarm, newItem: Alarm): Boolean {
+        return oldItem == newItem
+    }
+
+}
+
+
+class AlarmListener(val clickListener: (alarmId: Long) -> Unit) {
+    fun onclick(alarm: Alarm) = clickListener(alarm.alarmId)
 }
