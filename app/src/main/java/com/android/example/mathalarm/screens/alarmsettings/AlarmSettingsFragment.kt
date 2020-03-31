@@ -14,6 +14,7 @@ import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
+import androidx.navigation.fragment.findNavController
 import com.android.example.mathalarm.*
 import com.android.example.mathalarm.database.Alarm
 import com.android.example.mathalarm.database.AlarmDatabase
@@ -45,6 +46,10 @@ class AlarmSettingsFragment: Fragment() {
         setHasOptionsMenu(true)
     }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+    }
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
 
@@ -54,15 +59,18 @@ class AlarmSettingsFragment: Fragment() {
 
         val application = requireNotNull(this.activity).application
 
-        val args = AlarmSettingsFragmentArgs.fromBundle(arguments!!)
+        val args = AlarmSettingsFragmentArgs.fromBundle(requireArguments())
 
         //Creating an instance of the ViewModel Factory
         val dataSource = AlarmDatabase.getInstance(application).alarmDatabaseDao
-        val viewModelFactory =
-            AlarmSettingsViewFactory(
-                args.alarmKey,
-                dataSource
-            )
+        val key = if (args.type== "ADD"){
+            args.alarmKey + 1L
+        } else if (args.type== "ADD" && args.alarmKey == 0L){
+            1L
+        } else {
+            args.alarmKey
+        }
+        val viewModelFactory = AlarmSettingsViewFactory(key, dataSource)
 
         alarmSettingsViewModel = ViewModelProviders.of(
             this, viewModelFactory).get(AlarmSettingsViewModel::class.java)
@@ -70,17 +78,7 @@ class AlarmSettingsFragment: Fragment() {
         binding.alarmSettingsViewModel = alarmSettingsViewModel
 
 
-
-//        if (args.alarmKey == (alarmSettingsViewModel.currentAlarm.value!!.alarmId)){
-//            alarmSettingsViewModel.activeAlarm = alarmSettingsViewModel.currentAlarm
-//        } else {
-//            alarmSettingsViewModel.alarmm.value!!.hour =
-//        }
-
-//        mRepeat = mAlarm!!.repeatDays
-
-
-        alarmSettingsViewModel.alarmm.observe(this, Observer {
+        alarmSettingsViewModel.alarmm.observe(viewLifecycleOwner, Observer {
             if (it != null){
                 var mAlarm = alarmSettingsViewModel.alarmm.value!!
                 var mRepeat = alarmSettingsViewModel.alarmm.value!!.repeatDays
@@ -260,7 +258,7 @@ class AlarmSettingsFragment: Fragment() {
 
 
                 val toneAdapter = ArrayAdapter(
-                    activity!!,
+                    requireActivity(),
                     android.R.layout.simple_spinner_dropdown_item, toneItems
                 )
                 binding.settingsToneSpinner.adapter = toneAdapter
@@ -269,7 +267,7 @@ class AlarmSettingsFragment: Fragment() {
                 val difficultyItems =
                     arrayOf("Easy", "Medium", "Hard")
                 val difficultyAdapter = ArrayAdapter(
-                    activity!!,
+                    requireActivity(),
                     android.R.layout.simple_spinner_dropdown_item, difficultyItems
                 )
                 binding.settingsMathDifficultySpinner.adapter = difficultyAdapter
@@ -401,7 +399,9 @@ class AlarmSettingsFragment: Fragment() {
 //                        })
 //                    //                    Alarm oldAlarm = AlarmRepository.getInstance(getActivity()).getAlarm(mAlarm.getId());
 //                }
-                activity!!.onBackPressed()
+                findNavController().navigate(
+                    AlarmSettingsFragmentDirections.actionAlarmSettingsFragmentToAlarmFragment()
+                )
                 true
             }
             R.id.fragment_settings_delete -> {
@@ -411,7 +411,9 @@ class AlarmSettingsFragment: Fragment() {
                 alarmSettingsViewModel.onDelete(alarmSettingsViewModel.alarmm.value!!)
                 //AlarmViewModel.get(getActivity()).deleteAlarm(mAlarm);
 
-                activity!!.onBackPressed()
+                findNavController().navigate(
+                    AlarmSettingsFragmentDirections.actionAlarmSettingsFragmentToAlarmFragment()
+                )
                 true
             }
             else -> super.onOptionsItemSelected(item)

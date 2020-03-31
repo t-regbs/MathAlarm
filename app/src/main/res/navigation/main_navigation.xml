@@ -22,8 +22,15 @@
         <action
             android:id="@+id/action_alarmSettingsFragment_to_alarmMathFragment"
             app:destination="@id/alarmMathFragment" />
-        <argument android:name="alarmKey"
+        <action
+            android:id="@+id/action_alarmSettingsFragment_to_alarmFragment"
+            app:destination="@id/alarmFragment" />
+        <argument
+            android:name="alarmKey"
             app:argType="long" />
+        <argument
+            android:name="type"
+            app:argType="string" />
     </fragment>
     <fragment
         android:id="@+id/alarmMathFragment"

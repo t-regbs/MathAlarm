@@ -114,6 +114,7 @@ class AlarmListViewModel(
         _navigateToAlarmSettings.value = null
     }
 
+
     override fun onCleared() {
         super.onCleared()
         viewModelJob.cancel()

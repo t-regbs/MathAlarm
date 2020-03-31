@@ -35,13 +35,6 @@ class AlarmSettingsViewModel(
 
     private var _currentAlarm = MutableLiveData<Alarm?>()
 
-    val currentAlarm: LiveData<Alarm?>
-        get() = _currentAlarm
-
-    var activeAlarm: LiveData<Alarm?> = currentAlarm
-
-
-
     val alarms = database.getAlarms()
 
     init {

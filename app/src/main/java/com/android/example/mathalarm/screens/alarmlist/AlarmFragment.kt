@@ -2,8 +2,6 @@ package com.android.example.mathalarm.screens.alarmlist
 
 import android.os.Bundle
 import android.view.*
-import android.widget.RelativeLayout
-import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -69,10 +67,11 @@ class AlarmFragment: Fragment() {
 
         })
 
-        alarmListViewModel.navigateToAlarmSettings.observe(this, Observer { alarm ->
+        alarmListViewModel.navigateToAlarmSettings.observe(viewLifecycleOwner, Observer { alarm ->
             alarm?.let {
                 this.findNavController().navigate(AlarmFragmentDirections
-                    .actionAlarmFragmentToAlarmSettingsFragment(alarm))
+                    .actionAlarmFragmentToAlarmSettingsFragment(alarm, "")
+                )
                 alarmListViewModel.onAlarmSettingsNavigated()
             }
         })
@@ -91,7 +90,8 @@ class AlarmFragment: Fragment() {
                 binding.alarmListViewModel!!.onAdd()
                 findNavController().navigate(
                     AlarmFragmentDirections.actionAlarmFragmentToAlarmSettingsFragment(
-                        alarmListViewModel.currentAlarm.value!!.alarmId)
+                        alarmListViewModel.currentAlarm.value?.alarmId?:0L, "ADD"
+                    )
                 )
                 true
             }
