@@ -1,6 +1,6 @@
 //package com.android.example.mathalarm
 //
-//import com.android.example.mathalarm.screens.AlarmMathFragment
+//import com.android.example.mathalarm.screens.alarmmath.AlarmMathFragment
 //import java.util.*
 //
 //

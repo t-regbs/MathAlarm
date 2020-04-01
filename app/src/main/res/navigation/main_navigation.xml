@@ -34,7 +34,7 @@
     </fragment>
     <fragment
         android:id="@+id/alarmMathFragment"
-        android:name="com.android.example.mathalarm.screens.AlarmMathFragment"
+        android:name="com.android.example.mathalarm.screens.alarmmath.AlarmMathFragment"
         android:label="AlarmMathFragment"
         tools:layout="@layout/fragment_alarm_math"/>
 </navigation>

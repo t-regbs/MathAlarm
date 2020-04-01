@@ -1,11 +1,5 @@
 package com.android.example.mathalarm
 
-import android.content.Context
-import android.content.Intent
-import androidx.core.app.JobIntentService
-import com.android.example.mathalarm.database.Alarm
-import com.android.example.mathalarm.screens.AlarmMathFragment
-
 //class AlarmService: JobIntentService() {
 //    // Service unique ID
 //    val SERVICE_JOB_ID = 50

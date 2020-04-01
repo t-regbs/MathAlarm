@@ -80,6 +80,13 @@ class AlarmSettingsFragment: Fragment() {
                 var mAlarm = alarmSettingsViewModel.alarmm.value!!
                 var mRepeat = alarmSettingsViewModel.alarmm.value!!.repeatDays
 
+                if (args.type == "ADD"){
+                    val cal = Calendar.getInstance()
+
+                    mAlarm.hour = (cal[Calendar.HOUR_OF_DAY])
+                    mAlarm.minute = (cal[Calendar.MINUTE])
+                }
+
                 if (savedInstanceState != null) {
                     mAlarm.hour = savedInstanceState.getInt("hour", 0)
                     mAlarm.minute = savedInstanceState.getInt("minute", 0)
