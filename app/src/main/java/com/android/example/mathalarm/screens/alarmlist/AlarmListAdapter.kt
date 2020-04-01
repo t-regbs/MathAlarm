@@ -47,13 +47,10 @@ class AlarmListAdapter(val clickListener: AlarmListener):
 
             binding.alarmSwitchButton.isChecked = item.isOn
 
-            binding.alarmTime.setText(
-                getFormatTime(
-                    item
-                )
+            binding.alarmTime.text = getFormatTime(
+                item
             )
-            val color: Int
-            color = if (item.repeat) {
+            val color = if (item.repeat) {
                 R.color.colorGold
             } else {
                 R.color.colorWhite
@@ -65,7 +62,7 @@ class AlarmListAdapter(val clickListener: AlarmListener):
                 )
             )
 
-            if (repeat.get(SUN) == 'T') {
+            if (repeat[SUN] == 'T') {
                 binding.alarmRepeatSun.setTextColor(
                     ContextCompat.getColor(
                         itemView.context,
@@ -79,7 +76,7 @@ class AlarmListAdapter(val clickListener: AlarmListener):
                 )
             )
 
-            if (repeat.get(MON) == 'T') {
+            if (repeat[MON] == 'T') {
                 binding.alarmRepeatMon.setTextColor(
                     ContextCompat.getColor(
                         itemView.context,
@@ -93,7 +90,7 @@ class AlarmListAdapter(val clickListener: AlarmListener):
                 )
             )
 
-            if (repeat.get(TUE) == 'T') {
+            if (repeat[TUE] == 'T') {
                 binding.alarmRepeatTue.setTextColor(
                     ContextCompat.getColor(
                         itemView.context,
@@ -107,7 +104,7 @@ class AlarmListAdapter(val clickListener: AlarmListener):
                 )
             )
 
-            if (repeat.get(WED) == 'T') {
+            if (repeat[WED] == 'T') {
                 binding.alarmRepeatWed.setTextColor(
                     ContextCompat.getColor(
                         itemView.context,
@@ -121,7 +118,7 @@ class AlarmListAdapter(val clickListener: AlarmListener):
                 )
             )
 
-            if (repeat.get(THU) == 'T') {
+            if (repeat[THU] == 'T') {
                 binding.alarmRepeatThu.setTextColor(
                     ContextCompat.getColor(
                         itemView.context,
@@ -135,7 +132,7 @@ class AlarmListAdapter(val clickListener: AlarmListener):
                 )
             )
 
-            if (repeat.get(FRI) == 'T') {
+            if (repeat[FRI] == 'T') {
                 binding.alarmRepeatFri.setTextColor(
                     ContextCompat.getColor(
                         itemView.context,
@@ -149,7 +146,7 @@ class AlarmListAdapter(val clickListener: AlarmListener):
                 )
             )
 
-            if (repeat.get(SAT) == 'T') {
+            if (repeat[SAT] == 'T') {
                 binding.alarmRepeatSat.setTextColor(
                     ContextCompat.getColor(
                         itemView.context,

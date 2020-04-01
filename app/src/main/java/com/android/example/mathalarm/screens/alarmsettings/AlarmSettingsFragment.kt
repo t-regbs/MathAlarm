@@ -26,7 +26,6 @@ import kotlin.collections.ArrayList
 
 class AlarmSettingsFragment: Fragment() {
 
-//    var mAlarm: Alarm? = null
     private lateinit var  binding: FragmentAlarmSettingsBinding
 
     private lateinit var alarmSettingsViewModel: AlarmSettingsViewModel
@@ -34,8 +33,6 @@ class AlarmSettingsFragment: Fragment() {
     var mTestAlarm: Alarm? = null
 
     var mAlarmTones: Array<Uri?> = emptyArray()
-
-//    var mRepeat = ""
 
     private val REQUEST_TIME = 0
     private val DIALOG_TIME = "DialogTime"
@@ -83,6 +80,15 @@ class AlarmSettingsFragment: Fragment() {
                 var mAlarm = alarmSettingsViewModel.alarmm.value!!
                 var mRepeat = alarmSettingsViewModel.alarmm.value!!.repeatDays
 
+                if (savedInstanceState != null) {
+                    mAlarm.hour = savedInstanceState.getInt("hour", 0)
+                    mAlarm.minute = savedInstanceState.getInt("minute", 0)
+                    mAlarm.repeatDays = savedInstanceState.getString("repeat")!!
+                    mAlarm.repeat = savedInstanceState.getBoolean("repeatweekly")
+                }
+                mRepeat = mAlarm.repeatDays
+
+
                 binding.settingsTime.text = getFormatTime(mAlarm)
                 binding.settingsTime.setOnClickListener(View.OnClickListener {
                     val manager = fragmentManager
@@ -112,11 +118,11 @@ class AlarmSettingsFragment: Fragment() {
                     }
                 })
 
-                binding.setRepeatMon.setChecked(mRepeat.get(MON) == 'T')
+                binding.setRepeatMon.isChecked = mRepeat[MON] == 'T'
                 binding.setRepeatMon.setOnClickListener(View.OnClickListener {
-                    binding.setRepeatMon.setChecked(mRepeat.get(MON) != 'T')
+                    binding.setRepeatMon.isChecked = mRepeat[MON] != 'T'
                     val sb = StringBuilder(mRepeat)
-                    if (mRepeat.get(MON) == 'T') {
+                    if (mRepeat[MON] == 'T') {
                         sb.setCharAt(MON, 'F')
                         mRepeat = sb.toString()
                         mAlarm.repeatDays = mRepeat
@@ -127,11 +133,11 @@ class AlarmSettingsFragment: Fragment() {
                     }
                 })
 
-                binding.setRepeatTue.setChecked(mRepeat.get(TUE) == 'T')
+                binding.setRepeatTue.isChecked = mRepeat[TUE] == 'T'
                 binding.setRepeatTue.setOnClickListener(View.OnClickListener {
-                    binding.setRepeatTue.setChecked(mRepeat.get(TUE) != 'T')
+                    binding.setRepeatTue.isChecked = mRepeat[TUE] != 'T'
                     val sb = StringBuilder(mRepeat)
-                    if (mRepeat.get(TUE) == 'T') {
+                    if (mRepeat[TUE] == 'T') {
                         sb.setCharAt(TUE, 'F')
                         mRepeat = sb.toString()
                         mAlarm.repeatDays = mRepeat
@@ -142,11 +148,11 @@ class AlarmSettingsFragment: Fragment() {
                     }
                 })
 
-                binding.setRepeatWed.setChecked(mRepeat.get(WED) == 'T')
+                binding.setRepeatWed.isChecked = mRepeat[WED] == 'T'
                 binding.setRepeatWed.setOnClickListener(View.OnClickListener {
-                    binding.setRepeatWed.setChecked(mRepeat.get(WED) != 'T')
+                    binding.setRepeatWed.isChecked = mRepeat[WED] != 'T'
                     val sb = StringBuilder(mRepeat)
-                    if (mRepeat.get(WED) == 'T') {
+                    if (mRepeat[WED] == 'T') {
                         sb.setCharAt(WED, 'F')
                         mRepeat = sb.toString()
                         mAlarm.repeatDays = mRepeat
@@ -157,11 +163,11 @@ class AlarmSettingsFragment: Fragment() {
                     }
                 })
 
-                binding.setRepeatThu.setChecked(mRepeat.get(THU) == 'T')
+                binding.setRepeatThu.isChecked = mRepeat[THU] == 'T'
                 binding.setRepeatThu.setOnClickListener(View.OnClickListener {
-                    binding.setRepeatMon.setChecked(mRepeat.get(THU) != 'T')
+                    binding.setRepeatMon.isChecked = mRepeat[THU] != 'T'
                     val sb = StringBuilder(mRepeat)
-                    if (mRepeat.get(THU) == 'T') {
+                    if (mRepeat[THU] == 'T') {
                         sb.setCharAt(THU, 'F')
                         mRepeat = sb.toString()
                         mAlarm.repeatDays = mRepeat
@@ -172,11 +178,11 @@ class AlarmSettingsFragment: Fragment() {
                     }
                 })
 
-                binding.setRepeatFri.setChecked(mRepeat.get(FRI) == 'T')
+                binding.setRepeatFri.isChecked = mRepeat[FRI] == 'T'
                 binding.setRepeatFri.setOnClickListener(View.OnClickListener {
-                    binding.setRepeatMon.setChecked(mRepeat.get(FRI) != 'T')
+                    binding.setRepeatMon.isChecked = mRepeat[FRI] != 'T'
                     val sb = StringBuilder(mRepeat)
-                    if (mRepeat.get(FRI) == 'T') {
+                    if (mRepeat[FRI] == 'T') {
                         sb.setCharAt(FRI, 'F')
                         mRepeat = sb.toString()
                         mAlarm.repeatDays = mRepeat
@@ -187,11 +193,11 @@ class AlarmSettingsFragment: Fragment() {
                     }
                 })
 
-                binding.setRepeatSat.setChecked(mRepeat.get(SAT) == 'T')
+                binding.setRepeatSat.isChecked = mRepeat[SAT] == 'T'
                 binding.setRepeatSat.setOnClickListener(View.OnClickListener {
-                    binding.setRepeatMon.setChecked(mRepeat.get(SAT) != 'T')
+                    binding.setRepeatMon.isChecked = mRepeat[SAT] != 'T'
                     val sb = StringBuilder(mRepeat)
-                    if (mRepeat.get(SAT) == 'T') {
+                    if (mRepeat[SAT] == 'T') {
                         sb.setCharAt(SAT, 'F')
                         mRepeat = sb.toString()
                         mAlarm.repeatDays = mRepeat
@@ -202,9 +208,9 @@ class AlarmSettingsFragment: Fragment() {
                     }
                 })
 
-                binding.settingsRepeatSwitch.setChecked(mAlarm.repeat)
+                binding.settingsRepeatSwitch.isChecked = mAlarm.repeat
                 binding.settingsRepeatSwitch.setOnClickListener(View.OnClickListener {
-                    binding.settingsRepeatSwitch.setChecked(!mAlarm.repeat)
+                    binding.settingsRepeatSwitch.isChecked = !mAlarm.repeat
                     mAlarm.repeat = (!mAlarm.repeat)
                 })
 
@@ -360,6 +366,16 @@ class AlarmSettingsFragment: Fragment() {
                 //AlarmViewModel.get(getActivity()).deleteAlarm(mTestAlarm);
             }
         }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+
+        outState.putInt("hour", alarmSettingsViewModel.alarmm.value!!.hour)
+        outState.putInt("minute", alarmSettingsViewModel.alarmm.value!!.minute)
+        outState.putString("repeat", alarmSettingsViewModel.alarmm.value!!.repeatDays)
+        outState.putBoolean("repeatweekly", alarmSettingsViewModel.alarmm.value!!.repeat)
+
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {

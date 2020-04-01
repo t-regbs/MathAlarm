@@ -7,6 +7,8 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProviders
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.DividerItemDecoration
+import androidx.recyclerview.widget.RecyclerView
 import com.android.example.mathalarm.R
 import com.android.example.mathalarm.database.AlarmDatabase
 import com.android.example.mathalarm.databinding.FragmentAlarmListBinding
@@ -44,9 +46,9 @@ class AlarmFragment: Fragment() {
             this, viewModelFactory).get(AlarmListViewModel::class.java)
 
         binding.alarmListViewModel = alarmListViewModel
-
+        binding.alarmRecyclerView.addItemDecoration(DividerItemDecoration(context, RecyclerView
+            .VERTICAL))
         val adapter = AlarmListAdapter(AlarmListener {alarmId ->
-//            Toast.makeText(context, "$alarmId", Toast.LENGTH_LONG).show()
             alarmListViewModel.onAlarmClicked(alarmId)
         })
         binding.alarmRecyclerView.adapter = adapter

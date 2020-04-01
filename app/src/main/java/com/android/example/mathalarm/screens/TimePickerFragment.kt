@@ -16,31 +16,31 @@ import com.android.example.mathalarm.R
 class TimePickerFragment : DialogFragment() {
     private var mTimePicker: TimePicker? = null
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog {
-        val argHour = arguments!!.getInt(ARG_HOUR)
-        val argMin = arguments!!.getInt(ARG_MIN)
+        val argHour = requireArguments().getInt(ARG_HOUR)
+        val argMin = requireArguments().getInt(ARG_MIN)
         val v: View =
             LayoutInflater.from(activity).inflate(R.layout.dialog_time, null)
         mTimePicker = v.findViewById(R.id.dialog_time_time_picker)
         if (Build.VERSION.SDK_INT < 23) {
-            mTimePicker!!.setCurrentHour(argHour)
-            mTimePicker!!.setCurrentMinute(argMin)
+            mTimePicker!!.currentHour = argHour
+            mTimePicker!!.currentMinute = argMin
         } else {
             mTimePicker!!.hour = argHour
             mTimePicker!!.minute = argMin
         }
-        return AlertDialog.Builder(activity!!)
+        return AlertDialog.Builder(requireActivity())
             .setView(v)
             .setTitle(R.string.time_picker_title).setPositiveButton(
                 getString(R.string.ok),
-                DialogInterface.OnClickListener { _, which ->
+                DialogInterface.OnClickListener { _, _ ->
                     val hour: Int
                     val minute: Int
                     if (Build.VERSION.SDK_INT < 23) {
-                        hour = mTimePicker!!.getCurrentHour()
-                        minute = mTimePicker!!.getCurrentMinute()
+                        hour = mTimePicker!!.currentHour
+                        minute = mTimePicker!!.currentMinute
                     } else {
-                        hour = mTimePicker!!.getHour()
-                        minute = mTimePicker!!.getMinute()
+                        hour = mTimePicker!!.hour
+                        minute = mTimePicker!!.minute
                     }
                     sendResult(Activity.RESULT_OK, hour, minute)
                 })
