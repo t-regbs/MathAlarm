@@ -33,7 +33,7 @@ class AlarmMathViewModel(
 
     private val uiScope = CoroutineScope(Dispatchers.Main + viewModelJob)
 
-    private var _currentAlarm = MutableLiveData<Alarm?>()
+    var currentAlarm = MutableLiveData<Alarm?>()
 
     val alarms = database.getAlarms()
 
@@ -53,21 +53,21 @@ class AlarmMathViewModel(
 
             update(mAlarm)
 
-            _currentAlarm.value = getCurrentAlarmFromDatabase()
+            currentAlarm.value = getCurrentAlarmFromDatabase()
         }
     }
 
     fun onUpdate(alarm: Alarm){
         uiScope.launch {
             update(alarm)
-            _currentAlarm.value = getCurrentAlarmFromDatabase()
+            currentAlarm.value = getCurrentAlarmFromDatabase()
         }
     }
 
     fun onDelete(alarm: Alarm){
         uiScope.launch {
             delete(alarm)
-            _currentAlarm.value = getCurrentAlarmFromDatabase()
+            currentAlarm.value = getCurrentAlarmFromDatabase()
         }
     }
 
@@ -76,9 +76,9 @@ class AlarmMathViewModel(
     fun cancelAlarm(context: Context?) {
         val cancel = Intent(context, AlarmReceiver::class.java)
         for (i in 0..6) { //For each day of the week
-            if (_currentAlarm.value!!.repeatDays[i] == 'T') {
+            if (currentAlarm.value!!.repeatDays[i] == 'T') {
                 val stringId: StringBuilder = StringBuilder().append(i)
-                    .append(_currentAlarm.value!!.hour).append(_currentAlarm.value!!.minute)
+                    .append(currentAlarm.value!!.hour).append(currentAlarm.value!!.minute)
                 val intentId = stringId.toString().toInt()
                 val cancelAlarmPI = PendingIntent.getBroadcast(
                     context, intentId, cancel,
@@ -94,7 +94,7 @@ class AlarmMathViewModel(
 
     private fun initializeCurrentAlarm() {
         uiScope.launch {
-            _currentAlarm.value = getCurrentAlarmFromDatabase()
+            currentAlarm.value = getCurrentAlarmFromDatabase()
         }
     }
 
@@ -142,7 +142,7 @@ class AlarmMathViewModel(
     fun onAdd(newAlarm: Alarm){
         uiScope.launch {
             add(newAlarm)
-            _currentAlarm.value = getCurrentAlarmFromDatabase()
+            currentAlarm.value = getCurrentAlarmFromDatabase()
         }
     }
 
@@ -150,7 +150,7 @@ class AlarmMathViewModel(
         uiScope.launch {
             clear()
 
-            _currentAlarm.value = null
+            currentAlarm.value = null
         }
     }
 

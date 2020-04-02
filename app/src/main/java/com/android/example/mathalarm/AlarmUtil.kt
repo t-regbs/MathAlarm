@@ -23,6 +23,11 @@ const val HARD = 2
 
 const val ALARM_EXTRA = "alarm_extra"
 
+object numDB {
+    var dig: Long = 1L
+    var onDelete = false
+}
+
 //Get the formatted time (example: 12:00 AM)
 fun getFormatTime(alarm: Alarm): CharSequence? {
     val cal = Calendar.getInstance()
@@ -34,7 +39,7 @@ fun getFormatTime(alarm: Alarm): CharSequence? {
 //Schedules all the alarm of the object at once including repeating ones
 fun scheduleAlarm(context: Context, newAlarm: Alarm): Boolean {
     val alarm = Intent(context, AlarmReceiver::class.java)
-//    alarm.putExtra(Alarm.ALARM_EXTRA, newAlarm.alarmId)
+    alarm.putExtra(ALARM_EXTRA, newAlarm.alarmId)
     val alarmIntent: MutableList<PendingIntent> =
         ArrayList()
     val time: MutableList<Calendar> =
@@ -125,7 +130,7 @@ fun scheduleAlarm(context: Context, newAlarm: Alarm): Boolean {
 //This gets called if snooze get pressed
 fun scheduleSnooze(context: Context, newAlarm: Alarm) {
     val alarm = Intent(context, AlarmReceiver::class.java)
-//    alarm.putExtra(Alarm.ALARM_EXTRA, newAlarm.alarmId)
+    alarm.putExtra(ALARM_EXTRA, newAlarm.alarmId)
     val cal = Calendar.getInstance()
     cal.add(Calendar.MINUTE, newAlarm.snooze)
     val alarmIntent = PendingIntent.getBroadcast(
@@ -158,7 +163,7 @@ fun scheduleSnooze(context: Context, newAlarm: Alarm) {
 fun cancelAlarm(context: Context, newAlarm: Alarm) {
     val cancel = Intent(context, AlarmReceiver::class.java)
     for (i in 0..6) { //For each day of the week
-        if (newAlarm.repeatDays.get(i) == 'T') {
+        if (newAlarm.repeatDays[i] == 'T') {
             val stringId: StringBuilder = StringBuilder().append(i)
                 .append(newAlarm.hour).append(newAlarm.minute)
             val intentId = stringId.toString().toInt()

@@ -1,5 +1,7 @@
 package com.android.example.mathalarm
-
+/*
+* This receives the intent from AlarmManager to start the math fragment
+ */
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent

@@ -12,6 +12,7 @@ import androidx.recyclerview.widget.RecyclerView
 import com.android.example.mathalarm.R
 import com.android.example.mathalarm.database.AlarmDatabase
 import com.android.example.mathalarm.databinding.FragmentAlarmListBinding
+import com.android.example.mathalarm.numDB
 
 class AlarmFragment: Fragment() {
 
@@ -70,6 +71,10 @@ class AlarmFragment: Fragment() {
         })
 
         alarmListViewModel.navigateToAlarmSettings.observe(viewLifecycleOwner, Observer { alarm ->
+            if (alarm == alarmListViewModel.currentAlarm.value!!.alarmId){
+                ++numDB.dig
+                numDB.onDelete = true
+            }
             alarm?.let {
                 this.findNavController().navigate(AlarmFragmentDirections
                     .actionAlarmFragmentToAlarmSettingsFragment(alarm, "")

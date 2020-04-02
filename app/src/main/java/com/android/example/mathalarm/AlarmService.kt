@@ -3,7 +3,10 @@ package com.android.example.mathalarm
 import android.content.Context
 import android.content.Intent
 import androidx.core.app.JobIntentService
+import androidx.navigation.fragment.NavHostFragment.findNavController
 import com.android.example.mathalarm.screens.alarmmath.AlarmMathFragment
+import com.android.example.mathalarm.screens.alarmsettings.AlarmSettingsFragment
+import com.android.example.mathalarm.screens.alarmsettings.AlarmSettingsFragmentDirections
 
 class AlarmService: JobIntentService() {
 
@@ -22,12 +25,14 @@ class AlarmService: JobIntentService() {
 
 
     fun onHandleIntent(intent: Intent) {
-        val mathFragment = Intent(this, AlarmMathFragment::class.java)
-        mathFragment.putExtra(
-            ALARM_EXTRA,
-            intent.extras!![ALARM_EXTRA].toString()
-        )
-        mathFragment.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        startActivity(mathFragment)
+//        val mathFragment = Intent(this, AlarmMathFragment::class.java)
+//        mathFragment.putExtra(
+//            ALARM_EXTRA,
+//            intent.extras!![ALARM_EXTRA].toString()
+//        )
+//        mathFragment.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        findNavController(AlarmSettingsFragment()).navigate(
+            AlarmSettingsFragmentDirections.actionAlarmSettingsFragmentToAlarmMathFragment(intent.extras!![ALARM_EXTRA].toString().toLong(), ""))
+//        startActivity(mathFragment)
     }
 }

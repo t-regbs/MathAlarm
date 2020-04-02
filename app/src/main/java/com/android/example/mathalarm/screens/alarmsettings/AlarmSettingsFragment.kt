@@ -60,7 +60,7 @@ class AlarmSettingsFragment: Fragment() {
         //Creating an instance of the ViewModel Factory
         val dataSource = AlarmDatabase.getInstance(application).alarmDatabaseDao
         val key = if (args.type== "ADD"){
-            args.alarmKey + 1L
+            args.alarmKey + numDB.dig
         } else if (args.type== "ADD" && args.alarmKey == 0L){
             1L
         } else {
@@ -73,6 +73,10 @@ class AlarmSettingsFragment: Fragment() {
 
         binding.alarmSettingsViewModel = alarmSettingsViewModel
 
+        if (args.type == "ADD" && numDB.onDelete){
+            --numDB.dig
+            numDB.onDelete = false
+        }
 
         alarmSettingsViewModel.alarmm.observe(viewLifecycleOwner, Observer {
             if (it != null){
@@ -249,7 +253,7 @@ class AlarmSettingsFragment: Fragment() {
                 //If there are sound files, add them
                 //If there are sound files, add them
                 if (alarmsCount != 0) {
-                    mAlarmTones = arrayOfNulls<Uri>(alarmsCount)
+                    mAlarmTones = arrayOfNulls(alarmsCount)
                     val currentTone: String = mAlarm.alarmTone
                     while (!alarmsCursor.isAfterLast && alarmsCursor.moveToNext()) {
                         val currentPosition = alarmsCursor.position
@@ -430,6 +434,10 @@ class AlarmSettingsFragment: Fragment() {
             R.id.fragment_settings_delete -> {
                 if (alarmSettingsViewModel.alarmm.value!!.isOn) {
                     alarmSettingsViewModel.cancelAlarm(context)
+                }
+                if (args.type == "ADD"){
+                    ++numDB.dig
+                    numDB.onDelete = true
                 }
                 alarmSettingsViewModel.onDelete(alarmSettingsViewModel.alarmm.value!!)
 

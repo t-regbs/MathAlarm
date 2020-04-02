@@ -42,9 +42,6 @@ class AlarmMathFragment: Fragment() {
     private  var num2 = 0
     private var ans = 0
 
-
-
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         requireActivity().window.addFlags(
@@ -62,6 +59,10 @@ class AlarmMathFragment: Fragment() {
             inflater,
             R.layout.fragment_alarm_math, container, false)
 
+//        val intent = requireActivity().intent
+//        val extra = intent.extras
+//        val alarmId = extra!![ALARM_EXTRA] as Long
+
         val application = requireNotNull(this.activity).application
         val args = AlarmMathFragmentArgs.fromBundle(requireArguments())
 
@@ -71,7 +72,8 @@ class AlarmMathFragment: Fragment() {
             args.alarmKey
         } else if (args.type== "TEST" && args.alarmKey == 0L){
             1L
-        } else {
+        }
+        else {
             args.alarmKey
         }
         val viewModelFactory = AlarmMathViewFactory(key, dataSource)
@@ -80,13 +82,11 @@ class AlarmMathFragment: Fragment() {
             this, viewModelFactory).get(AlarmMathViewModel::class.java)
         binding.alarmMathViewModel = alarmMathViewModel
 
-        alarmMathViewModel.alarmm.observe(viewLifecycleOwner, Observer {
-            if (it != null){
-                var alarm = alarmMathViewModel.alarmm.value!!
+        alarmMathViewModel.alarmm.observe(viewLifecycleOwner, Observer {alarm ->
+            if (alarm != null){
                 val dayOfTheWeek = getDayOfWeek(
                     Calendar.getInstance()[Calendar.DAY_OF_WEEK]
                 )
-
                 if (!alarm.repeat) {
                     val repeat = StringBuilder(alarm.repeatDays)
                     repeat.setCharAt(dayOfTheWeek, 'F')
@@ -138,9 +138,10 @@ class AlarmMathFragment: Fragment() {
                 }
 
                 //Get difficulty
-                getMathProblem(alarm.difficulty)
+                getMathProblem(alarmMathViewModel.alarmm.value!!.difficulty)
                 showCalc(args)
             }
+//            alarmMathViewModel.onUpdate(alarmMathViewModel.alarmm.value!!)
         })
         return binding.root
     }
@@ -208,6 +209,11 @@ class AlarmMathFragment: Fragment() {
                 mp.stop()
                 vibrateRunning = false
                 if (args.type == "TEST"){
+                    if (alarmMathViewModel.alarmm.value!!.alarmId
+                        == alarmMathViewModel.currentAlarm.value!!.alarmId){
+                        ++numDB.dig
+                        numDB.onDelete = true
+                    }
                     findNavController().navigate(
                         AlarmMathFragmentDirections.actionAlarmMathFragmentToAlarmSettingsFragment(
                             alarmMathViewModel.alarmm.value!!.alarmId, ""
