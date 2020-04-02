@@ -1,4 +1,4 @@
-package com.android.example.mathalarm.screens.alarmsettings
+package com.android.example.mathalarm.screens.alarmmath
 
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -13,9 +13,10 @@ import com.android.example.mathalarm.database.AlarmDao
 import kotlinx.coroutines.*
 import java.util.*
 
-class AlarmSettingsViewModel(
+class AlarmMathViewModel(
     private val alarmKey:Long = 0L,
-    dataSource: AlarmDao): ViewModel() {
+    dataSource: AlarmDao
+): ViewModel() {
 
     val database = dataSource
 
@@ -151,14 +152,6 @@ class AlarmSettingsViewModel(
 
             _currentAlarm.value = null
         }
-    }
-
-    fun onGetListSize(): Int{
-        var size = 0
-        uiScope.launch {
-            size = getListSize()
-        }
-        return size
     }
 
     override fun onCleared() {

@@ -55,7 +55,6 @@ class AlarmSettingsFragment: Fragment() {
             R.layout.fragment_alarm_settings, container, false)
 
         val application = requireNotNull(this.activity).application
-
         val args = AlarmSettingsFragmentArgs.fromBundle(requireArguments())
 
         //Creating an instance of the ViewModel Factory
@@ -321,17 +320,23 @@ class AlarmSettingsFragment: Fragment() {
         })
 
         binding.settingsTestButton.setOnClickListener(View.OnClickListener {
-            mTestAlarm = Alarm()
-            mTestAlarm!!.difficulty = binding.settingsMathDifficultySpinner.selectedItemPosition
+//            mTestAlarm = Alarm()
+            var mAlarm = alarmSettingsViewModel.alarmm.value!!
+            mAlarm!!.difficulty = binding.settingsMathDifficultySpinner.selectedItemPosition
             if (mAlarmTones.isNotEmpty()) {
-                mTestAlarm!!.alarmTone = (
+                mAlarm!!.alarmTone = (
                     mAlarmTones[binding.settingsToneSpinner
                         .selectedItemPosition].toString()
                 )
             }
-            mTestAlarm!!.vibrate = binding.settingsVibrateSwitch.isChecked
-            mTestAlarm!!.snooze = 0
-            alarmSettingsViewModel.onAdd(mTestAlarm!!)
+            mAlarm!!.vibrate = binding.settingsVibrateSwitch.isChecked
+            mAlarm!!.snooze = 0
+            alarmSettingsViewModel.onUpdate(mAlarm!!)
+            findNavController().navigate(
+                AlarmSettingsFragmentDirections.actionAlarmSettingsFragmentToAlarmMathFragment(
+                    alarmSettingsViewModel.alarmm.value?.alarmId?:0L, "TEST"
+                )
+            )
 //            AlarmViewModel.get(getActivity()).addAlarm(mTestAlarm);
 //            val test = Intent(activity, AlarmMathActivity::class.java)
 //            test.putExtra(Alarm.ALARM_EXTRA, mTestAlarm.getId())
@@ -341,17 +346,18 @@ class AlarmSettingsFragment: Fragment() {
         return binding.root
     }
 
-//    fun scheduleAndMessage() { //schedule it and create a toast
-//        if (alarmSettingsViewModel.currentAlarm.value!!.scheduleAlarm(activity)) {
-//            Toast.makeText(
-//                activity, mAlarm.getTimeLeftMessage(activity),
-//                Toast.LENGTH_SHORT
-//            ).show()
-//            mAlarm.setIsOn(true)
-//        } else {
-//            mAlarm.setIsOn(false)
-//        }
-//    }
+    private fun scheduleAndMessage() { //schedule it and create a toast
+        if (scheduleAlarm(requireContext(), alarmSettingsViewModel.alarmm.value!!)) {
+            Toast.makeText(
+                activity, getTimeLeftMessage(requireContext(), alarmSettingsViewModel.alarmm.value!!),
+                Toast.LENGTH_SHORT
+            ).show()
+            alarmSettingsViewModel.alarmm.value!!.isOn = true
+        } else {
+            alarmSettingsViewModel.alarmm.value!!.isOn = false
+
+        }
+    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode != Activity.RESULT_OK) {
@@ -391,6 +397,7 @@ class AlarmSettingsFragment: Fragment() {
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
+        val args = AlarmSettingsFragmentArgs.fromBundle(requireArguments())
         return when (item.itemId) {
             R.id.fragment_settings_done -> {
                 //Setting difficulty + alarm tone
@@ -403,25 +410,18 @@ class AlarmSettingsFragment: Fragment() {
                 }
                 alarmSettingsViewModel.onUpdate(alarmSettingsViewModel.alarmm.value!!)
                 //schedule alarm, update to database and close settings
-//                if (mAdd) {
-//                    scheduleAndMessage()
-//                    alarmViewModel.addAlarm(mAlarm)
-//                    //AlarmViewModel.get(getActivity()).addAlarm(mAlarm);
-//                } else { // Alarm oldAlarm = AlarmViewModel.get(getActivity()).getAlarm(mAlarm.getId());
-//                    alarmViewModel.getAlarm(mAlarm.getId())
-//                    alarmViewModel.getAlarmResult().observe(
-//                        viewLifecycleOwner,
-//                        Observer<Alarm> { alarm ->
-//                            //                            Alarm oldAlarm = alarm;
-//                            if (alarm.isOn()) {
-//                                alarm.cancelAlarm(activity)
-//                            }
-//                            scheduleAndMessage()
-//                            alarmViewModel.updateAlarm(mAlarm)
-//                            //AlarmViewModel.get(getActivity()).updateAlarm(mAlarm);
-//                        })
-//                    //                    Alarm oldAlarm = AlarmRepository.getInstance(getActivity()).getAlarm(mAlarm.getId());
-//                }
+                if (args.type == "ADD") {
+                    scheduleAndMessage()
+                } else { // Alarm oldAlarm = AlarmViewModel.get(getActivity()).getAlarm(mAlarm.getId());
+                    alarmSettingsViewModel.alarmm.observe(viewLifecycleOwner, Observer { alarm ->
+                        if (alarm.isOn){
+                            cancelAlarm(requireContext(), alarm)
+                        }
+                        scheduleAndMessage()
+                        alarmSettingsViewModel.onUpdate(alarm)
+                    })
+
+                }
                 findNavController().navigate(
                     AlarmSettingsFragmentDirections.actionAlarmSettingsFragmentToAlarmFragment()
                 )
@@ -432,7 +432,6 @@ class AlarmSettingsFragment: Fragment() {
                     alarmSettingsViewModel.cancelAlarm(context)
                 }
                 alarmSettingsViewModel.onDelete(alarmSettingsViewModel.alarmm.value!!)
-                //AlarmViewModel.get(getActivity()).deleteAlarm(mAlarm);
 
                 findNavController().navigate(
                     AlarmSettingsFragmentDirections.actionAlarmSettingsFragmentToAlarmFragment()

@@ -36,5 +36,18 @@
         android:id="@+id/alarmMathFragment"
         android:name="com.android.example.mathalarm.screens.alarmmath.AlarmMathFragment"
         android:label="AlarmMathFragment"
-        tools:layout="@layout/fragment_alarm_math"/>
+        tools:layout="@layout/fragment_alarm_math">
+        <argument
+            android:name="alarmKey"
+            app:argType="long" />
+        <argument
+            android:name="type"
+            app:argType="string" />
+        <action
+            android:id="@+id/action_alarmMathFragment_to_alarmFragment"
+            app:destination="@id/alarmFragment" />
+        <action
+            android:id="@+id/action_alarmMathFragment_to_alarmSettingsFragment"
+            app:destination="@id/alarmSettingsFragment" />
+    </fragment>
 </navigation>
