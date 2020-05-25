@@ -1,7 +1,6 @@
 package com.android.example.mathalarm.screens.alarmsettings
 
 import android.app.AlarmManager
-import android.app.Application
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
@@ -12,24 +11,18 @@ import com.android.example.mathalarm.AlarmReceiver
 import com.android.example.mathalarm.database.Alarm
 import com.android.example.mathalarm.database.AlarmDao
 import kotlinx.coroutines.*
-import java.util.*
 
-class AlarmSettingsViewModel(
-    private val alarmKey:Long = 0L,
-    dataSource: AlarmDao): ViewModel() {
+class AlarmSettingsViewModel(private val alarmKey:Long = 0L, dataSource: AlarmDao): ViewModel() {
 
     val database = dataSource
 
-//    var mAlarm: Alarm? = null
-
+    val alarms = database.getAlarms()
 
     private var viewModelJob = Job()
 
-    private val alarm: LiveData<Alarm>
-    val alarmm: LiveData<Alarm>
-        get() = alarm
-
-    fun getAlarm() = alarm
+    private var _alarm: LiveData<Alarm>
+    val alarm: LiveData<Alarm>
+        get() = _alarm
 
     private val uiScope = CoroutineScope(Dispatchers.Main + viewModelJob)
 
@@ -38,31 +31,12 @@ class AlarmSettingsViewModel(
     val currentAlarm: LiveData<Alarm?>
         get() = _currentAlarm
 
-    var activeAlarm: LiveData<Alarm?> = currentAlarm
-
-
-
-    val alarms = database.getAlarms()
 
     init {
-        alarm = database.getAlarm(alarmKey)
+        _alarm = database.getAlarm(alarmKey)
         initializeCurrentAlarm()
     }
 
-    fun createAlarm(){
-        uiScope.launch {
-            var mAlarm = Alarm()
-            add(mAlarm)
-            val cal = Calendar.getInstance()
-
-            mAlarm.hour = (cal[Calendar.HOUR_OF_DAY])
-            mAlarm.minute = (cal[Calendar.MINUTE])
-
-            update(mAlarm)
-
-            _currentAlarm.value = getCurrentAlarmFromDatabase()
-        }
-    }
 
     fun onUpdate(alarm: Alarm){
         uiScope.launch {
@@ -173,4 +147,12 @@ class AlarmSettingsViewModel(
         super.onCleared()
         viewModelJob.cancel()
     }
+
+//    fun setaddAlarm() {
+//        alarm = database.getAlarm(alarmKey + 1L)
+//    }
+//
+//    fun setAddAlarmEmpty(){
+//        alarm = database.getAlarm(0L)
+//    }
 }

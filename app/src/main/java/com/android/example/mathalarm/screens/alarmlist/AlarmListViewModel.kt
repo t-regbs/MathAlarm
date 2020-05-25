@@ -48,13 +48,6 @@ class AlarmListViewModel(
         }
     }
 
-    private suspend fun getListSize(): Int{
-        var size = 0
-        withContext(Dispatchers.IO){
-            size = database.getSize()
-        }
-        return size
-    }
 
     private suspend fun update(alarm: Alarm){
         withContext(Dispatchers.IO) {
@@ -62,11 +55,6 @@ class AlarmListViewModel(
         }
     }
 
-    private suspend fun delete(alarm: Alarm) {
-        withContext(Dispatchers.IO){
-            database.deleteAlarm(alarm)
-        }
-    }
 
     private suspend fun clear() {
         withContext(Dispatchers.IO) {
@@ -79,16 +67,17 @@ class AlarmListViewModel(
         uiScope.launch {
             var mAlarm = Alarm()
             add(mAlarm)
-            val cal = Calendar.getInstance()
 
-            mAlarm.hour = (cal[Calendar.HOUR_OF_DAY])
-            mAlarm.minute = (cal[Calendar.MINUTE])
+            val cal = Calendar.getInstance()
+            mAlarm.hour = cal[Calendar.HOUR_OF_DAY]
+            mAlarm.minute = cal[Calendar.MINUTE]
 
             update(mAlarm)
 
-            currentAlarm.value = getCurrentAlarmFromDatabase()
+            _navigateToAlarmSettings.value = getCurrentAlarmFromDatabase()!!.alarmId
         }
     }
+
 
     fun onClear(){
         uiScope.launch {
@@ -98,13 +87,6 @@ class AlarmListViewModel(
         }
     }
 
-    fun onGetListSize(): Int{
-        var size = 0
-        uiScope.launch {
-            size = getListSize()
-        }
-        return size
-    }
 
     fun onAlarmClicked(id: Long){
         _navigateToAlarmSettings.value = id

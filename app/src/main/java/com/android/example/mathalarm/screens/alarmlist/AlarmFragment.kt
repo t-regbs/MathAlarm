@@ -7,6 +7,7 @@ import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.ViewModelProviders
 import androidx.navigation.fragment.findNavController
 import com.android.example.mathalarm.R
@@ -42,7 +43,7 @@ class AlarmFragment: Fragment() {
                 application
             )
 
-        alarmListViewModel = ViewModelProviders.of(
+        alarmListViewModel = ViewModelProvider(
             this, viewModelFactory).get(AlarmListViewModel::class.java)
 
         binding.alarmListViewModel = alarmListViewModel
@@ -88,11 +89,7 @@ class AlarmFragment: Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.fragment_add_alarm_menu -> {
-                binding.alarmListViewModel!!.onAdd()
-                findNavController().navigate(
-                    AlarmFragmentDirections.actionAlarmFragmentToAlarmSettingsFragment(
-                        alarmListViewModel.currentAlarm.value!!.alarmId)
-                )
+                alarmListViewModel.onAdd()
                 true
             }
             else -> super.onOptionsItemSelected(item)
