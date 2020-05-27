@@ -23,11 +23,12 @@ const val HARD = 2
 
 const val ALARM_EXTRA = "alarm_extra"
 
-object numDB {
-    var dig: Long = 1L
-    var onDelete = false
-    var delFromAdd = false
+object  Cal {
+    val cal: Calendar = Calendar.getInstance()
+    val hour = cal[Calendar.HOUR_OF_DAY]
+    val minute = cal[Calendar.MINUTE]
 }
+
 
 //Get the formatted time (example: 12:00 AM)
 fun getFormatTime(alarm: Alarm): CharSequence? {
@@ -41,10 +42,8 @@ fun getFormatTime(alarm: Alarm): CharSequence? {
 fun scheduleAlarm(context: Context, newAlarm: Alarm): Boolean {
     val alarm = Intent(context, AlarmReceiver::class.java)
     alarm.putExtra(ALARM_EXTRA, newAlarm.alarmId)
-    val alarmIntent: MutableList<PendingIntent> =
-        ArrayList()
-    val time: MutableList<Calendar> =
-        ArrayList()
+    val alarmIntent: MutableList<PendingIntent> = ArrayList()
+    val time: MutableList<Calendar> = ArrayList()
     // If there is no day set, set the alarm on the closest possible date
     if (newAlarm.repeatDays == "FFFFFFF") {
         val cal = initCalendar(newAlarm)
@@ -69,16 +68,11 @@ fun scheduleAlarm(context: Context, newAlarm: Alarm): Boolean {
     for (i in SUN..SAT) {
         if (newAlarm.repeatDays[i] == 'T') {
             var daysUntilAlarm: Int
-            val cal =
-                initCalendar(
-                    newAlarm
-                )
-            val currentDay =
-                getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
+            val cal = initCalendar(newAlarm)
+            val currentDay = getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
             if (currentDay > i ||
-                currentDay == i && cal.timeInMillis < System.currentTimeMillis()
-            ) {
-                //days left till end of week(sat) + the day of the week of the alarm;
+                (currentDay == i && cal.timeInMillis < System.currentTimeMillis())) {
+                //days left till end of week(sat) + the day of the week of the alarm
                 // EX: alarm = i = tues = 2; current = wed = 3; end of week = sat = 6
                 //end - current = 6 - 3 = 3 -> 3 days till saturday/end of week
                 //end of week + 1 (to sunday) + day of week alarm is on = 3 + 1 + 2 = 6
@@ -90,13 +84,12 @@ fun scheduleAlarm(context: Context, newAlarm: Alarm): Boolean {
             }
             val stringId: StringBuilder = StringBuilder().append(i)
                 .append(newAlarm.hour).append(newAlarm.minute)
-            val intentId = stringId.toString().toInt()
+            val id = stringId.toString().split("-").joinToString("")
+            val intentId = id.toInt()
             //check if a previous alarm has been set
             if (PendingIntent.getBroadcast(
                     context, intentId, alarm,
-                    PendingIntent.FLAG_NO_CREATE
-                ) != null
-            ) {
+                    PendingIntent.FLAG_NO_CREATE) != null) {
                 Toast.makeText(
                     context, context.getString(R.string.alarm_duplicate_toast_text),
                     Toast.LENGTH_SHORT

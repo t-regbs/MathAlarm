@@ -83,19 +83,6 @@ class AlarmMathFragment: Fragment() {
 
         alarmMathViewModel.alarm.observe(viewLifecycleOwner, Observer{ alarm ->
             if (alarm != null) {
-                val dayOfTheWeek = getDayOfWeek(
-                    Calendar.getInstance()[Calendar.DAY_OF_WEEK]
-                )
-                if (!alarm.repeat) {
-                    val repeat = StringBuilder(alarm.repeatDays)
-                    repeat.setCharAt(dayOfTheWeek, 'F')
-                    alarm.repeatDays = repeat.toString()
-                    if (alarm.repeatDays == "FFFFFFF") {
-                        alarm.isOn = false
-                    }
-//                alarmMathViewModel.onUpdate(alarm)
-                }
-
                 //Play alarm tone
                 if (alarm.alarmTone.isNotEmpty()) {
                     val alarmUri = Uri.parse(alarm.alarmTone)
@@ -219,6 +206,24 @@ class AlarmMathFragment: Fragment() {
                 })
             }
         })
+
+        val dayOfTheWeek = getDayOfWeek(
+            Calendar.getInstance()[Calendar.DAY_OF_WEEK]
+        )
+        if (alarmMathViewModel.alarm.value != null) {
+            val currAlarm = alarmMathViewModel.alarm.value!!
+            if (!currAlarm.repeat) {
+                val repeat = StringBuilder(currAlarm.repeatDays)
+                repeat.setCharAt(dayOfTheWeek, 'F')
+                currAlarm.repeatDays = repeat.toString()
+                if (currAlarm.repeatDays == "FFFFFFF") {
+                    currAlarm.isOn = false
+                }
+                alarmMathViewModel.onUpdate(currAlarm)
+            }
+        }
+
+
         return binding.root
     }
 

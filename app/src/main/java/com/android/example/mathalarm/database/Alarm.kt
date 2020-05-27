@@ -3,6 +3,7 @@ package com.android.example.mathalarm.database
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.android.example.mathalarm.Cal
 import java.util.*
 
 @Entity(tableName = "alarms")
@@ -11,10 +12,10 @@ data class Alarm (
     var alarmId: Long = 0L,
 
     @ColumnInfo(name = "hour")
-    var hour: Int = -1,
+    var hour: Int = Cal.hour,
 
     @ColumnInfo(name = "minute")
-    var minute: Int = -1,
+    var minute: Int = Cal.minute,
 
     @ColumnInfo(name = "repeat")
     var repeat: Boolean = false,

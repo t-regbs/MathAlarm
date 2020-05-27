@@ -325,17 +325,17 @@ class AlarmSettingsFragment: Fragment() {
         return binding.root
     }
 
-//    fun scheduleAndMessage() { //schedule it and create a toast
-//        if (alarmSettingsViewModel.currentAlarm.value!!.scheduleAlarm(activity)) {
-//            Toast.makeText(
-//                activity, mAlarm.getTimeLeftMessage(activity),
-//                Toast.LENGTH_SHORT
-//            ).show()
-//            mAlarm.setIsOn(true)
-//        } else {
-//            mAlarm.setIsOn(false)
-//        }
-//    }
+    fun scheduleAndMessage() { //schedule it and create a toast
+        if (scheduleAlarm(requireContext(), alarmSettingsViewModel.currentAlarm.value!!)) {
+            Toast.makeText(
+                activity, getTimeLeftMessage(requireContext(), mAlarm),
+                Toast.LENGTH_SHORT
+            ).show()
+            mAlarm.isOn = true
+        } else {
+            mAlarm.isOn = false
+        }
+    }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
         if (resultCode != Activity.RESULT_OK) {
@@ -375,34 +375,21 @@ class AlarmSettingsFragment: Fragment() {
         return when (item.itemId) {
             R.id.fragment_settings_done -> {
                 //Setting difficulty + alarm tone
-                alarmSettingsViewModel.alarm.value!!.difficulty =(binding.settingsMathDifficultySpinner.selectedItemPosition)
+                val alarm = alarmSettingsViewModel.alarm.value!!
+                alarm.difficulty =(binding.settingsMathDifficultySpinner.selectedItemPosition)
                 if (mAlarmTones.isNotEmpty()) {
-                    alarmSettingsViewModel.alarm.value!!.alarmTone = (
+                    alarm.alarmTone = (
                         mAlarmTones[binding.settingsToneSpinner
                             .selectedItemPosition].toString()
                     )
                 }
-                alarmSettingsViewModel.onUpdate(alarmSettingsViewModel.alarm.value!!)
+
                 //schedule alarm, update to database and close settings
-//                if (mAdd) {
-//                    scheduleAndMessage()
-//                    alarmViewModel.addAlarm(mAlarm)
-//                    //AlarmViewModel.get(getActivity()).addAlarm(mAlarm);
-//                } else { // Alarm oldAlarm = AlarmViewModel.get(getActivity()).getAlarm(mAlarm.getId());
-//                    alarmViewModel.getAlarm(mAlarm.getId())
-//                    alarmViewModel.getAlarmResult().observe(
-//                        viewLifecycleOwner,
-//                        Observer<Alarm> { alarm ->
-//                            //                            Alarm oldAlarm = alarm;
-//                            if (alarm.isOn()) {
-//                                alarm.cancelAlarm(activity)
-//                            }
-//                            scheduleAndMessage()
-//                            alarmViewModel.updateAlarm(mAlarm)
-//                            //AlarmViewModel.get(getActivity()).updateAlarm(mAlarm);
-//                        })
-//                    //                    Alarm oldAlarm = AlarmRepository.getInstance(getActivity()).getAlarm(mAlarm.getId());
-//                }
+                if (alarm.isOn) {
+                    cancelAlarm(requireContext(), alarm)
+                }
+                scheduleAndMessage()
+                alarmSettingsViewModel.onUpdate(alarm)
                 findNavController().navigate(
                     AlarmSettingsFragmentDirections.actionAlarmSettingsFragmentToAlarmFragment()
                 )

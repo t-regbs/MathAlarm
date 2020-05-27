@@ -67,13 +67,6 @@ class AlarmListViewModel(
         uiScope.launch {
             var mAlarm = Alarm()
             add(mAlarm)
-
-            val cal = Calendar.getInstance()
-            mAlarm.hour = cal[Calendar.HOUR_OF_DAY]
-            mAlarm.minute = cal[Calendar.MINUTE]
-
-            update(mAlarm)
-
             _navigateToAlarmSettings.value = getCurrentAlarmFromDatabase()!!.alarmId
         }
     }
