@@ -1,4 +1,4 @@
-package com.android.example.mathalarm.screens.alarmsettings
+package com.android.example.mathalarm.screens.alarmmath
 
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -11,43 +11,61 @@ import com.android.example.mathalarm.AlarmReceiver
 import com.android.example.mathalarm.database.Alarm
 import com.android.example.mathalarm.database.AlarmDao
 import kotlinx.coroutines.*
+import java.util.*
 
-class AlarmSettingsViewModel(private val alarmKey:Long = 0L, dataSource: AlarmDao): ViewModel() {
+class AlarmMathViewModel(
+    private val alarmKey:Long = 0L,
+    dataSource: AlarmDao
+): ViewModel() {
 
     val database = dataSource
 
-    val alarms = database.getAlarms()
+//    var mAlarm: Alarm? = null
+
 
     private var viewModelJob = Job()
 
-    val alarm: LiveData<Alarm>
-
-    private val _navigateToAlarmMath = MutableLiveData<Long>()
-    val navigateToAlarmMath
-        get() = _navigateToAlarmMath
+    var alarm: LiveData<Alarm>
 
     private val uiScope = CoroutineScope(Dispatchers.Main + viewModelJob)
 
-    private var _currentAlarm = MutableLiveData<Alarm?>()
+    var currentAlarm = MutableLiveData<Alarm?>()
 
+    val alarms = database.getAlarms()
 
     init {
-        this.alarm = database.getAlarm(alarmKey)
-        initializeCurrentAlarm()
+        alarm = database.getAlarm(alarmKey)
     }
 
+    fun getAlarm(alarmId: Long): LiveData<Alarm>{
+        return database.getAlarm(alarmId)
+    }
+    fun createAlarm(){
+        uiScope.launch {
+            var mAlarm = Alarm()
+            add(mAlarm)
+            val cal = Calendar.getInstance()
+
+            mAlarm.hour = (cal[Calendar.HOUR_OF_DAY])
+            mAlarm.minute = (cal[Calendar.MINUTE])
+
+            update(mAlarm)
+
+            currentAlarm.value = getCurrentAlarmFromDatabase()
+        }
+    }
 
     fun onUpdate(alarm: Alarm){
         uiScope.launch {
             update(alarm)
-            _currentAlarm.value = getCurrentAlarmFromDatabase()
+            currentAlarm.value = getCurrentAlarmFromDatabase()
         }
     }
 
     fun onDelete(alarm: Alarm){
         uiScope.launch {
             delete(alarm)
-            _currentAlarm.value = getCurrentAlarmFromDatabase()
+            currentAlarm.value = getCurrentAlarmFromDatabase()
         }
     }
 
@@ -56,9 +74,9 @@ class AlarmSettingsViewModel(private val alarmKey:Long = 0L, dataSource: AlarmDa
     fun cancelAlarm(context: Context?) {
         val cancel = Intent(context, AlarmReceiver::class.java)
         for (i in 0..6) { //For each day of the week
-            if (_currentAlarm.value!!.repeatDays[i] == 'T') {
+            if (currentAlarm.value!!.repeatDays[i] == 'T') {
                 val stringId: StringBuilder = StringBuilder().append(i)
-                    .append(_currentAlarm.value!!.hour).append(_currentAlarm.value!!.minute)
+                    .append(currentAlarm.value!!.hour).append(currentAlarm.value!!.minute)
                 val intentId = stringId.toString().toInt()
                 val cancelAlarmPI = PendingIntent.getBroadcast(
                     context, intentId, cancel,
@@ -69,12 +87,6 @@ class AlarmSettingsViewModel(private val alarmKey:Long = 0L, dataSource: AlarmDa
                 alarmManager.cancel(cancelAlarmPI)
                 cancelAlarmPI.cancel()
             }
-        }
-    }
-
-    private fun initializeCurrentAlarm() {
-        uiScope.launch {
-            _currentAlarm.value = getCurrentAlarmFromDatabase()
         }
     }
 
@@ -122,7 +134,7 @@ class AlarmSettingsViewModel(private val alarmKey:Long = 0L, dataSource: AlarmDa
     fun onAdd(newAlarm: Alarm){
         uiScope.launch {
             add(newAlarm)
-           _navigateToAlarmMath.value = getCurrentAlarmFromDatabase()!!.alarmId
+            currentAlarm.value = getCurrentAlarmFromDatabase()
         }
     }
 
@@ -130,7 +142,7 @@ class AlarmSettingsViewModel(private val alarmKey:Long = 0L, dataSource: AlarmDa
         uiScope.launch {
             clear()
 
-            _currentAlarm.value = null
+            currentAlarm.value = null
         }
     }
 
@@ -146,16 +158,4 @@ class AlarmSettingsViewModel(private val alarmKey:Long = 0L, dataSource: AlarmDa
         super.onCleared()
         viewModelJob.cancel()
     }
-
-    fun onAlarmMathNavigated(){
-        _navigateToAlarmMath.value = null
-    }
-
-//    fun setaddAlarm() {
-//        alarm = database.getAlarm(alarmKey + 1L)
-//    }
-//
-//    fun setAddAlarmEmpty(){
-//        alarm = database.getAlarm(0L)
-//    }
 }

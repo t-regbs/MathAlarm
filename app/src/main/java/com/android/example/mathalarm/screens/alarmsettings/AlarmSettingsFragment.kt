@@ -21,6 +21,7 @@ import com.android.example.mathalarm.database.Alarm
 import com.android.example.mathalarm.database.AlarmDatabase
 import com.android.example.mathalarm.databinding.FragmentAlarmSettingsBinding
 import com.android.example.mathalarm.screens.TimePickerFragment
+import com.android.example.mathalarm.screens.alarmmath.AlarmMathActivity
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -69,16 +70,16 @@ class AlarmSettingsFragment: Fragment() {
         binding.alarmSettingsViewModel = alarmSettingsViewModel
 
 
-//        if (args.alarmKey == (alarmSettingsViewModel.currentAlarm.value!!.alarmId)){
-//            alarmSettingsViewModel.activeAlarm = alarmSettingsViewModel.currentAlarm
-//        } else {
-//            alarmSettingsViewModel.alarmm.value!!.hour =
-//        }
+        alarmSettingsViewModel.navigateToAlarmMath.observe(viewLifecycleOwner, Observer { alarm ->
+            alarm?.let {
+                val test = Intent(activity, AlarmMathActivity::class.java)
+                test.putExtra(ALARM_EXTRA, alarm)
+                startActivityForResult(test, REQUEST_TEST)
+                alarmSettingsViewModel.onAlarmMathNavigated()
+            }
+        })
 
-//        mRepeat = mAlarm!!.repeatDays
-
-
-        alarmSettingsViewModel.alarm.observe(this, Observer {
+        alarmSettingsViewModel.alarm.observe(viewLifecycleOwner, Observer {
             if (it != null){
                 mAlarm = alarmSettingsViewModel.alarm.value!!
                 var mRepeat = alarmSettingsViewModel.alarm.value!!.repeatDays
@@ -319,10 +320,6 @@ class AlarmSettingsFragment: Fragment() {
             mTestAlarm!!.vibrate = binding.settingsVibrateSwitch.isChecked
             mTestAlarm!!.snooze = 0
             alarmSettingsViewModel.onAdd(mTestAlarm!!)
-//            AlarmViewModel.get(getActivity()).addAlarm(mTestAlarm);
-//            val test = Intent(activity, AlarmMathActivity::class.java)
-//            test.putExtra(Alarm.ALARM_EXTRA, mTestAlarm.getId())
-//            startActivityForResult(test, AlarmSettingsFragment.REQUEST_TEST)
         })
 
         return binding.root
@@ -356,10 +353,17 @@ class AlarmSettingsFragment: Fragment() {
             binding.settingsTime.text = getFormatTime(alarmSettingsViewModel.alarm.value!!)
         } else {
             if (requestCode == REQUEST_TEST) {
-//                alarmSettingsViewModel.onDelete(mTestAlarm)
-                //AlarmViewModel.get(getActivity()).deleteAlarm(mTestAlarm);
+                alarmSettingsViewModel.onDelete(mTestAlarm!!)
             }
         }
+    }
+
+    override fun onSaveInstanceState(savedInstanceState: Bundle) {
+        super.onSaveInstanceState(savedInstanceState)
+        savedInstanceState.putInt("hour", mAlarm.hour)
+        savedInstanceState.putInt("minute", mAlarm.minute)
+        savedInstanceState.putString("repeat", mAlarm.repeatDays)
+        savedInstanceState.putBoolean("repeatweekly", mAlarm.repeat)
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
