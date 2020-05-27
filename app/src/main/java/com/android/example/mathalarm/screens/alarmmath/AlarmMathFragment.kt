@@ -82,140 +82,142 @@ class AlarmMathFragment: Fragment() {
 
 
         alarmMathViewModel.alarm.observe(viewLifecycleOwner, Observer{ alarm ->
-            val dayOfTheWeek = getDayOfWeek(
-                Calendar.getInstance()[Calendar.DAY_OF_WEEK]
-            )
-            if (!alarm.repeat) {
-                val repeat = StringBuilder(alarm.repeatDays)
-                repeat.setCharAt(dayOfTheWeek, 'F')
-                alarm.repeatDays = repeat.toString()
-                if (alarm.repeatDays == "FFFFFFF") {
-                    alarm.isOn = false
-                }
-//                alarmMathViewModel.onUpdate(alarm)
-            }
-
-            //Play alarm tone
-            if (alarm.alarmTone.isNotEmpty()) {
-                val alarmUri = Uri.parse(alarm.alarmTone)
-                try {
-                    mp.reset()
-                    mp.setDataSource(requireContext(), alarmUri)
-                    mp.setAudioStreamType(AudioManager.STREAM_MUSIC)
-                    mp.prepare()
-                    mp.isLooping = true
-                    mp.start()
-                } catch (e: IOException) {
-                    e.printStackTrace()
-                }
-            } else {
-                Toast.makeText(
-                    activity, getString(R.string.tone_not_available),
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
-
-            //Vibrate phone
-            if (alarm.vibrate) {
-                vibrateRunning = true
-                val thread = Thread(Runnable {
-                    while (vibrateRunning) {
-                        val v =
-                            requireActivity().getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-                        v.vibrate(1000)
-                        try {
-                            Thread.sleep(5000)
-                        } catch (e: InterruptedException) {
-                        }
+            if (alarm != null) {
+                val dayOfTheWeek = getDayOfWeek(
+                    Calendar.getInstance()[Calendar.DAY_OF_WEEK]
+                )
+                if (!alarm.repeat) {
+                    val repeat = StringBuilder(alarm.repeatDays)
+                    repeat.setCharAt(dayOfTheWeek, 'F')
+                    alarm.repeatDays = repeat.toString()
+                    if (alarm.repeatDays == "FFFFFFF") {
+                        alarm.isOn = false
                     }
-                    if (!vibrateRunning) {
-                        return@Runnable
+//                alarmMathViewModel.onUpdate(alarm)
+                }
+
+                //Play alarm tone
+                if (alarm.alarmTone.isNotEmpty()) {
+                    val alarmUri = Uri.parse(alarm.alarmTone)
+                    try {
+                        mp.reset()
+                        mp.setDataSource(requireContext(), alarmUri)
+                        mp.setAudioStreamType(AudioManager.STREAM_MUSIC)
+                        mp.prepare()
+                        mp.isLooping = true
+                        mp.start()
+                    } catch (e: IOException) {
+                        e.printStackTrace()
+                    }
+                } else {
+                    Toast.makeText(
+                        activity, getString(R.string.tone_not_available),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
+
+                //Vibrate phone
+                if (alarm.vibrate) {
+                    vibrateRunning = true
+                    val thread = Thread(Runnable {
+                        while (vibrateRunning) {
+                            val v =
+                                requireActivity().getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+                            v.vibrate(1000)
+                            try {
+                                Thread.sleep(5000)
+                            } catch (e: InterruptedException) {
+                            }
+                        }
+                        if (!vibrateRunning) {
+                            return@Runnable
+                        }
+                    })
+                    thread.start()
+                }
+
+                //Get difficulty
+                getMathProblem(alarm.difficulty)
+
+                //Initialize the buttons and the on click actions
+                sb = StringBuilder("")
+                binding.mathQuestion.text = getMathString()
+                binding.mathBtn1.setOnClickListener(View.OnClickListener {
+                    sb!!.append(1)
+                    binding.mathAnswer.text = sb
+                })
+                binding.mathBtn2.setOnClickListener(View.OnClickListener {
+                    sb!!.append(2)
+                    binding.mathAnswer.text = sb
+                })
+                binding.mathBtn3.setOnClickListener(View.OnClickListener {
+                    sb!!.append(3)
+                    binding.mathAnswer.text = sb
+                })
+                binding.mathBtn4.setOnClickListener(View.OnClickListener {
+                    sb!!.append(4)
+                    binding.mathAnswer.text = sb
+                })
+                binding.mathBtn5.setOnClickListener(View.OnClickListener {
+                    sb!!.append(5)
+                    binding.mathAnswer.text = sb
+                })
+                binding.mathBtn6.setOnClickListener(View.OnClickListener {
+                    sb!!.append(6)
+                    binding.mathAnswer.text = sb
+                })
+                binding.mathBtn7.setOnClickListener(View.OnClickListener {
+                    sb!!.append(7)
+                    binding.mathAnswer.text = sb
+                })
+                binding.mathBtn8.setOnClickListener(View.OnClickListener {
+                    sb!!.append(8)
+                    binding.mathAnswer.text = sb
+                })
+                binding.mathBtn9.setOnClickListener(View.OnClickListener {
+                    sb!!.append(9)
+                    binding.mathAnswer.text = sb
+                })
+                binding.mathBtn0.setOnClickListener(View.OnClickListener {
+                    sb!!.append(0)
+                    binding.mathAnswer.text = sb
+                })
+                binding.mathBtnDel.setOnClickListener(View.OnClickListener {
+                    if (sb!!.isNotEmpty()) {
+                        sb!!.deleteCharAt(sb!!.length - 1)
+                        binding.mathAnswer.text = sb
                     }
                 })
-                thread.start()
-            }
-
-            //Get difficulty
-            getMathProblem(alarm.difficulty)
-
-            //Initialize the buttons and the on click actions
-            sb = StringBuilder("")
-            binding.mathQuestion.text = getMathString()
-            binding.mathBtn1.setOnClickListener(View.OnClickListener {
-                sb!!.append(1)
-                binding.mathAnswer.text = sb
-            })
-            binding.mathBtn2.setOnClickListener(View.OnClickListener {
-                sb!!.append(2)
-                binding.mathAnswer.text = sb
-            })
-            binding.mathBtn3.setOnClickListener(View.OnClickListener {
-                sb!!.append(3)
-                binding.mathAnswer.text = sb
-            })
-            binding.mathBtn4.setOnClickListener(View.OnClickListener {
-                sb!!.append(4)
-                binding.mathAnswer.text = sb
-            })
-            binding.mathBtn5.setOnClickListener(View.OnClickListener {
-                sb!!.append(5)
-                binding.mathAnswer.text = sb
-            })
-            binding.mathBtn6.setOnClickListener(View.OnClickListener {
-                sb!!.append(6)
-                binding.mathAnswer.text = sb
-            })
-            binding.mathBtn7.setOnClickListener(View.OnClickListener {
-                sb!!.append(7)
-                binding.mathAnswer.text = sb
-            })
-            binding.mathBtn8.setOnClickListener(View.OnClickListener {
-                sb!!.append(8)
-                binding.mathAnswer.text = sb
-            })
-            binding.mathBtn9.setOnClickListener(View.OnClickListener {
-                sb!!.append(9)
-                binding.mathAnswer.text = sb
-            })
-            binding.mathBtn0.setOnClickListener(View.OnClickListener {
-                sb!!.append(0)
-                binding.mathAnswer.text = sb
-            })
-            binding.mathBtnDel.setOnClickListener(View.OnClickListener {
-                if (sb!!.isNotEmpty()) {
-                    sb!!.deleteCharAt(sb!!.length - 1)
+                binding.mathBtnClear.setOnClickListener(View.OnClickListener {
+                    sb!!.delete(0, sb!!.length)
                     binding.mathAnswer.text = sb
-                }
-            })
-            binding.mathBtnClear.setOnClickListener(View.OnClickListener {
-                sb!!.delete(0, sb!!.length)
-                binding.mathAnswer.text = sb
-            })
-            binding.mathBtnSet.setOnClickListener(View.OnClickListener {
-                if (sb.toString().toInt() != ans) {
-                    Toast.makeText(activity, "Incorrect!", Toast.LENGTH_SHORT).show()
-                    sb!!.setLength(0)
-                    binding.mathAnswer.text = ""
-                } else {
-                    mp.stop()
-                    vibrateRunning = false
-                    requireActivity().setResult(Activity.RESULT_OK)
-                    requireActivity().finish()
-                }
-            })
-            binding.mathBtnSnooze.setOnClickListener(View.OnClickListener {
-                if (alarm.snooze == 0) {
-                    Toast.makeText(
-                        activity,
-                        getString(R.string.snooze_off), Toast.LENGTH_SHORT
-                    ).show()
-                } else {
-                    mp.stop()
-                    vibrateRunning = false
-                    scheduleSnooze(requireContext(), alarm)
-                    requireActivity().finish()
-                }
-            })
+                })
+                binding.mathBtnSet.setOnClickListener(View.OnClickListener {
+                    if (sb.toString().toInt() != ans) {
+                        Toast.makeText(activity, "Incorrect!", Toast.LENGTH_SHORT).show()
+                        sb!!.setLength(0)
+                        binding.mathAnswer.text = ""
+                    } else {
+                        mp.stop()
+                        vibrateRunning = false
+                        requireActivity().setResult(Activity.RESULT_OK)
+                        requireActivity().finish()
+                    }
+                })
+                binding.mathBtnSnooze.setOnClickListener(View.OnClickListener {
+                    if (alarm.snooze == 0) {
+                        Toast.makeText(
+                            activity,
+                            getString(R.string.snooze_off), Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        mp.stop()
+                        vibrateRunning = false
+                        scheduleSnooze(requireContext(), alarm)
+                        requireActivity().finish()
+                    }
+                })
+            }
         })
         return binding.root
     }

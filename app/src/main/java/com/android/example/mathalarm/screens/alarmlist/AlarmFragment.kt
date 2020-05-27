@@ -70,7 +70,7 @@ class AlarmFragment: Fragment() {
 
         })
 
-        alarmListViewModel.navigateToAlarmSettings.observe(this, Observer { alarm ->
+        alarmListViewModel.navigateToAlarmSettings.observe(viewLifecycleOwner, Observer { alarm ->
             alarm?.let {
                 this.findNavController().navigate(AlarmFragmentDirections
                     .actionAlarmFragmentToAlarmSettingsFragment(alarm))

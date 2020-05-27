@@ -29,6 +29,8 @@ class AlarmSettingsViewModel(private val alarmKey:Long = 0L, dataSource: AlarmDa
     private val uiScope = CoroutineScope(Dispatchers.Main + viewModelJob)
 
     private var _currentAlarm = MutableLiveData<Alarm?>()
+    val currentAlarm: LiveData<Alarm?>
+        get() = _currentAlarm
 
 
     init {
@@ -123,6 +125,7 @@ class AlarmSettingsViewModel(private val alarmKey:Long = 0L, dataSource: AlarmDa
         uiScope.launch {
             add(newAlarm)
            _navigateToAlarmMath.value = getCurrentAlarmFromDatabase()!!.alarmId
+            _currentAlarm.value = getCurrentAlarmFromDatabase()
         }
     }
 

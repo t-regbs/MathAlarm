@@ -259,7 +259,7 @@ class AlarmSettingsFragment: Fragment() {
 
 
                 val toneAdapter = ArrayAdapter(
-                    activity!!,
+                    requireActivity(),
                     android.R.layout.simple_spinner_dropdown_item, toneItems
                 )
                 binding.settingsToneSpinner.adapter = toneAdapter
@@ -268,7 +268,7 @@ class AlarmSettingsFragment: Fragment() {
                 val difficultyItems =
                     arrayOf("Easy", "Medium", "Hard")
                 val difficultyAdapter = ArrayAdapter(
-                    activity!!,
+                    requireActivity(),
                     android.R.layout.simple_spinner_dropdown_item, difficultyItems
                 )
                 binding.settingsMathDifficultySpinner.adapter = difficultyAdapter
@@ -353,7 +353,7 @@ class AlarmSettingsFragment: Fragment() {
             binding.settingsTime.text = getFormatTime(alarmSettingsViewModel.alarm.value!!)
         } else {
             if (requestCode == REQUEST_TEST) {
-                alarmSettingsViewModel.onDelete(mTestAlarm!!)
+                alarmSettingsViewModel.onDelete(alarmSettingsViewModel.currentAlarm.value!!)
             }
         }
     }
