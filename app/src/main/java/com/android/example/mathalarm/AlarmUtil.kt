@@ -23,7 +23,7 @@ const val HARD = 2
 
 const val ALARM_EXTRA = "alarm_extra"
 
-object  Cal {
+object Cal {
     val cal: Calendar = Calendar.getInstance()
     val hour = cal[Calendar.HOUR_OF_DAY]
     val minute = cal[Calendar.MINUTE]
@@ -56,8 +56,7 @@ fun scheduleAlarm(context: Context, newAlarm: Alarm): Boolean {
         } else { //alarm time already passed for the day so set it tomorrow
             val sb = StringBuilder("FFFFFFF")
             if (dayOfTheWeek == SAT) { //if it is saturday
-                dayOfTheWeek =
-                    SUN
+                dayOfTheWeek = SUN
             } else {
                 dayOfTheWeek++
             }

@@ -17,7 +17,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name=".screens.alarmmath.AlarmMathActivity"/>
+        <activity android:name=".screens.alarmmath.AlarmMathActivity"
+            android:excludeFromRecents="true"
+            android:configChanges="orientation|screenSize">
+        </activity>
+        <service android:name=".AlarmService"
+            android:enabled="true"
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE"/>
+        <receiver android:name=".AlarmReceiver"/>
     </application>
 
 </manifest>

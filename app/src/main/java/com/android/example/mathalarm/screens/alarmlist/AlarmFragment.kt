@@ -49,14 +49,13 @@ class AlarmFragment: Fragment() {
         binding.alarmListViewModel = alarmListViewModel
 
         val adapter = AlarmListAdapter(AlarmListener {alarmId ->
-//            Toast.makeText(context, "$alarmId", Toast.LENGTH_LONG).show()
             alarmListViewModel.onAlarmClicked(alarmId)
         })
+        val itemDecoration = VerticalSpacingItemDecoration(15)
+        binding.alarmRecyclerView.addItemDecoration(itemDecoration)
         binding.alarmRecyclerView.adapter = adapter
 
         binding.lifecycleOwner = this
-
-//        alarmListViewModel.onClear()
 
         alarmListViewModel.alarms.observe(viewLifecycleOwner, Observer {
             if (it.isNotEmpty()){

@@ -12,6 +12,5 @@ class AlarmReceiver : BroadcastReceiver() {
         val service = Intent(context, AlarmService::class.java)
         service.putExtra(ALARM_EXTRA, intent.extras!![ALARM_EXTRA].toString())
         AlarmService.enqueueWork(context, service)
-
     }
 }

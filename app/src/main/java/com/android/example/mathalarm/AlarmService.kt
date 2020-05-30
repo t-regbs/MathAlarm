@@ -26,12 +26,8 @@ class AlarmService: JobIntentService() {
 
     fun onHandleIntent(intent: Intent) {
         val mathFragment = Intent(this, AlarmMathActivity::class.java)
-        mathFragment.putExtra(
-            ALARM_EXTRA,
-            intent.extras!![ALARM_EXTRA].toString()
-        )
+        mathFragment.putExtra(ALARM_EXTRA, intent.extras!![ALARM_EXTRA].toString())
         mathFragment.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         startActivity(mathFragment)
-
     }
 }
