@@ -2,10 +2,13 @@ package com.android.example.mathalarm.screens.alarmmath
 
 import android.app.Activity
 import android.content.Context
+import android.media.AudioAttributes
 import android.media.AudioManager
 import android.media.MediaPlayer
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.VibrationEffect
 import android.os.Vibrator
 import android.view.LayoutInflater
 import android.view.View
@@ -16,8 +19,6 @@ import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelProviders
-import androidx.navigation.fragment.findNavController
 import com.android.example.mathalarm.*
 import com.android.example.mathalarm.database.AlarmDatabase
 import com.android.example.mathalarm.databinding.FragmentAlarmMathBinding
@@ -70,7 +71,7 @@ class AlarmMathFragment: Fragment() {
 
         val application = requireNotNull(this.activity).application
 
-        val alarmId: Long = extra!![ALARM_EXTRA] as Long
+        val alarmId: Long = extra!!.getString(ALARM_EXTRA)!!.toLong()
 
         val dataSource = AlarmDatabase.getInstance(application).alarmDatabaseDao
 
@@ -81,18 +82,44 @@ class AlarmMathFragment: Fragment() {
         binding.alarmMathViewModel = alarmMathViewModel
 
 
+        val dayOfTheWeek = getDayOfWeek(
+            Calendar.getInstance()[Calendar.DAY_OF_WEEK]
+        )
+        if (alarmMathViewModel.alarm.value != null) {
+            val currAlarm = alarmMathViewModel.alarm.value!!
+            if (!currAlarm.repeat) {
+                val repeatDays = StringBuilder(currAlarm.repeatDays)
+                repeatDays.setCharAt(dayOfTheWeek, 'F')
+                currAlarm.repeatDays = repeatDays.toString()
+                if (currAlarm.repeatDays == "FFFFFFF") {
+                    currAlarm.isOn = false
+                }
+                alarmMathViewModel.onUpdate(currAlarm)
+            }
+        }
+
         alarmMathViewModel.alarm.observe(viewLifecycleOwner, Observer{ alarm ->
             if (alarm != null) {
                 //Play alarm tone
                 if (alarm.alarmTone.isNotEmpty()) {
                     val alarmUri = Uri.parse(alarm.alarmTone)
                     try {
-                        mp.reset()
-                        mp.setDataSource(requireContext(), alarmUri)
-                        mp.setAudioStreamType(AudioManager.STREAM_MUSIC)
-                        mp.prepare()
-                        mp.isLooping = true
-                        mp.start()
+                        mp.apply {
+                            reset()
+                            setDataSource(requireContext(), alarmUri)
+                            if (Build.VERSION.SDK_INT < 21) {
+                                @Suppress("DEPRECATION")
+                                setAudioStreamType(AudioManager.STREAM_MUSIC)
+                            } else {
+                                setAudioAttributes(AudioAttributes.Builder()
+                                    .setContentType(
+                                        AudioAttributes.CONTENT_TYPE_MUSIC)
+                                    .build())
+                            }
+                            prepare()
+                            isLooping = true
+                            start()
+                        }
                     } catch (e: IOException) {
                         e.printStackTrace()
                     }
@@ -110,7 +137,12 @@ class AlarmMathFragment: Fragment() {
                         while (vibrateRunning) {
                             val v =
                                 requireActivity().getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-                            v.vibrate(1000)
+                            if (Build.VERSION.SDK_INT >= 26) {
+                                v.vibrate(VibrationEffect.createOneShot(1000,10));
+                            } else {
+                                @Suppress("DEPRECATION")
+                                v.vibrate(1000);
+                            }
                             try {
                                 Thread.sleep(5000)
                             } catch (e: InterruptedException) {
@@ -129,57 +161,57 @@ class AlarmMathFragment: Fragment() {
                 //Initialize the buttons and the on click actions
                 sb = StringBuilder("")
                 binding.mathQuestion.text = getMathString()
-                binding.mathBtn1.setOnClickListener(View.OnClickListener {
+                binding.mathBtn1.setOnClickListener {
                     sb!!.append(1)
                     binding.mathAnswer.text = sb
-                })
-                binding.mathBtn2.setOnClickListener(View.OnClickListener {
+                }
+                binding.mathBtn2.setOnClickListener {
                     sb!!.append(2)
                     binding.mathAnswer.text = sb
-                })
-                binding.mathBtn3.setOnClickListener(View.OnClickListener {
+                }
+                binding.mathBtn3.setOnClickListener {
                     sb!!.append(3)
                     binding.mathAnswer.text = sb
-                })
-                binding.mathBtn4.setOnClickListener(View.OnClickListener {
+                }
+                binding.mathBtn4.setOnClickListener {
                     sb!!.append(4)
                     binding.mathAnswer.text = sb
-                })
-                binding.mathBtn5.setOnClickListener(View.OnClickListener {
+                }
+                binding.mathBtn5.setOnClickListener {
                     sb!!.append(5)
                     binding.mathAnswer.text = sb
-                })
-                binding.mathBtn6.setOnClickListener(View.OnClickListener {
+                }
+                binding.mathBtn6.setOnClickListener {
                     sb!!.append(6)
                     binding.mathAnswer.text = sb
-                })
-                binding.mathBtn7.setOnClickListener(View.OnClickListener {
+                }
+                binding.mathBtn7.setOnClickListener {
                     sb!!.append(7)
                     binding.mathAnswer.text = sb
-                })
-                binding.mathBtn8.setOnClickListener(View.OnClickListener {
+                }
+                binding.mathBtn8.setOnClickListener {
                     sb!!.append(8)
                     binding.mathAnswer.text = sb
-                })
-                binding.mathBtn9.setOnClickListener(View.OnClickListener {
+                }
+                binding.mathBtn9.setOnClickListener {
                     sb!!.append(9)
                     binding.mathAnswer.text = sb
-                })
-                binding.mathBtn0.setOnClickListener(View.OnClickListener {
+                }
+                binding.mathBtn0.setOnClickListener {
                     sb!!.append(0)
                     binding.mathAnswer.text = sb
-                })
-                binding.mathBtnDel.setOnClickListener(View.OnClickListener {
+                }
+                binding.mathBtnDel.setOnClickListener {
                     if (sb!!.isNotEmpty()) {
                         sb!!.deleteCharAt(sb!!.length - 1)
                         binding.mathAnswer.text = sb
                     }
-                })
-                binding.mathBtnClear.setOnClickListener(View.OnClickListener {
+                }
+                binding.mathBtnClear.setOnClickListener {
                     sb!!.delete(0, sb!!.length)
                     binding.mathAnswer.text = sb
-                })
-                binding.mathBtnSet.setOnClickListener(View.OnClickListener {
+                }
+                binding.mathBtnSet.setOnClickListener {
                     if (sb.toString().toInt() != ans) {
                         Toast.makeText(activity, "Incorrect!", Toast.LENGTH_SHORT).show()
                         sb!!.setLength(0)
@@ -190,8 +222,8 @@ class AlarmMathFragment: Fragment() {
                         requireActivity().setResult(Activity.RESULT_OK)
                         requireActivity().finish()
                     }
-                })
-                binding.mathBtnSnooze.setOnClickListener(View.OnClickListener {
+                }
+                binding.mathBtnSnooze.setOnClickListener {
                     if (alarm.snooze == 0) {
                         Toast.makeText(
                             activity,
@@ -203,26 +235,9 @@ class AlarmMathFragment: Fragment() {
                         scheduleSnooze(requireContext(), alarm)
                         requireActivity().finish()
                     }
-                })
+                }
             }
         })
-
-        val dayOfTheWeek = getDayOfWeek(
-            Calendar.getInstance()[Calendar.DAY_OF_WEEK]
-        )
-        if (alarmMathViewModel.alarm.value != null) {
-            val currAlarm = alarmMathViewModel.alarm.value!!
-            if (!currAlarm.repeat) {
-                val repeat = StringBuilder(currAlarm.repeatDays)
-                repeat.setCharAt(dayOfTheWeek, 'F')
-                currAlarm.repeatDays = repeat.toString()
-                if (currAlarm.repeatDays == "FFFFFFF") {
-                    currAlarm.isOn = false
-                }
-                alarmMathViewModel.onUpdate(currAlarm)
-            }
-        }
-
 
         return binding.root
     }

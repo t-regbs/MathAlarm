@@ -5,12 +5,9 @@ import android.content.Context
 import android.content.Intent
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelProviders
 import com.android.example.mathalarm.database.Alarm
-import com.android.example.mathalarm.database.AlarmDatabase
 import com.android.example.mathalarm.screens.alarmlist.AlarmFragment
 import com.android.example.mathalarm.screens.alarmlist.AlarmListViewModel
-import com.android.example.mathalarm.screens.alarmlist.AlarmListViewModelFactory
 
 class RebootReceiver : BroadcastReceiver() {
     private lateinit var alarmViewModel: AlarmListViewModel

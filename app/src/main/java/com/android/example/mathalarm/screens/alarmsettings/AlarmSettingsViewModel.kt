@@ -12,7 +12,7 @@ import com.android.example.mathalarm.database.Alarm
 import com.android.example.mathalarm.database.AlarmDao
 import kotlinx.coroutines.*
 
-class AlarmSettingsViewModel(private val alarmKey:Long = 0L, dataSource: AlarmDao): ViewModel() {
+class AlarmSettingsViewModel(alarmKey:Long = 0L, dataSource: AlarmDao): ViewModel() {
 
     val database = dataSource
 
@@ -54,26 +54,6 @@ class AlarmSettingsViewModel(private val alarmKey:Long = 0L, dataSource: AlarmDa
     }
 
 
-    //Cancels an alarm - Called when an alarm is turned off, deleted, and rescheduled
-    fun cancelAlarm(context: Context?) {
-        val cancel = Intent(context, AlarmReceiver::class.java)
-        for (i in 0..6) { //For each day of the week
-            if (_currentAlarm.value!!.repeatDays[i] == 'T') {
-                val stringId: StringBuilder = StringBuilder().append(i)
-                    .append(_currentAlarm.value!!.hour).append(_currentAlarm.value!!.minute)
-                val intentId = stringId.toString().toInt()
-                val cancelAlarmPI = PendingIntent.getBroadcast(
-                    context, intentId, cancel,
-                    PendingIntent.FLAG_CANCEL_CURRENT
-                )
-                val alarmManager = context
-                    ?.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-                alarmManager.cancel(cancelAlarmPI)
-                cancelAlarmPI.cancel()
-            }
-        }
-    }
-
     private fun initializeCurrentAlarm() {
         uiScope.launch {
             _currentAlarm.value = getCurrentAlarmFromDatabase()
@@ -92,15 +72,6 @@ class AlarmSettingsViewModel(private val alarmKey:Long = 0L, dataSource: AlarmDa
         }
     }
 
-
-    private suspend fun getListSize(): Int{
-        var size = 0
-        withContext(Dispatchers.IO){
-            size = database.getSize()
-        }
-        return size
-    }
-
     private suspend fun update(alarm: Alarm){
         withContext(Dispatchers.IO) {
             database.updateAlarm(alarm)
@@ -114,12 +85,6 @@ class AlarmSettingsViewModel(private val alarmKey:Long = 0L, dataSource: AlarmDa
         }
     }
 
-    private suspend fun clear() {
-        withContext(Dispatchers.IO) {
-            database.clear()
-        }
-    }
-
     //Called when add menu is pressed
     fun onAdd(newAlarm: Alarm){
         uiScope.launch {
@@ -127,22 +92,6 @@ class AlarmSettingsViewModel(private val alarmKey:Long = 0L, dataSource: AlarmDa
            _navigateToAlarmMath.value = getCurrentAlarmFromDatabase()!!.alarmId
             _currentAlarm.value = getCurrentAlarmFromDatabase()
         }
-    }
-
-    fun onClear(){
-        uiScope.launch {
-            clear()
-
-            _currentAlarm.value = null
-        }
-    }
-
-    fun onGetListSize(): Int{
-        var size = 0
-        uiScope.launch {
-            size = getListSize()
-        }
-        return size
     }
 
     override fun onCleared() {
@@ -154,11 +103,4 @@ class AlarmSettingsViewModel(private val alarmKey:Long = 0L, dataSource: AlarmDa
         _navigateToAlarmMath.value = null
     }
 
-//    fun setaddAlarm() {
-//        alarm = database.getAlarm(alarmKey + 1L)
-//    }
-//
-//    fun setAddAlarmEmpty(){
-//        alarm = database.getAlarm(0L)
-//    }
 }

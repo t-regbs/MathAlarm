@@ -6,7 +6,7 @@ apply plugin: 'androidx.navigation.safeargs'
 
 android {
     compileSdkVersion 29
-    buildToolsVersion "29.0.0"
+    buildToolsVersion "29.0.2"
     defaultConfig {
         applicationId "com.android.example.mathalarm"
         minSdkVersion 19
@@ -22,9 +22,10 @@ android {
         }
     }
 
-    dataBinding {
-        enabled = true
+    buildFeatures {
+        dataBinding = true
     }
+    
 }
 
 dependencies {
@@ -57,4 +58,7 @@ dependencies {
     // Navigation
     implementation "android.arch.navigation:navigation-fragment-ktx:$navigationVersion"
     implementation "android.arch.navigation:navigation-ui-ktx:$navigationVersion"
+
+    //Timber
+    implementation 'com.jakewharton.timber:timber:4.7.1'
 }

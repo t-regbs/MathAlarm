@@ -22,15 +22,19 @@
         <action
             android:id="@+id/action_alarmSettingsFragment_to_alarmMathFragment"
             app:destination="@id/alarmMathFragment" />
-        <argument android:name="alarmKey"
+        <argument
+            android:name="alarmKey"
             app:argType="long" />
         <action
             android:id="@+id/action_alarmSettingsFragment_to_alarmFragment"
             app:destination="@id/alarmFragment" />
+        <argument
+            android:name="add"
+            app:argType="boolean" />
     </fragment>
     <fragment
         android:id="@+id/alarmMathFragment"
-        android:name="com.android.example.mathalarm.screens.AlarmMathFragment"
+        android:name="com.android.example.mathalarm.screens.alarmmath.AlarmMathFragment"
         android:label="AlarmMathFragment"
         tools:layout="@layout/fragment_alarm_math"/>
 </navigation>

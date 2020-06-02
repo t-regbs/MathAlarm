@@ -4,7 +4,6 @@ import android.content.Context
 import android.content.Intent
 import androidx.core.app.JobIntentService
 import com.android.example.mathalarm.screens.alarmmath.AlarmMathActivity
-import com.android.example.mathalarm.screens.alarmmath.AlarmMathFragment
 
 class AlarmService: JobIntentService() {
 
@@ -13,8 +12,8 @@ class AlarmService: JobIntentService() {
         val SERVICE_JOB_ID = 50
 
 
-        fun enqueueWork(context: Context?, service: Intent?) {
-            enqueueWork(context!!, AlarmService::class.java, SERVICE_JOB_ID, service!!)
+        fun enqueueWork(context: Context, service: Intent) {
+            enqueueWork(context, AlarmService::class.java, SERVICE_JOB_ID, service)
         }
     }
 
@@ -25,9 +24,9 @@ class AlarmService: JobIntentService() {
 
 
     fun onHandleIntent(intent: Intent) {
-        val mathFragment = Intent(this, AlarmMathActivity::class.java)
-        mathFragment.putExtra(ALARM_EXTRA, intent.extras!![ALARM_EXTRA].toString())
-        mathFragment.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        startActivity(mathFragment)
+        val mathActivity = Intent(this, AlarmMathActivity::class.java)
+        mathActivity.putExtra(ALARM_EXTRA, intent.extras!![ALARM_EXTRA].toString())
+        mathActivity.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+        startActivity(mathActivity)
     }
 }

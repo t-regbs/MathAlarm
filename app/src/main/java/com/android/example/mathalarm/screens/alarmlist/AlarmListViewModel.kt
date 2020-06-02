@@ -9,8 +9,7 @@ import kotlinx.coroutines.*
 import java.util.*
 
 class AlarmListViewModel(
-    dataSource: AlarmDao,
-    application: Application): ViewModel(){
+    dataSource: AlarmDao): ViewModel(){
 
     val database = dataSource
 
@@ -19,6 +18,8 @@ class AlarmListViewModel(
     private val uiScope = CoroutineScope(Dispatchers.Main + viewModelJob)
 
     var currentAlarm = MutableLiveData<Alarm?>()
+
+    var isFromAdd = MutableLiveData<Boolean?>()
 
     val alarms = database.getAlarms()
 
@@ -48,6 +49,11 @@ class AlarmListViewModel(
         }
     }
 
+    fun onUpdate(alarm: Alarm){
+        uiScope.launch {
+            update(alarm)
+        }
+    }
 
     private suspend fun update(alarm: Alarm){
         withContext(Dispatchers.IO) {
@@ -65,8 +71,9 @@ class AlarmListViewModel(
     //Called when add menu is pressed
     fun onAdd(){
         uiScope.launch {
-            var mAlarm = Alarm()
+            val mAlarm = Alarm()
             add(mAlarm)
+            isFromAdd.value = true
             _navigateToAlarmSettings.value = getCurrentAlarmFromDatabase()!!.alarmId
         }
     }
@@ -82,6 +89,7 @@ class AlarmListViewModel(
 
 
     fun onAlarmClicked(id: Long){
+        isFromAdd.value = false
         _navigateToAlarmSettings.value = id
     }
 

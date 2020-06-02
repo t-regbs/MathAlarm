@@ -7,6 +7,7 @@ import android.content.Intent
 import android.text.format.DateFormat
 import android.widget.Toast
 import com.android.example.mathalarm.database.Alarm
+import timber.log.Timber
 import java.util.*
 
 
@@ -69,6 +70,7 @@ fun scheduleAlarm(context: Context, newAlarm: Alarm): Boolean {
             var daysUntilAlarm: Int
             val cal = initCalendar(newAlarm)
             val currentDay = getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
+            Timber.d("current day: $currentDay")
             if (currentDay > i ||
                 (currentDay == i && cal.timeInMillis < System.currentTimeMillis())) {
                 //days left till end of week(sat) + the day of the week of the alarm
@@ -77,14 +79,17 @@ fun scheduleAlarm(context: Context, newAlarm: Alarm): Boolean {
                 //end of week + 1 (to sunday) + day of week alarm is on = 3 + 1 + 2 = 6
                 daysUntilAlarm = SAT - currentDay + 1 + i
                 cal.add(Calendar.DAY_OF_YEAR, daysUntilAlarm)
+                Timber.d("days until alarm: $daysUntilAlarm")
             } else {
                 daysUntilAlarm = i - currentDay
                 cal.add(Calendar.DAY_OF_YEAR, daysUntilAlarm)
+                Timber.d("days until alarm: $daysUntilAlarm")
             }
             val stringId: StringBuilder = StringBuilder().append(i)
                 .append(newAlarm.hour).append(newAlarm.minute)
             val id = stringId.toString().split("-").joinToString("")
             val intentId = id.toInt()
+            Timber.d("intent id: $intentId")
             //check if a previous alarm has been set
             if (PendingIntent.getBroadcast(
                     context, intentId, alarm,
@@ -113,8 +118,10 @@ fun scheduleAlarm(context: Context, newAlarm: Alarm): Boolean {
                 AlarmManager.RTC_WAKEUP, cal.timeInMillis,
                 AlarmManager.INTERVAL_DAY * 7, pendingIntent
             )
+            Timber.d("scheduled new alarm")
         } else {
             alarmManager[AlarmManager.RTC_WAKEUP, cal.timeInMillis] = pendingIntent
+            Timber.d("scheduled new alarm")
         }
     }
     return true

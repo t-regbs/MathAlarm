@@ -2,13 +2,10 @@ package com.android.example.mathalarm.screens.alarmlist
 
 import android.os.Bundle
 import android.view.*
-import android.widget.RelativeLayout
-import android.widget.Toast
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
-import androidx.lifecycle.ViewModelProviders
 import androidx.navigation.fragment.findNavController
 import com.android.example.mathalarm.R
 import com.android.example.mathalarm.database.AlarmDatabase
@@ -19,7 +16,8 @@ class AlarmFragment: Fragment() {
     private lateinit var binding: FragmentAlarmListBinding
 
     private lateinit var alarmListViewModel: AlarmListViewModel
-    val sourceAdd = "add"
+
+    private var add: Boolean? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,18 +35,14 @@ class AlarmFragment: Fragment() {
 
         //Creating an instance of the ViewModel Factory
         val dataSource = AlarmDatabase.getInstance(application).alarmDatabaseDao
-        val viewModelFactory =
-            AlarmListViewModelFactory(
-                dataSource,
-                application
-            )
+        val viewModelFactory = AlarmListViewModelFactory(dataSource)
 
         alarmListViewModel = ViewModelProvider(
             this, viewModelFactory).get(AlarmListViewModel::class.java)
 
         binding.alarmListViewModel = alarmListViewModel
 
-        val adapter = AlarmListAdapter(AlarmListener {alarmId ->
+        val adapter = AlarmListAdapter(alarmListViewModel, AlarmListener {alarmId ->
             alarmListViewModel.onAlarmClicked(alarmId)
         })
         val itemDecoration = VerticalSpacingItemDecoration(15)
@@ -56,6 +50,13 @@ class AlarmFragment: Fragment() {
         binding.alarmRecyclerView.adapter = adapter
 
         binding.lifecycleOwner = this
+
+
+        alarmListViewModel.isFromAdd.observe(viewLifecycleOwner, Observer {
+            if (it != null) {
+                add = it
+            }
+        })
 
         alarmListViewModel.alarms.observe(viewLifecycleOwner, Observer {
             if (it.isNotEmpty()){
@@ -72,7 +73,7 @@ class AlarmFragment: Fragment() {
         alarmListViewModel.navigateToAlarmSettings.observe(viewLifecycleOwner, Observer { alarm ->
             alarm?.let {
                 this.findNavController().navigate(AlarmFragmentDirections
-                    .actionAlarmFragmentToAlarmSettingsFragment(alarm))
+                    .actionAlarmFragmentToAlarmSettingsFragment(alarm, add!!))
                 alarmListViewModel.onAlarmSettingsNavigated()
             }
         })
