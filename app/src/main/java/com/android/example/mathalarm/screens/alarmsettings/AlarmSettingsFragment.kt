@@ -88,16 +88,14 @@ class AlarmSettingsFragment: Fragment() {
 
                 binding.settingsTime.text = getFormatTime(mAlarm)
                 binding.settingsTime.setOnClickListener {
-                    val manager = childFragmentManager
+                    val manager = parentFragmentManager
                     val dialog: TimePickerFragment = TimePickerFragment
                         .newInstance(alarm.hour, alarm.minute)
                     dialog.setTargetFragment(
                         this@AlarmSettingsFragment,
                         REQUEST_TIME
                     )
-                    if (manager != null) {
-                        dialog.show(manager, DIALOG_TIME)
-                    }
+                    dialog.show(manager, DIALOG_TIME)
                 }
 
                 binding.setRepeatSun.isChecked = mRepeat[SUN] == 'T'
@@ -327,7 +325,7 @@ class AlarmSettingsFragment: Fragment() {
         return binding.root
     }
 
-    fun scheduleAndMessage() { //schedule it and create a toast
+    private fun scheduleAndMessage() { //schedule it and create a toast
         if (scheduleAlarm(requireActivity(), mAlarm)) {
             Toast.makeText(
                 activity, getTimeLeftMessage(requireContext(), mAlarm),
