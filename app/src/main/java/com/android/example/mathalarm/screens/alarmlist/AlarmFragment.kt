@@ -1,7 +1,9 @@
 package com.android.example.mathalarm.screens.alarmlist
 
+import android.content.DialogInterface
 import android.os.Bundle
 import android.view.*
+import androidx.appcompat.app.AlertDialog
 import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
@@ -11,6 +13,7 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import com.android.example.mathalarm.R
 import com.android.example.mathalarm.database.AlarmDatabase
 import com.android.example.mathalarm.databinding.FragmentAlarmListBinding
+
 
 class AlarmFragment: Fragment() {
 
@@ -99,6 +102,23 @@ class AlarmFragment: Fragment() {
         return when (item.itemId) {
             R.id.fragment_add_alarm_menu -> {
                 alarmListViewModel.onAdd()
+                true
+            }
+            R.id.fragment_clear_alarm_menu -> {
+                val builder = AlertDialog.Builder(requireContext())
+                builder.setMessage("Are you sure you want to delete all the alarms?")
+                builder.setCancelable(true)
+
+                builder.setPositiveButton("Yes") { dialog, _ ->
+                    alarmListViewModel.onClear()
+                    dialog.cancel()
+                }
+
+                builder.setNegativeButton("No") { dialog, _ -> dialog.cancel() }
+
+                builder.create().apply {
+                    show()
+                }
                 true
             }
             else -> super.onOptionsItemSelected(item)

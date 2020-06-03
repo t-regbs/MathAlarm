@@ -3,6 +3,12 @@
       xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <item
+        android:id="@+id/fragment_clear_alarm_menu"
+        android:icon="@drawable/ic_clear"
+        android:title="@string/clear_alarms"
+        app:showAsAction="ifRoom|withText" />
+
+    <item
         android:id="@+id/fragment_add_alarm_menu"
         android:icon="@drawable/ic_content_add"
         android:title="@string/menu_add_alarm"

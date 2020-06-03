@@ -96,7 +96,6 @@ class AlarmListViewModel(
     fun onClear(){
         uiScope.launch {
             clear()
-
             currentAlarm.value = null
         }
     }
