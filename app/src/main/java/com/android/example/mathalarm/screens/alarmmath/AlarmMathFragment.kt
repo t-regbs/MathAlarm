@@ -71,7 +71,8 @@ class AlarmMathFragment: Fragment() {
 
         val application = requireNotNull(this.activity).application
 
-        val alarmId: Long = extra!!.getString(ALARM_EXTRA)!!.toLong()
+        val alarmString = extra?.getString(ALARM_EXTRA)
+        val alarmId = alarmString!!.toLong()
 
         val dataSource = AlarmDatabase.getInstance(application).alarmDatabaseDao
 

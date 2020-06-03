@@ -7,11 +7,18 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.ItemTouchHelper
 import com.android.example.mathalarm.R
 import com.android.example.mathalarm.database.AlarmDatabase
 import com.android.example.mathalarm.databinding.FragmentAlarmListBinding
 
 class AlarmFragment: Fragment() {
+
+    companion object {
+        fun newInstance(): AlarmFragment {
+            return AlarmFragment()
+        }
+    }
 
     private lateinit var binding: FragmentAlarmListBinding
 
@@ -48,6 +55,8 @@ class AlarmFragment: Fragment() {
         val itemDecoration = VerticalSpacingItemDecoration(15)
         binding.alarmRecyclerView.addItemDecoration(itemDecoration)
         binding.alarmRecyclerView.adapter = adapter
+        val itemTouchHelper = ItemTouchHelper(SwipeToDeleteCallback(adapter))
+        itemTouchHelper.attachToRecyclerView(binding.alarmRecyclerView)
 
         binding.lifecycleOwner = this
 

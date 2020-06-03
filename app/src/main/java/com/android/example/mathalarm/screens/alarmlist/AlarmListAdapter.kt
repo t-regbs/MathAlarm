@@ -15,16 +15,18 @@ import com.android.example.mathalarm.databinding.AlarmItemBinding
 class AlarmListAdapter(
     val viewModel: AlarmListViewModel,
     val clickListener: AlarmListener
-):
-    ListAdapter<Alarm, AlarmListAdapter.ViewHolder>(AlarmDiffCallback()) {
+): ListAdapter<Alarm, AlarmListAdapter.ViewHolder>(AlarmDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         return ViewHolder.from(parent)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
-
         holder.bind(getItem(position)!!, clickListener, viewModel)
+    }
+
+    fun deleteTask(position: Int) {
+        viewModel.onDelete(getItem(position))
     }
 
     class ViewHolder private constructor(val binding: AlarmItemBinding): RecyclerView.ViewHolder(binding.root) {
@@ -181,7 +183,6 @@ class AlarmListAdapter(
                     )
                 )
             }
-
         }
 
         companion object {

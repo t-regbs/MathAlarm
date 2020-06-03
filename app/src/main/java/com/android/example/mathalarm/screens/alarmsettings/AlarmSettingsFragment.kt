@@ -75,7 +75,7 @@ class AlarmSettingsFragment: Fragment() {
         alarmSettingsViewModel.navigateToAlarmMath.observe(viewLifecycleOwner, Observer { alarm ->
             alarm?.let {
                 val test = Intent(activity, AlarmMathActivity::class.java)
-                test.putExtra(ALARM_EXTRA, alarm)
+                test.putExtra(ALARM_EXTRA, alarm.toString())
                 startActivityForResult(test, REQUEST_TEST)
                 alarmSettingsViewModel.onAlarmMathNavigated()
             }
@@ -313,8 +313,7 @@ class AlarmSettingsFragment: Fragment() {
             mTestAlarm!!.difficulty = binding.settingsMathDifficultySpinner.selectedItemPosition
             if (mAlarmTones.isNotEmpty()) {
                 mTestAlarm!!.alarmTone = (
-                        mAlarmTones[binding.settingsToneSpinner
-                            .selectedItemPosition].toString()
+                        mAlarmTones[binding.settingsToneSpinner.selectedItemPosition].toString()
                         )
             }
             mTestAlarm!!.vibrate = binding.settingsVibrateSwitch.isChecked

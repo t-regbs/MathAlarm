@@ -1,7 +1,9 @@
 package com.android.example.mathalarm.screens.alarmlist
 
 import android.app.Application
+import android.view.View
 import androidx.lifecycle.MutableLiveData
+import androidx.lifecycle.Transformations
 import androidx.lifecycle.ViewModel
 import com.android.example.mathalarm.database.Alarm
 import com.android.example.mathalarm.database.AlarmDao
@@ -78,6 +80,18 @@ class AlarmListViewModel(
         }
     }
 
+    fun onDelete(alarm: Alarm){
+        uiScope.launch {
+            delete(alarm)
+            currentAlarm.value = getCurrentAlarmFromDatabase()
+        }
+    }
+
+    private suspend fun delete(alarm: Alarm) {
+        withContext(Dispatchers.IO){
+            database.deleteAlarm(alarm)
+        }
+    }
 
     fun onClear(){
         uiScope.launch {
