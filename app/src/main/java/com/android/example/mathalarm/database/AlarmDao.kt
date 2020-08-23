@@ -6,26 +6,26 @@ import androidx.room.*
 @Dao
 interface AlarmDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    fun addAlarm(alarm: Alarm?)
+    suspend fun addAlarm(alarm: Alarm?): Long
 
     @Update
-    fun updateAlarm(alarm: Alarm?)
+    suspend fun updateAlarm(alarm: Alarm?)
 
     @Delete
-    fun deleteAlarm(alarm: Alarm?)
+    suspend fun deleteAlarm(alarm: Alarm?)
 
     @Query("DELETE FROM alarms")
-    fun clear()
+    suspend fun clear()
 
     @Query("SELECT * FROM alarms WHERE alarmid = :alarmUid LIMIT 1")
-    fun getAlarm(alarmUid: Long?): LiveData<Alarm>
+    suspend fun getAlarm(alarmUid: Long?): Alarm
 
     @Query("SELECT * FROM alarms ORDER BY alarmid DESC LIMIT 1")
-    fun getLastAlarm(): Alarm?
+    suspend fun getLastAlarm(): Alarm?
 
     @Query("SELECT * FROM alarms ORDER BY alarmid DESC")
     fun getAlarms(): LiveData<List<Alarm>>
 
     @Query("SELECT COUNT(*) FROM alarms")
-    fun getSize(): Int
+    suspend fun getSize(): Int
 }

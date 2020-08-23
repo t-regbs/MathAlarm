@@ -65,9 +65,7 @@ class AlarmMathFragment: Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
 
-        binding = DataBindingUtil.inflate(
-            inflater,
-            R.layout.fragment_alarm_math, container, false)
+        binding = FragmentAlarmMathBinding.inflate(inflater, container, false)
 
 //        val intent = requireActivity().intent
 //        val extra = intent.extras

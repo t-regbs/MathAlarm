@@ -32,8 +32,8 @@ class AlarmFragment: Fragment() {
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
 
         // Get a reference to the binding object and inflate the fragment views.
-        binding = DataBindingUtil.inflate(
-            inflater, R.layout.fragment_alarm_list, container, false)
+        binding = FragmentAlarmListBinding.inflate(
+            inflater, container, false)
 
         val application = requireNotNull(this.activity).application
 

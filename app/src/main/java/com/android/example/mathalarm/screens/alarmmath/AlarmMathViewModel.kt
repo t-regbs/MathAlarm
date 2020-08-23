@@ -7,6 +7,7 @@ import android.content.Intent
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.android.example.mathalarm.AlarmReceiver
 import com.android.example.mathalarm.database.Alarm
 import com.android.example.mathalarm.database.AlarmDao
@@ -20,51 +21,25 @@ class AlarmMathViewModel(
 
     val database = dataSource
 
-//    var mAlarm: Alarm? = null
-
-
-    private var viewModelJob = Job()
-
-    var alarm: LiveData<Alarm>
-
-    private val uiScope = CoroutineScope(Dispatchers.Main + viewModelJob)
+    var alarm = MutableLiveData<Alarm?>()
 
     var currentAlarm = MutableLiveData<Alarm?>()
 
     val alarms = database.getAlarms()
 
     init {
-        alarm = database.getAlarm(alarmKey)
+        getAlarm(alarmKey)
     }
 
-    fun getAlarm(alarmId: Long): LiveData<Alarm>{
-        return database.getAlarm(alarmId)
+    fun getAlarm(key: Long) = viewModelScope.launch {
+        val alarmFound = findAlarm(key)
+        alarm.postValue(alarmFound)
     }
-    fun createAlarm(){
-        uiScope.launch {
-            var mAlarm = Alarm()
-            add(mAlarm)
-            val cal = Calendar.getInstance()
 
-            mAlarm.hour = (cal[Calendar.HOUR_OF_DAY])
-            mAlarm.minute = (cal[Calendar.MINUTE])
-
-            update(mAlarm)
-
-            currentAlarm.value = getCurrentAlarmFromDatabase()
-        }
-    }
 
     fun onUpdate(alarm: Alarm){
-        uiScope.launch {
+        viewModelScope.launch {
             update(alarm)
-            currentAlarm.value = getCurrentAlarmFromDatabase()
-        }
-    }
-
-    fun onDelete(alarm: Alarm){
-        uiScope.launch {
-            delete(alarm)
             currentAlarm.value = getCurrentAlarmFromDatabase()
         }
     }
@@ -90,72 +65,27 @@ class AlarmMathViewModel(
         }
     }
 
+    private suspend fun findAlarm(id: Long): Alarm = database.getAlarm(id)
+
     private suspend fun getCurrentAlarmFromDatabase(): Alarm? {
         return withContext(Dispatchers.IO){
             database.getLastAlarm()
         }
     }
 
-    private suspend fun add(alarm: Alarm){
-        withContext(Dispatchers.IO){
-            database.addAlarm(alarm)
-        }
-    }
-
-
-    private suspend fun getListSize(): Int{
-        var size = 0
-        withContext(Dispatchers.IO){
-            size = database.getSize()
-        }
-        return size
-    }
 
     private suspend fun update(alarm: Alarm){
-        withContext(Dispatchers.IO) {
-            database.updateAlarm(alarm)
-        }
+        database.updateAlarm(alarm)
     }
 
+    private suspend fun clear() = database.clear()
 
-    private suspend fun delete(alarm: Alarm) {
-        withContext(Dispatchers.IO){
-            database.deleteAlarm(alarm)
-        }
-    }
-
-    private suspend fun clear() {
-        withContext(Dispatchers.IO) {
-            database.clear()
-        }
-    }
-
-    //Called when add menu is pressed
-    fun onAdd(newAlarm: Alarm){
-        uiScope.launch {
-            add(newAlarm)
-            currentAlarm.value = getCurrentAlarmFromDatabase()
-        }
-    }
 
     fun onClear(){
-        uiScope.launch {
+        viewModelScope.launch {
             clear()
 
             currentAlarm.value = null
         }
-    }
-
-    fun onGetListSize(): Int{
-        var size = 0
-        uiScope.launch {
-            size = getListSize()
-        }
-        return size
-    }
-
-    override fun onCleared() {
-        super.onCleared()
-        viewModelJob.cancel()
     }
 }

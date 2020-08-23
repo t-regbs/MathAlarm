@@ -5,6 +5,7 @@ import android.view.View
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.Transformations
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.android.example.mathalarm.database.Alarm
 import com.android.example.mathalarm.database.AlarmDao
 import kotlinx.coroutines.*
@@ -15,12 +16,6 @@ class AlarmListViewModel(
 
     val database = dataSource
 
-    private var viewModelJob = Job()
-
-    private val uiScope = CoroutineScope(Dispatchers.Main + viewModelJob)
-
-    var currentAlarm = MutableLiveData<Alarm?>()
-
     var isFromAdd = MutableLiveData<Boolean?>()
 
     val alarms = database.getAlarms()
@@ -29,74 +24,48 @@ class AlarmListViewModel(
     val navigateToAlarmSettings
         get() = _navigateToAlarmSettings
 
-    init {
-        initializeCurrentAlarm()
-    }
 
-    private fun initializeCurrentAlarm() {
-        uiScope.launch {
-            currentAlarm.value = getCurrentAlarmFromDatabase()
-        }
-    }
-
-    private suspend fun getCurrentAlarmFromDatabase(): Alarm? {
-        return withContext(Dispatchers.IO){
-            database.getLastAlarm()
-        }
-    }
-
-    private suspend fun add(alarm: Alarm){
-        withContext(Dispatchers.IO){
-            database.addAlarm(alarm)
-        }
+    private suspend fun add(alarm: Alarm): Long{
+        return database.addAlarm(alarm)
     }
 
     fun onUpdate(alarm: Alarm){
-        uiScope.launch {
+        viewModelScope.launch {
             update(alarm)
         }
     }
 
     private suspend fun update(alarm: Alarm){
-        withContext(Dispatchers.IO) {
-            database.updateAlarm(alarm)
-        }
+        database.updateAlarm(alarm)
     }
 
 
     private suspend fun clear() {
-        withContext(Dispatchers.IO) {
-            database.clear()
-        }
+        database.clear()
     }
 
     //Called when add menu is pressed
     fun onAdd(){
-        uiScope.launch {
-            val mAlarm = Alarm()
-            add(mAlarm)
+        viewModelScope.launch {
+            val id = add(Alarm())
             isFromAdd.value = true
-            _navigateToAlarmSettings.value = getCurrentAlarmFromDatabase()!!.alarmId
+            _navigateToAlarmSettings.value = id
         }
     }
 
     fun onDelete(alarm: Alarm){
-        uiScope.launch {
+        viewModelScope.launch {
             delete(alarm)
-            currentAlarm.value = getCurrentAlarmFromDatabase()
         }
     }
 
     private suspend fun delete(alarm: Alarm) {
-        withContext(Dispatchers.IO){
-            database.deleteAlarm(alarm)
-        }
+        database.deleteAlarm(alarm)
     }
 
     fun onClear(){
-        uiScope.launch {
+        viewModelScope.launch {
             clear()
-            currentAlarm.value = null
         }
     }
 
@@ -110,8 +79,4 @@ class AlarmListViewModel(
         _navigateToAlarmSettings.value = null
     }
 
-    override fun onCleared() {
-        super.onCleared()
-        viewModelJob.cancel()
-    }
 }

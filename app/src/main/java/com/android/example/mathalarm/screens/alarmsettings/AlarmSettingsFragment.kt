@@ -21,7 +21,6 @@ import com.android.example.mathalarm.database.Alarm
 import com.android.example.mathalarm.database.AlarmDatabase
 import com.android.example.mathalarm.databinding.FragmentAlarmSettingsBinding
 import com.android.example.mathalarm.screens.TimePickerFragment
-import com.android.example.mathalarm.screens.alarmmath.AlarmMathActivity
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -53,22 +52,20 @@ class AlarmSettingsFragment: Fragment() {
 
         setFragmentResultListener("request_key") { requestKey: String, bundle: Bundle ->
             if(bundle.getString(ALARM_EXTRA) == "test"){
-                alarmSettingsViewModel.onDelete(alarmSettingsViewModel.currentAlarm.value!!)
+                alarmSettingsViewModel.onDelete(alarmSettingsViewModel.latestAlarm.value!!)
             }
         }
     }
 
     override fun onStart() {
         super.onStart()
-        alarmSettingsViewModel.getAlarm(key!!)
+//        alarmSettingsViewModel.getAlarm(key!!)
     }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
 
-        binding = DataBindingUtil.inflate(
-            inflater,
-            R.layout.fragment_alarm_settings, container, false)
+        binding = FragmentAlarmSettingsBinding.inflate(inflater, container, false)
 
         val application = requireNotNull(this.activity).application
 
@@ -85,8 +82,8 @@ class AlarmSettingsFragment: Fragment() {
         binding.alarmSettingsViewModel = alarmSettingsViewModel
 
 
-        alarmSettingsViewModel.navigateToAlarmMath.observe(viewLifecycleOwner, Observer { alarm ->
-            alarm?.let {
+        alarmSettingsViewModel.navigateToAlarmMath.observe(viewLifecycleOwner, Observer { alarmId ->
+            alarmId?.let {
 //                val test = Intent(activity, AlarmMathActivity::class.java)
 //                test.putExtra(ALARM_EXTRA, alarm.toString())
 //                startActivityForResult(test, REQUEST_TEST)
@@ -94,7 +91,7 @@ class AlarmSettingsFragment: Fragment() {
                     putString(ALARM_EXTRA, "test")
                 }
                 findNavController().navigate(AlarmSettingsFragmentDirections.
-                actionAlarmSettingsFragmentToAlarmMathFragment(alarm.toString()))
+                actionAlarmSettingsFragmentToAlarmMathFragment(alarmId.toString()))
                 setFragmentResult("request_key", result)
                 alarmSettingsViewModel.onAlarmMathNavigated()
             }
@@ -371,7 +368,7 @@ class AlarmSettingsFragment: Fragment() {
             binding.settingsTime.text = getFormatTime(alarmSettingsViewModel.alarm.value!!)
         } else {
             if (requestCode == REQUEST_TEST) {
-                alarmSettingsViewModel.onDelete(alarmSettingsViewModel.currentAlarm.value!!)
+                alarmSettingsViewModel.onDelete(alarmSettingsViewModel.latestAlarm.value!!)
             }
         }
     }
