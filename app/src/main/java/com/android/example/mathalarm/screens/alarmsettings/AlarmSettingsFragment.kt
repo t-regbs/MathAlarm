@@ -11,8 +11,7 @@ import android.view.*
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.databinding.DataBindingUtil
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.*
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
@@ -35,6 +34,9 @@ class AlarmSettingsFragment: Fragment() {
 
     private lateinit var mAlarm: Alarm
 
+    private val args: AlarmSettingsFragmentArgs by navArgs()
+    var key: Long? = null
+
     private var isFromAdd: Boolean? = null
 
     var mTestAlarm: Alarm? = null
@@ -48,6 +50,17 @@ class AlarmSettingsFragment: Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
+
+        setFragmentResultListener("request_key") { requestKey: String, bundle: Bundle ->
+            if(bundle.getString(ALARM_EXTRA) == "test"){
+                alarmSettingsViewModel.onDelete(alarmSettingsViewModel.currentAlarm.value!!)
+            }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        alarmSettingsViewModel.getAlarm(key!!)
     }
 
     override fun onCreateView(
@@ -59,8 +72,8 @@ class AlarmSettingsFragment: Fragment() {
 
         val application = requireNotNull(this.activity).application
 
-        val args: AlarmSettingsFragmentArgs by navArgs()
         isFromAdd = args.add
+        key = args.alarmKey
 
         //Creating an instance of the ViewModel Factory
         val dataSource = AlarmDatabase.getInstance(application).alarmDatabaseDao
@@ -74,9 +87,15 @@ class AlarmSettingsFragment: Fragment() {
 
         alarmSettingsViewModel.navigateToAlarmMath.observe(viewLifecycleOwner, Observer { alarm ->
             alarm?.let {
-                val test = Intent(activity, AlarmMathActivity::class.java)
-                test.putExtra(ALARM_EXTRA, alarm.toString())
-                startActivityForResult(test, REQUEST_TEST)
+//                val test = Intent(activity, AlarmMathActivity::class.java)
+//                test.putExtra(ALARM_EXTRA, alarm.toString())
+//                startActivityForResult(test, REQUEST_TEST)
+                val result = Bundle().apply {
+                    putString(ALARM_EXTRA, "test")
+                }
+                findNavController().navigate(AlarmSettingsFragmentDirections.
+                actionAlarmSettingsFragmentToAlarmMathFragment(alarm.toString()))
+                setFragmentResult("request_key", result)
                 alarmSettingsViewModel.onAlarmMathNavigated()
             }
         })

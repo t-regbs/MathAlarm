@@ -19,9 +19,12 @@ import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
+import androidx.navigation.Navigation.findNavController
+import androidx.navigation.fragment.navArgs
 import com.android.example.mathalarm.*
 import com.android.example.mathalarm.database.AlarmDatabase
 import com.android.example.mathalarm.databinding.FragmentAlarmMathBinding
+import com.android.example.mathalarm.screens.alarmsettings.AlarmSettingsFragmentArgs
 import java.io.IOException
 import java.util.*
 
@@ -66,13 +69,13 @@ class AlarmMathFragment: Fragment() {
             inflater,
             R.layout.fragment_alarm_math, container, false)
 
-        val intent = requireActivity().intent
-        val extra = intent.extras
-
+//        val intent = requireActivity().intent
+//        val extra = intent.extras
+        val args: AlarmMathFragmentArgs by navArgs()
         val application = requireNotNull(this.activity).application
 
-        val alarmString = extra?.getString(ALARM_EXTRA)
-        val alarmId = alarmString!!.toLong()
+//        val alarmString = extra?.getString(ALARM_EXTRA)
+        val alarmId = args.alarmId.toLong()
 
         val dataSource = AlarmDatabase.getInstance(application).alarmDatabaseDao
 
@@ -221,7 +224,9 @@ class AlarmMathFragment: Fragment() {
                         mp.stop()
                         vibrateRunning = false
                         requireActivity().setResult(Activity.RESULT_OK)
-                        requireActivity().finish()
+//                        findNavController(requireView()).previousBackStackEntry?.savedStateHandle?.set("key", Activity.RESULT_OK)
+//                        requireActivity().finish()
+                        findNavController(requireView()).navigateUp()
                     }
                 }
                 binding.mathBtnSnooze.setOnClickListener {

@@ -20,7 +20,7 @@ class AlarmSettingsViewModel(alarmKey:Long = 0L, dataSource: AlarmDao): ViewMode
 
     private var viewModelJob = Job()
 
-    val alarm: LiveData<Alarm>
+    var alarm: LiveData<Alarm>
 
     private val _navigateToAlarmMath = MutableLiveData<Long>()
     val navigateToAlarmMath
@@ -53,6 +53,9 @@ class AlarmSettingsViewModel(alarmKey:Long = 0L, dataSource: AlarmDao): ViewMode
         }
     }
 
+    fun getAlarm(key: Long) = uiScope.launch {
+        alarm = database.getAlarm(key)
+    }
 
     private fun initializeCurrentAlarm() {
         uiScope.launch {

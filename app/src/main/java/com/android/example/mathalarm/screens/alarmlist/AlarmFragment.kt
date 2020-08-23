@@ -17,12 +17,6 @@ import com.android.example.mathalarm.databinding.FragmentAlarmListBinding
 
 class AlarmFragment: Fragment() {
 
-    companion object {
-        fun newInstance(): AlarmFragment {
-            return AlarmFragment()
-        }
-    }
-
     private lateinit var binding: FragmentAlarmListBinding
 
     private lateinit var alarmListViewModel: AlarmListViewModel
