@@ -16,9 +16,8 @@ import com.android.example.mathalarm.databinding.FragmentAlarmListBinding
 class AlarmFragment: Fragment() {
 
     private lateinit var binding: FragmentAlarmListBinding
-
     private lateinit var alarmListViewModel: AlarmListViewModel
-
+    private lateinit var adapter: AlarmListAdapter
     private var add: Boolean? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -44,7 +43,7 @@ class AlarmFragment: Fragment() {
 
         binding.alarmListViewModel = alarmListViewModel
 
-        val adapter = AlarmListAdapter(alarmListViewModel, AlarmListener {alarmId ->
+        adapter = AlarmListAdapter(alarmListViewModel, AlarmListener {alarmId ->
             alarmListViewModel.onAlarmClicked(alarmId)
         })
         val itemDecoration = VerticalSpacingItemDecoration(15)
@@ -54,8 +53,15 @@ class AlarmFragment: Fragment() {
         itemTouchHelper.attachToRecyclerView(binding.alarmRecyclerView)
 
         binding.lifecycleOwner = this
+        return binding.root
+    }
 
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        setupObservers()
+    }
 
+    private fun setupObservers() {
         alarmListViewModel.addClicked.observe(viewLifecycleOwner, {
             if (it != null) {
                 add = it
@@ -65,13 +71,10 @@ class AlarmFragment: Fragment() {
         alarmListViewModel.alarms.observe(viewLifecycleOwner, {
             if (it.isNotEmpty()){
                 binding.alarmEmptyView.visibility = View.GONE
-                it.let{
-                    adapter.submitList(it)
-                }
+                it.let{ adapter.submitList(it) }
             } else {
                 binding.alarmEmptyView.visibility = View.VISIBLE
             }
-
         })
 
         alarmListViewModel.navigateToAlarmSettings.observe(viewLifecycleOwner, { alarm ->
@@ -81,8 +84,6 @@ class AlarmFragment: Fragment() {
                 alarmListViewModel.onAlarmSettingsNavigated()
             }
         })
-
-        return binding.root
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {

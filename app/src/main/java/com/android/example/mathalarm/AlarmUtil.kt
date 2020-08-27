@@ -1,5 +1,4 @@
 package com.android.example.mathalarm
-
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
@@ -9,7 +8,6 @@ import android.widget.Toast
 import com.android.example.mathalarm.database.Alarm
 import timber.log.Timber
 import java.util.*
-
 
 const val SUN = 0
 const val MON = 1

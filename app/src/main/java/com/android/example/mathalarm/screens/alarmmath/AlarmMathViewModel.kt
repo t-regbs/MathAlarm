@@ -25,14 +25,13 @@ class AlarmMathViewModel(
 
     var currentAlarm = MutableLiveData<Alarm?>()
 
-    val alarms = database.getAlarms()
-
     init {
         getAlarm(alarmKey)
     }
 
     fun getAlarm(key: Long) = viewModelScope.launch {
-        val alarmFound = findAlarm(key)
+        val al = getCurrentAlarmFromDatabase()
+        val alarmFound = if (key == 0L) findAlarm(al!!.alarmId) else findAlarm(key)
         alarm.postValue(alarmFound)
     }
 
