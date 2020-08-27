@@ -1,6 +1,5 @@
 package com.android.example.mathalarm.screens.alarmsettings
 
-import android.app.Activity
 import android.content.Intent
 import android.media.RingtoneManager
 import android.net.Uri
@@ -11,7 +10,6 @@ import android.view.*
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.fragment.app.*
-import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
@@ -21,7 +19,6 @@ import com.android.example.mathalarm.*
 import com.android.example.mathalarm.database.Alarm
 import com.android.example.mathalarm.database.AlarmDatabase
 import com.android.example.mathalarm.databinding.FragmentAlarmSettingsBinding
-import com.android.example.mathalarm.screens.TimePickerFragment
 import com.android.example.mathalarm.screens.alarmmath.AlarmMathActivity
 import java.util.*
 import kotlin.collections.ArrayList
@@ -30,23 +27,13 @@ import kotlin.collections.ArrayList
 class AlarmSettingsFragment: Fragment() {
 
     private lateinit var  binding: FragmentAlarmSettingsBinding
-
     private lateinit var settingsViewModel: AlarmSettingsViewModel
-
     private lateinit var mAlarm: Alarm
+    private lateinit var mTestAlarm: Alarm
 
-    private val args: AlarmSettingsFragmentArgs by navArgs()
-    var key: Long? = null
-
+    private var key: Long? = null
     private var isFromAdd: Boolean? = null
-
-    var mTestAlarm: Alarm? = null
-
-    var mAlarmTones: Array<Uri?> = emptyArray()
-
-    private val REQUEST_TIME = 0
-    private val DIALOG_TIME = "DialogTime"
-    private val REQUEST_TEST = 1
+    private var mAlarmTones: Array<Uri?> = emptyArray()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -57,16 +44,12 @@ class AlarmSettingsFragment: Fragment() {
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
 
-
         val application = requireNotNull(this.activity).application
-
+        val args: AlarmSettingsFragmentArgs by navArgs()
         isFromAdd = args.add
         key = args.alarmKey
-
-        //Creating an instance of the ViewModel Factory
         val dataSource = AlarmDatabase.getInstance(application).alarmDatabaseDao
         val viewModelFactory = AlarmSettingsViewFactory(args.alarmKey,dataSource)
-
         settingsViewModel = ViewModelProvider(
             this, viewModelFactory).get(AlarmSettingsViewModel::class.java)
 
@@ -82,14 +65,14 @@ class AlarmSettingsFragment: Fragment() {
         setupObservers()
         binding.settingsTestButton.setOnClickListener {
             mTestAlarm = Alarm()
-            mTestAlarm!!.difficulty = binding.settingsMathDifficultySpinner.selectedItemPosition
+            mTestAlarm.difficulty = binding.settingsMathDifficultySpinner.selectedItemPosition
             if (mAlarmTones.isNotEmpty()) {
-                mTestAlarm!!.alarmTone = (
+                mTestAlarm.alarmTone = (
                         mAlarmTones[binding.settingsToneSpinner.selectedItemPosition].toString())
             }
-            mTestAlarm!!.vibrate = binding.settingsVibrateSwitch.isChecked
-            mTestAlarm!!.snooze = 0
-            settingsViewModel.onAdd(mTestAlarm!!)
+            mTestAlarm.vibrate = binding.settingsVibrateSwitch.isChecked
+            mTestAlarm.snooze = 0
+            settingsViewModel.onAdd(mTestAlarm)
         }
     }
 
@@ -228,7 +211,6 @@ class AlarmSettingsFragment: Fragment() {
                 }
 
                 //Getting system sound files for tone and displaying in spinner
-                //Getting system sound files for tone and displaying in spinner
                 val toneItems: MutableList<String> =
                     ArrayList()
                 val ringtoneMgr = RingtoneManager(activity)
@@ -253,7 +235,6 @@ class AlarmSettingsFragment: Fragment() {
 
                 var previousPosition = 0
 
-                //If there are sound files, add them
                 //If there are sound files, add them
                 if (alarmsCount != 0) {
                     mAlarmTones = arrayOfNulls(alarmsCount)
@@ -330,7 +311,8 @@ class AlarmSettingsFragment: Fragment() {
             alarmId?.let {
                 val test = Intent(requireContext(), AlarmMathActivity::class.java)
                 test.putExtra(ALARM_EXTRA, alarmId.toString())
-                startActivityForResult(test, REQUEST_TEST)
+                startActivity(test)
+                settingsViewModel.onDelete(settingsViewModel.latestAlarm.value!!)
                 settingsViewModel.onAlarmMathNavigated()
             }
         })
@@ -346,16 +328,6 @@ class AlarmSettingsFragment: Fragment() {
         } else {
             mAlarm.isOn = false
         }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        if (resultCode != Activity.RESULT_OK) {
-            return
-        }
-        if (requestCode == REQUEST_TEST) {
-            settingsViewModel.onDelete(settingsViewModel.latestAlarm.value!!)
-        }
-
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {

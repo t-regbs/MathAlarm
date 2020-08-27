@@ -224,8 +224,7 @@ class AlarmMathFragment: Fragment() {
                     } else {
                         mp.stop()
                         vibrateRunning = false
-                        requireActivity().setResult(Activity.RESULT_OK)
-//                        findNavController(requireView()).previousBackStackEntry?.savedStateHandle?.set("key", Activity.RESULT_OK)
+//                        requireActivity().setResult(Activity.RESULT_OK)
                         requireActivity().finish()
                     }
                 }
