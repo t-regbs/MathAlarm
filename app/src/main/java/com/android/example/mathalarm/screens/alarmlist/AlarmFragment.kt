@@ -1,10 +1,8 @@
 package com.android.example.mathalarm.screens.alarmlist
 
-import android.content.DialogInterface
 import android.os.Bundle
 import android.view.*
 import androidx.appcompat.app.AlertDialog
-import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
@@ -58,13 +56,13 @@ class AlarmFragment: Fragment() {
         binding.lifecycleOwner = this
 
 
-        alarmListViewModel.isFromAdd.observe(viewLifecycleOwner, Observer {
+        alarmListViewModel.addClicked.observe(viewLifecycleOwner, {
             if (it != null) {
                 add = it
             }
         })
 
-        alarmListViewModel.alarms.observe(viewLifecycleOwner, Observer {
+        alarmListViewModel.alarms.observe(viewLifecycleOwner, {
             if (it.isNotEmpty()){
                 binding.alarmEmptyView.visibility = View.GONE
                 it.let{
@@ -76,7 +74,7 @@ class AlarmFragment: Fragment() {
 
         })
 
-        alarmListViewModel.navigateToAlarmSettings.observe(viewLifecycleOwner, Observer { alarm ->
+        alarmListViewModel.navigateToAlarmSettings.observe(viewLifecycleOwner, { alarm ->
             alarm?.let {
                 this.findNavController().navigate(AlarmFragmentDirections
                     .actionAlarmFragmentToAlarmSettingsFragment(alarm, add!!))

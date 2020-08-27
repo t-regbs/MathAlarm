@@ -10,17 +10,19 @@ import android.text.TextWatcher
 import android.view.*
 import android.widget.ArrayAdapter
 import android.widget.Toast
-import androidx.databinding.DataBindingUtil
 import androidx.fragment.app.*
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
+import com.afollestad.materialdialogs.MaterialDialog
+import com.afollestad.materialdialogs.datetime.timePicker
 import com.android.example.mathalarm.*
 import com.android.example.mathalarm.database.Alarm
 import com.android.example.mathalarm.database.AlarmDatabase
 import com.android.example.mathalarm.databinding.FragmentAlarmSettingsBinding
 import com.android.example.mathalarm.screens.TimePickerFragment
+import com.android.example.mathalarm.screens.alarmmath.AlarmMathActivity
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -29,7 +31,7 @@ class AlarmSettingsFragment: Fragment() {
 
     private lateinit var  binding: FragmentAlarmSettingsBinding
 
-    private lateinit var alarmSettingsViewModel: AlarmSettingsViewModel
+    private lateinit var settingsViewModel: AlarmSettingsViewModel
 
     private lateinit var mAlarm: Alarm
 
@@ -49,23 +51,12 @@ class AlarmSettingsFragment: Fragment() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setHasOptionsMenu(true)
-
-        setFragmentResultListener("request_key") { requestKey: String, bundle: Bundle ->
-            if(bundle.getString(ALARM_EXTRA) == "test"){
-                alarmSettingsViewModel.onDelete(alarmSettingsViewModel.latestAlarm.value!!)
-            }
-        }
     }
 
-    override fun onStart() {
-        super.onStart()
-//        alarmSettingsViewModel.getAlarm(key!!)
-    }
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
 
-        binding = FragmentAlarmSettingsBinding.inflate(inflater, container, false)
 
         val application = requireNotNull(this.activity).application
 
@@ -76,42 +67,53 @@ class AlarmSettingsFragment: Fragment() {
         val dataSource = AlarmDatabase.getInstance(application).alarmDatabaseDao
         val viewModelFactory = AlarmSettingsViewFactory(args.alarmKey,dataSource)
 
-        alarmSettingsViewModel = ViewModelProvider(
+        settingsViewModel = ViewModelProvider(
             this, viewModelFactory).get(AlarmSettingsViewModel::class.java)
 
-        binding.alarmSettingsViewModel = alarmSettingsViewModel
+        binding = FragmentAlarmSettingsBinding.inflate(inflater, container, false).apply {
+            alarmSettingsViewModel = settingsViewModel
+        }
 
+        return binding.root
+    }
 
-        alarmSettingsViewModel.navigateToAlarmMath.observe(viewLifecycleOwner, Observer { alarmId ->
-            alarmId?.let {
-//                val test = Intent(activity, AlarmMathActivity::class.java)
-//                test.putExtra(ALARM_EXTRA, alarm.toString())
-//                startActivityForResult(test, REQUEST_TEST)
-                val result = Bundle().apply {
-                    putString(ALARM_EXTRA, "test")
-                }
-                findNavController().navigate(AlarmSettingsFragmentDirections.
-                actionAlarmSettingsFragmentToAlarmMathFragment(alarmId.toString()))
-                setFragmentResult("request_key", result)
-                alarmSettingsViewModel.onAlarmMathNavigated()
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        setupObservers()
+        binding.settingsTestButton.setOnClickListener {
+            mTestAlarm = Alarm()
+            mTestAlarm!!.difficulty = binding.settingsMathDifficultySpinner.selectedItemPosition
+            if (mAlarmTones.isNotEmpty()) {
+                mTestAlarm!!.alarmTone = (
+                        mAlarmTones[binding.settingsToneSpinner.selectedItemPosition].toString())
             }
-        })
+            mTestAlarm!!.vibrate = binding.settingsVibrateSwitch.isChecked
+            mTestAlarm!!.snooze = 0
+            settingsViewModel.onAdd(mTestAlarm!!)
+        }
+    }
 
-        alarmSettingsViewModel.alarm.observe(viewLifecycleOwner, Observer {alarm ->
-            if (alarm != null){
-                mAlarm = alarmSettingsViewModel.alarm.value!!
-                var mRepeat = alarmSettingsViewModel.alarm.value!!.repeatDays
+    private fun setupObservers() {
+        settingsViewModel.alarm.observe(viewLifecycleOwner, { alarm ->
+            alarm?.let{
+                mAlarm = alarm
+                var mRepeat = alarm.repeatDays
 
                 binding.settingsTime.text = getFormatTime(mAlarm)
                 binding.settingsTime.setOnClickListener {
-                    val manager = parentFragmentManager
-                    val dialog: TimePickerFragment = TimePickerFragment
-                        .newInstance(alarm.hour, alarm.minute)
-                    dialog.setTargetFragment(
-                        this@AlarmSettingsFragment,
-                        REQUEST_TIME
-                    )
-                    dialog.show(manager, DIALOG_TIME)
+                    val timeCal = Calendar.getInstance()
+                    if (!isFromAdd!!) {
+                        timeCal.set(0, 0, 0, alarm.hour, alarm.minute)
+                    }
+                    MaterialDialog(requireContext()).show {
+                        timePicker(currentTime = timeCal, show24HoursView = false) { _, datetime ->
+                            alarm.hour = datetime.get(Calendar.HOUR_OF_DAY)
+                            alarm.minute = datetime.get(Calendar.MINUTE)
+                            settingsViewModel.onUpdate(alarm)
+                            binding.settingsTime.text = getFormatTime(alarm)
+                            mAlarm = alarm
+                        }
+                    }
                 }
 
                 binding.setRepeatSun.isChecked = mRepeat[SUN] == 'T'
@@ -254,7 +256,7 @@ class AlarmSettingsFragment: Fragment() {
                 //If there are sound files, add them
                 //If there are sound files, add them
                 if (alarmsCount != 0) {
-                    mAlarmTones = arrayOfNulls<Uri>(alarmsCount)
+                    mAlarmTones = arrayOfNulls(alarmsCount)
                     val currentTone: String = mAlarm.alarmTone
                     while (!alarmsCursor.isAfterLast && alarmsCursor.moveToNext()) {
                         val currentPosition = alarmsCursor.position
@@ -324,20 +326,14 @@ class AlarmSettingsFragment: Fragment() {
             }
         })
 
-        binding.settingsTestButton.setOnClickListener {
-            mTestAlarm = Alarm()
-            mTestAlarm!!.difficulty = binding.settingsMathDifficultySpinner.selectedItemPosition
-            if (mAlarmTones.isNotEmpty()) {
-                mTestAlarm!!.alarmTone = (
-                        mAlarmTones[binding.settingsToneSpinner.selectedItemPosition].toString()
-                        )
+        settingsViewModel.navigateToAlarmMath.observe(viewLifecycleOwner, { alarmId ->
+            alarmId?.let {
+                val test = Intent(requireContext(), AlarmMathActivity::class.java)
+                test.putExtra(ALARM_EXTRA, alarmId.toString())
+                startActivityForResult(test, REQUEST_TEST)
+                settingsViewModel.onAlarmMathNavigated()
             }
-            mTestAlarm!!.vibrate = binding.settingsVibrateSwitch.isChecked
-            mTestAlarm!!.snooze = 0
-            alarmSettingsViewModel.onAdd(mTestAlarm!!)
-        }
-
-        return binding.root
+        })
     }
 
     private fun scheduleAndMessage() { //schedule it and create a toast
@@ -356,29 +352,10 @@ class AlarmSettingsFragment: Fragment() {
         if (resultCode != Activity.RESULT_OK) {
             return
         }
-        if (requestCode == REQUEST_TIME) {
-            val hour = data?.getIntExtra(TimePickerFragment.EXTRA_HOUR, 0)
-            val min = data?.getIntExtra(TimePickerFragment.EXTRA_MIN, 0)
-            if (hour != null) {
-                alarmSettingsViewModel.alarm.value!!.hour = hour
-            }
-            if (min != null) {
-                alarmSettingsViewModel.alarm.value!!.minute = min
-            }
-            binding.settingsTime.text = getFormatTime(alarmSettingsViewModel.alarm.value!!)
-        } else {
-            if (requestCode == REQUEST_TEST) {
-                alarmSettingsViewModel.onDelete(alarmSettingsViewModel.latestAlarm.value!!)
-            }
+        if (requestCode == REQUEST_TEST) {
+            settingsViewModel.onDelete(settingsViewModel.latestAlarm.value!!)
         }
-    }
 
-    override fun onSaveInstanceState(savedInstanceState: Bundle) {
-        super.onSaveInstanceState(savedInstanceState)
-        savedInstanceState.putInt("hour", mAlarm.hour)
-        savedInstanceState.putInt("minute", mAlarm.minute)
-        savedInstanceState.putString("repeat", mAlarm.repeatDays)
-        savedInstanceState.putBoolean("repeatweekly", mAlarm.repeat)
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -400,28 +377,24 @@ class AlarmSettingsFragment: Fragment() {
                 //schedule alarm, update to database and close settings
                 if (isFromAdd!!) {
                     scheduleAndMessage()
-                    alarmSettingsViewModel.onUpdate(mAlarm)
+                    settingsViewModel.onUpdate(mAlarm)
                 } else {
                     if (mAlarm.isOn) {
                         cancelAlarm(requireContext(), mAlarm)
                     }
                     scheduleAndMessage()
-                    alarmSettingsViewModel.onUpdate(mAlarm)
+                    settingsViewModel.onUpdate(mAlarm)
                 }
-                findNavController().navigate(
-                    AlarmSettingsFragmentDirections.actionAlarmSettingsFragmentToAlarmFragment()
-                )
+                findNavController().popBackStack()
                 true
             }
             R.id.fragment_settings_delete -> {
                 if (mAlarm.isOn) {
                     cancelAlarm(requireContext(), mAlarm)
                 }
-                alarmSettingsViewModel.onDelete(alarmSettingsViewModel.alarm.value!!)
+                settingsViewModel.onDelete(mAlarm)
 
-                findNavController().navigate(
-                    AlarmSettingsFragmentDirections.actionAlarmSettingsFragmentToAlarmFragment()
-                )
+                findNavController().popBackStack()
                 true
             }
             else -> super.onOptionsItemSelected(item)

@@ -24,13 +24,6 @@ const val HARD = 2
 
 const val ALARM_EXTRA = "alarm_extra"
 
-object Cal {
-    val cal: Calendar = Calendar.getInstance()
-    val hour = cal[Calendar.HOUR_OF_DAY]
-    val minute = cal[Calendar.MINUTE]
-}
-
-
 //Get the formatted time (example: 12:00 AM)
 fun getFormatTime(alarm: Alarm): CharSequence? {
     val cal = Calendar.getInstance()
@@ -101,9 +94,7 @@ fun scheduleAlarm(context: Context, newAlarm: Alarm): Boolean {
                 return false
             }
             val pendingIntent = PendingIntent.getBroadcast(
-                context, intentId, alarm,
-                PendingIntent.FLAG_CANCEL_CURRENT
-            )
+                context, intentId, alarm, PendingIntent.FLAG_CANCEL_CURRENT)
             alarmIntent.add(pendingIntent)
             time.add(cal)
         }

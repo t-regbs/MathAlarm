@@ -20,6 +20,7 @@ import androidx.fragment.app.Fragment
 import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.Navigation.findNavController
+import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.android.example.mathalarm.*
 import com.android.example.mathalarm.database.AlarmDatabase
@@ -35,9 +36,6 @@ class AlarmMathFragment: Fragment() {
         private const val SUBTRACT = 1
         private const val TIMES = 2
         private const val DIVIDE = 3
-        fun newInstance(): AlarmMathFragment{
-            return AlarmMathFragment()
-        }
     }
     private lateinit var binding: FragmentAlarmMathBinding
     private lateinit var alarmMathViewModel: AlarmMathViewModel
@@ -67,13 +65,13 @@ class AlarmMathFragment: Fragment() {
 
         binding = FragmentAlarmMathBinding.inflate(inflater, container, false)
 
-//        val intent = requireActivity().intent
-//        val extra = intent.extras
-        val args: AlarmMathFragmentArgs by navArgs()
-        val application = requireNotNull(this.activity).application
+        val intent = requireActivity().intent
+        val extra = intent.extras
+//        val args: AlarmMathFragmentArgs by navArgs()
 
 //        val alarmString = extra?.getString(ALARM_EXTRA)
-        val alarmId = args.alarmId.toLong()
+        val application = requireNotNull(this.activity).application
+        val alarmId = extra?.getString(ALARM_EXTRA)!!.toLong()
 
         val dataSource = AlarmDatabase.getInstance(application).alarmDatabaseDao
 
@@ -100,7 +98,12 @@ class AlarmMathFragment: Fragment() {
             }
         }
 
-        alarmMathViewModel.alarm.observe(viewLifecycleOwner, Observer{ alarm ->
+        return binding.root
+    }
+
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+        alarmMathViewModel.alarm.observe(viewLifecycleOwner, { alarm ->
             if (alarm != null) {
                 //Play alarm tone
                 if (alarm.alarmTone.isNotEmpty()) {
@@ -140,10 +143,10 @@ class AlarmMathFragment: Fragment() {
                             val v =
                                 requireActivity().getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
                             if (Build.VERSION.SDK_INT >= 26) {
-                                v.vibrate(VibrationEffect.createOneShot(1000,10));
+                                v.vibrate(VibrationEffect.createOneShot(1000,10))
                             } else {
                                 @Suppress("DEPRECATION")
-                                v.vibrate(1000);
+                                v.vibrate(1000)
                             }
                             try {
                                 Thread.sleep(5000)
@@ -223,8 +226,7 @@ class AlarmMathFragment: Fragment() {
                         vibrateRunning = false
                         requireActivity().setResult(Activity.RESULT_OK)
 //                        findNavController(requireView()).previousBackStackEntry?.savedStateHandle?.set("key", Activity.RESULT_OK)
-//                        requireActivity().finish()
-                        findNavController(requireView()).navigateUp()
+                        requireActivity().finish()
                     }
                 }
                 binding.mathBtnSnooze.setOnClickListener {
@@ -242,8 +244,6 @@ class AlarmMathFragment: Fragment() {
                 }
             }
         })
-
-        return binding.root
     }
 
     //Creates the math problem based on the user-set difficulty

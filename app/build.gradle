@@ -73,4 +73,9 @@ dependencies {
 
     //Timber
     implementation 'com.jakewharton.timber:timber:4.7.1'
+
+    // material dialogs
+    def material_dialogs_version = "3.3.0"
+    implementation "com.afollestad.material-dialogs:core:$material_dialogs_version"
+    implementation "com.afollestad.material-dialogs:datetime:$material_dialogs_version"
 }

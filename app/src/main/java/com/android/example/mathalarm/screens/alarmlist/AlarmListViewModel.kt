@@ -1,22 +1,18 @@
 package com.android.example.mathalarm.screens.alarmlist
 
-import android.app.Application
-import android.view.View
 import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.Transformations
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.example.mathalarm.database.Alarm
 import com.android.example.mathalarm.database.AlarmDao
 import kotlinx.coroutines.*
-import java.util.*
 
 class AlarmListViewModel(
     dataSource: AlarmDao): ViewModel(){
 
     val database = dataSource
 
-    var isFromAdd = MutableLiveData<Boolean?>()
+    var addClicked = MutableLiveData<Boolean?>()
 
     val alarms = database.getAlarms()
 
@@ -48,7 +44,7 @@ class AlarmListViewModel(
     fun onAdd(){
         viewModelScope.launch {
             val id = add(Alarm())
-            isFromAdd.value = true
+            addClicked.value = true
             _navigateToAlarmSettings.value = id
         }
     }
@@ -71,7 +67,7 @@ class AlarmListViewModel(
 
 
     fun onAlarmClicked(id: Long){
-        isFromAdd.value = false
+        addClicked.value = false
         _navigateToAlarmSettings.value = id
     }
 

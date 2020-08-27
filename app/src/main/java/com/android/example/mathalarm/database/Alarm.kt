@@ -2,8 +2,8 @@ package com.android.example.mathalarm.database
 
 import androidx.room.ColumnInfo
 import androidx.room.Entity
+import androidx.room.Ignore
 import androidx.room.PrimaryKey
-import com.android.example.mathalarm.Cal
 import java.util.*
 
 @Entity(tableName = "alarms")
@@ -11,11 +11,20 @@ data class Alarm (
     @PrimaryKey(autoGenerate = true)
     var alarmId: Long = 0L,
 
+    @Ignore
+    val newCal: Calendar = Calendar.getInstance(),
+
+    @Ignore
+    val newHour: Int = newCal[Calendar.HOUR_OF_DAY],
+
+    @Ignore
+    val newMinute: Int = newCal[Calendar.MINUTE],
+
     @ColumnInfo(name = "hour")
-    var hour: Int = Cal.hour,
+    var hour: Int = newHour,
 
     @ColumnInfo(name = "minute")
-    var minute: Int = Cal.minute,
+    var minute: Int = newMinute,
 
     @ColumnInfo(name = "repeat")
     var repeat: Boolean = false,
@@ -37,5 +46,4 @@ data class Alarm (
 
     @ColumnInfo(name = "snooze")
     var snooze: Int = 5
-
 )
