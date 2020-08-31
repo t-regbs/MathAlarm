@@ -4,6 +4,7 @@ import android.app.Application
 import androidx.room.Room
 import com.android.example.mathalarm.database.AlarmDao
 import com.android.example.mathalarm.database.AlarmDatabase
+import com.android.example.mathalarm.database.AlarmRepository
 import org.koin.android.ext.koin.androidApplication
 import org.koin.dsl.module
 
@@ -21,4 +22,12 @@ val databaseModule = module {
 
     single { provideDatabase(androidApplication()) }
     single { provideAlarmDao(get()) }
+}
+
+val repositoryModule = module {
+    fun provideRepository(alarmDao: AlarmDao): AlarmRepository {
+        return AlarmRepository(alarmDao)
+    }
+
+    single { provideRepository(get()) }
 }
