@@ -6,6 +6,7 @@ import com.android.example.mathalarm.database.AlarmDao
 import com.android.example.mathalarm.database.AlarmDatabase
 import com.android.example.mathalarm.database.AlarmRepository
 import com.android.example.mathalarm.screens.alarmlist.AlarmListViewModel
+import com.android.example.mathalarm.screens.alarmmath.AlarmMathViewModel
 import com.android.example.mathalarm.screens.alarmsettings.AlarmSettingsViewModel
 import org.koin.android.ext.koin.androidApplication
 import org.koin.androidx.viewmodel.dsl.viewModel
@@ -14,6 +15,7 @@ import org.koin.dsl.module
 val viewModelModule = module {
     viewModel { AlarmListViewModel(get()) }
     viewModel { AlarmSettingsViewModel(get()) }
+    viewModel { AlarmMathViewModel(get()) }
 }
 
 val databaseModule = module {

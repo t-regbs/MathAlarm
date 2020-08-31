@@ -11,35 +11,29 @@ import androidx.lifecycle.viewModelScope
 import com.android.example.mathalarm.AlarmReceiver
 import com.android.example.mathalarm.database.Alarm
 import com.android.example.mathalarm.database.AlarmDao
+import com.android.example.mathalarm.database.AlarmRepository
 import kotlinx.coroutines.*
 import java.util.*
 
-class AlarmMathViewModel(
-    private val alarmKey:Long = 0L,
-    dataSource: AlarmDao
-): ViewModel() {
-
-    val database = dataSource
-
+class AlarmMathViewModel(private val repository: AlarmRepository): ViewModel() {
     var alarm = MutableLiveData<Alarm?>()
-
     var currentAlarm = MutableLiveData<Alarm?>()
 
-    init {
-        getAlarm(alarmKey)
-    }
+//    init {
+//        getAlarm(alarmKey)
+//    }
 
     fun getAlarm(key: Long) = viewModelScope.launch {
-        val al = getCurrentAlarmFromDatabase()
-        val alarmFound = if (key == 0L) findAlarm(al!!.alarmId) else findAlarm(key)
+        val al = repository.getLatestAlarmFromDatabase()
+        val alarmFound = if (key == 0L) repository.findAlarm(al!!.alarmId) else repository.findAlarm(key)
         alarm.postValue(alarmFound)
     }
 
 
     fun onUpdate(alarm: Alarm){
         viewModelScope.launch {
-            update(alarm)
-            currentAlarm.value = getCurrentAlarmFromDatabase()
+            repository.update(alarm)
+            currentAlarm.value = repository.getLatestAlarmFromDatabase()
         }
     }
 
@@ -64,26 +58,9 @@ class AlarmMathViewModel(
         }
     }
 
-    private suspend fun findAlarm(id: Long): Alarm = database.getAlarm(id)
-
-    private suspend fun getCurrentAlarmFromDatabase(): Alarm? {
-        return withContext(Dispatchers.IO){
-            database.getLastAlarm()
-        }
-    }
-
-
-    private suspend fun update(alarm: Alarm){
-        database.updateAlarm(alarm)
-    }
-
-    private suspend fun clear() = database.clear()
-
-
     fun onClear(){
         viewModelScope.launch {
-            clear()
-
+            repository.clear()
             currentAlarm.value = null
         }
     }

@@ -26,6 +26,7 @@ import com.android.example.mathalarm.*
 import com.android.example.mathalarm.database.AlarmDatabase
 import com.android.example.mathalarm.databinding.FragmentAlarmMathBinding
 import com.android.example.mathalarm.screens.alarmsettings.AlarmSettingsFragmentArgs
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.io.IOException
 import java.util.*
 
@@ -38,11 +39,12 @@ class AlarmMathFragment: Fragment() {
         private const val DIVIDE = 3
     }
     private lateinit var binding: FragmentAlarmMathBinding
-    private lateinit var alarmMathViewModel: AlarmMathViewModel
+    private val alarmMathViewModel by viewModel<AlarmMathViewModel>()
 
     private var sb: StringBuilder? = null
     private val mp = MediaPlayer()
     private var vibrateRunning = false
+    private var key: Long? = null
 
     private var op = 0
     private  var num1 = 0
@@ -67,18 +69,8 @@ class AlarmMathFragment: Fragment() {
 
         val intent = requireActivity().intent
         val extra = intent.extras
-//        val args: AlarmMathFragmentArgs by navArgs()
+        key = extra?.getString(ALARM_EXTRA)!!.toLong()
 
-//        val alarmString = extra?.getString(ALARM_EXTRA)
-        val application = requireNotNull(this.activity).application
-        val alarmId = extra?.getString(ALARM_EXTRA)!!.toLong()
-
-        val dataSource = AlarmDatabase.getInstance(application).alarmDatabaseDao
-
-        val viewModelFactory = AlarmMathViewFactory(alarmId, dataSource)
-
-        alarmMathViewModel = ViewModelProvider(
-            this, viewModelFactory).get(AlarmMathViewModel::class.java)
         binding.alarmMathViewModel = alarmMathViewModel
 
 
@@ -103,6 +95,7 @@ class AlarmMathFragment: Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        alarmMathViewModel.getAlarm(key!!)
         alarmMathViewModel.alarm.observe(viewLifecycleOwner, { alarm ->
             if (alarm != null) {
                 //Play alarm tone
