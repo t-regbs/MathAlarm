@@ -9,7 +9,7 @@ class AlarmService: JobIntentService() {
 
     companion object {
         // Service unique ID
-        val SERVICE_JOB_ID = 50
+        const val SERVICE_JOB_ID = 50
 
 
         fun enqueueWork(context: Context, service: Intent) {
