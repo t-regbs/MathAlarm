@@ -5,12 +5,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.example.mathalarm.database.Alarm
 import com.android.example.mathalarm.database.AlarmDao
+import com.android.example.mathalarm.database.AlarmRepository
 import kotlinx.coroutines.*
 
 class AlarmListViewModel(
-    dataSource: AlarmDao): ViewModel(){
-
-    val database = dataSource
+    private val repository: AlarmRepository): ViewModel(){
 
     var addClicked = MutableLiveData<Boolean?>()
 
@@ -23,14 +22,14 @@ class AlarmListViewModel(
 
     fun onUpdate(alarm: Alarm){
         viewModelScope.launch {
-            update(alarm)
+            repository.update(alarm)
         }
     }
 
     //Called when add menu is pressed
     fun onAdd(){
         viewModelScope.launch {
-            val id = add(Alarm())
+            val id = repository.add(Alarm())
             addClicked.value = true
             _navigateToAlarmSettings.value = id
         }
@@ -38,14 +37,14 @@ class AlarmListViewModel(
 
     fun onDelete(alarm: Alarm){
         viewModelScope.launch {
-            delete(alarm)
+            repository.delete(alarm)
         }
     }
 
 
     fun onClear(){
         viewModelScope.launch {
-            clear()
+            repository.clear()
         }
     }
 
