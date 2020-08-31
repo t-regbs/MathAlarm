@@ -18,6 +18,12 @@ class AlarmRepository(private val alarmDao: AlarmDao) {
         return alarmDao.getAlarms()
     }
 
+    suspend fun getLatestAlarmFromDatabase(): Alarm? {
+        return alarmDao.getLastAlarm()
+    }
+
+    suspend fun findAlarm(id: Long): Alarm = alarmDao.getAlarm(id)
+
     suspend fun clear() {
         alarmDao.clear()
     }

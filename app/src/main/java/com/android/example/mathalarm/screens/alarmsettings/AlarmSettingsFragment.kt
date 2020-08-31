@@ -21,6 +21,7 @@ import com.android.example.mathalarm.database.Alarm
 import com.android.example.mathalarm.database.AlarmDatabase
 import com.android.example.mathalarm.databinding.FragmentAlarmSettingsBinding
 import com.android.example.mathalarm.screens.alarmmath.AlarmMathActivity
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -29,7 +30,7 @@ class AlarmSettingsFragment: Fragment() {
 
     private lateinit var  binding: FragmentAlarmSettingsBinding
 
-    private lateinit var settingsViewModel: AlarmSettingsViewModel
+    private val settingsViewModel by viewModel<AlarmSettingsViewModel>()
 
     private lateinit var mAlarm: Alarm
 
@@ -51,29 +52,18 @@ class AlarmSettingsFragment: Fragment() {
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-
-
-        val application = requireNotNull(this.activity).application
-
         isFromAdd = args.add
         key = args.alarmKey
-
-        //Creating an instance of the ViewModel Factory
-        val dataSource = AlarmDatabase.getInstance(application).alarmDatabaseDao
-        val viewModelFactory = AlarmSettingsViewFactory(args.alarmKey,dataSource)
-
-        settingsViewModel = ViewModelProvider(
-            this, viewModelFactory).get(AlarmSettingsViewModel::class.java)
 
         binding = FragmentAlarmSettingsBinding.inflate(inflater, container, false).apply {
             alarmSettingsViewModel = settingsViewModel
         }
-
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        settingsViewModel.getAlarm(key!!)
         setupObservers()
         binding.settingsTestButton.setOnClickListener {
             mTestAlarm = Alarm()
