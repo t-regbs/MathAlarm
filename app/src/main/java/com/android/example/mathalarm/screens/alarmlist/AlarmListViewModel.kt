@@ -8,11 +8,8 @@ import com.android.example.mathalarm.database.AlarmDao
 import com.android.example.mathalarm.database.AlarmRepository
 import kotlinx.coroutines.*
 
-class AlarmListViewModel(
-    private val repository: AlarmRepository): ViewModel(){
-
+class AlarmListViewModel(private val repository: AlarmRepository): ViewModel(){
     var addClicked = MutableLiveData<Boolean?>()
-
     val alarms = MutableLiveData<List<Alarm>>()
 
     private val _navigateToAlarmSettings = MutableLiveData<Long>()

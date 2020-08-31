@@ -11,12 +11,13 @@ import androidx.recyclerview.widget.ItemTouchHelper
 import com.android.example.mathalarm.R
 import com.android.example.mathalarm.database.AlarmDatabase
 import com.android.example.mathalarm.databinding.FragmentAlarmListBinding
+import org.koin.androidx.viewmodel.ext.android.viewModel
 
 
 class AlarmFragment: Fragment() {
 
     private lateinit var binding: FragmentAlarmListBinding
-    private lateinit var alarmListViewModel: AlarmListViewModel
+    private val alarmListViewModel by viewModel<AlarmListViewModel>()
     private lateinit var adapter: AlarmListAdapter
     private var add: Boolean? = null
 
@@ -31,15 +32,6 @@ class AlarmFragment: Fragment() {
         // Get a reference to the binding object and inflate the fragment views.
         binding = FragmentAlarmListBinding.inflate(
             inflater, container, false)
-
-        val application = requireNotNull(this.activity).application
-
-        //Creating an instance of the ViewModel Factory
-        val dataSource = AlarmDatabase.getInstance(application).alarmDatabaseDao
-        val viewModelFactory = AlarmListViewModelFactory(dataSource)
-
-        alarmListViewModel = ViewModelProvider(
-            this, viewModelFactory).get(AlarmListViewModel::class.java)
 
         binding.alarmListViewModel = alarmListViewModel
 

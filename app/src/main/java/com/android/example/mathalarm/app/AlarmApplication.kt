@@ -3,6 +3,7 @@ package com.android.example.mathalarm.app
 import android.app.Application
 import com.android.example.mathalarm.app.di.databaseModule
 import com.android.example.mathalarm.app.di.repositoryModule
+import com.android.example.mathalarm.app.di.viewModelModule
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -16,7 +17,7 @@ class AlarmApplication : Application() {
         startKoin {
             androidLogger(Level.ERROR)
             androidContext(this@AlarmApplication)
-            modules(listOf(databaseModule, repositoryModule))
+            modules(listOf(databaseModule, repositoryModule, viewModelModule))
         }
     }
 }
