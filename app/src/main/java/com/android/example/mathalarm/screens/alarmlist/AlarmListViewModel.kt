@@ -20,6 +20,7 @@ class AlarmListViewModel(private val repository: AlarmRepository): ViewModel(){
     fun onUpdate(alarm: Alarm){
         viewModelScope.launch {
             repository.update(alarm)
+            getAlarms()
         }
     }
 
@@ -42,6 +43,7 @@ class AlarmListViewModel(private val repository: AlarmRepository): ViewModel(){
     fun onDelete(alarm: Alarm){
         viewModelScope.launch {
             repository.delete(alarm)
+            getAlarms()
         }
     }
 
@@ -49,6 +51,7 @@ class AlarmListViewModel(private val repository: AlarmRepository): ViewModel(){
     fun onClear(){
         viewModelScope.launch {
             repository.clear()
+            getAlarms()
         }
     }
 

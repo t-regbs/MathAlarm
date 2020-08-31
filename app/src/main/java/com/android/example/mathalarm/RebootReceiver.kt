@@ -3,25 +3,33 @@ package com.android.example.mathalarm
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.ViewModelProvider
 import com.android.example.mathalarm.database.Alarm
-import com.android.example.mathalarm.database.AlarmDatabase
-import com.android.example.mathalarm.screens.MainActivity
-import com.android.example.mathalarm.screens.alarmlist.AlarmFragment
-import com.android.example.mathalarm.screens.alarmlist.AlarmListViewModel
-import com.android.example.mathalarm.screens.alarmlist.AlarmListViewModelFactory
+import com.android.example.mathalarm.database.AlarmDao
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.launch
+import org.koin.core.KoinComponent
+import org.koin.core.inject
 
 class RebootReceiver : BroadcastReceiver() {
-    override fun onReceive(context: Context, intent: Intent) {
-        val application = context.applicationContext
+    private val myHelper: MyHelper by lazy { MyHelper() }
 
-        //Creating an instance of the ViewModel Factory
-        val dataSource = AlarmDatabase.getInstance(application).alarmDatabaseDao
-        if (intent.action == "android.intent.action.BOOT_COMPLETED") {
-            val alarms: LiveData<List<Alarm>> = dataSource.getAlarms()
-            for (i in alarms.value!!.indices) {
-                val alarm: Alarm = alarms.value!![i]
+    override fun onReceive(context: Context, intent: Intent) {
+        myHelper.onReceive(context, intent)
+    }
+}
+
+class MyHelper : KoinComponent {
+    private val dataSource: AlarmDao by inject()
+    private val job = Job()
+    private val uiScope = CoroutineScope(Dispatchers.Main + job)
+
+    fun onReceive(context: Context, intent: Intent) {
+        uiScope.launch {
+            val alarms: List<Alarm> = dataSource.getAlarms()
+            for (i in alarms.indices) {
+                val alarm: Alarm = alarms[i]
                 if (alarm.isOn) {
                     scheduleAlarm(context, alarm)
                 }
