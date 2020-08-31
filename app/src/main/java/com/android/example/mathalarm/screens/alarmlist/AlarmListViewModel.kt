@@ -21,23 +21,10 @@ class AlarmListViewModel(
         get() = _navigateToAlarmSettings
 
 
-    private suspend fun add(alarm: Alarm): Long{
-        return database.addAlarm(alarm)
-    }
-
     fun onUpdate(alarm: Alarm){
         viewModelScope.launch {
             update(alarm)
         }
-    }
-
-    private suspend fun update(alarm: Alarm){
-        database.updateAlarm(alarm)
-    }
-
-
-    private suspend fun clear() {
-        database.clear()
     }
 
     //Called when add menu is pressed
@@ -55,9 +42,6 @@ class AlarmListViewModel(
         }
     }
 
-    private suspend fun delete(alarm: Alarm) {
-        database.deleteAlarm(alarm)
-    }
 
     fun onClear(){
         viewModelScope.launch {
