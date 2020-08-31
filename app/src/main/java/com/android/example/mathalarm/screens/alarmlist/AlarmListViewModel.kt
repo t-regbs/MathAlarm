@@ -13,7 +13,7 @@ class AlarmListViewModel(
 
     var addClicked = MutableLiveData<Boolean?>()
 
-    val alarms = database.getAlarms()
+    val alarms = MutableLiveData<List<Alarm>>()
 
     private val _navigateToAlarmSettings = MutableLiveData<Long>()
     val navigateToAlarmSettings
@@ -23,6 +23,13 @@ class AlarmListViewModel(
     fun onUpdate(alarm: Alarm){
         viewModelScope.launch {
             repository.update(alarm)
+        }
+    }
+
+    fun getAlarms() {
+        viewModelScope.launch {
+            val alarmList = repository.getAlarms()
+            alarms.postValue(alarmList)
         }
     }
 

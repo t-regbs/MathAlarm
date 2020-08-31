@@ -14,6 +14,9 @@ class AlarmRepository(private val alarmDao: AlarmDao) {
         alarmDao.updateAlarm(alarm)
     }
 
+    suspend fun getAlarms(): List<Alarm> {
+        return alarmDao.getAlarms()
+    }
 
     suspend fun clear() {
         alarmDao.clear()
