@@ -21,6 +21,7 @@ import com.android.example.mathalarm.database.Alarm
 import com.android.example.mathalarm.database.AlarmDatabase
 import com.android.example.mathalarm.databinding.FragmentAlarmSettingsBinding
 import com.android.example.mathalarm.screens.alarmmath.AlarmMathActivity
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.util.*
 import kotlin.collections.ArrayList
 
@@ -29,7 +30,7 @@ class AlarmSettingsFragment: Fragment() {
 
     private lateinit var  binding: FragmentAlarmSettingsBinding
 
-    private lateinit var settingsViewModel: AlarmSettingsViewModel
+    private val settingsViewModel by viewModel<AlarmSettingsViewModel>()
 
     private lateinit var mAlarm: Alarm
 
@@ -39,6 +40,7 @@ class AlarmSettingsFragment: Fragment() {
     private var isFromAdd: Boolean? = null
 
     var mTestAlarm: Alarm? = null
+    var mTestAlarmId: Long? = null
 
     var mAlarmTones: Array<Uri?> = emptyArray()
     private val REQUEST_TEST = 1
@@ -51,36 +53,26 @@ class AlarmSettingsFragment: Fragment() {
 
     override fun onCreateView(
         inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
-
-
-        val application = requireNotNull(this.activity).application
-
         isFromAdd = args.add
         key = args.alarmKey
-
-        //Creating an instance of the ViewModel Factory
-        val dataSource = AlarmDatabase.getInstance(application).alarmDatabaseDao
-        val viewModelFactory = AlarmSettingsViewFactory(args.alarmKey,dataSource)
-
-        settingsViewModel = ViewModelProvider(
-            this, viewModelFactory).get(AlarmSettingsViewModel::class.java)
 
         binding = FragmentAlarmSettingsBinding.inflate(inflater, container, false).apply {
             alarmSettingsViewModel = settingsViewModel
         }
-
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        settingsViewModel.getAlarm(key!!)
         setupObservers()
         binding.settingsTestButton.setOnClickListener {
             mTestAlarm = Alarm()
             mTestAlarm!!.difficulty = binding.settingsMathDifficultySpinner.selectedItemPosition
             if (mAlarmTones.isNotEmpty()) {
                 mTestAlarm!!.alarmTone = (
-                        mAlarmTones[binding.settingsToneSpinner.selectedItemPosition].toString())
+                        mAlarmTones[binding.settingsToneSpinner.selectedItemPosition].toString()
+                )
             }
             mTestAlarm!!.vibrate = binding.settingsVibrateSwitch.isChecked
             mTestAlarm!!.snooze = 0
@@ -89,8 +81,8 @@ class AlarmSettingsFragment: Fragment() {
     }
 
     private fun setupObservers() {
-        settingsViewModel.alarm.observe(viewLifecycleOwner, { alarm ->
-            alarm?.let{
+        settingsViewModel.alarm.observe(viewLifecycleOwner, {
+            it?.let{ alarm ->
                 mAlarm = alarm
                 var mRepeat = alarm.repeatDays
 
@@ -102,11 +94,10 @@ class AlarmSettingsFragment: Fragment() {
                     }
                     MaterialDialog(requireContext()).show {
                         timePicker(currentTime = timeCal, show24HoursView = false) { _, datetime ->
-                            alarm.hour = datetime.get(Calendar.HOUR_OF_DAY)
-                            alarm.minute = datetime.get(Calendar.MINUTE)
-                            settingsViewModel.onUpdate(alarm)
-                            binding.settingsTime.text = getFormatTime(alarm)
-                            mAlarm = alarm
+                            mAlarm.hour = datetime.get(Calendar.HOUR_OF_DAY)
+                            mAlarm.minute = datetime.get(Calendar.MINUTE)
+                            settingsViewModel.onUpdate(mAlarm)
+                            binding.settingsTime.text = getFormatTime(mAlarm)
                         }
                     }
                 }
@@ -173,7 +164,7 @@ class AlarmSettingsFragment: Fragment() {
 
                 binding.setRepeatThu.isChecked = mRepeat[THU] == 'T'
                 binding.setRepeatThu.setOnClickListener {
-                    binding.setRepeatMon.isChecked = mRepeat[THU] != 'T'
+                    binding.setRepeatThu.isChecked = mRepeat[THU] != 'T'
                     val sb = StringBuilder(mRepeat)
                     if (mRepeat[THU] == 'T') {
                         sb.setCharAt(THU, 'F')
@@ -188,7 +179,7 @@ class AlarmSettingsFragment: Fragment() {
 
                 binding.setRepeatFri.isChecked = mRepeat[FRI] == 'T'
                 binding.setRepeatFri.setOnClickListener {
-                    binding.setRepeatMon.isChecked = mRepeat[FRI] != 'T'
+                    binding.setRepeatFri.isChecked = mRepeat[FRI] != 'T'
                     val sb = StringBuilder(mRepeat)
                     if (mRepeat[FRI] == 'T') {
                         sb.setCharAt(FRI, 'F')
@@ -203,7 +194,7 @@ class AlarmSettingsFragment: Fragment() {
 
                 binding.setRepeatSat.isChecked = mRepeat[SAT] == 'T'
                 binding.setRepeatSat.setOnClickListener {
-                    binding.setRepeatMon.isChecked = mRepeat[SAT] != 'T'
+                    binding.setRepeatSat.isChecked = mRepeat[SAT] != 'T'
                     val sb = StringBuilder(mRepeat)
                     if (mRepeat[SAT] == 'T') {
                         sb.setCharAt(SAT, 'F')
@@ -248,7 +239,6 @@ class AlarmSettingsFragment: Fragment() {
 
                 var previousPosition = 0
 
-                //If there are sound files, add them
                 //If there are sound files, add them
                 if (alarmsCount != 0) {
                     mAlarmTones = arrayOfNulls(alarmsCount)
@@ -323,6 +313,7 @@ class AlarmSettingsFragment: Fragment() {
 
         settingsViewModel.navigateToAlarmMath.observe(viewLifecycleOwner, { alarmId ->
             alarmId?.let {
+                mTestAlarmId = alarmId
                 val test = Intent(requireContext(), AlarmMathActivity::class.java)
                 test.putExtra(ALARM_EXTRA, alarmId.toString())
                 startActivityForResult(test, REQUEST_TEST)
@@ -348,7 +339,7 @@ class AlarmSettingsFragment: Fragment() {
             return
         }
         if (requestCode == REQUEST_TEST) {
-            settingsViewModel.onDelete(settingsViewModel.latestAlarm.value!!)
+            settingsViewModel.onDeleteFromId(mTestAlarmId)
         }
 
     }
@@ -387,7 +378,7 @@ class AlarmSettingsFragment: Fragment() {
                 if (mAlarm.isOn) {
                     cancelAlarm(requireContext(), mAlarm)
                 }
-                settingsViewModel.onDelete(mAlarm)
+                settingsViewModel.onDeleteAlarm(mAlarm)
 
                 findNavController().popBackStack()
                 true

@@ -75,6 +75,11 @@ dependencies {
     //Timber
     implementation 'com.jakewharton.timber:timber:4.7.1'
 
+    //Koin
+    implementation "org.koin:koin-android:2.1.5"
+    implementation 'org.koin:koin-androidx-viewmodel:2.1.5'
+    implementation 'org.koin:koin-androidx-scope:2.1.5'
+
     // material dialogs
     def material_dialogs_version = "3.3.0"
     implementation "com.afollestad.material-dialogs:core:$material_dialogs_version"

@@ -4,64 +4,70 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.example.mathalarm.database.Alarm
-import com.android.example.mathalarm.database.AlarmDao
+import com.android.example.mathalarm.database.AlarmRepository
+import com.android.example.mathalarm.getDayOfWeek
 import kotlinx.coroutines.*
+import java.util.*
 
-class AlarmListViewModel(
-    dataSource: AlarmDao): ViewModel(){
-
-    val database = dataSource
-
+class AlarmListViewModel(private val repository: AlarmRepository): ViewModel(){
     var addClicked = MutableLiveData<Boolean?>()
-
-    val alarms = database.getAlarms()
+    val alarms = MutableLiveData<List<Alarm>>()
 
     private val _navigateToAlarmSettings = MutableLiveData<Long>()
     val navigateToAlarmSettings
         get() = _navigateToAlarmSettings
 
 
-    private suspend fun add(alarm: Alarm): Long{
-        return database.addAlarm(alarm)
-    }
-
     fun onUpdate(alarm: Alarm){
         viewModelScope.launch {
-            update(alarm)
+            repository.update(alarm)
+            getAlarms()
         }
     }
 
-    private suspend fun update(alarm: Alarm){
-        database.updateAlarm(alarm)
-    }
-
-
-    private suspend fun clear() {
-        database.clear()
+    fun getAlarms() {
+        viewModelScope.launch {
+            val alarmList = repository.getAlarms()
+            alarms.postValue(alarmList)
+        }
     }
 
     //Called when add menu is pressed
     fun onAdd(){
+        val new = Alarm()
+        val sb = StringBuilder("FFFFFFF")
+        val cal = initCalendar(new)
+        var dayOfTheWeek =
+            getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
+        sb.setCharAt(dayOfTheWeek, 'T')
+        new.repeatDays = sb.toString()
         viewModelScope.launch {
-            val id = add(Alarm())
+            val id = repository.add(new)
             addClicked.value = true
             _navigateToAlarmSettings.value = id
         }
     }
 
+    private  fun initCalendar(alarm: Alarm): Calendar {
+        val cal = Calendar.getInstance()
+        cal[Calendar.HOUR_OF_DAY] = alarm.hour
+        cal[Calendar.MINUTE] = alarm.minute
+        cal[Calendar.SECOND] = 0
+        return cal
+    }
+
     fun onDelete(alarm: Alarm){
         viewModelScope.launch {
-            delete(alarm)
+            repository.delete(alarm)
+            getAlarms()
         }
     }
 
-    private suspend fun delete(alarm: Alarm) {
-        database.deleteAlarm(alarm)
-    }
 
     fun onClear(){
         viewModelScope.launch {
-            clear()
+            repository.clear()
+            getAlarms()
         }
     }
 

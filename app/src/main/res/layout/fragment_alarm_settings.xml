@@ -121,7 +121,7 @@
                     android:layout_width="70dp"
                     android:layout_height="70dp"
                     android:layout_weight="1"
-                    android:layout_marginLeft="-4dp"
+                    android:layout_marginStart="-4dp"
                     android:textColor="@color/toggle_color"
                     android:textOn="@string/sat"
                     android:textOff="@string/sat"/>
@@ -139,18 +139,18 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:gravity="start|center_vertical"
-                    android:layout_marginLeft="10dp"
+                    android:layout_marginStart="10dp"
                     android:textSize="15sp"
                     android:textStyle="bold"
                     android:layout_weight="1"
                     android:text="@string/settings_repeat_text"/>
 
-                <Switch
+                <androidx.appcompat.widget.SwitchCompat
                     android:id="@+id/settings_repeat_switch"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_gravity="center_vertical|end"
-                    android:layout_marginRight="20dp"
+                    android:layout_marginEnd="20dp"
                     android:layout_weight="1"/>
 
             </LinearLayout>
@@ -174,7 +174,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:gravity="start|center_vertical"
-                    android:layout_marginLeft="10dp"
+                    android:layout_marginStart="10dp"
                     android:textSize="15sp"
                     android:textStyle="bold"
                     android:layout_weight="1"
@@ -185,7 +185,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_gravity="center_vertical|end"
-                    android:layout_marginRight="20dp"
+                    android:layout_marginEnd="20dp"
                     android:layout_weight="1"/>
 
             </LinearLayout>
@@ -201,7 +201,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:gravity="start|center_vertical"
-                    android:layout_marginLeft="10dp"
+                    android:layout_marginStart="10dp"
                     android:textSize="15sp"
                     android:textStyle="bold"
                     android:layout_weight="1"
@@ -212,7 +212,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_gravity="center_vertical|end"
-                    android:layout_marginRight="20dp"
+                    android:layout_marginEnd="20dp"
                     android:layout_weight="1"/>
 
             </LinearLayout>
@@ -230,7 +230,7 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:gravity="start|center_vertical"
-                    android:layout_marginLeft="10dp"
+                    android:layout_marginStart="10dp"
                     android:textSize="15sp"
                     android:textStyle="bold"
                     android:layout_weight="1"
@@ -242,7 +242,7 @@
                     android:layout_height="match_parent"
                     android:gravity="center"
                     android:layout_gravity="center_vertical|end"
-                    android:layout_marginLeft="50dp"
+                    android:layout_marginStart="50dp"
                     android:inputType="number"
                     android:maxLength="2"
                     android:layout_weight="1"/>
@@ -252,7 +252,7 @@
                     android:layout_height="match_parent"
                     android:gravity="center|start"
                     android:layout_gravity="center_vertical|end"
-                    android:layout_marginRight="20dp"
+                    android:layout_marginEnd="20dp"
                     android:text="@string/minutes"/>
 
             </LinearLayout>
@@ -268,18 +268,18 @@
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:gravity="start|center_vertical"
-                    android:layout_marginLeft="10dp"
+                    android:layout_marginStart="10dp"
                     android:textSize="15sp"
                     android:textStyle="bold"
                     android:layout_weight="1"
                     android:text="@string/settings_vibrate_text"/>
 
-                <Switch
+                <androidx.appcompat.widget.SwitchCompat
                     android:id="@+id/settings_vibrate_switch"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
                     android:layout_gravity="center_vertical|end"
-                    android:layout_marginRight="20dp"
+                    android:layout_marginEnd="20dp"
                     android:layout_weight="1"/>
 
             </LinearLayout>

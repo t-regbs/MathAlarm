@@ -1,6 +1,7 @@
 package com.android.example.mathalarm.screens.alarmmath
 
 import android.app.Activity
+import android.app.KeyguardManager
 import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioManager
@@ -15,17 +16,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.Toast
-import androidx.databinding.DataBindingUtil
+import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.Observer
-import androidx.lifecycle.ViewModelProvider
-import androidx.navigation.Navigation.findNavController
-import androidx.navigation.fragment.findNavController
-import androidx.navigation.fragment.navArgs
 import com.android.example.mathalarm.*
-import com.android.example.mathalarm.database.AlarmDatabase
 import com.android.example.mathalarm.databinding.FragmentAlarmMathBinding
-import com.android.example.mathalarm.screens.alarmsettings.AlarmSettingsFragmentArgs
+import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.io.IOException
 import java.util.*
 
@@ -38,11 +33,12 @@ class AlarmMathFragment: Fragment() {
         private const val DIVIDE = 3
     }
     private lateinit var binding: FragmentAlarmMathBinding
-    private lateinit var alarmMathViewModel: AlarmMathViewModel
+    private val alarmMathViewModel by viewModel<AlarmMathViewModel>()
 
     private var sb: StringBuilder? = null
     private val mp = MediaPlayer()
     private var vibrateRunning = false
+    private var key: Long? = null
 
     private var op = 0
     private  var num1 = 0
@@ -51,13 +47,20 @@ class AlarmMathFragment: Fragment() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        requireActivity().window.addFlags(
-            WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
-                    or WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
-                    or WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-                    or WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
-                    or WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
-        )
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            activity?.setShowWhenLocked(true)
+            activity?.setTurnScreenOn(true)
+            val keyguardManager = activity?.getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+            keyguardManager.requestDismissKeyguard(requireActivity(), null)
+        } else {
+            requireActivity().window.addFlags(
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
+                        or WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+                        or WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                        or WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                        or WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
+            )
+        }
     }
 
     override fun onCreateView(
@@ -67,18 +70,8 @@ class AlarmMathFragment: Fragment() {
 
         val intent = requireActivity().intent
         val extra = intent.extras
-//        val args: AlarmMathFragmentArgs by navArgs()
+        key = extra?.getString(ALARM_EXTRA)!!.toLong()
 
-//        val alarmString = extra?.getString(ALARM_EXTRA)
-        val application = requireNotNull(this.activity).application
-        val alarmId = extra?.getString(ALARM_EXTRA)!!.toLong()
-
-        val dataSource = AlarmDatabase.getInstance(application).alarmDatabaseDao
-
-        val viewModelFactory = AlarmMathViewFactory(alarmId, dataSource)
-
-        alarmMathViewModel = ViewModelProvider(
-            this, viewModelFactory).get(AlarmMathViewModel::class.java)
         binding.alarmMathViewModel = alarmMathViewModel
 
 
@@ -103,6 +96,7 @@ class AlarmMathFragment: Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+        alarmMathViewModel.getAlarm(key!!)
         alarmMathViewModel.alarm.observe(viewLifecycleOwner, { alarm ->
             if (alarm != null) {
                 //Play alarm tone
@@ -224,7 +218,7 @@ class AlarmMathFragment: Fragment() {
                     } else {
                         mp.stop()
                         vibrateRunning = false
-//                        requireActivity().setResult(Activity.RESULT_OK)
+                        requireActivity().setResult(Activity.RESULT_OK)
                         requireActivity().finish()
                     }
                 }
