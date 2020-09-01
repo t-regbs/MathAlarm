@@ -1,4 +1,4 @@
-package com.android.example.mathalarm
+package com.android.example.mathalarm.utils
 
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.text.format.DateFormat
 import android.widget.Toast
+import com.android.example.mathalarm.AlarmReceiver
+import com.android.example.mathalarm.R
 import com.android.example.mathalarm.database.Alarm
 import timber.log.Timber
 import java.util.*

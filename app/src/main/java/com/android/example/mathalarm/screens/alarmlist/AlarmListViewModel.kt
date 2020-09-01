@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.example.mathalarm.database.Alarm
 import com.android.example.mathalarm.database.AlarmRepository
-import com.android.example.mathalarm.getDayOfWeek
+import com.android.example.mathalarm.utils.getDayOfWeek
 import kotlinx.coroutines.*
 import java.util.*
 

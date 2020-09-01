@@ -65,4 +65,6 @@
     <string name="tone_not_available">Alarm tone not available.</string>
     <string name="ok">OK</string>
     <string name="clear_alarms">Clear Alarms</string>
+    <string name="alarm_notification_channel_id">alarm_channel</string>
+    <string name="notification_title">Math Alarm</string>
 </resources>

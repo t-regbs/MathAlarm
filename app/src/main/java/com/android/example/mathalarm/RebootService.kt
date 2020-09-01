@@ -4,6 +4,7 @@ import android.app.IntentService
 import android.content.Intent
 import com.android.example.mathalarm.database.Alarm
 import com.android.example.mathalarm.database.AlarmDao
+import com.android.example.mathalarm.utils.scheduleAlarm
 import org.koin.android.ext.android.inject
 import timber.log.Timber
 

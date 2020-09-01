@@ -16,10 +16,10 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.Toast
-import androidx.core.content.ContextCompat.getSystemService
 import androidx.fragment.app.Fragment
 import com.android.example.mathalarm.*
 import com.android.example.mathalarm.databinding.FragmentAlarmMathBinding
+import com.android.example.mathalarm.utils.*
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.io.IOException
 import java.util.*
