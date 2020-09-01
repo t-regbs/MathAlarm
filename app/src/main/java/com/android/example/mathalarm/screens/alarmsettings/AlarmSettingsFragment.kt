@@ -70,7 +70,8 @@ class AlarmSettingsFragment: Fragment() {
             mTestAlarm!!.difficulty = binding.settingsMathDifficultySpinner.selectedItemPosition
             if (mAlarmTones.isNotEmpty()) {
                 mTestAlarm!!.alarmTone = (
-                        mAlarmTones[binding.settingsToneSpinner.selectedItemPosition].toString())
+                        mAlarmTones[binding.settingsToneSpinner.selectedItemPosition].toString()
+                )
             }
             mTestAlarm!!.vibrate = binding.settingsVibrateSwitch.isChecked
             mTestAlarm!!.snooze = 0
@@ -79,8 +80,8 @@ class AlarmSettingsFragment: Fragment() {
     }
 
     private fun setupObservers() {
-        settingsViewModel.alarm.observe(viewLifecycleOwner, { alarm ->
-            alarm?.let{
+        settingsViewModel.alarm.observe(viewLifecycleOwner, {
+            it?.let{ alarm ->
                 mAlarm = alarm
                 var mRepeat = alarm.repeatDays
 
@@ -92,11 +93,10 @@ class AlarmSettingsFragment: Fragment() {
                     }
                     MaterialDialog(requireContext()).show {
                         timePicker(currentTime = timeCal, show24HoursView = false) { _, datetime ->
-                            alarm.hour = datetime.get(Calendar.HOUR_OF_DAY)
-                            alarm.minute = datetime.get(Calendar.MINUTE)
-                            settingsViewModel.onUpdate(alarm)
-                            binding.settingsTime.text = getFormatTime(alarm)
-                            mAlarm = alarm
+                            mAlarm.hour = datetime.get(Calendar.HOUR_OF_DAY)
+                            mAlarm.minute = datetime.get(Calendar.MINUTE)
+                            settingsViewModel.onUpdate(mAlarm)
+                            binding.settingsTime.text = getFormatTime(mAlarm)
                         }
                     }
                 }
@@ -163,7 +163,7 @@ class AlarmSettingsFragment: Fragment() {
 
                 binding.setRepeatThu.isChecked = mRepeat[THU] == 'T'
                 binding.setRepeatThu.setOnClickListener {
-                    binding.setRepeatMon.isChecked = mRepeat[THU] != 'T'
+                    binding.setRepeatThu.isChecked = mRepeat[THU] != 'T'
                     val sb = StringBuilder(mRepeat)
                     if (mRepeat[THU] == 'T') {
                         sb.setCharAt(THU, 'F')
@@ -178,7 +178,7 @@ class AlarmSettingsFragment: Fragment() {
 
                 binding.setRepeatFri.isChecked = mRepeat[FRI] == 'T'
                 binding.setRepeatFri.setOnClickListener {
-                    binding.setRepeatMon.isChecked = mRepeat[FRI] != 'T'
+                    binding.setRepeatFri.isChecked = mRepeat[FRI] != 'T'
                     val sb = StringBuilder(mRepeat)
                     if (mRepeat[FRI] == 'T') {
                         sb.setCharAt(FRI, 'F')
@@ -193,7 +193,7 @@ class AlarmSettingsFragment: Fragment() {
 
                 binding.setRepeatSat.isChecked = mRepeat[SAT] == 'T'
                 binding.setRepeatSat.setOnClickListener {
-                    binding.setRepeatMon.isChecked = mRepeat[SAT] != 'T'
+                    binding.setRepeatSat.isChecked = mRepeat[SAT] != 'T'
                     val sb = StringBuilder(mRepeat)
                     if (mRepeat[SAT] == 'T') {
                         sb.setCharAt(SAT, 'F')
@@ -238,7 +238,6 @@ class AlarmSettingsFragment: Fragment() {
 
                 var previousPosition = 0
 
-                //If there are sound files, add them
                 //If there are sound files, add them
                 if (alarmsCount != 0) {
                     mAlarmTones = arrayOfNulls(alarmsCount)

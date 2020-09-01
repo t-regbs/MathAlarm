@@ -4,9 +4,10 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.android.example.mathalarm.database.Alarm
-import com.android.example.mathalarm.database.AlarmDao
 import com.android.example.mathalarm.database.AlarmRepository
+import com.android.example.mathalarm.getDayOfWeek
 import kotlinx.coroutines.*
+import java.util.*
 
 class AlarmListViewModel(private val repository: AlarmRepository): ViewModel(){
     var addClicked = MutableLiveData<Boolean?>()
@@ -33,11 +34,26 @@ class AlarmListViewModel(private val repository: AlarmRepository): ViewModel(){
 
     //Called when add menu is pressed
     fun onAdd(){
+        val new = Alarm()
+        val sb = StringBuilder("FFFFFFF")
+        val cal = initCalendar(new)
+        var dayOfTheWeek =
+            getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
+        sb.setCharAt(dayOfTheWeek, 'T')
+        new.repeatDays = sb.toString()
         viewModelScope.launch {
-            val id = repository.add(Alarm())
+            val id = repository.add(new)
             addClicked.value = true
             _navigateToAlarmSettings.value = id
         }
+    }
+
+    private  fun initCalendar(alarm: Alarm): Calendar {
+        val cal = Calendar.getInstance()
+        cal[Calendar.HOUR_OF_DAY] = alarm.hour
+        cal[Calendar.MINUTE] = alarm.minute
+        cal[Calendar.SECOND] = 0
+        return cal
     }
 
     fun onDelete(alarm: Alarm){
