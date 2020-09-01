@@ -217,7 +217,7 @@ class AlarmMathFragment: Fragment() {
                     } else {
                         mp.stop()
                         vibrateRunning = false
-//                        requireActivity().setResult(Activity.RESULT_OK)
+                        requireActivity().setResult(Activity.RESULT_OK)
                         requireActivity().finish()
                     }
                 }

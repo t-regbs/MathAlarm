@@ -34,7 +34,15 @@ class AlarmSettingsViewModel(private val repository: AlarmRepository): ViewModel
         }
     }
 
-    fun onDelete(alarm: Alarm){
+    fun onDeleteFromId(alarmId: Long?){
+        viewModelScope.launch {
+            val alarm = repository.findAlarm(alarmId!!)
+            repository.delete(alarm)
+            _latestAlarm.value = repository.getLatestAlarmFromDatabase()
+        }
+    }
+
+    fun onDeleteAlarm(alarm: Alarm){
         viewModelScope.launch {
             repository.delete(alarm)
             _latestAlarm.value = repository.getLatestAlarmFromDatabase()

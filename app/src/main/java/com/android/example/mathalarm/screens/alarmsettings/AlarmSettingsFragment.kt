@@ -40,6 +40,7 @@ class AlarmSettingsFragment: Fragment() {
     private var isFromAdd: Boolean? = null
 
     var mTestAlarm: Alarm? = null
+    var mTestAlarmId: Long? = null
 
     var mAlarmTones: Array<Uri?> = emptyArray()
     private val REQUEST_TEST = 1
@@ -312,6 +313,7 @@ class AlarmSettingsFragment: Fragment() {
 
         settingsViewModel.navigateToAlarmMath.observe(viewLifecycleOwner, { alarmId ->
             alarmId?.let {
+                mTestAlarmId = alarmId
                 val test = Intent(requireContext(), AlarmMathActivity::class.java)
                 test.putExtra(ALARM_EXTRA, alarmId.toString())
                 startActivityForResult(test, REQUEST_TEST)
@@ -337,7 +339,7 @@ class AlarmSettingsFragment: Fragment() {
             return
         }
         if (requestCode == REQUEST_TEST) {
-            settingsViewModel.onDelete(settingsViewModel.latestAlarm.value!!)
+            settingsViewModel.onDeleteFromId(mTestAlarmId)
         }
 
     }
@@ -376,7 +378,7 @@ class AlarmSettingsFragment: Fragment() {
                 if (mAlarm.isOn) {
                     cancelAlarm(requireContext(), mAlarm)
                 }
-                settingsViewModel.onDelete(mAlarm)
+                settingsViewModel.onDeleteAlarm(mAlarm)
 
                 findNavController().popBackStack()
                 true
