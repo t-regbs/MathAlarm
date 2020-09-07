@@ -26,28 +26,27 @@ const val HARD = 2
 const val ALARM_EXTRA = "alarm_extra"
 
 //Get the formatted time (example: 12:00 AM)
-fun getFormatTime(alarm: Alarm): CharSequence? {
+fun Alarm.getFormatTime(): CharSequence? {
     val cal = Calendar.getInstance()
-    cal[Calendar.HOUR_OF_DAY] = alarm.hour
-    cal[Calendar.MINUTE] = alarm.minute
+    cal[Calendar.HOUR_OF_DAY] = hour
+    cal[Calendar.MINUTE] = minute
     return DateFormat.format("hh:mm a", cal)
 }
 
 //Schedules all the alarm of the object at once including repeating ones
-fun scheduleAlarm(context: Context, newAlarm: Alarm): Boolean {
+fun Alarm.scheduleAlarm(context: Context): Boolean {
     val alarm = Intent(context, AlarmReceiver::class.java)
-    alarm.putExtra(ALARM_EXTRA, newAlarm.alarmId)
+    alarm.putExtra(ALARM_EXTRA, alarmId)
     val alarmIntent: MutableList<PendingIntent> = ArrayList()
     val time: MutableList<Calendar> = ArrayList()
     // If there is no day set, set the alarm on the closest possible date
-    if (newAlarm.repeatDays == "FFFFFFF") {
-        val cal = initCalendar(newAlarm)
-        var dayOfTheWeek =
-            getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
+    if (repeatDays == "FFFFFFF") {
+        val cal = initCalendar()
+        var dayOfTheWeek = getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
         if (cal.timeInMillis > System.currentTimeMillis()) { //set it today
             val sb = StringBuilder("FFFFFFF")
             sb.setCharAt(dayOfTheWeek, 'T')
-            newAlarm.repeatDays = sb.toString()
+            repeatDays = sb.toString()
         } else { //alarm time already passed for the day so set it tomorrow
             val sb = StringBuilder("FFFFFFF")
             if (dayOfTheWeek == SAT) { //if it is saturday
@@ -56,13 +55,13 @@ fun scheduleAlarm(context: Context, newAlarm: Alarm): Boolean {
                 dayOfTheWeek++
             }
             sb.setCharAt(dayOfTheWeek, 'T')
-            newAlarm.repeatDays = sb.toString()
+            repeatDays = sb.toString()
         }
     }
     for (i in SUN..SAT) {
-        if (newAlarm.repeatDays[i] == 'T') {
+        if (repeatDays[i] == 'T') {
             var daysUntilAlarm: Int
-            val cal = initCalendar(newAlarm)
+            val cal = initCalendar()
             val currentDay = getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
             Timber.d("current day: $currentDay")
             if (currentDay > i ||
@@ -80,7 +79,7 @@ fun scheduleAlarm(context: Context, newAlarm: Alarm): Boolean {
                 Timber.d("days until alarm: $daysUntilAlarm")
             }
             val stringId: StringBuilder = StringBuilder().append(i)
-                .append(newAlarm.hour).append(newAlarm.minute)
+                .append(hour).append(minute)
             val id = stringId.toString().split("-").joinToString("")
             val intentId = id.toInt()
             Timber.d("intent id: $intentId")
@@ -105,7 +104,7 @@ fun scheduleAlarm(context: Context, newAlarm: Alarm): Boolean {
         val cal = time[i]
         val alarmManager = context
             .getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        if (newAlarm.repeat) {
+        if (repeat) {
             alarmManager.setRepeating(
                 AlarmManager.RTC_WAKEUP, cal.timeInMillis,
                 AlarmManager.INTERVAL_DAY * 7, pendingIntent
@@ -120,11 +119,11 @@ fun scheduleAlarm(context: Context, newAlarm: Alarm): Boolean {
 }
 
 //This gets called if snooze get pressed
-fun scheduleSnooze(context: Context, newAlarm: Alarm) {
+fun Alarm.scheduleSnooze(context: Context) {
     val alarm = Intent(context, AlarmReceiver::class.java)
-    alarm.putExtra(ALARM_EXTRA, newAlarm.alarmId)
+    alarm.putExtra(ALARM_EXTRA, alarmId)
     val cal = Calendar.getInstance()
-    cal.add(Calendar.MINUTE, newAlarm.snooze)
+    cal.add(Calendar.MINUTE, snooze)
     val alarmIntent = PendingIntent.getBroadcast(
         context, 0, alarm,
         PendingIntent.FLAG_CANCEL_CURRENT
@@ -132,10 +131,10 @@ fun scheduleSnooze(context: Context, newAlarm: Alarm) {
     val alarmManager = context
         .getSystemService(Context.ALARM_SERVICE) as AlarmManager
     alarmManager[AlarmManager.RTC_WAKEUP, cal.timeInMillis] = alarmIntent
-    if (newAlarm.snooze == 1) {
+    if (snooze == 1) {
         Toast.makeText(
             context,
-            "${context.getString(R.string.alarm_set_begin_msg)} ${newAlarm.snooze}${context.getString(
+            "${context.getString(R.string.alarm_set_begin_msg)} ${snooze}${context.getString(
                 R.string.alarm_minute
             )} ${context.getString(R.string.alarm_set_end_msg)}",
             Toast.LENGTH_SHORT
@@ -143,7 +142,7 @@ fun scheduleSnooze(context: Context, newAlarm: Alarm) {
     } else {
         Toast.makeText(
             context,
-            "${context.getString(R.string.alarm_set_begin_msg)} ${newAlarm.snooze}${context.getString(
+            "${context.getString(R.string.alarm_set_begin_msg)} ${snooze}${context.getString(
                 R.string.alarm_minutes
             )} ${context.getString(R.string.alarm_set_end_msg)}",
             Toast.LENGTH_SHORT
@@ -152,12 +151,12 @@ fun scheduleSnooze(context: Context, newAlarm: Alarm) {
 }
 
 //Cancels an alarm - Called when an alarm is turned off, deleted, and rescheduled
-fun cancelAlarm(context: Context, newAlarm: Alarm) {
+fun Alarm.cancelAlarm(context: Context) {
     val cancel = Intent(context, AlarmReceiver::class.java)
     for (i in 0..6) { //For each day of the week
-        if (newAlarm.repeatDays[i] == 'T') {
+        if (repeatDays[i] == 'T') {
             val stringId: StringBuilder = StringBuilder().append(i)
-                .append(newAlarm.hour).append(newAlarm.minute)
+                .append(hour).append(minute)
             val intentId = stringId.toString().toInt()
             val cancelAlarmPI = PendingIntent.getBroadcast(
                 context, intentId, cancel,
@@ -172,11 +171,11 @@ fun cancelAlarm(context: Context, newAlarm: Alarm) {
 }
 
 //Used for displaying the toast for the the remaining time until the next alarm
-fun getTimeLeftMessage(context: Context, alarm: Alarm): String? {
+fun Alarm.getTimeLeftMessage(context: Context): String? {
     val message: String
     val cal = Calendar.getInstance()
-    cal[Calendar.HOUR_OF_DAY] = alarm.hour
-    cal[Calendar.MINUTE] = alarm.minute
+    cal[Calendar.HOUR_OF_DAY] = hour
+    cal[Calendar.MINUTE] = minute
     cal[Calendar.SECOND] = 0
     val today =
         getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
@@ -201,7 +200,7 @@ fun getTimeLeftMessage(context: Context, alarm: Alarm): String? {
         if (i == 7) {
             i = 0
         }
-        if (alarm.repeatDays.get(i) == 'T') {
+        if (repeatDays.get(i) == 'T') {
             break
         }
         i++
@@ -254,10 +253,10 @@ fun getTimeLeftMessage(context: Context, alarm: Alarm): String? {
     return message
 }
 
-private  fun initCalendar(alarm: Alarm): Calendar {
+private  fun Alarm.initCalendar(): Calendar {
     val cal = Calendar.getInstance()
-    cal[Calendar.HOUR_OF_DAY] = alarm.hour
-    cal[Calendar.MINUTE] = alarm.minute
+    cal[Calendar.HOUR_OF_DAY] = hour
+    cal[Calendar.MINUTE] = minute
     cal[Calendar.SECOND] = 0
     return cal
 }

@@ -85,7 +85,7 @@ class AlarmSettingsFragment: Fragment() {
                 mAlarm = alarm
                 var mRepeat = alarm.repeatDays
 
-                binding.settingsTime.text = getFormatTime(mAlarm)
+                binding.settingsTime.text = mAlarm.getFormatTime()
                 binding.settingsTime.setOnClickListener {
                     val timeCal = Calendar.getInstance()
                     if (!isFromAdd!!) {
@@ -96,7 +96,7 @@ class AlarmSettingsFragment: Fragment() {
                             mAlarm.hour = datetime.get(Calendar.HOUR_OF_DAY)
                             mAlarm.minute = datetime.get(Calendar.MINUTE)
                             settingsViewModel.onUpdate(mAlarm)
-                            binding.settingsTime.text = getFormatTime(mAlarm)
+                            binding.settingsTime.text = mAlarm.getFormatTime()
                         }
                     }
                 }
@@ -322,9 +322,9 @@ class AlarmSettingsFragment: Fragment() {
     }
 
     private fun scheduleAndMessage() { //schedule it and create a toast
-        if (scheduleAlarm(requireActivity(), mAlarm)) {
+        if (mAlarm.scheduleAlarm(requireActivity())) {
             Toast.makeText(
-                activity, getTimeLeftMessage(requireContext(), mAlarm),
+                activity, mAlarm.getTimeLeftMessage(requireContext()),
                 Toast.LENGTH_SHORT
             ).show()
             mAlarm.isOn = true
@@ -365,7 +365,7 @@ class AlarmSettingsFragment: Fragment() {
                     settingsViewModel.onUpdate(mAlarm)
                 } else {
                     if (mAlarm.isOn) {
-                        cancelAlarm(requireContext(), mAlarm)
+                        mAlarm.cancelAlarm(requireContext())
                     }
                     scheduleAndMessage()
                     settingsViewModel.onUpdate(mAlarm)
@@ -375,7 +375,7 @@ class AlarmSettingsFragment: Fragment() {
             }
             R.id.fragment_settings_delete -> {
                 if (mAlarm.isOn) {
-                    cancelAlarm(requireContext(), mAlarm)
+                    mAlarm.cancelAlarm(requireContext())
                 }
                 settingsViewModel.onDeleteAlarm(mAlarm)
 

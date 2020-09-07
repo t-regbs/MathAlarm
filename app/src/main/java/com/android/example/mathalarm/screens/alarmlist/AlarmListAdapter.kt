@@ -54,9 +54,9 @@ class AlarmListAdapter(
                 item.isOn = !item.isOn
                 binding.alarmSwitchButton.isChecked = item.isOn
                 if (item.isOn) {
-                    if (scheduleAlarm(itemView.context, item)) {
+                    if (item.scheduleAlarm(itemView.context)) {
                         Toast.makeText(
-                            itemView.context, getTimeLeftMessage(itemView.context, item),
+                            itemView.context, item.getTimeLeftMessage(itemView.context),
                             Toast.LENGTH_SHORT
                         ).show()
                     } else {
@@ -64,14 +64,14 @@ class AlarmListAdapter(
                         binding.alarmSwitchButton.isChecked = false
                     }
                 } else {
-                    cancelAlarm(itemView.context, item)
+                    item.cancelAlarm(itemView.context)
                 }
                 viewModel.onUpdate(item)
             }
 
             binding.alarmSwitchButton.isChecked = item.isOn
 
-            binding.alarmTime.text = getFormatTime(item)
+            binding.alarmTime.text = item.getFormatTime()
             val color: Int = if (item.repeat) {
                 R.color.colorGold
             } else {

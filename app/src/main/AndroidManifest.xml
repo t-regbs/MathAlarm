@@ -32,8 +32,8 @@
         <service android:name=".RebootService"
             android:enabled="true"
             android:exported="false" />
-        <receiver android:name=".AlarmReceiver"/>
-        <receiver android:name=".RebootReceiver">
+        <receiver android:name=".AlarmReceiver" android:enabled="true" android:exported="false"/>
+        <receiver android:name=".RebootReceiver" android:enabled="true" android:exported="false" android:permission="android.permission.RECEIVE_BOOT_COMPLETED">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
 <!--                <action android:name="android.intent.action.LOCKED_BOOT_COMPLETED" />-->

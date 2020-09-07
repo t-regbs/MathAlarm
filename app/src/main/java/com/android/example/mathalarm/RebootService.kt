@@ -17,7 +17,7 @@ class RebootService : IntentService(RebootService::class.simpleName) {
             for (i in alarms.indices) {
                 val alarm: Alarm = alarms[i]
                 Timber.d("alarm id: ${alarm.alarmId}")
-                scheduleAlarm(this, alarm)
+                alarm.scheduleAlarm(this)
                 Timber.d("Alarm scheduled")
             }
         }

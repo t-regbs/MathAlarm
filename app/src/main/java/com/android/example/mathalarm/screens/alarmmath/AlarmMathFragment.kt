@@ -231,7 +231,7 @@ class AlarmMathFragment: Fragment() {
                     } else {
                         mp.stop()
                         vibrateRunning = false
-                        scheduleSnooze(requireContext(), alarm)
+                        alarm.scheduleSnooze(requireContext())
                         requireActivity().finish()
                     }
                 }
