@@ -4,6 +4,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.text.format.DateFormat
 import android.widget.Toast
 import com.android.example.mathalarm.AlarmReceiver
@@ -111,7 +112,11 @@ fun Alarm.scheduleAlarm(context: Context): Boolean {
             )
             Timber.d("scheduled new alarm")
         } else {
-            alarmManager[AlarmManager.RTC_WAKEUP, cal.timeInMillis] = pendingIntent
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
+            } else {
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
+            }
             Timber.d("scheduled new alarm")
         }
     }
@@ -130,7 +135,7 @@ fun Alarm.scheduleSnooze(context: Context) {
     )
     val alarmManager = context
         .getSystemService(Context.ALARM_SERVICE) as AlarmManager
-    alarmManager[AlarmManager.RTC_WAKEUP, cal.timeInMillis] = alarmIntent
+    alarmManager.set(AlarmManager.RTC_WAKEUP, cal.timeInMillis, alarmIntent)
     if (snooze == 1) {
         Toast.makeText(
             context,
