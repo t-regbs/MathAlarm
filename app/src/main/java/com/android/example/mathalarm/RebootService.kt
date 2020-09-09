@@ -13,15 +13,14 @@ class RebootService : IntentService(RebootService::class.simpleName) {
 //    private val myHelper: MyHelper by lazy { MyHelper() }
     override fun onHandleIntent(intent: Intent?) {
         if (intent?.extras?.get("service_extra") == "Reboot") {
-//            val alarms: List<Alarm> = dataSource.getActiveAlarms()
-//            for (i in alarms.indices) {
-//                val alarm: Alarm = alarms[i]
-//                Timber.d("alarm id: ${alarm.alarmId}")
-//                alarm.scheduleAlarm(this)
-//                Timber.d("Alarm scheduled")
-//            }
+            val alarms: List<Alarm> = dataSource.getActiveAlarms()
+            for (i in alarms.indices) {
+                val alarm: Alarm = alarms[i]
+                Timber.d("alarm id: ${alarm.alarmId}")
+                alarm.scheduleAlarm(this)
+                Timber.d("Alarm scheduled")
+            }
         }
-
     }
 }
 

@@ -30,7 +30,7 @@ interface AlarmDao {
     suspend fun getAlarms(): List<Alarm>
 
     @Query("SELECT * FROM alarms WHERE ison = :state")
-    suspend fun getActiveAlarms(state: Boolean = true): List<Alarm>
+    fun getActiveAlarms(state: Boolean = true): List<Alarm>
 
     @Query("SELECT COUNT(*) FROM alarms")
     suspend fun getSize(): Int

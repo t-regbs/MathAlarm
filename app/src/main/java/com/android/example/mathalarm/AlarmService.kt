@@ -20,9 +20,6 @@ import java.io.IOException
 
 class AlarmService: JobIntentService() {
 
-    private val job = Job()
-    private val scope = CoroutineScope(Dispatchers.IO + job)
-
     companion object {
         // Service unique ID
         const val SERVICE_JOB_ID = 50
@@ -58,22 +55,4 @@ class AlarmService: JobIntentService() {
         )
     }
 
-    @Throws(IOException::class)
-    fun getFilePathFromUri(uri: Uri, name: String): Uri {
-        val file = File(baseContext.externalCacheDir, name)
-        file.createNewFile()
-        FileOutputStream(file).use { outputStream ->
-            baseContext.contentResolver.openInputStream(uri).use { inputStream ->
-                copyStream(inputStream!!, outputStream) //Simply reads input to output stream
-                outputStream.flush()
-            }
-        }
-        return Uri.fromFile(file)
-    }
-
-
-    override fun onDestroy() {
-        super.onDestroy()
-        job.cancel()
-    }
 }

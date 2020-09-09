@@ -29,12 +29,9 @@ fun NotificationManager.sendNotification(
     extras: String,
     tone: Uri
 ) {
-    // Create the content intent for the notification, which launches
-    // this activity
-    // create intent
+
     val fullScreenIntent = Intent(applicationContext, AlarmMathActivity::class.java)
     fullScreenIntent.putExtra(ALARM_EXTRA, extras)
-    // create PendingIntent
     val fullScreenPendingIntent = PendingIntent.getActivity(
         applicationContext,
         NOTIFICATION_ID,
@@ -42,7 +39,6 @@ fun NotificationManager.sendNotification(
         PendingIntent.FLAG_UPDATE_CURRENT
     )
     val vibratePattern = longArrayOf(0, 100, 200, 300)
-    //add style
     val alarmImage = BitmapFactory.decodeResource(
         applicationContext.resources,
         R.mipmap.ic_launcher
@@ -50,37 +46,22 @@ fun NotificationManager.sendNotification(
     val bigPicStyle = NotificationCompat.BigPictureStyle()
         .bigPicture(alarmImage)
         .bigLargeIcon(null)
-    // get an instance of NotificationCompat.Builder
-    // Build the notification
+
     val builder = NotificationCompat.Builder(
         applicationContext,
         applicationContext.getString(R.string.alarm_notification_channel_id)
     )
-
-
-        // set title, text and icon to builder
         .setSmallIcon(R.mipmap.ic_launcher)
-        .setContentTitle(
-            applicationContext
-                .getString(R.string.notification_title)
-        )
+        .setContentTitle(applicationContext.getString(R.string.notification_title))
         .setContentText(messageBody)
-
-        //set content intent
-//        .setContentIntent(contentPendingIntent)
         .setFullScreenIntent(fullScreenPendingIntent, true)
         .setAutoCancel(true)
-
-        // add style to builder
         .setStyle(bigPicStyle)
         .setLargeIcon(alarmImage)
-        //Set visibility
         .setVisibility(VISIBILITY_PUBLIC)
-        .setSound(tone, AudioManager.STREAM_ALARM)
+        .setSound(tone, AudioManager.STREAM_MUSIC)
         .setCategory(NotificationCompat.CATEGORY_ALARM)
         .setVibrate(vibratePattern)
-
-        //set priority
         .setPriority(NotificationCompat.PRIORITY_HIGH)
 
     val notif = builder.build()
