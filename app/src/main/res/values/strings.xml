@@ -67,4 +67,5 @@
     <string name="clear_alarms">Clear Alarms</string>
     <string name="alarm_notification_channel_id">alarm_channel</string>
     <string name="notification_title">Math Alarm</string>
+    <string name="math_alarm">Math Alarm!!</string>
 </resources>

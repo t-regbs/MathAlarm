@@ -1,11 +1,15 @@
 package com.android.example.mathalarm.utils
 
+import android.app.Notification
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.media.AudioManager
+import android.net.Uri
 import androidx.core.app.NotificationCompat
+import androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC
 import com.android.example.mathalarm.R
 import com.android.example.mathalarm.screens.alarmmath.AlarmMathActivity
 
@@ -19,19 +23,25 @@ private val FLAGS = 0
  *
  * @param context, activity context.
  */
-fun NotificationManager.sendNotification(messageBody: String, applicationContext: Context) {
+fun NotificationManager.sendNotification(
+    applicationContext: Context,
+    messageBody: String,
+    extras: String,
+    tone: Uri
+) {
     // Create the content intent for the notification, which launches
     // this activity
     // create intent
-    val contentIntent = Intent(applicationContext, AlarmMathActivity::class.java)
+    val fullScreenIntent = Intent(applicationContext, AlarmMathActivity::class.java)
+    fullScreenIntent.putExtra(ALARM_EXTRA, extras)
     // create PendingIntent
-    val contentPendingIntent = PendingIntent.getActivity(
+    val fullScreenPendingIntent = PendingIntent.getActivity(
         applicationContext,
         NOTIFICATION_ID,
-        contentIntent,
+        fullScreenIntent,
         PendingIntent.FLAG_UPDATE_CURRENT
     )
-
+    val vibratePattern = longArrayOf(0, 100, 200, 300)
     //add style
     val alarmImage = BitmapFactory.decodeResource(
         applicationContext.resources,
@@ -40,15 +50,6 @@ fun NotificationManager.sendNotification(messageBody: String, applicationContext
     val bigPicStyle = NotificationCompat.BigPictureStyle()
         .bigPicture(alarmImage)
         .bigLargeIcon(null)
-
-    //add snooze action
-//    val snoozeIntent = Intent(applicationContext, SnoozeReceiver::class.java)
-//    val snoozePendingIntent: PendingIntent = PendingIntent.getBroadcast(
-//        applicationContext,
-//        REQUEST_CODE,
-//        snoozeIntent,
-//        FLAGS)
-
     // get an instance of NotificationCompat.Builder
     // Build the notification
     val builder = NotificationCompat.Builder(
@@ -59,28 +60,32 @@ fun NotificationManager.sendNotification(messageBody: String, applicationContext
 
         // set title, text and icon to builder
         .setSmallIcon(R.mipmap.ic_launcher)
-        .setContentTitle(applicationContext
-            .getString(R.string.notification_title))
+        .setContentTitle(
+            applicationContext
+                .getString(R.string.notification_title)
+        )
         .setContentText(messageBody)
 
         //set content intent
-        .setContentIntent(contentPendingIntent)
+//        .setContentIntent(contentPendingIntent)
+        .setFullScreenIntent(fullScreenPendingIntent, true)
         .setAutoCancel(true)
 
         // add style to builder
         .setStyle(bigPicStyle)
         .setLargeIcon(alarmImage)
-
-        // add snooze action
-//        .addAction(
-//            R.drawable.egg_icon,
-//            applicationContext.getString(R.string.snooze),
-//            snoozePendingIntent
-//        )
+        //Set visibility
+        .setVisibility(VISIBILITY_PUBLIC)
+        .setSound(tone, AudioManager.STREAM_ALARM)
+        .setCategory(NotificationCompat.CATEGORY_ALARM)
+        .setVibrate(vibratePattern)
 
         //set priority
         .setPriority(NotificationCompat.PRIORITY_HIGH)
-    notify(NOTIFICATION_ID, builder.build())
+
+    val notif = builder.build()
+    notif.flags = notif.flags or Notification.FLAG_INSISTENT
+    notify(NOTIFICATION_ID, notif)
 }
 
 /**
