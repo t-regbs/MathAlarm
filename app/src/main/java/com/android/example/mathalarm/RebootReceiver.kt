@@ -17,20 +17,7 @@ class RebootReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val service = Intent(context, RebootService::class.java)
         service.putExtra("service_extra", "Reboot")
-        context.startService(service)
-//        Timber.d("onReceive entered")
-//        myHelper.onReceive(context, intent)
-//    val dataSource = AlarmDatabase.getInstance(context.applicationContext).alarmDatabaseDao
-//    if (intent.action == "android.intent.action.BOOT_COMPLETED") {
-//        val alarms: List<Alarm> = dataSource.getActiveAlarms()
-//        for (i in alarms.indices) {
-//            val alarm: Alarm = alarms[i]
-//            if (alarm.isOn) {
-//                alarm.scheduleAlarm(context)
-//                Timber.d("alarm scheduled")
-//            }
-//        }
-//    }
+        RebootService.enqueueWork(context, service)
     }
 }
 

@@ -2,6 +2,7 @@ package com.android.example.mathalarm.screens.alarmmath
 
 import android.app.Activity
 import android.app.KeyguardManager
+import android.app.NotificationManager
 import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioManager
@@ -16,6 +17,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.WindowManager
 import android.widget.Toast
+import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import com.android.example.mathalarm.*
 import com.android.example.mathalarm.databinding.FragmentAlarmMathBinding
@@ -218,6 +220,11 @@ class AlarmMathFragment: Fragment() {
                     } else {
                         mp.stop()
                         vibrateRunning = false
+                        val notificationManager = ContextCompat.getSystemService(
+                            requireContext(),
+                            NotificationManager::class.java
+                        ) as NotificationManager
+                        notificationManager.cancel(0)
                         requireActivity().setResult(Activity.RESULT_OK)
                         requireActivity().finish()
                     }

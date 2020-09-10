@@ -36,6 +36,7 @@ fun Alarm.getFormatTime(): CharSequence? {
 
 //Schedules all the alarm of the object at once including repeating ones
 fun Alarm.scheduleAlarm(context: Context): Boolean {
+    Timber.d("Schedule alarm..")
     val alarm = Intent(context, AlarmReceiver::class.java)
     alarm.putExtra(ALARM_EXTRA, alarmId)
     val alarmIntent: MutableList<PendingIntent> = ArrayList()
