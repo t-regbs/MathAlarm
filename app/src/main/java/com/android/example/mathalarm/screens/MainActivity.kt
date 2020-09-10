@@ -2,9 +2,6 @@ package com.android.example.mathalarm.screens
 
 import androidx.appcompat.app.AppCompatActivity
 import android.os.Bundle
-import androidx.navigation.findNavController
-import androidx.navigation.ui.AppBarConfiguration
-import androidx.navigation.ui.NavigationUI
 import com.android.example.mathalarm.R
 
 class MainActivity : AppCompatActivity() {
@@ -14,4 +11,13 @@ class MainActivity : AppCompatActivity() {
         setContentView(R.layout.activity_main)
     }
 
+    override fun onResume() {
+        super.onResume()
+//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+//            RestartServiceBroadcastReceiver.scheduleJob(applicationContext)
+//        } else {
+//            val bck = ProcessMainClass()
+//            bck.launchService(applicationContext)
+//        }
+    }
 }

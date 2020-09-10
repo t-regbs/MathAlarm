@@ -25,32 +25,5 @@ class AlarmApplication : Application() {
             androidContext(this@AlarmApplication)
             modules(listOf(databaseModule, repositoryModule, viewModelModule))
         }
-        createChannel(
-            getString(R.string.alarm_notification_channel_id),
-            getString(R.string.notification_title)
-        )
-    }
-
-    private fun createChannel(channelId: String, channelName: String) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val notificationChannel = NotificationChannel(
-                channelId,
-                channelName,
-                NotificationManager.IMPORTANCE_HIGH
-            )
-                .apply {
-                    setShowBadge(false)
-                    enableLights(false)
-                    lightColor = Color.RED
-                    enableVibration(true)
-                    description = getString(R.string.math_alarm)
-                }
-
-            val notificationManager = getSystemService(
-                NotificationManager::class.java
-            )
-            notificationManager.createNotificationChannel(notificationChannel)
-
-        }
     }
 }
