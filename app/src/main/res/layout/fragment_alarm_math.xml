@@ -4,7 +4,7 @@
     <data>
         <variable
             name="alarmMathViewModel"
-            type="com.android.example.mathalarm.screens.alarmmath.AlarmMathViewModel" />
+            type="com.timilehinaregbesola.mathalarm.screens.alarmmath.AlarmMathViewModel" />
     </data>
     <ScrollView
         android:layout_width="match_parent"
@@ -70,7 +70,8 @@
                             android:textColor="@color/colorWhite"
                             android:layout_marginEnd="10dp"
                             android:text="@string/one"
-                            android:layout_weight="1"/>
+                            android:layout_weight="1"
+                            style="?android:attr/buttonBarButtonStyle" />
                         <Button
                             android:id="@+id/math_btn_2"
                             android:layout_width="wrap_content"
@@ -79,7 +80,8 @@
                             android:textColor="@color/colorWhite"
                             android:layout_marginEnd="10dp"
                             android:text="@string/two"
-                            android:layout_weight="1"/>
+                            android:layout_weight="1"
+                            style="?android:attr/buttonBarButtonStyle" />
                         <Button
                             android:id="@+id/math_btn_3"
                             android:layout_width="wrap_content"
@@ -87,7 +89,8 @@
                             android:background="@color/colorSkyBlue"
                             android:textColor="@color/colorWhite"
                             android:text="@string/three"
-                            android:layout_weight="1"/>
+                            android:layout_weight="1"
+                            style="?android:attr/buttonBarButtonStyle" />
                     </LinearLayout>
 
                     <LinearLayout
@@ -103,7 +106,8 @@
                             android:textColor="@color/colorWhite"
                             android:layout_marginEnd="10dp"
                             android:text="@string/four"
-                            android:layout_weight="1"/>
+                            android:layout_weight="1"
+                            style="?android:attr/buttonBarButtonStyle" />
                         <Button
                             android:id="@+id/math_btn_5"
                             android:layout_width="wrap_content"
@@ -112,7 +116,8 @@
                             android:textColor="@color/colorWhite"
                             android:layout_marginEnd="10dp"
                             android:text="@string/five"
-                            android:layout_weight="1"/>
+                            android:layout_weight="1"
+                            style="?android:attr/buttonBarButtonStyle" />
                         <Button
                             android:id="@+id/math_btn_6"
                             android:layout_width="wrap_content"
@@ -120,7 +125,8 @@
                             android:background="@color/colorSkyBlue"
                             android:textColor="@color/colorWhite"
                             android:text="@string/six"
-                            android:layout_weight="1"/>
+                            android:layout_weight="1"
+                            style="?android:attr/buttonBarButtonStyle" />
                     </LinearLayout>
 
                     <LinearLayout
@@ -136,7 +142,8 @@
                             android:textColor="@color/colorWhite"
                             android:layout_marginEnd="10dp"
                             android:text="@string/seven"
-                            android:layout_weight="1"/>
+                            android:layout_weight="1"
+                            style="?android:attr/buttonBarButtonStyle" />
                         <Button
                             android:id="@+id/math_btn_8"
                             android:layout_width="wrap_content"
@@ -145,7 +152,8 @@
                             android:textColor="@color/colorWhite"
                             android:layout_marginEnd="10dp"
                             android:text="@string/eight"
-                            android:layout_weight="1"/>
+                            android:layout_weight="1"
+                            style="?android:attr/buttonBarButtonStyle" />
                         <Button
                             android:id="@+id/math_btn_9"
                             android:layout_width="wrap_content"
@@ -153,7 +161,8 @@
                             android:background="@color/colorSkyBlue"
                             android:textColor="@color/colorWhite"
                             android:text="@string/nine"
-                            android:layout_weight="1"/>
+                            android:layout_weight="1"
+                            style="?android:attr/buttonBarButtonStyle" />
                     </LinearLayout>
 
                     <LinearLayout
@@ -168,7 +177,8 @@
                             android:textColor="@color/colorWhite"
                             android:layout_marginEnd="10dp"
                             android:text="@string/delete"
-                            android:layout_weight="1"/>
+                            android:layout_weight="1"
+                            style="?android:attr/buttonBarButtonStyle" />
                         <Button
                             android:id="@+id/math_btn_0"
                             android:layout_width="wrap_content"
@@ -177,7 +187,8 @@
                             android:textColor="@color/colorWhite"
                             android:layout_marginEnd="10dp"
                             android:text="@string/zero"
-                            android:layout_weight="1"/>
+                            android:layout_weight="1"
+                            style="?android:attr/buttonBarButtonStyle" />
                         <Button
                             android:id="@+id/math_btn_clear"
                             android:layout_width="wrap_content"
@@ -185,7 +196,8 @@
                             android:background="@color/colorSkyBlue"
                             android:textColor="@color/colorWhite"
                             android:text="@string/clear"
-                            android:layout_weight="1"/>
+                            android:layout_weight="1"
+                            style="?android:attr/buttonBarButtonStyle" />
 
                     </LinearLayout>
 
@@ -210,7 +222,8 @@
                     android:layout_marginEnd="10dp"
                     android:background="@color/colorSkyBlue"
                     android:textColor="@color/colorWhite"
-                    android:text="@string/set"/>
+                    android:text="@string/set"
+                    style="?android:attr/buttonBarButtonStyle" />
 
                 <Button
                     android:id="@+id/math_btn_snooze"
@@ -222,7 +235,8 @@
                     android:layout_marginEnd="40dp"
                     android:background="@color/colorNightBlue"
                     android:textColor="@color/colorWhite"
-                    android:text="@string/snooze"/>
+                    android:text="@string/snooze"
+                    style="?android:attr/buttonBarButtonStyle" />
 
             </LinearLayout>
 

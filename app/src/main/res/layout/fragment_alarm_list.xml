@@ -5,7 +5,7 @@
     <data>
         <variable
             name="alarmListViewModel"
-            type="com.android.example.mathalarm.screens.alarmlist.AlarmListViewModel" />
+            type="com.timilehinaregbesola.mathalarm.screens.alarmlist.AlarmListViewModel" />
     </data>
     <RelativeLayout
 
@@ -37,16 +37,13 @@
                 android:scaleType="fitCenter"
                 android:layout_marginBottom="41dp"
                 android:layout_alignParentBottom="true"
-                android:layout_alignParentRight="true"
                 android:layout_alignParentEnd="true"
                 android:contentDescription="@string/android_cd"/>
 
             <RelativeLayout
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_alignRight="@+id/relativeLayout"
                 android:layout_alignEnd="@+id/relativeLayout"
-                android:layout_alignParentLeft="true"
                 android:layout_alignParentStart="true"
                 android:layout_alignBottom="@+id/empty_view_android"
                 android:layout_alignParentTop="true">
@@ -57,7 +54,6 @@
                     android:src="@drawable/ic_bubble"
                     android:contentDescription="@string/bubble_cd"
                     android:layout_centerVertical="true"
-                    android:layout_alignParentLeft="true"
                     android:layout_alignParentStart="true"/>
 
                 <TextView
@@ -69,9 +65,7 @@
                     android:text="@string/empty"
                     android:gravity="center"
                     android:paddingBottom="30dp"
-                    android:layout_alignLeft="@id/bubble_imageview"
                     android:layout_alignStart="@id/bubble_imageview"
-                    android:layout_alignRight="@id/bubble_imageview"
                     android:layout_alignEnd="@id/bubble_imageview"
                     android:layout_alignTop="@id/bubble_imageview"
                     android:layout_alignBottom="@id/bubble_imageview"/>
@@ -81,9 +75,8 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_alignParentTop="true"
-                android:layout_alignParentRight="true"
                 android:layout_alignParentEnd="true"
-                android:layout_marginRight="15dp"
+                android:layout_marginEnd="15dp"
                 android:id="@+id/relativeLayout">
 
                 <ImageView
@@ -100,9 +93,7 @@
                     android:textSize="30sp"
                     android:textStyle="bold"
                     android:gravity="center"
-                    android:layout_alignLeft="@id/msg_imageview"
                     android:layout_alignStart="@id/msg_imageview"
-                    android:layout_alignRight="@id/msg_imageview"
                     android:layout_alignEnd="@id/msg_imageview"
                     android:layout_alignTop="@id/msg_imageview"
                     android:layout_alignBottom="@id/msg_imageview"

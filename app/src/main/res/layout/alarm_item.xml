@@ -5,10 +5,10 @@
     <data>
         <variable
             name="alarm"
-            type="com.android.example.mathalarm.database.Alarm" />
+            type="com.timilehinaregbesola.mathalarm.database.Alarm" />
         <variable
             name="clickListener"
-            type="com.android.example.mathalarm.screens.alarmlist.AlarmListener" />
+            type="com.timilehinaregbesola.mathalarm.screens.alarmlist.AlarmListener" />
     </data>
 
     <RelativeLayout

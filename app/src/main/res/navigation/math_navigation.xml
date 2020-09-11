@@ -7,8 +7,8 @@
 
     <fragment
         android:id="@+id/alarmMathFragment"
-        android:name="com.android.example.mathalarm.screens.alarmmath.AlarmMathFragment"
+        android:name="com.timilehinaregbesola.mathalarm.screens.alarmmath.AlarmMathFragment"
         android:label="AlarmMathFragment"
-        tools:layout="@layout/fragment_alarm_math"/>
+        tools:layout="@layout/fragment_alarm_math" />
 
 </navigation>

@@ -4,7 +4,7 @@
     <data>
         <variable
             name="alarmSettingsViewModel"
-            type="com.android.example.mathalarm.screens.alarmsettings.AlarmSettingsViewModel" />
+            type="com.timilehinaregbesola.mathalarm.screens.alarmsettings.AlarmSettingsViewModel" />
     </data>
     <ScrollView
         android:layout_width="match_parent"

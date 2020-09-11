@@ -6,7 +6,7 @@
     app:startDestination="@id/alarmFragment">
     <fragment
         android:id="@+id/alarmFragment"
-        android:name="com.android.example.mathalarm.screens.alarmlist.AlarmFragment"
+        android:name="com.timilehinaregbesola.mathalarm.screens.alarmlist.AlarmFragment"
         android:label="AlarmFragment"
         tools:layout="@layout/fragment_alarm_list">
         <action
@@ -16,7 +16,7 @@
     </fragment>
     <fragment
         android:id="@+id/alarmSettingsFragment"
-        android:name="com.android.example.mathalarm.screens.alarmsettings.AlarmSettingsFragment"
+        android:name="com.timilehinaregbesola.mathalarm.screens.alarmsettings.AlarmSettingsFragment"
         android:label="AlarmSettingsFragment"
         tools:layout="@layout/fragment_alarm_settings">
         <argument
