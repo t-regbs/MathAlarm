@@ -18,7 +18,7 @@
         android:onClick="@{()-> clickListener.onclick(alarm)}"
         android:padding="7dp">
 
-        <Switch
+        <androidx.appcompat.widget.SwitchCompat
             android:id="@+id/alarm_switch_button"
             android:layout_width="wrap_content"
             android:layout_height="match_parent"

@@ -34,7 +34,8 @@
             android:permission="android.permission.BIND_JOB_SERVICE"/>
         <service android:name=".RebootService"
             android:enabled="true"
-            android:exported="false" />
+            android:exported="false"
+            android:permission="android.permission.BIND_JOB_SERVICE"/>
         <receiver android:name=".AlarmReceiver" />
         <receiver android:name=".RebootReceiver"
             android:enabled="true"
@@ -46,30 +47,6 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </receiver>
-<!--        <service android:name=".restarter.JobService"-->
-<!--            android:permission="android.permission.BIND_JOB_SERVICE" />-->
-
-<!--        <service-->
-<!--            android:name=".Service"-->
-<!--            android:clearTaskOnLaunch="true"-->
-<!--            android:enabled="true"-->
-<!--            android:excludeFromRecents="true"-->
-<!--            android:launchMode="singleInstance"-->
-<!--            />-->
-
-
-<!--        <receiver-->
-<!--            android:name=".restarter.RestartServiceBroadcastReceiver"-->
-<!--            android:enabled="true"-->
-<!--            android:exported="true"-->
-<!--            android:label="StartMyServiceAtBootReceiver">-->
-<!--            <intent-filter>-->
-<!--                <action android:name="android.intent.action.BOOT_COMPLETED"/>-->
-<!--                <action android:name="android.intent.action.QUICKBOOT_POWERON"/>-->
-<!--                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>-->
-<!--                <category android:name="android.intent.category.DEFAULT"/>-->
-<!--            </intent-filter>-->
-<!--        </receiver>-->
     </application>
 
 </manifest>

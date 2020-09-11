@@ -259,7 +259,7 @@ fun Alarm.getTimeLeftMessage(context: Context): String? {
     return message
 }
 
-private  fun Alarm.initCalendar(): Calendar {
+fun Alarm.initCalendar(): Calendar {
     val cal = Calendar.getInstance()
     cal[Calendar.HOUR_OF_DAY] = hour
     cal[Calendar.MINUTE] = minute
