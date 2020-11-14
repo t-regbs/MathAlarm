@@ -6,7 +6,7 @@ apply plugin: 'androidx.navigation.safeargs'
 
 android {
     compileSdkVersion 30
-    buildToolsVersion "29.0.3"
+    buildToolsVersion "30.0.2"
     defaultConfig {
         applicationId "com.timilehinaregbesola.mathalarm"
         minSdkVersion 19
@@ -42,18 +42,18 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
 
     //KTX
-    implementation 'androidx.core:core-ktx:1.3.1'
+    implementation 'androidx.core:core-ktx:1.3.2'
 
     //Testing
-    testImplementation 'junit:junit:4.13'
+    testImplementation 'junit:junit:4.13.1'
     androidTestImplementation 'androidx.test.ext:junit:1.1.2'
     androidTestImplementation 'androidx.test.espresso:espresso-core:3.3.0'
 
     // Support libraries
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'androidx.fragment:fragment:1.2.5'
-    implementation 'androidx.constraintlayout:constraintlayout:2.0.1'
-    implementation 'androidx.recyclerview:recyclerview:1.2.0-alpha05'
+    implementation 'androidx.constraintlayout:constraintlayout:2.0.4'
+    implementation 'androidx.recyclerview:recyclerview:1.2.0-alpha06'
 
     // Room and Lifecycle dependencies
     implementation "androidx.room:room-runtime:$room_version"
@@ -70,8 +70,8 @@ dependencies {
     implementation "androidx.navigation:navigation-fragment-ktx:$nav_version"
     implementation "androidx.navigation:navigation-ui-ktx:$nav_version"
 
-    implementation 'androidx.fragment:fragment-ktx:1.3.0-alpha08'
-    implementation 'androidx.activity:activity-ktx:1.2.0-alpha08'
+    implementation 'androidx.fragment:fragment-ktx:1.3.0-beta01'
+    implementation 'androidx.activity:activity-ktx:1.2.0-beta01'
 
     //Timber
     implementation 'com.jakewharton.timber:timber:4.7.1'
