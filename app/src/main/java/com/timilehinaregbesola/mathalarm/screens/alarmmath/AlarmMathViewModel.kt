@@ -11,7 +11,7 @@ import com.timilehinaregbesola.mathalarm.database.Alarm
 import com.timilehinaregbesola.mathalarm.database.AlarmRepository
 import kotlinx.coroutines.*
 
-class AlarmMathViewModel(private val repository: AlarmRepository): ViewModel() {
+class AlarmMathViewModel(private val repository: AlarmRepository) : ViewModel() {
     var alarm = MutableLiveData<Alarm?>()
     var currentAlarm = MutableLiveData<Alarm?>()
 
@@ -21,19 +21,17 @@ class AlarmMathViewModel(private val repository: AlarmRepository): ViewModel() {
         alarm.postValue(alarmFound)
     }
 
-
-    fun onUpdate(alarm: Alarm){
+    fun onUpdate(alarm: Alarm) {
         viewModelScope.launch {
             repository.update(alarm)
             currentAlarm.value = repository.getLatestAlarmFromDatabase()
         }
     }
 
-
-    //Cancels an alarm - Called when an alarm is turned off, deleted, and rescheduled
+    // Cancels an alarm - Called when an alarm is turned off, deleted, and rescheduled
     fun cancelAlarm(context: Context?) {
         val cancel = Intent(context, com.timilehinaregbesola.mathalarm.AlarmReceiver::class.java)
-        for (i in 0..6) { //For each day of the week
+        for (i in 0..6) { // For each day of the week
             if (currentAlarm.value!!.repeatDays[i] == 'T') {
                 val stringId: StringBuilder = StringBuilder().append(i)
                     .append(currentAlarm.value!!.hour).append(currentAlarm.value!!.minute)
@@ -50,7 +48,7 @@ class AlarmMathViewModel(private val repository: AlarmRepository): ViewModel() {
         }
     }
 
-    fun onClear(){
+    fun onClear() {
         viewModelScope.launch {
             repository.clear()
             currentAlarm.value = null

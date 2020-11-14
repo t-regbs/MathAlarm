@@ -26,7 +26,7 @@ const val HARD = 2
 
 const val ALARM_EXTRA = "alarm_extra"
 
-//Get the formatted time (example: 12:00 AM)
+// Get the formatted time (example: 12:00 AM)
 fun Alarm.getFormatTime(): CharSequence? {
     val cal = Calendar.getInstance()
     cal[Calendar.HOUR_OF_DAY] = hour
@@ -34,7 +34,7 @@ fun Alarm.getFormatTime(): CharSequence? {
     return DateFormat.format("hh:mm a", cal)
 }
 
-//Schedules all the alarm of the object at once including repeating ones
+// Schedules all the alarm of the object at once including repeating ones
 fun Alarm.scheduleAlarm(context: Context): Boolean {
     Timber.d("Schedule alarm..")
     val alarm = Intent(context, AlarmReceiver::class.java)
@@ -45,13 +45,13 @@ fun Alarm.scheduleAlarm(context: Context): Boolean {
     if (repeatDays == "FFFFFFF") {
         val cal = initCalendar()
         var dayOfTheWeek = getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
-        if (cal.timeInMillis > System.currentTimeMillis()) { //set it today
+        if (cal.timeInMillis > System.currentTimeMillis()) { // set it today
             val sb = StringBuilder("FFFFFFF")
             sb.setCharAt(dayOfTheWeek, 'T')
             repeatDays = sb.toString()
-        } else { //alarm time already passed for the day so set it tomorrow
+        } else { // alarm time already passed for the day so set it tomorrow
             val sb = StringBuilder("FFFFFFF")
-            if (dayOfTheWeek == SAT) { //if it is saturday
+            if (dayOfTheWeek == SAT) { // if it is saturday
                 dayOfTheWeek = SUN
             } else {
                 dayOfTheWeek++
@@ -67,11 +67,12 @@ fun Alarm.scheduleAlarm(context: Context): Boolean {
             val currentDay = getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
             Timber.d("current day: $currentDay")
             if (currentDay > i ||
-                (currentDay == i && cal.timeInMillis < System.currentTimeMillis())) {
-                //days left till end of week(sat) + the day of the week of the alarm
+                (currentDay == i && cal.timeInMillis < System.currentTimeMillis())
+            ) {
+                // days left till end of week(sat) + the day of the week of the alarm
                 // EX: alarm = i = tues = 2; current = wed = 3; end of week = sat = 6
-                //end - current = 6 - 3 = 3 -> 3 days till saturday/end of week
-                //end of week + 1 (to sunday) + day of week alarm is on = 3 + 1 + 2 = 6
+                // end - current = 6 - 3 = 3 -> 3 days till saturday/end of week
+                // end of week + 1 (to sunday) + day of week alarm is on = 3 + 1 + 2 = 6
                 daysUntilAlarm = SAT - currentDay + 1 + i
                 cal.add(Calendar.DAY_OF_YEAR, daysUntilAlarm)
                 Timber.d("days until alarm: $daysUntilAlarm")
@@ -85,10 +86,12 @@ fun Alarm.scheduleAlarm(context: Context): Boolean {
             val id = stringId.toString().split("-").joinToString("")
             val intentId = id.toInt()
             Timber.d("intent id: $intentId")
-            //check if a previous alarm has been set
+            // check if a previous alarm has been set
             if (PendingIntent.getBroadcast(
                     context, intentId, alarm,
-                    PendingIntent.FLAG_NO_CREATE) != null) {
+                    PendingIntent.FLAG_NO_CREATE
+                ) != null
+            ) {
                 Toast.makeText(
                     context, context.getString(R.string.alarm_duplicate_toast_text),
                     Toast.LENGTH_SHORT
@@ -96,7 +99,8 @@ fun Alarm.scheduleAlarm(context: Context): Boolean {
                 return false
             }
             val pendingIntent = PendingIntent.getBroadcast(
-                context, intentId, alarm, PendingIntent.FLAG_CANCEL_CURRENT)
+                context, intentId, alarm, PendingIntent.FLAG_CANCEL_CURRENT
+            )
             alarmIntent.add(pendingIntent)
             time.add(cal)
         }
@@ -124,7 +128,7 @@ fun Alarm.scheduleAlarm(context: Context): Boolean {
     return true
 }
 
-//This gets called if snooze get pressed
+// This gets called if snooze get pressed
 fun Alarm.scheduleSnooze(context: Context) {
     val alarm = Intent(context, AlarmReceiver::class.java)
     alarm.putExtra(ALARM_EXTRA, alarmId)
@@ -156,10 +160,10 @@ fun Alarm.scheduleSnooze(context: Context) {
     }
 }
 
-//Cancels an alarm - Called when an alarm is turned off, deleted, and rescheduled
+// Cancels an alarm - Called when an alarm is turned off, deleted, and rescheduled
 fun Alarm.cancelAlarm(context: Context) {
     val cancel = Intent(context, AlarmReceiver::class.java)
-    for (i in 0..6) { //For each day of the week
+    for (i in 0..6) { // For each day of the week
         if (repeatDays[i] == 'T') {
             val stringId: StringBuilder = StringBuilder().append(i)
                 .append(hour).append(minute)
@@ -176,7 +180,7 @@ fun Alarm.cancelAlarm(context: Context) {
     }
 }
 
-//Used for displaying the toast for the the remaining time until the next alarm
+// Used for displaying the toast for the the remaining time until the next alarm
 fun Alarm.getTimeLeftMessage(context: Context): String? {
     val message: String
     val cal = Calendar.getInstance()
@@ -243,18 +247,24 @@ fun Alarm.getTimeLeftMessage(context: Context): String? {
     }
     message = if (days == 0) {
         if (hours == 0) {
-            ("${context.getString(R.string.alarm_set_begin_msg)} $minutes $mString ${context.getString(
-                R.string.alarm_set_end_msg
-            )}")
+            (
+                "${context.getString(R.string.alarm_set_begin_msg)} $minutes $mString ${context.getString(
+                    R.string.alarm_set_end_msg
+                )}"
+                )
         } else {
-            ("${context.getString(R.string.alarm_set_begin_msg)} $hours $hString $minutes $mString ${context.getString(
-                R.string.alarm_set_end_msg
-            )}")
+            (
+                "${context.getString(R.string.alarm_set_begin_msg)} $hours $hString $minutes $mString ${context.getString(
+                    R.string.alarm_set_end_msg
+                )}"
+                )
         }
     } else {
-        (context.getString(R.string.alarm_set_begin_msg) + " "
-                + days + " " + dString + " " + hours + " " + hString + " " + minutes + " " +
-                mString + " " + context.getString(R.string.alarm_set_end_msg))
+        (
+            context.getString(R.string.alarm_set_begin_msg) + " " +
+                days + " " + dString + " " + hours + " " + hString + " " + minutes + " " +
+                mString + " " + context.getString(R.string.alarm_set_end_msg)
+            )
     }
     return message
 }

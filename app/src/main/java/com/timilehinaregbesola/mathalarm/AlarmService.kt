@@ -13,24 +13,20 @@ import com.timilehinaregbesola.mathalarm.utils.setNotification
 import org.koin.android.ext.android.inject
 import timber.log.Timber
 
-
-class AlarmService: JobIntentService() {
+class AlarmService : JobIntentService() {
 
     companion object {
         // Service unique ID
         const val SERVICE_JOB_ID = 50
-
 
         fun enqueueWork(context: Context, service: Intent) {
             enqueueWork(context, AlarmService::class.java, SERVICE_JOB_ID, service)
         }
     }
 
-
     override fun onHandleWork(intent: Intent) {
         onHandleIntent(intent)
     }
-
 
     private fun onHandleIntent(intent: Intent) {
         Timber.d("service intent")
@@ -48,7 +44,5 @@ class AlarmService: JobIntentService() {
             NotificationManager::class.java
         ) as NotificationManager
         notificationManager.notify(0, notification)
-
     }
-
 }

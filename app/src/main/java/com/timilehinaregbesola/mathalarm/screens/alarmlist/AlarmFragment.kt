@@ -1,7 +1,7 @@
 package com.timilehinaregbesola.mathalarm.screens.alarmlist
 
 import android.os.Bundle
-import android.view.*
+import android.view.* // ktlint-disable no-wildcard-imports
 import androidx.appcompat.app.AlertDialog
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
@@ -10,8 +10,7 @@ import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.databinding.FragmentAlarmListBinding
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
-
-class AlarmFragment: Fragment() {
+class AlarmFragment : Fragment() {
     private lateinit var binding: FragmentAlarmListBinding
     private val alarmListViewModel by viewModel<AlarmListViewModel>()
     private lateinit var adapter: AlarmListAdapter
@@ -23,17 +22,24 @@ class AlarmFragment: Fragment() {
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
 
         // Get a reference to the binding object and inflate the fragment views.
         binding = FragmentAlarmListBinding.inflate(
-            inflater, container, false)
+            inflater, container, false
+        )
 
         binding.alarmListViewModel = alarmListViewModel
 
-        adapter = AlarmListAdapter(alarmListViewModel, AlarmListener {alarmId ->
-            alarmListViewModel.onAlarmClicked(alarmId)
-        })
+        adapter = AlarmListAdapter(
+            alarmListViewModel,
+            AlarmListener { alarmId ->
+                alarmListViewModel.onAlarmClicked(alarmId)
+            }
+        )
         val itemDecoration = VerticalSpacingItemDecoration(15)
         binding.alarmRecyclerView.addItemDecoration(itemDecoration)
         binding.alarmRecyclerView.adapter = adapter
@@ -51,28 +57,39 @@ class AlarmFragment: Fragment() {
     }
 
     private fun setupObservers() {
-        alarmListViewModel.addClicked.observe(viewLifecycleOwner, {
-            if (it != null) {
-                add = it
+        alarmListViewModel.addClicked.observe(
+            viewLifecycleOwner,
+            {
+                if (it != null) {
+                    add = it
+                }
             }
-        })
+        )
 
-        alarmListViewModel.alarms.observe(viewLifecycleOwner, {
-            if (it.isNotEmpty()){
-                binding.alarmEmptyView.visibility = View.GONE
-                it.let{ adapter.submitList(it) }
-            } else {
-                binding.alarmEmptyView.visibility = View.VISIBLE
+        alarmListViewModel.alarms.observe(
+            viewLifecycleOwner,
+            {
+                if (it.isNotEmpty()) {
+                    binding.alarmEmptyView.visibility = View.GONE
+                    it.let { adapter.submitList(it) }
+                } else {
+                    binding.alarmEmptyView.visibility = View.VISIBLE
+                }
             }
-        })
+        )
 
-        alarmListViewModel.navigateToAlarmSettings.observe(viewLifecycleOwner, { alarm ->
-            alarm?.let {
-                this.findNavController().navigate(AlarmFragmentDirections
-                    .actionAlarmFragmentToAlarmSettingsFragment(alarm, add!!))
-                alarmListViewModel.onAlarmSettingsNavigated()
+        alarmListViewModel.navigateToAlarmSettings.observe(
+            viewLifecycleOwner,
+            { alarm ->
+                alarm?.let {
+                    this.findNavController().navigate(
+                        AlarmFragmentDirections
+                            .actionAlarmFragmentToAlarmSettingsFragment(alarm, add!!)
+                    )
+                    alarmListViewModel.onAlarmSettingsNavigated()
+                }
             }
-        })
+        )
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {

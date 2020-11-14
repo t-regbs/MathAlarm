@@ -8,7 +8,7 @@ import com.timilehinaregbesola.mathalarm.database.Alarm
 import com.timilehinaregbesola.mathalarm.database.AlarmRepository
 import kotlinx.coroutines.*
 
-class AlarmSettingsViewModel(private val repository: AlarmRepository): ViewModel() {
+class AlarmSettingsViewModel(private val repository: AlarmRepository) : ViewModel() {
     var alarm = MutableLiveData<Alarm?>()
 
     private val _navigateToAlarmMath = MutableLiveData<Long>()
@@ -19,21 +19,19 @@ class AlarmSettingsViewModel(private val repository: AlarmRepository): ViewModel
     val latestAlarm: LiveData<Alarm?>
         get() = _latestAlarm
 
-
     init {
 //        getAlarm(alarmKey)
         initializeCurrentAlarm()
     }
 
-
-    fun onUpdate(alarm: Alarm){
+    fun onUpdate(alarm: Alarm) {
         viewModelScope.launch {
             repository.update(alarm)
             _latestAlarm.value = repository.getLatestAlarmFromDatabase()
         }
     }
 
-    fun onDeleteFromId(alarmId: Long?){
+    fun onDeleteFromId(alarmId: Long?) {
         viewModelScope.launch {
             val alarm = repository.findAlarm(alarmId!!)
             repository.delete(alarm)
@@ -41,7 +39,7 @@ class AlarmSettingsViewModel(private val repository: AlarmRepository): ViewModel
         }
     }
 
-    fun onDeleteAlarm(alarm: Alarm){
+    fun onDeleteAlarm(alarm: Alarm) {
         viewModelScope.launch {
             repository.delete(alarm)
             _latestAlarm.value = repository.getLatestAlarmFromDatabase()
@@ -59,11 +57,11 @@ class AlarmSettingsViewModel(private val repository: AlarmRepository): ViewModel
         }
     }
 
-    //Called when add menu is pressed
-    fun onAdd(newAlarm: Alarm){
+    // Called when add menu is pressed
+    fun onAdd(newAlarm: Alarm) {
         viewModelScope.launch {
             val id = repository.add(newAlarm)
-           _navigateToAlarmMath.value = id
+            _navigateToAlarmMath.value = id
             _latestAlarm.value = repository.getLatestAlarmFromDatabase()
         }
     }
@@ -71,5 +69,4 @@ class AlarmSettingsViewModel(private val repository: AlarmRepository): ViewModel
     fun onAlarmMathNavigated() {
         _navigateToAlarmMath.value = null
     }
-
 }

@@ -17,7 +17,6 @@ import androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.screens.alarmmath.AlarmMathActivity
 
-
 // Notification ID.
 private val NOTIFICATION_ID = 0
 private val REQUEST_CODE = 0
@@ -73,14 +72,14 @@ fun setNotification(
                 lightColor = Color.RED
                 setSound(tone, audioAttributes)
                 enableVibration(true)
-                description =  applicationContext.getString(R.string.math_alarm)
+                description = applicationContext.getString(R.string.math_alarm)
             }
             val notificationBuilder = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
 
             applicationContext.getSystemService(NotificationManager::class.java).createNotificationChannel(
                 channel
             )
-            notification = notificationBuilder //the log is PNG file format with a transparent background
+            notification = notificationBuilder // the log is PNG file format with a transparent background
                 .setSmallIcon(R.drawable.icon)
                 .setContentTitle(applicationContext.getString(R.string.notification_title))
                 .setContentText(messageBody)

@@ -26,7 +26,7 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.io.IOException
 import java.util.*
 
-class AlarmMathFragment: Fragment() {
+class AlarmMathFragment : Fragment() {
 
     companion object {
         private const val ADD = 0
@@ -43,8 +43,8 @@ class AlarmMathFragment: Fragment() {
     private var key: Long? = null
 
     private var op = 0
-    private  var num1 = 0
-    private  var num2 = 0
+    private var num1 = 0
+    private var num2 = 0
     private var ans = 0
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -57,16 +57,19 @@ class AlarmMathFragment: Fragment() {
         } else {
             requireActivity().window.addFlags(
                 WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED
-                        or WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
-                        or WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
-                        or WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
-                        or WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
+                    or WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+                    or WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON
+                    or WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON
+                    or WindowManager.LayoutParams.FLAG_ALLOW_LOCK_WHILE_SCREEN_ON
             )
         }
     }
 
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
 
         binding = FragmentAlarmMathBinding.inflate(inflater, container, false)
 
@@ -75,7 +78,6 @@ class AlarmMathFragment: Fragment() {
         key = extra?.getString(ALARM_EXTRA)!!.toLong()
 
         binding.alarmMathViewModel = alarmMathViewModel
-
 
         val dayOfTheWeek = getDayOfWeek(
             Calendar.getInstance()[Calendar.DAY_OF_WEEK]
@@ -101,7 +103,7 @@ class AlarmMathFragment: Fragment() {
         alarmMathViewModel.getAlarm(key!!)
         alarmMathViewModel.alarm.observe(viewLifecycleOwner) { alarm ->
             if (alarm != null) {
-                //Play alarm tone
+                // Play alarm tone
                 if (alarm.alarmTone.isNotEmpty()) {
                     val alarmUri = Uri.parse(alarm.alarmTone)
                     try {
@@ -134,35 +136,37 @@ class AlarmMathFragment: Fragment() {
                     ).show()
                 }
 
-                //Vibrate phone
+                // Vibrate phone
                 if (alarm.vibrate) {
                     vibrateRunning = true
-                    val thread = Thread(Runnable {
-                        while (vibrateRunning) {
-                            val v =
-                                requireActivity().getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-                            if (Build.VERSION.SDK_INT >= 26) {
-                                v.vibrate(VibrationEffect.createOneShot(1000, 10))
-                            } else {
-                                @Suppress("DEPRECATION")
-                                v.vibrate(1000)
+                    val thread = Thread(
+                        Runnable {
+                            while (vibrateRunning) {
+                                val v =
+                                    requireActivity().getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+                                if (Build.VERSION.SDK_INT >= 26) {
+                                    v.vibrate(VibrationEffect.createOneShot(1000, 10))
+                                } else {
+                                    @Suppress("DEPRECATION")
+                                    v.vibrate(1000)
+                                }
+                                try {
+                                    Thread.sleep(5000)
+                                } catch (e: InterruptedException) {
+                                }
                             }
-                            try {
-                                Thread.sleep(5000)
-                            } catch (e: InterruptedException) {
+                            if (!vibrateRunning) {
+                                return@Runnable
                             }
                         }
-                        if (!vibrateRunning) {
-                            return@Runnable
-                        }
-                    })
+                    )
                     thread.start()
                 }
 
-                //Get difficulty
+                // Get difficulty
                 getMathProblem(alarm.difficulty)
 
-                //Initialize the buttons and the on click actions
+                // Initialize the buttons and the on click actions
                 sb = StringBuilder("")
                 binding.mathQuestion.text = getMathString()
                 binding.mathBtn1.setOnClickListener {
@@ -249,7 +253,7 @@ class AlarmMathFragment: Fragment() {
         }
     }
 
-    //Creates the math problem based on the user-set difficulty
+    // Creates the math problem based on the user-set difficulty
     private fun getMathProblem(difficulty: Int) {
         val random = Random()
         op = random.nextInt(4)

@@ -3,7 +3,6 @@ package com.timilehinaregbesola.mathalarm.screens.alarmlist
 import androidx.recyclerview.widget.ItemTouchHelper
 import androidx.recyclerview.widget.RecyclerView
 
-
 class SwipeToDeleteCallback(private val mAdapter: AlarmListAdapter) :
     ItemTouchHelper.SimpleCallback(0, ItemTouchHelper.LEFT or ItemTouchHelper.RIGHT) {
 

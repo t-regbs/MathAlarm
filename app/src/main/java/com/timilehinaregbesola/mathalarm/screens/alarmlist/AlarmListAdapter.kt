@@ -10,12 +10,12 @@ import androidx.recyclerview.widget.RecyclerView
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.database.Alarm
 import com.timilehinaregbesola.mathalarm.databinding.AlarmItemBinding
-import com.timilehinaregbesola.mathalarm.utils.*
+import com.timilehinaregbesola.mathalarm.utils.* // ktlint-disable no-wildcard-imports
 
 class AlarmListAdapter(
     val viewModel: AlarmListViewModel,
     val clickListener: AlarmListener
-): ListAdapter<Alarm, AlarmListAdapter.ViewHolder>(AlarmDiffCallback()) {
+) : ListAdapter<Alarm, AlarmListAdapter.ViewHolder>(AlarmDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         return ViewHolder.from(parent)
@@ -29,7 +29,7 @@ class AlarmListAdapter(
         viewModel.onDelete(getItem(position))
     }
 
-    class ViewHolder private constructor(val binding: AlarmItemBinding): RecyclerView.ViewHolder(binding.root) {
+    class ViewHolder private constructor(val binding: AlarmItemBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(
             item: Alarm,
             clickListener: AlarmListener,
@@ -195,7 +195,7 @@ class AlarmListAdapter(
     }
 }
 
-class AlarmDiffCallback: DiffUtil.ItemCallback<Alarm>(){
+class AlarmDiffCallback : DiffUtil.ItemCallback<Alarm>() {
     override fun areItemsTheSame(oldItem: Alarm, newItem: Alarm): Boolean {
         return oldItem.alarmId == newItem.alarmId
     }
@@ -203,9 +203,7 @@ class AlarmDiffCallback: DiffUtil.ItemCallback<Alarm>(){
     override fun areContentsTheSame(oldItem: Alarm, newItem: Alarm): Boolean {
         return oldItem == newItem
     }
-
 }
-
 
 class AlarmListener(val clickListener: (alarmId: Long) -> Unit) {
     fun onclick(alarm: Alarm) = clickListener(alarm.alarmId)

@@ -4,10 +4,10 @@ import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.Ignore
 import androidx.room.PrimaryKey
-import java.util.*
+import java.util.* // ktlint-disable no-wildcard-imports
 
 @Entity(tableName = "alarms")
-data class Alarm (
+data class Alarm(
     @PrimaryKey(autoGenerate = true)
     var alarmId: Long = 0L,
 

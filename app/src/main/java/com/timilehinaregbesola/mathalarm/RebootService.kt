@@ -14,18 +14,15 @@ import org.koin.android.ext.android.inject
 import timber.log.Timber
 import java.util.*
 
-
 class RebootService : JobIntentService() {
     companion object {
         // Service unique ID
         const val SERVICE_JOB_ID = 55
 
-
         fun enqueueWork(context: Context, service: Intent) {
             enqueueWork(context, AlarmService::class.java, SERVICE_JOB_ID, service)
         }
     }
-
 
     override fun onHandleWork(intent: Intent) {
         onHandleIntent(intent)
@@ -54,13 +51,13 @@ class RebootService : JobIntentService() {
         if (alarmm.repeatDays == "FFFFFFF") {
             val cal = alarmm.initCalendar()
             var dayOfTheWeek = getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
-            if (cal.timeInMillis > System.currentTimeMillis()) { //set it today
+            if (cal.timeInMillis > System.currentTimeMillis()) { // set it today
                 val sb = StringBuilder("FFFFFFF")
                 sb.setCharAt(dayOfTheWeek, 'T')
                 alarmm.repeatDays = sb.toString()
-            } else { //alarm time already passed for the day so set it tomorrow
+            } else { // alarm time already passed for the day so set it tomorrow
                 val sb = StringBuilder("FFFFFFF")
-                if (dayOfTheWeek == SAT) { //if it is saturday
+                if (dayOfTheWeek == SAT) { // if it is saturday
                     dayOfTheWeek = SUN
                 } else {
                     dayOfTheWeek++
@@ -76,11 +73,12 @@ class RebootService : JobIntentService() {
                 val currentDay = getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
                 Timber.d("current day: $currentDay")
                 if (currentDay > i ||
-                    (currentDay == i && cal.timeInMillis < System.currentTimeMillis())) {
-                    //days left till end of week(sat) + the day of the week of the alarm
+                    (currentDay == i && cal.timeInMillis < System.currentTimeMillis())
+                ) {
+                    // days left till end of week(sat) + the day of the week of the alarm
                     // EX: alarm = i = tues = 2; current = wed = 3; end of week = sat = 6
-                    //end - current = 6 - 3 = 3 -> 3 days till saturday/end of week
-                    //end of week + 1 (to sunday) + day of week alarm is on = 3 + 1 + 2 = 6
+                    // end - current = 6 - 3 = 3 -> 3 days till saturday/end of week
+                    // end of week + 1 (to sunday) + day of week alarm is on = 3 + 1 + 2 = 6
                     daysUntilAlarm = SAT - currentDay + 1 + i
                     cal.add(Calendar.DAY_OF_YEAR, daysUntilAlarm)
                     Timber.d("days until alarm: $daysUntilAlarm")
@@ -94,10 +92,12 @@ class RebootService : JobIntentService() {
                 val id = stringId.toString().split("-").joinToString("")
                 val intentId = id.toInt()
                 Timber.d("intent id: $intentId")
-                //check if a previous alarm has been set
+                // check if a previous alarm has been set
                 if (PendingIntent.getService(
                         context, intentId, alarm,
-                        PendingIntent.FLAG_NO_CREATE) != null) {
+                        PendingIntent.FLAG_NO_CREATE
+                    ) != null
+                ) {
                     Toast.makeText(
                         context, context.getString(R.string.alarm_duplicate_toast_text),
                         Toast.LENGTH_SHORT
@@ -105,7 +105,8 @@ class RebootService : JobIntentService() {
                     return false
                 }
                 val pendingIntent = PendingIntent.getService(
-                    context, intentId, alarm, PendingIntent.FLAG_CANCEL_CURRENT)
+                    context, intentId, alarm, PendingIntent.FLAG_CANCEL_CURRENT
+                )
                 alarmIntent.add(pendingIntent)
                 time.add(cal)
             }
@@ -133,4 +134,3 @@ class RebootService : JobIntentService() {
         return true
     }
 }
-

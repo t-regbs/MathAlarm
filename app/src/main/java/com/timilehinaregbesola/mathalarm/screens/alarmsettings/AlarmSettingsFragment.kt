@@ -7,27 +7,26 @@ import android.net.Uri
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.view.*
+import android.view.* // ktlint-disable no-wildcard-imports
 import android.widget.ArrayAdapter
 import android.widget.Toast
-import androidx.fragment.app.*
+import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.datetime.timePicker
-import com.timilehinaregbesola.mathalarm.*
+import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.database.Alarm
 import com.timilehinaregbesola.mathalarm.databinding.FragmentAlarmSettingsBinding
 import com.timilehinaregbesola.mathalarm.screens.alarmmath.AlarmMathActivity
-import com.timilehinaregbesola.mathalarm.utils.*
+import com.timilehinaregbesola.mathalarm.utils.* // ktlint-disable no-wildcard-imports
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import java.util.*
+import java.util.* // ktlint-disable no-wildcard-imports
 import kotlin.collections.ArrayList
 
+class AlarmSettingsFragment : Fragment() {
 
-class AlarmSettingsFragment: Fragment() {
-
-    private lateinit var  binding: FragmentAlarmSettingsBinding
+    private lateinit var binding: FragmentAlarmSettingsBinding
 
     private val settingsViewModel by viewModel<AlarmSettingsViewModel>()
 
@@ -49,9 +48,11 @@ class AlarmSettingsFragment: Fragment() {
         setHasOptionsMenu(true)
     }
 
-
     override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
         isFromAdd = args.add
         key = args.alarmKey
 
@@ -70,8 +71,8 @@ class AlarmSettingsFragment: Fragment() {
             mTestAlarm!!.difficulty = binding.settingsMathDifficultySpinner.selectedItemPosition
             if (mAlarmTones.isNotEmpty()) {
                 mTestAlarm!!.alarmTone = (
-                        mAlarmTones[binding.settingsToneSpinner.selectedItemPosition].toString()
-                )
+                    mAlarmTones[binding.settingsToneSpinner.selectedItemPosition].toString()
+                    )
             }
             mTestAlarm!!.vibrate = binding.settingsVibrateSwitch.isChecked
             mTestAlarm!!.snooze = 0
@@ -212,8 +213,8 @@ class AlarmSettingsFragment: Fragment() {
                     mAlarm.repeat = (!mAlarm.repeat)
                 }
 
-                //Getting system sound files for tone and displaying in spinner
-                //Getting system sound files for tone and displaying in spinner
+                // Getting system sound files for tone and displaying in spinner
+                // Getting system sound files for tone and displaying in spinner
                 val toneItems: MutableList<String> =
                     ArrayList()
                 val ringtoneMgr = RingtoneManager(activity)
@@ -221,11 +222,11 @@ class AlarmSettingsFragment: Fragment() {
                 var alarmsCursor = ringtoneMgr.cursor
                 var alarmsCount = alarmsCursor.count
 
-                if (alarmsCount == 0) { //if there are no alarms, use notification sounds
+                if (alarmsCount == 0) { // if there are no alarms, use notification sounds
                     ringtoneMgr.setType(RingtoneManager.TYPE_NOTIFICATION)
                     alarmsCursor = ringtoneMgr.cursor
                     alarmsCount = alarmsCursor.count
-                    if (alarmsCount == 0) { //if no alarms and notification sounds, finally use ringtones
+                    if (alarmsCount == 0) { // if no alarms and notification sounds, finally use ringtones
                         ringtoneMgr.setType(RingtoneManager.TYPE_RINGTONE)
                         alarmsCursor = ringtoneMgr.cursor
                         alarmsCount = alarmsCursor.count
@@ -238,7 +239,7 @@ class AlarmSettingsFragment: Fragment() {
 
                 var previousPosition = 0
 
-                //If there are sound files, add them
+                // If there are sound files, add them
                 if (alarmsCount != 0) {
                     mAlarmTones = arrayOfNulls(alarmsCount)
                     val currentTone: String = mAlarm.alarmTone
@@ -258,7 +259,6 @@ class AlarmSettingsFragment: Fragment() {
                 if (toneItems.isEmpty()) {
                     toneItems.add("Empty")
                 }
-
 
                 val toneAdapter = ArrayAdapter(
                     requireActivity(),
@@ -311,23 +311,24 @@ class AlarmSettingsFragment: Fragment() {
                     binding.settingsVibrateSwitch.isChecked = !mAlarm.vibrate
                     mAlarm.vibrate = (!mAlarm.vibrate)
                 }
-
-
             }
         }
 
-        settingsViewModel.navigateToAlarmMath.observe(viewLifecycleOwner, { alarmId ->
-            alarmId?.let {
-                mTestAlarmId = alarmId
-                val test = Intent(requireContext(), AlarmMathActivity::class.java)
-                test.putExtra(ALARM_EXTRA, alarmId.toString())
-                startActivityForResult(test, REQUEST_TEST)
-                settingsViewModel.onAlarmMathNavigated()
+        settingsViewModel.navigateToAlarmMath.observe(
+            viewLifecycleOwner,
+            { alarmId ->
+                alarmId?.let {
+                    mTestAlarmId = alarmId
+                    val test = Intent(requireContext(), AlarmMathActivity::class.java)
+                    test.putExtra(ALARM_EXTRA, alarmId.toString())
+                    startActivityForResult(test, REQUEST_TEST)
+                    settingsViewModel.onAlarmMathNavigated()
+                }
             }
-        })
+        )
     }
 
-    private fun scheduleAndMessage() { //schedule it and create a toast
+    private fun scheduleAndMessage() { // schedule it and create a toast
         if (mAlarm.scheduleAlarm(requireActivity())) {
             Toast.makeText(
                 activity, mAlarm.getTimeLeftMessage(requireContext()),
@@ -346,7 +347,6 @@ class AlarmSettingsFragment: Fragment() {
         if (requestCode == REQUEST_TEST) {
             settingsViewModel.onDeleteFromId(mTestAlarmId)
         }
-
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -357,15 +357,17 @@ class AlarmSettingsFragment: Fragment() {
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
         return when (item.itemId) {
             R.id.fragment_settings_done -> {
-                //Setting difficulty + alarm tone
-                mAlarm.difficulty =(binding.settingsMathDifficultySpinner.selectedItemPosition)
+                // Setting difficulty + alarm tone
+                mAlarm.difficulty = (binding.settingsMathDifficultySpinner.selectedItemPosition)
                 if (mAlarmTones.isNotEmpty()) {
                     mAlarm.alarmTone = (
-                        mAlarmTones[binding.settingsToneSpinner
-                            .selectedItemPosition].toString()
-                    )
+                        mAlarmTones[
+                            binding.settingsToneSpinner
+                                .selectedItemPosition
+                        ].toString()
+                        )
                 }
-                //schedule alarm, update to database and close settings
+                // schedule alarm, update to database and close settings
                 if (isFromAdd!!) {
                     scheduleAndMessage()
                     settingsViewModel.onUpdate(mAlarm)

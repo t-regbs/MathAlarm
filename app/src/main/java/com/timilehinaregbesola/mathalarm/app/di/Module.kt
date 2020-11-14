@@ -20,10 +20,11 @@ val viewModelModule = module {
 
 val databaseModule = module {
     fun provideDatabase(application: Application): AlarmDatabase {
-        return Room.databaseBuilder(application,
+        return Room.databaseBuilder(
+            application,
             AlarmDatabase::class.java,
-            "alarm_history_database")
-            .build()
+            "alarm_history_database"
+        ).build()
     }
 
     fun provideAlarmDao(database: AlarmDatabase): AlarmDao {

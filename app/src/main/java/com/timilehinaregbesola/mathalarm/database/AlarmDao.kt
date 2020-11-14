@@ -1,6 +1,6 @@
 package com.timilehinaregbesola.mathalarm.database
 
-import androidx.room.*
+import androidx.room.* // ktlint-disable no-wildcard-imports
 
 @Dao
 interface AlarmDao {

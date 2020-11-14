@@ -13,7 +13,7 @@ class RebootReceiver : BroadcastReceiver() {
     }
 }
 
-//class MyHelper : KoinComponent {
+// class MyHelper : KoinComponent {
 //    private val dataSource: AlarmDao by inject()
 //    val job = Job()
 //    val scope = Dispatchers.Main + job
@@ -30,4 +30,4 @@ class RebootReceiver : BroadcastReceiver() {
 //        }
 //
 //    }
-//}
+// }
