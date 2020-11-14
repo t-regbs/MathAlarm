@@ -19,8 +19,7 @@
             android:layout_height="match_parent"
             android:background="@color/colorBlack"
             android:scrollbars="vertical"
-            tools:listitem="@layout/alarm_item"
-            />
+            tools:listitem="@layout/alarm_item" />
 
         <RelativeLayout
             android:id="@+id/alarm_empty_view"
