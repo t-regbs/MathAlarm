@@ -12,9 +12,6 @@ class AlarmReceiver : BroadcastReceiver() {
     override fun onReceive(context: Context, intent: Intent) {
         val service = Intent(context, AlarmService::class.java)
         service.putExtra(ALARM_EXTRA, intent.extras!![ALARM_EXTRA].toString())
-        AlarmService.enqueueWork(
-            context,
-            service
-        )
+        AlarmService.enqueueWork(context, service)
     }
 }

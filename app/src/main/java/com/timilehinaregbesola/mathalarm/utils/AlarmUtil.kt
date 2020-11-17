@@ -4,7 +4,6 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
-import android.os.Build
 import android.text.format.DateFormat
 import android.widget.Toast
 import com.timilehinaregbesola.mathalarm.AlarmReceiver
@@ -88,8 +87,7 @@ fun Alarm.scheduleAlarm(context: Context): Boolean {
             Timber.d("intent id: $intentId")
             // check if a previous alarm has been set
             if (PendingIntent.getBroadcast(
-                    context, intentId, alarm,
-                    PendingIntent.FLAG_NO_CREATE
+                    context, intentId, alarm, PendingIntent.FLAG_NO_CREATE
                 ) != null
             ) {
                 Toast.makeText(
@@ -117,11 +115,12 @@ fun Alarm.scheduleAlarm(context: Context): Boolean {
             )
             Timber.d("scheduled new alarm")
         } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
-            } else {
-                alarmManager.setExact(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
-            }
+            alarmManager.setExact(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+//                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
+//            } else {
+//                alarmManager.setExact(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
+//            }
             Timber.d("scheduled new alarm")
         }
     }
