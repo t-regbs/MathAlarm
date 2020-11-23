@@ -54,7 +54,7 @@ class AlarmListAdapter(
                 item.isOn = !item.isOn
                 binding.alarmSwitchButton.isChecked = item.isOn
                 if (item.isOn) {
-                    if (item.scheduleAlarm(itemView.context)) {
+                    if (item.scheduleAlarm(itemView.context, false)) {
                         Toast.makeText(
                             itemView.context, item.getTimeLeftMessage(itemView.context),
                             Toast.LENGTH_SHORT

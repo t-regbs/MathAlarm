@@ -10,6 +10,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.timilehinaregbesola.mathalarm.database.AlarmDao
 import com.timilehinaregbesola.mathalarm.utils.ALARM_EXTRA
+import com.timilehinaregbesola.mathalarm.utils.scheduleAlarm
 import com.timilehinaregbesola.mathalarm.utils.setNotification
 import org.koin.android.ext.android.inject
 import timber.log.Timber
@@ -46,13 +47,8 @@ class AlarmService : JobIntentService() {
             NotificationManager::class.java
         ) as NotificationManager
         notificationManager.notify(0, notification)
-//        if (alarm.repeat) {
-//            val alarmClockInfo = AlarmManager.AlarmClockInfo(cal.timeInMillis, pendingIntent)
-//            alarmManager.setAlarmClock(alarmClockInfo, pendingIntent)
-//            alarmManager.setRepeating(
-//                AlarmManager.RTC_WAKEUP, cal.timeInMillis,
-//                AlarmManager.INTERVAL_DAY * 7, pendingIntent
-//            )
-//        }
+        if (alarm.repeat) {
+            alarm.scheduleAlarm(baseContext, true)
+        }
     }
 }

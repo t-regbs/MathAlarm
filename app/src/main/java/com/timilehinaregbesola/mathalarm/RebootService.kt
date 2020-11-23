@@ -31,7 +31,7 @@ class RebootService : JobIntentService() {
             for (i in alarms.indices) {
                 val alarm: Alarm = alarms[i]
                 Timber.d("alarm id: ${alarm.alarmId}")
-                alarm.scheduleAlarm(applicationContext)
+                alarm.scheduleAlarm(applicationContext, false)
                 Timber.d("Alarm scheduled")
             }
         }

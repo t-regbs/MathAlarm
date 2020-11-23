@@ -30,7 +30,7 @@ class MyHelper : KoinComponent {
             val alarms: List<Alarm> = dataSource.getActiveAlarms(true)
             for (i in alarms.indices) {
                 val alarm: Alarm = alarms[i]
-                alarm.scheduleAlarm(context)
+                alarm.scheduleAlarm(context, false)
             }
         }
     }
