@@ -11,6 +11,7 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <application
         android:name="com.timilehinaregbesola.mathalarm.app.AlarmApplication"
+        android:installLocation="internalOnly"
         android:allowBackup="true"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -37,9 +38,7 @@
             android:exported="false"
             android:permission="android.permission.BIND_JOB_SERVICE"/>
         <receiver android:name="com.timilehinaregbesola.mathalarm.AlarmReceiver" />
-        <receiver android:name="com.timilehinaregbesola.mathalarm.RebootReceiver"
-            android:enabled="true"
-            android:exported="true">
+        <receiver android:name="com.timilehinaregbesola.mathalarm.RebootReceiver">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.QUICKBOOT_POWERON"/>

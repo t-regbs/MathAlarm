@@ -329,7 +329,7 @@ class AlarmSettingsFragment : Fragment() {
     }
 
     private fun scheduleAndMessage() { // schedule it and create a toast
-        if (mAlarm.scheduleAlarm(requireActivity())) {
+        if (mAlarm.scheduleAlarm(requireActivity(), false)) {
             Toast.makeText(
                 activity, mAlarm.getTimeLeftMessage(requireContext()),
                 Toast.LENGTH_SHORT

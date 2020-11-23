@@ -1,5 +1,6 @@
 package com.timilehinaregbesola.mathalarm
 
+import android.app.AlarmManager
 import android.app.Notification
 import android.app.NotificationManager
 import android.content.Context
@@ -9,6 +10,7 @@ import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import com.timilehinaregbesola.mathalarm.database.AlarmDao
 import com.timilehinaregbesola.mathalarm.utils.ALARM_EXTRA
+import com.timilehinaregbesola.mathalarm.utils.scheduleAlarm
 import com.timilehinaregbesola.mathalarm.utils.setNotification
 import org.koin.android.ext.android.inject
 import timber.log.Timber
@@ -31,6 +33,7 @@ class AlarmService : JobIntentService() {
     private fun onHandleIntent(intent: Intent) {
         Timber.d("service intent")
         val notification: Notification
+        val alarmManager = baseContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val dataSource: AlarmDao by inject()
         val id = intent.extras?.getString(ALARM_EXTRA)!!.toLong()
         val alarm = dataSource.search(id)
@@ -44,5 +47,8 @@ class AlarmService : JobIntentService() {
             NotificationManager::class.java
         ) as NotificationManager
         notificationManager.notify(0, notification)
+        if (alarm.repeat) {
+            alarm.scheduleAlarm(baseContext, true)
+        }
     }
 }

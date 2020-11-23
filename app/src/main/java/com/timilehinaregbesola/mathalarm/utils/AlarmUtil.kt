@@ -4,6 +4,7 @@ import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import android.text.format.DateFormat
 import android.widget.Toast
 import com.timilehinaregbesola.mathalarm.AlarmReceiver
@@ -34,7 +35,7 @@ fun Alarm.getFormatTime(): CharSequence? {
 }
 
 // Schedules all the alarm of the object at once including repeating ones
-fun Alarm.scheduleAlarm(context: Context): Boolean {
+fun Alarm.scheduleAlarm(context: Context, reschedule: Boolean): Boolean {
     Timber.d("Schedule alarm..")
     val alarm = Intent(context, AlarmReceiver::class.java)
     alarm.putExtra(ALARM_EXTRA, alarmId)
@@ -90,10 +91,12 @@ fun Alarm.scheduleAlarm(context: Context): Boolean {
                     context, intentId, alarm, PendingIntent.FLAG_NO_CREATE
                 ) != null
             ) {
-                Toast.makeText(
-                    context, context.getString(R.string.alarm_duplicate_toast_text),
-                    Toast.LENGTH_SHORT
-                ).show()
+                if (!reschedule) {
+                    Toast.makeText(
+                        context, context.getString(R.string.alarm_duplicate_toast_text),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
                 return false
             }
             val pendingIntent = PendingIntent.getBroadcast(
@@ -108,21 +111,12 @@ fun Alarm.scheduleAlarm(context: Context): Boolean {
         val cal = time[i]
         val alarmManager = context
             .getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        if (repeat) {
-            alarmManager.setRepeating(
-                AlarmManager.RTC_WAKEUP, cal.timeInMillis,
-                AlarmManager.INTERVAL_DAY * 7, pendingIntent
-            )
-            Timber.d("scheduled new alarm")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
         } else {
             alarmManager.setExact(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-//                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
-//            } else {
-//                alarmManager.setExact(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
-//            }
-            Timber.d("scheduled new alarm")
         }
+        Timber.d("scheduled new alarm")
     }
     return true
 }
