@@ -33,10 +33,6 @@
             android:enabled="true"
             android:exported="false"
             android:permission="android.permission.BIND_JOB_SERVICE"/>
-        <service android:name="com.timilehinaregbesola.mathalarm.RebootService"
-            android:enabled="true"
-            android:exported="false"
-            android:permission="android.permission.BIND_JOB_SERVICE"/>
         <receiver android:name="com.timilehinaregbesola.mathalarm.AlarmReceiver" />
         <receiver android:name="com.timilehinaregbesola.mathalarm.RebootReceiver">
             <intent-filter>

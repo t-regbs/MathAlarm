@@ -13,11 +13,10 @@ import org.koin.core.inject
 class RebootReceiver : BroadcastReceiver() {
     private val myHelper: MyHelper by lazy { MyHelper() }
     override fun onReceive(context: Context, intent: Intent) {
-        if (intent.action.equals("android.intent.action.BOOT_COMPLETED")) {
+        if (intent.action.equals("android.intent.action.BOOT_COMPLETED") ||
+            intent.action.equals("android.intent.action.QUICKBOOT_POWERON")
+        ) {
             myHelper.onReceive(context, intent)
-//            val service = Intent(context, RebootService::class.java)
-//            service.putExtra("service_extra", "Reboot")
-//            RebootService.enqueueWork(context, service)
         }
     }
 }
