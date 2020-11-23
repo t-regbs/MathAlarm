@@ -115,7 +115,8 @@ fun Alarm.scheduleAlarm(context: Context): Boolean {
             )
             Timber.d("scheduled new alarm")
         } else {
-            alarmManager.setExact(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
+            val alarmClockInfo = AlarmManager.AlarmClockInfo(cal.timeInMillis, pendingIntent)
+            alarmManager.setAlarmClock(alarmClockInfo, pendingIntent)
 //            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
 //                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
 //            } else {
