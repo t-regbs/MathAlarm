@@ -361,10 +361,7 @@ class AlarmSettingsFragment : Fragment() {
                 mAlarm.difficulty = (binding.settingsMathDifficultySpinner.selectedItemPosition)
                 if (mAlarmTones.isNotEmpty()) {
                     mAlarm.alarmTone = (
-                        mAlarmTones[
-                            binding.settingsToneSpinner
-                                .selectedItemPosition
-                        ].toString()
+                        mAlarmTones[binding.settingsToneSpinner.selectedItemPosition].toString()
                         )
                 }
                 // schedule alarm, update to database and close settings
