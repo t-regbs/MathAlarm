@@ -220,7 +220,7 @@ class AlarmMathFragment : Fragment() {
                     binding.mathAnswer.text = sb
                 }
                 binding.mathBtnSet.setOnClickListener {
-                    if (sb.toString().toInt() != ans) {
+                    if (sb.isNullOrEmpty() || sb.toString().toInt() != ans) {
                         Toast.makeText(activity, "Incorrect!", Toast.LENGTH_SHORT).show()
                         sb!!.setLength(0)
                         binding.mathAnswer.text = ""
