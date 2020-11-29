@@ -68,6 +68,7 @@ fun setNotification(
                 .build()
             channel.apply {
                 setShowBadge(false)
+                setBypassDnd(true)
                 enableLights(false)
                 lightColor = Color.RED
                 setSound(tone, audioAttributes)
