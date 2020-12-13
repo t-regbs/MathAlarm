@@ -78,109 +78,64 @@ class AlarmListAdapter(
                 R.color.colorWhite
             }
             binding.alarmTime.setTextColor(
-                ContextCompat.getColor(
-                    itemView.context,
-                    color
-                )
+                ContextCompat.getColor(itemView.context, color)
             )
 
             if (repeat[SUN] == 'T') {
                 binding.alarmRepeatSun.setTextColor(
-                    ContextCompat.getColor(
-                        itemView.context,
-                        R.color.colorGold
-                    )
+                    ContextCompat.getColor(itemView.context, R.color.colorGold)
                 )
             } else binding.alarmRepeatSun.setTextColor(
-                ContextCompat.getColor(
-                    itemView.context,
-                    R.color.colorWhite
-                )
+                ContextCompat.getColor(itemView.context, R.color.colorWhite)
             )
 
             if (repeat[MON] == 'T') {
                 binding.alarmRepeatMon.setTextColor(
-                    ContextCompat.getColor(
-                        itemView.context,
-                        R.color.colorGold
-                    )
+                    ContextCompat.getColor(itemView.context, R.color.colorGold)
                 )
             } else binding.alarmRepeatMon.setTextColor(
-                ContextCompat.getColor(
-                    itemView.context,
-                    R.color.colorWhite
-                )
+                ContextCompat.getColor(itemView.context, R.color.colorWhite)
             )
 
             if (repeat[TUE] == 'T') {
                 binding.alarmRepeatTue.setTextColor(
-                    ContextCompat.getColor(
-                        itemView.context,
-                        R.color.colorGold
-                    )
+                    ContextCompat.getColor(itemView.context, R.color.colorGold)
                 )
             } else binding.alarmRepeatTue.setTextColor(
-                ContextCompat.getColor(
-                    itemView.context,
-                    R.color.colorWhite
-                )
+                ContextCompat.getColor(itemView.context, R.color.colorWhite)
             )
 
             if (repeat[WED] == 'T') {
                 binding.alarmRepeatWed.setTextColor(
-                    ContextCompat.getColor(
-                        itemView.context,
-                        R.color.colorGold
-                    )
+                    ContextCompat.getColor(itemView.context, R.color.colorGold)
                 )
             } else binding.alarmRepeatWed.setTextColor(
-                ContextCompat.getColor(
-                    itemView.context,
-                    R.color.colorWhite
-                )
+                ContextCompat.getColor(itemView.context, R.color.colorWhite)
             )
 
             if (repeat[THU] == 'T') {
                 binding.alarmRepeatThu.setTextColor(
-                    ContextCompat.getColor(
-                        itemView.context,
-                        R.color.colorGold
-                    )
+                    ContextCompat.getColor(itemView.context, R.color.colorGold)
                 )
             } else binding.alarmRepeatThu.setTextColor(
-                ContextCompat.getColor(
-                    itemView.context,
-                    R.color.colorWhite
-                )
+                ContextCompat.getColor(itemView.context, R.color.colorWhite)
             )
 
             if (repeat[FRI] == 'T') {
                 binding.alarmRepeatFri.setTextColor(
-                    ContextCompat.getColor(
-                        itemView.context,
-                        R.color.colorGold
-                    )
+                    ContextCompat.getColor(itemView.context, R.color.colorGold)
                 )
             } else binding.alarmRepeatFri.setTextColor(
-                ContextCompat.getColor(
-                    itemView.context,
-                    R.color.colorWhite
-                )
+                ContextCompat.getColor(itemView.context, R.color.colorWhite)
             )
 
             if (repeat[SAT] == 'T') {
                 binding.alarmRepeatSat.setTextColor(
-                    ContextCompat.getColor(
-                        itemView.context,
-                        R.color.colorGold
-                    )
+                    ContextCompat.getColor(itemView.context, R.color.colorGold)
                 )
             } else {
                 binding.alarmRepeatSat.setTextColor(
-                    ContextCompat.getColor(
-                        itemView.context,
-                        R.color.colorWhite
-                    )
+                    ContextCompat.getColor(itemView.context, R.color.colorWhite)
                 )
             }
         }
