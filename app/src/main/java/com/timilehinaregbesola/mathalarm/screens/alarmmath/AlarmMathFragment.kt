@@ -170,48 +170,68 @@ class AlarmMathFragment : Fragment() {
                 sb = StringBuilder("")
                 binding.mathQuestion.text = getMathString()
                 binding.mathBtn1.setOnClickListener {
-                    sb!!.append(1)
-                    binding.mathAnswer.text = sb
+                    if (sb!!.length < 9) {
+                        sb!!.append(1)
+                        binding.mathAnswer.text = sb
+                    }
                 }
                 binding.mathBtn2.setOnClickListener {
-                    sb!!.append(2)
-                    binding.mathAnswer.text = sb
+                    if (sb!!.length < 9) {
+                        sb!!.append(2)
+                        binding.mathAnswer.text = sb
+                    }
                 }
                 binding.mathBtn3.setOnClickListener {
-                    sb!!.append(3)
-                    binding.mathAnswer.text = sb
+                    if (sb!!.length < 9) {
+                        sb!!.append(3)
+                        binding.mathAnswer.text = sb
+                    }
                 }
                 binding.mathBtn4.setOnClickListener {
-                    sb!!.append(4)
-                    binding.mathAnswer.text = sb
+                    if (sb!!.length < 9) {
+                        sb!!.append(4)
+                        binding.mathAnswer.text = sb
+                    }
                 }
                 binding.mathBtn5.setOnClickListener {
-                    sb!!.append(5)
-                    binding.mathAnswer.text = sb
+                    if (sb!!.length < 9) {
+                        sb!!.append(5)
+                        binding.mathAnswer.text = sb
+                    }
                 }
                 binding.mathBtn6.setOnClickListener {
-                    sb!!.append(6)
-                    binding.mathAnswer.text = sb
+                    if (sb!!.length < 9) {
+                        sb!!.append(6)
+                        binding.mathAnswer.text = sb
+                    }
                 }
                 binding.mathBtn7.setOnClickListener {
-                    sb!!.append(7)
-                    binding.mathAnswer.text = sb
+                    if (sb!!.length < 9) {
+                        sb!!.append(7)
+                        binding.mathAnswer.text = sb
+                    }
                 }
                 binding.mathBtn8.setOnClickListener {
-                    sb!!.append(8)
-                    binding.mathAnswer.text = sb
+                    if (sb!!.length < 9) {
+                        sb!!.append(8)
+                        binding.mathAnswer.text = sb
+                    }
                 }
                 binding.mathBtn9.setOnClickListener {
-                    sb!!.append(9)
-                    binding.mathAnswer.text = sb
+                    if (sb!!.length < 9) {
+                        sb!!.append(9)
+                        binding.mathAnswer.text = sb
+                    }
                 }
                 binding.mathBtn0.setOnClickListener {
-                    sb!!.append(0)
-                    binding.mathAnswer.text = sb
+                    if (sb!!.length < 9) {
+                        sb!!.append(0)
+                        binding.mathAnswer.text = sb
+                    }
                 }
                 binding.mathBtnDel.setOnClickListener {
                     if (sb!!.isNotEmpty()) {
-                        sb!!.deleteCharAt(sb!!.length - 1)
+                        sb!!.deleteCharAt(sb!!.lastIndex)
                         binding.mathAnswer.text = sb
                     }
                 }
@@ -220,7 +240,7 @@ class AlarmMathFragment : Fragment() {
                     binding.mathAnswer.text = sb
                 }
                 binding.mathBtnSet.setOnClickListener {
-                    if (sb.isNullOrEmpty() || sb.toString().toInt() != ans) {
+                    if (sb.isNullOrEmpty() || sb.toString().trim().toInt() != ans) {
                         Toast.makeText(activity, "Incorrect!", Toast.LENGTH_SHORT).show()
                         sb!!.setLength(0)
                         binding.mathAnswer.text = ""
