@@ -77,9 +77,8 @@ fun setNotification(
             }
             val notificationBuilder = NotificationCompat.Builder(applicationContext, CHANNEL_ID)
 
-            applicationContext.getSystemService(NotificationManager::class.java).createNotificationChannel(
-                channel
-            )
+            applicationContext.getSystemService(NotificationManager::class.java)
+                .createNotificationChannel(channel)
             notification = notificationBuilder // the log is PNG file format with a transparent background
                 .setSmallIcon(R.drawable.icon)
                 .setContentTitle(applicationContext.getString(R.string.notification_title))

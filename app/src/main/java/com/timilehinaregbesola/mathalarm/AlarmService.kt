@@ -1,6 +1,5 @@
 package com.timilehinaregbesola.mathalarm
 
-import android.app.AlarmManager
 import android.app.Notification
 import android.app.NotificationManager
 import android.content.Context
@@ -33,7 +32,6 @@ class AlarmService : JobIntentService() {
     private fun onHandleIntent(intent: Intent) {
         Timber.d("service intent")
         val notification: Notification
-        val alarmManager = baseContext.getSystemService(Context.ALARM_SERVICE) as AlarmManager
         val dataSource: AlarmDao by inject()
         val id = intent.extras?.getString(ALARM_EXTRA)!!.toLong()
         val alarm = dataSource.search(id)
