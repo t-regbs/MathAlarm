@@ -23,16 +23,28 @@
                 android:text="@string/settings_time_title"
                 style="?android:listSeparatorTextViewStyle"/>
 
-            <TextView
-                android:id="@+id/settings_time"
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:textStyle="bold"
-                android:textSize="50sp"
-                android:padding="30dp"
-                android:gravity="center"
-                tools:text="DISPLAY TIME HERE"
-                />
+                android:orientation="vertical">
+                <ProgressBar
+                    android:id="@+id/time_progress"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:indeterminate="true"/>
+                <TextView
+                    android:id="@+id/settings_time"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:textStyle="bold"
+                    android:textSize="50sp"
+                    android:padding="30dp"
+                    android:gravity="center"
+                    tools:text="DISPLAY TIME HERE"
+                    />
+            </LinearLayout>
+
 
             <TextView
                 android:layout_width="match_parent"

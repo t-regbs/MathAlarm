@@ -7,7 +7,7 @@ import android.net.Uri
 import android.os.Bundle
 import android.text.Editable
 import android.text.TextWatcher
-import android.view.* // ktlint-disable no-wildcard-imports
+import android.view.*
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.fragment.app.Fragment
@@ -19,9 +19,13 @@ import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.database.Alarm
 import com.timilehinaregbesola.mathalarm.databinding.FragmentAlarmSettingsBinding
 import com.timilehinaregbesola.mathalarm.screens.alarmmath.AlarmMathActivity
-import com.timilehinaregbesola.mathalarm.utils.* // ktlint-disable no-wildcard-imports
+import com.timilehinaregbesola.mathalarm.utils.*
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.koin.androidx.viewmodel.ext.android.viewModel
-import java.util.* // ktlint-disable no-wildcard-imports
+import java.util.*
 import kotlin.collections.ArrayList
 
 class AlarmSettingsFragment : Fragment() {
@@ -85,8 +89,13 @@ class AlarmSettingsFragment : Fragment() {
             it?.let { alarm ->
                 mAlarm = alarm
                 var mRepeat = alarm.repeatDays
-
-                binding.settingsTime.text = mAlarm.getFormatTime()
+//                binding.timeProgress.visibility = View.VISIBLE
+                GlobalScope.launch {
+                    binding.settingsTime.text = mAlarm.getFormatTime()
+                    withContext(Dispatchers.Main) {
+                        binding.timeProgress.visibility = View.GONE
+                    }
+                }
                 binding.settingsTime.setOnClickListener {
                     val timeCal = Calendar.getInstance()
                     if (!isFromAdd!!) {
@@ -141,7 +150,7 @@ class AlarmSettingsFragment : Fragment() {
                         mRepeat = sb.toString()
                         mAlarm.repeatDays = mRepeat
                     } else {
-                        sb.setCharAt(MON, 'T')
+                        sb.setCharAt(TUE, 'T')
                         mRepeat = sb.toString()
                         mAlarm.repeatDays = mRepeat
                     }
