@@ -112,13 +112,12 @@ class AlarmMathFragment : Fragment() {
                             setDataSource(requireContext(), alarmUri)
                             if (Build.VERSION.SDK_INT < 21) {
                                 @Suppress("DEPRECATION")
-                                setAudioStreamType(AudioManager.STREAM_MUSIC)
+                                setAudioStreamType(AudioManager.STREAM_ALARM)
                             } else {
                                 setAudioAttributes(
                                     AudioAttributes.Builder()
-                                        .setContentType(
-                                            AudioAttributes.CONTENT_TYPE_MUSIC
-                                        )
+                                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                                        .setUsage(AudioAttributes.USAGE_ALARM)
                                         .build()
                                 )
                             }
