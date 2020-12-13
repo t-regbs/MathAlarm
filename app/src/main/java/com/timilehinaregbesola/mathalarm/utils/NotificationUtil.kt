@@ -63,8 +63,8 @@ fun setNotification(
             val CHANNEL_ID = applicationContext.getString(R.string.alarm_notification_channel_id)
             val channel = NotificationChannel(CHANNEL_ID, name, importance)
             val audioAttributes = AudioAttributes.Builder()
-                .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION)
-                .setUsage(AudioAttributes.USAGE_NOTIFICATION)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .setUsage(AudioAttributes.USAGE_ALARM)
                 .build()
             channel.apply {
                 setShowBadge(false)
