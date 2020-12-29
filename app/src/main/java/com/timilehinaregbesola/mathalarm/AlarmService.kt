@@ -37,16 +37,16 @@ class AlarmService : JobIntentService() {
         val alarm = dataSource.search(id)
         val tone = alarm.alarmTone
         notification = setNotification(
-            baseContext, "Time for alarm!!!", intent.extras!![ALARM_EXTRA].toString(), tone.toUri()
+            applicationContext, "Time for alarm!!!", intent.extras!![ALARM_EXTRA].toString(), tone.toUri()
         )
         notification.flags = notification.flags or Notification.FLAG_INSISTENT
         val notificationManager = ContextCompat.getSystemService(
-            baseContext,
+            applicationContext,
             NotificationManager::class.java
         ) as NotificationManager
         notificationManager.notify(0, notification)
         if (alarm.repeat) {
-            alarm.scheduleAlarm(baseContext, true)
+            alarm.scheduleAlarm(applicationContext, true)
         }
     }
 }

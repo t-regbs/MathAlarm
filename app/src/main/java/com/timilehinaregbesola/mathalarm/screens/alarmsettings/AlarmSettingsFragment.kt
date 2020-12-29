@@ -11,6 +11,7 @@ import android.view.*
 import android.widget.ArrayAdapter
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.fragment.navArgs
 import com.afollestad.materialdialogs.MaterialDialog
@@ -24,6 +25,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import org.koin.android.ext.android.bind
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.util.*
 import kotlin.collections.ArrayList
@@ -84,17 +86,21 @@ class AlarmSettingsFragment : Fragment() {
         }
     }
 
+    private suspend fun getTime(alarm: Alarm): CharSequence? = withContext(Dispatchers.IO) {
+        alarm.getFormatTime()
+    }
+
     private fun setupObservers() {
+        settingsViewModel.removeSpinner.observe(viewLifecycleOwner) {
+            binding.timeProgress.visibility = View.GONE
+        }
         settingsViewModel.alarm.observe(viewLifecycleOwner) {
             it?.let { alarm ->
                 mAlarm = alarm
                 var mRepeat = alarm.repeatDays
-//                binding.timeProgress.visibility = View.VISIBLE
-                GlobalScope.launch {
-                    binding.settingsTime.text = mAlarm.getFormatTime()
-                    withContext(Dispatchers.Main) {
-                        binding.timeProgress.visibility = View.GONE
-                    }
+                viewLifecycleOwner.lifecycleScope.launch {
+                    binding.settingsTime.text = getTime(mAlarm)
+                    settingsViewModel.stopLoading()
                 }
                 binding.settingsTime.setOnClickListener {
                     val timeCal = Calendar.getInstance()

@@ -14,7 +14,9 @@ class AlarmSettingsViewModel(private val repository: AlarmRepository) : ViewMode
     private val _navigateToAlarmMath = MutableLiveData<Long>()
     val navigateToAlarmMath
         get() = _navigateToAlarmMath
-
+    private val _removeSpinner = MutableLiveData<Boolean>()
+    val removeSpinner
+        get() = _removeSpinner
     private var _latestAlarm = MutableLiveData<Alarm?>()
     val latestAlarm: LiveData<Alarm?>
         get() = _latestAlarm
@@ -68,5 +70,9 @@ class AlarmSettingsViewModel(private val repository: AlarmRepository) : ViewMode
 
     fun onAlarmMathNavigated() {
         _navigateToAlarmMath.value = null
+    }
+
+    fun stopLoading() {
+        _removeSpinner.postValue(true)
     }
 }
