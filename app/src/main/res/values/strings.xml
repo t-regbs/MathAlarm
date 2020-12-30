@@ -1,6 +1,4 @@
 <resources>
-    <string name="app_name">Math Alarm</string>
-
     <string name="time_picker_title">Set Alarm Time:</string>
 
     <string name="settings_time_title">Set Alarm Time</string>
