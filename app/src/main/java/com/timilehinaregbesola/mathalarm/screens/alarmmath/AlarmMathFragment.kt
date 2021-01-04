@@ -1,6 +1,7 @@
 package com.timilehinaregbesola.mathalarm.screens.alarmmath
 
 import android.app.Activity
+import android.app.Application
 import android.app.KeyguardManager
 import android.app.NotificationManager
 import android.content.Context
@@ -142,7 +143,7 @@ class AlarmMathFragment : Fragment() {
                         Runnable {
                             while (vibrateRunning) {
                                 val v =
-                                    requireActivity().getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+                                    activity?.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
                                 if (Build.VERSION.SDK_INT >= 26) {
                                     v.vibrate(VibrationEffect.createOneShot(1000, 10))
                                 } else {
