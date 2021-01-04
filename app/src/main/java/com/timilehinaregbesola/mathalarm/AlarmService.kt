@@ -33,7 +33,7 @@ class AlarmService : JobIntentService() {
         Timber.d("service intent")
         val notification: Notification
         val dataSource: AlarmDao by inject()
-        val id = intent.extras?.getString(ALARM_EXTRA)!!.toLong()
+        val id = intent.extras?.getString(ALARM_EXTRA)?.toLong()
         val alarm = dataSource.search(id)
         val tone = alarm.alarmTone
         notification = setNotification(
