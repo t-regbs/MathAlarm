@@ -37,7 +37,7 @@ class AlarmService : JobIntentService() {
         val alarm = dataSource.search(id)
         val tone = alarm.alarmTone
         notification = setNotification(
-            applicationContext, "Time for alarm!!!", intent.extras!![ALARM_EXTRA].toString(), tone.toUri()
+            applicationContext, "Time for alarm!!!", (intent.extras ?: throw NullPointerException("Expression 'intent.extras' must not be null"))[ALARM_EXTRA].toString(), tone.toUri()
         )
         notification.flags = notification.flags or Notification.FLAG_INSISTENT
         val notificationManager = ContextCompat.getSystemService(
