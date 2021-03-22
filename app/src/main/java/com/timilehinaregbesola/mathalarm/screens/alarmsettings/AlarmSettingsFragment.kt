@@ -22,10 +22,8 @@ import com.timilehinaregbesola.mathalarm.databinding.FragmentAlarmSettingsBindin
 import com.timilehinaregbesola.mathalarm.screens.alarmmath.AlarmMathActivity
 import com.timilehinaregbesola.mathalarm.utils.*
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.koin.android.ext.android.bind
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.util.*
 import kotlin.collections.ArrayList
@@ -261,10 +259,7 @@ class AlarmSettingsFragment : Fragment() {
                     while (!alarmsCursor.isAfterLast && alarmsCursor.moveToNext()) {
                         val currentPosition = alarmsCursor.position
                         mAlarmTones[currentPosition] = ringtoneMgr.getRingtoneUri(currentPosition)
-                        toneItems.add(
-                            ringtoneMgr.getRingtone(currentPosition)
-                                .getTitle(activity)
-                        )
+                        toneItems.add(ringtoneMgr.getRingtone(currentPosition).getTitle(activity))
                         if (currentTone == mAlarmTones[currentPosition].toString()) {
                             previousPosition = currentPosition
                         }
