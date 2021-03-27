@@ -5,7 +5,7 @@
     <data>
         <variable
             name="alarm"
-            type="com.timilehinaregbesola.mathalarm.database.Alarm" />
+            type="com.timilehinaregbesola.mathalarm.domain.model.Alarm" />
         <variable
             name="clickListener"
             type="com.timilehinaregbesola.mathalarm.screens.alarmlist.AlarmListener" />

@@ -2,9 +2,10 @@ package com.timilehinaregbesola.mathalarm.app.di
 
 import android.app.Application
 import androidx.room.Room
-import com.timilehinaregbesola.mathalarm.database.AlarmDao
-import com.timilehinaregbesola.mathalarm.database.AlarmDatabase
-import com.timilehinaregbesola.mathalarm.database.AlarmRepository
+import com.timilehinaregbesola.mathalarm.framework.RoomAlarmDataSource
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmDao
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmDatabase
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.screens.alarmlist.AlarmListViewModel
 import com.timilehinaregbesola.mathalarm.screens.alarmmath.AlarmMathViewModel
 import com.timilehinaregbesola.mathalarm.screens.alarmsettings.AlarmSettingsViewModel
@@ -31,14 +32,19 @@ val databaseModule = module {
         return database.alarmDatabaseDao
     }
 
+    fun provideAlarmMapper(): AlarmMapper {
+        return AlarmMapper()
+    }
+
     single { provideDatabase(androidApplication()) }
     single { provideAlarmDao(get()) }
+    single { provideAlarmMapper() }
 }
 
 val repositoryModule = module {
-    fun provideRepository(alarmDao: AlarmDao): AlarmRepository {
-        return AlarmRepository(alarmDao)
+    fun provideDataSource(alarmDao: AlarmDao, mapper: AlarmMapper): RoomAlarmDataSource {
+        return RoomAlarmDataSource(alarmDao, mapper)
     }
 
-    single { provideRepository(get()) }
+    single { provideDataSource(get(), get()) }
 }

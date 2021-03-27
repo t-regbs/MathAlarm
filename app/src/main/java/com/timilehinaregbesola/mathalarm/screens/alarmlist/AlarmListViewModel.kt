@@ -3,13 +3,13 @@ package com.timilehinaregbesola.mathalarm.screens.alarmlist
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.timilehinaregbesola.mathalarm.database.Alarm
-import com.timilehinaregbesola.mathalarm.database.AlarmRepository
+import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.framework.RoomAlarmDataSource
 import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
 import kotlinx.coroutines.* // ktlint-disable no-wildcard-imports
 import java.util.* // ktlint-disable no-wildcard-imports
 
-class AlarmListViewModel(private val repository: AlarmRepository) : ViewModel() {
+class AlarmListViewModel(private val repository: RoomAlarmDataSource) : ViewModel() {
     var addClicked = MutableLiveData<Boolean?>()
     val alarms = MutableLiveData<List<Alarm>>()
 
@@ -19,7 +19,7 @@ class AlarmListViewModel(private val repository: AlarmRepository) : ViewModel() 
 
     fun onUpdate(alarm: Alarm) {
         viewModelScope.launch {
-            repository.update(alarm)
+            repository.updateAlarm(alarm)
             getAlarms()
         }
     }
@@ -41,7 +41,7 @@ class AlarmListViewModel(private val repository: AlarmRepository) : ViewModel() 
         sb.setCharAt(dayOfTheWeek, 'T')
         new.repeatDays = sb.toString()
         viewModelScope.launch {
-            val id = repository.add(new)
+            val id = repository.addAlarm(new)
             addClicked.value = true
             _navigateToAlarmSettings.value = id
         }
@@ -57,7 +57,7 @@ class AlarmListViewModel(private val repository: AlarmRepository) : ViewModel() 
 
     fun onDelete(alarm: Alarm) {
         viewModelScope.launch {
-            repository.delete(alarm)
+            repository.deleteAlarm(alarm)
             getAlarms()
         }
     }

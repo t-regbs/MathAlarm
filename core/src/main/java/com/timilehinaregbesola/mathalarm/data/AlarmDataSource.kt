@@ -1,6 +1,6 @@
 package com.timilehinaregbesola.mathalarm.data
 
-import com.timilehinaregbesola.mathalarm.domain.Alarm
+import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 
 interface AlarmDataSource {
     suspend fun addAlarm(alarm: Alarm): Long

@@ -1,4 +1,4 @@
-package com.timilehinaregbesola.mathalarm.domain
+package com.timilehinaregbesola.mathalarm.domain.model
 
 import java.util.*
 

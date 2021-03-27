@@ -1,6 +1,6 @@
 package com.timilehinaregbesola.mathalarm.data
 
-import com.timilehinaregbesola.mathalarm.domain.Alarm
+import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 
 class AlarmRepository(private val dataSource: AlarmDataSource) {
     suspend fun addAlarm(alarm: Alarm) = dataSource.addAlarm(alarm)

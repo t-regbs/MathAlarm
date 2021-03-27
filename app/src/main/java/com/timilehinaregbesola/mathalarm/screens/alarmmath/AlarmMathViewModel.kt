@@ -7,11 +7,11 @@ import android.content.Intent
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.timilehinaregbesola.mathalarm.database.Alarm
-import com.timilehinaregbesola.mathalarm.database.AlarmRepository
+import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.framework.RoomAlarmDataSource
 import kotlinx.coroutines.*
 
-class AlarmMathViewModel(private val repository: AlarmRepository) : ViewModel() {
+class AlarmMathViewModel(private val repository: RoomAlarmDataSource) : ViewModel() {
     var alarm = MutableLiveData<Alarm?>()
     var currentAlarm = MutableLiveData<Alarm?>()
 
@@ -23,7 +23,7 @@ class AlarmMathViewModel(private val repository: AlarmRepository) : ViewModel() 
 
     fun onUpdate(alarm: Alarm) {
         viewModelScope.launch {
-            repository.update(alarm)
+            repository.updateAlarm(alarm)
             currentAlarm.value = repository.getLatestAlarmFromDatabase()
         }
     }

@@ -9,7 +9,7 @@ import android.text.format.DateFormat
 import android.widget.Toast
 import com.timilehinaregbesola.mathalarm.AlarmReceiver
 import com.timilehinaregbesola.mathalarm.R
-import com.timilehinaregbesola.mathalarm.database.Alarm
+import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import timber.log.Timber
 import java.util.*
 
@@ -174,7 +174,7 @@ fun Alarm.cancelAlarm(context: Context) {
 }
 
 // Used for displaying the toast for the the remaining time until the next alarm
-fun Alarm.getTimeLeftMessage(context: Context): String? {
+fun Alarm.getTimeLeftMessage(context: Context): String {
     val message: String
     val cal = Calendar.getInstance()
     cal[Calendar.HOUR_OF_DAY] = hour

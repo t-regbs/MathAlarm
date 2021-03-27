@@ -17,8 +17,8 @@ import androidx.navigation.fragment.navArgs
 import com.afollestad.materialdialogs.MaterialDialog
 import com.afollestad.materialdialogs.datetime.timePicker
 import com.timilehinaregbesola.mathalarm.R
-import com.timilehinaregbesola.mathalarm.database.Alarm
 import com.timilehinaregbesola.mathalarm.databinding.FragmentAlarmSettingsBinding
+import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.screens.alarmmath.AlarmMathActivity
 import com.timilehinaregbesola.mathalarm.utils.*
 import kotlinx.coroutines.Dispatchers
@@ -56,7 +56,7 @@ class AlarmSettingsFragment : Fragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
-    ): View? {
+    ): View {
         isFromAdd = args.add
         key = args.alarmKey
 

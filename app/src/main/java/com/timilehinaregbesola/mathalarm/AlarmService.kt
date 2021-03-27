@@ -7,7 +7,8 @@ import android.content.Intent
 import androidx.core.app.JobIntentService
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
-import com.timilehinaregbesola.mathalarm.database.AlarmDao
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmDao
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.utils.ALARM_EXTRA
 import com.timilehinaregbesola.mathalarm.utils.scheduleAlarm
 import com.timilehinaregbesola.mathalarm.utils.setNotification
@@ -33,8 +34,9 @@ class AlarmService : JobIntentService() {
         Timber.d("service intent")
         val notification: Notification
         val dataSource: AlarmDao by inject()
+        val mapper: AlarmMapper by inject()
         val id = intent.extras?.getString(ALARM_EXTRA)?.toLong()
-        val alarm = dataSource.search(id)
+        val alarm = mapper.mapToDomainModel(dataSource.search(id))
         val tone = alarm.alarmTone
         notification = setNotification(
             applicationContext, "Time for alarm!!!", (intent.extras ?: throw NullPointerException("Expression 'intent.extras' must not be null"))[ALARM_EXTRA].toString(), tone.toUri()

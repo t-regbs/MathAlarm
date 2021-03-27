@@ -8,8 +8,9 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.timilehinaregbesola.mathalarm.R
-import com.timilehinaregbesola.mathalarm.database.Alarm
 import com.timilehinaregbesola.mathalarm.databinding.AlarmItemBinding
+import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.utils.* // ktlint-disable no-wildcard-imports
 
 class AlarmListAdapter(
@@ -161,5 +162,5 @@ class AlarmDiffCallback : DiffUtil.ItemCallback<Alarm>() {
 }
 
 class AlarmListener(val clickListener: (alarmId: Long) -> Unit) {
-    fun onclick(alarm: Alarm) = clickListener(alarm.alarmId)
+    fun onclick(alarm: AlarmEntity) = clickListener(alarm.alarmId)
 }
