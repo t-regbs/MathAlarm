@@ -26,6 +26,8 @@ class AlarmListAdapter(
     }
 
     fun deleteTask(position: Int) {
+//        val alarm = getItem(position)
+//        alarm.cancelAlarm(this)
         viewModel.onDelete(getItem(position))
     }
 

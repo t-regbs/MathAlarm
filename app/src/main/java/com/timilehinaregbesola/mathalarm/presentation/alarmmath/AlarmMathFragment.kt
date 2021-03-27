@@ -90,6 +90,7 @@ class AlarmMathFragment : Fragment() {
                 currAlarm.repeatDays = repeatDays.toString()
                 if (currAlarm.repeatDays == "FFFFFFF") {
                     currAlarm.isOn = false
+                    currAlarm.cancelAlarm(requireContext())
                 }
                 alarmMathViewModel.onUpdate(currAlarm)
             }
