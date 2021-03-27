@@ -1,4 +1,4 @@
-package com.timilehinaregbesola.mathalarm.screens.alarmlist
+package com.timilehinaregbesola.mathalarm.presentation.alarmlist
 
 import android.graphics.Rect
 import android.view.View

@@ -1,15 +1,15 @@
-package com.timilehinaregbesola.mathalarm.screens.alarmlist
+package com.timilehinaregbesola.mathalarm.presentation.alarmlist
 
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
-import com.timilehinaregbesola.mathalarm.framework.RoomAlarmDataSource
+import com.timilehinaregbesola.mathalarm.framework.Interactors
 import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
 import kotlinx.coroutines.* // ktlint-disable no-wildcard-imports
 import java.util.* // ktlint-disable no-wildcard-imports
 
-class AlarmListViewModel(private val repository: RoomAlarmDataSource) : ViewModel() {
+class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
     var addClicked = MutableLiveData<Boolean?>()
     val alarms = MutableLiveData<List<Alarm>>()
 
@@ -19,14 +19,14 @@ class AlarmListViewModel(private val repository: RoomAlarmDataSource) : ViewMode
 
     fun onUpdate(alarm: Alarm) {
         viewModelScope.launch {
-            repository.updateAlarm(alarm)
+            interactors.updateAlarm(alarm)
             getAlarms()
         }
     }
 
     fun getAlarms() {
         viewModelScope.launch {
-            val alarmList = repository.getAlarms()
+            val alarmList = interactors.getAlarms()
             alarms.postValue(alarmList)
         }
     }
@@ -41,7 +41,7 @@ class AlarmListViewModel(private val repository: RoomAlarmDataSource) : ViewMode
         sb.setCharAt(dayOfTheWeek, 'T')
         new.repeatDays = sb.toString()
         viewModelScope.launch {
-            val id = repository.addAlarm(new)
+            val id = interactors.addAlarm(new)
             addClicked.value = true
             _navigateToAlarmSettings.value = id
         }
@@ -57,14 +57,14 @@ class AlarmListViewModel(private val repository: RoomAlarmDataSource) : ViewMode
 
     fun onDelete(alarm: Alarm) {
         viewModelScope.launch {
-            repository.deleteAlarm(alarm)
+            interactors.deleteAlarm(alarm)
             getAlarms()
         }
     }
 
     fun onClear() {
         viewModelScope.launch {
-            repository.clear()
+            interactors.clearAlarms()
             getAlarms()
         }
     }

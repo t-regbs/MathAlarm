@@ -1,4 +1,4 @@
-package com.timilehinaregbesola.mathalarm.screens
+package com.timilehinaregbesola.mathalarm.presentation
 
 import android.os.Bundle
 import androidx.appcompat.app.AppCompatActivity

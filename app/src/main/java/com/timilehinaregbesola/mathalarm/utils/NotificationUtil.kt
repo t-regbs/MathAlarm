@@ -15,7 +15,7 @@ import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC
 import com.timilehinaregbesola.mathalarm.R
-import com.timilehinaregbesola.mathalarm.screens.alarmmath.AlarmMathActivity
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.AlarmMathActivity
 
 // Notification ID.
 private val NOTIFICATION_ID = 0

@@ -1,14 +1,14 @@
-package com.timilehinaregbesola.mathalarm.screens.alarmsettings
+package com.timilehinaregbesola.mathalarm.presentation.alarmsettings
 
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
-import com.timilehinaregbesola.mathalarm.framework.RoomAlarmDataSource
+import com.timilehinaregbesola.mathalarm.framework.Interactors
 import kotlinx.coroutines.*
 
-class AlarmSettingsViewModel(private val repository: RoomAlarmDataSource) : ViewModel() {
+class AlarmSettingsViewModel(private val interactors: Interactors) : ViewModel() {
     var alarm = MutableLiveData<Alarm?>()
 
     private val _navigateToAlarmMath = MutableLiveData<Long>()
@@ -28,43 +28,43 @@ class AlarmSettingsViewModel(private val repository: RoomAlarmDataSource) : View
 
     fun onUpdate(alarm: Alarm) {
         viewModelScope.launch {
-            repository.updateAlarm(alarm)
-            _latestAlarm.value = repository.getLatestAlarmFromDatabase()
+            interactors.updateAlarm(alarm)
+            _latestAlarm.value = interactors.getLatestAlarm()
         }
     }
 
     fun onDeleteFromId(alarmId: Long?) {
         viewModelScope.launch {
-            val alarm = repository.findAlarm(alarmId!!)
-            repository.deleteAlarm(alarm)
-            _latestAlarm.value = repository.getLatestAlarmFromDatabase()
+            val alarm = interactors.findAlarm(alarmId!!)
+            interactors.deleteAlarm(alarm)
+            _latestAlarm.value = interactors.getLatestAlarm()
         }
     }
 
     fun onDeleteAlarm(alarm: Alarm) {
         viewModelScope.launch {
-            repository.deleteAlarm(alarm)
-            _latestAlarm.value = repository.getLatestAlarmFromDatabase()
+            interactors.deleteAlarm(alarm)
+            _latestAlarm.value = interactors.getLatestAlarm()
         }
     }
 
     fun getAlarm(key: Long) = viewModelScope.launch {
-        val alarmFound = repository.findAlarm(key)
+        val alarmFound = interactors.findAlarm(key)
         alarm.postValue(alarmFound)
     }
 
     private fun initializeCurrentAlarm() {
         viewModelScope.launch {
-            _latestAlarm.value = repository.getLatestAlarmFromDatabase()
+            _latestAlarm.value = interactors.getLatestAlarm()
         }
     }
 
     // Called when add menu is pressed
     fun onAdd(newAlarm: Alarm) {
         viewModelScope.launch {
-            val id = repository.addAlarm(newAlarm)
+            val id = interactors.addAlarm(newAlarm)
             _navigateToAlarmMath.value = id
-            _latestAlarm.value = repository.getLatestAlarmFromDatabase()
+            _latestAlarm.value = interactors.getLatestAlarm()
         }
     }
 

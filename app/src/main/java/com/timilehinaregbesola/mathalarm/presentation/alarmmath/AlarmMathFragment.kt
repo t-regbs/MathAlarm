@@ -1,7 +1,6 @@
-package com.timilehinaregbesola.mathalarm.screens.alarmmath
+package com.timilehinaregbesola.mathalarm.presentation.alarmmath
 
 import android.app.Activity
-import android.app.Application
 import android.app.KeyguardManager
 import android.app.NotificationManager
 import android.content.Context

@@ -8,7 +8,7 @@
             type="com.timilehinaregbesola.mathalarm.domain.model.Alarm" />
         <variable
             name="clickListener"
-            type="com.timilehinaregbesola.mathalarm.screens.alarmlist.AlarmListener" />
+            type="com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListener" />
     </data>
 
     <RelativeLayout

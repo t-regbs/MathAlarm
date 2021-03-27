@@ -1,4 +1,4 @@
-package com.timilehinaregbesola.mathalarm.screens.alarmsettings
+package com.timilehinaregbesola.mathalarm.presentation.alarmsettings
 
 import android.app.Activity
 import android.content.Intent
@@ -19,7 +19,7 @@ import com.afollestad.materialdialogs.datetime.timePicker
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.databinding.FragmentAlarmSettingsBinding
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
-import com.timilehinaregbesola.mathalarm.screens.alarmmath.AlarmMathActivity
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.AlarmMathActivity
 import com.timilehinaregbesola.mathalarm.utils.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

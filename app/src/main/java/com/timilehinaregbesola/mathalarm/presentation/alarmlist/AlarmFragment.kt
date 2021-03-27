@@ -1,4 +1,4 @@
-package com.timilehinaregbesola.mathalarm.screens.alarmlist
+package com.timilehinaregbesola.mathalarm.presentation.alarmlist
 
 import android.os.Bundle
 import android.view.* // ktlint-disable no-wildcard-imports

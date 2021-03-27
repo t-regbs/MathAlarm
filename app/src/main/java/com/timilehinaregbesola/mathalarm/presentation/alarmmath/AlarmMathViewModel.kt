@@ -1,4 +1,4 @@
-package com.timilehinaregbesola.mathalarm.screens.alarmmath
+package com.timilehinaregbesola.mathalarm.presentation.alarmmath
 
 import android.app.AlarmManager
 import android.app.PendingIntent
@@ -8,23 +8,23 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
-import com.timilehinaregbesola.mathalarm.framework.RoomAlarmDataSource
+import com.timilehinaregbesola.mathalarm.framework.Interactors
 import kotlinx.coroutines.*
 
-class AlarmMathViewModel(private val repository: RoomAlarmDataSource) : ViewModel() {
+class AlarmMathViewModel(private val interactors: Interactors) : ViewModel() {
     var alarm = MutableLiveData<Alarm?>()
     var currentAlarm = MutableLiveData<Alarm?>()
 
     fun getAlarm(key: Long) = viewModelScope.launch {
-        val al = repository.getLatestAlarmFromDatabase()
-        val alarmFound = if (key == 0L) repository.findAlarm(al!!.alarmId) else repository.findAlarm(key)
+        val al = interactors.getLatestAlarm()
+        val alarmFound = if (key == 0L) interactors.findAlarm(al!!.alarmId) else interactors.findAlarm(key)
         alarm.postValue(alarmFound)
     }
 
     fun onUpdate(alarm: Alarm) {
         viewModelScope.launch {
-            repository.updateAlarm(alarm)
-            currentAlarm.value = repository.getLatestAlarmFromDatabase()
+            interactors.updateAlarm(alarm)
+            currentAlarm.value = interactors.getLatestAlarm()
         }
     }
 
@@ -50,7 +50,7 @@ class AlarmMathViewModel(private val repository: RoomAlarmDataSource) : ViewMode
 
     fun onClear() {
         viewModelScope.launch {
-            repository.clear()
+            interactors.clearAlarms()
             currentAlarm.value = null
         }
     }
