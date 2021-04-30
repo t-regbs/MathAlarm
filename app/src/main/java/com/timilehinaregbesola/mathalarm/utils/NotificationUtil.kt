@@ -88,7 +88,7 @@ fun setNotification(
                 .setStyle(bigPicStyle)
                 .setLargeIcon(alarmImage)
                 .setVisibility(VISIBILITY_PUBLIC)
-                .setSound(tone, AudioManager.STREAM_ALARM)
+//                .setSound(tone, AudioManager.STREAM_ALARM)
                 .setCategory(NotificationCompat.CATEGORY_ALARM)
                 .setVibrate(vibratePattern)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
