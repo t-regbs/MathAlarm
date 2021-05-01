@@ -8,6 +8,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.ItemTouchHelper
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.databinding.FragmentAlarmListBinding
+import com.timilehinaregbesola.mathalarm.utils.cancelAlarm
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class AlarmFragment : Fragment() {
@@ -109,6 +110,12 @@ class AlarmFragment : Fragment() {
                 builder.setCancelable(true)
 
                 builder.setPositiveButton("Yes") { dialog, _ ->
+                    val alarms = alarmListViewModel.alarms.value
+                    alarms?.forEach {
+                        if (it.isOn) {
+                            it.cancelAlarm(requireContext())
+                        }
+                    }
                     alarmListViewModel.onClear()
                     dialog.cancel()
                 }

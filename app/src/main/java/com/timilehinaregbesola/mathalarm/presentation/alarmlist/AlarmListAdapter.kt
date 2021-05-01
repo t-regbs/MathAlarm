@@ -1,5 +1,6 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist
 
+import android.content.Context
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.Toast
@@ -11,11 +12,15 @@ import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.databinding.AlarmItemBinding
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.utils.* // ktlint-disable no-wildcard-imports
+import org.koin.core.KoinComponent
+import org.koin.core.get
 
 class AlarmListAdapter(
     val viewModel: AlarmListViewModel,
     val clickListener: AlarmListener
-) : ListAdapter<Alarm, AlarmListAdapter.ViewHolder>(AlarmDiffCallback()) {
+) : ListAdapter<Alarm, AlarmListAdapter.ViewHolder>(AlarmDiffCallback()), KoinComponent {
+
+    private val context: Context = get()
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
         return ViewHolder.from(parent)
@@ -26,9 +31,9 @@ class AlarmListAdapter(
     }
 
     fun deleteTask(position: Int) {
-//        val alarm = getItem(position)
-//        alarm.cancelAlarm(this)
-        viewModel.onDelete(getItem(position))
+        val alarm = getItem(position)
+        alarm.cancelAlarm(context)
+        viewModel.onDelete(alarm)
     }
 
     class ViewHolder private constructor(val binding: AlarmItemBinding) : RecyclerView.ViewHolder(binding.root) {
