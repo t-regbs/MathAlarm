@@ -13,8 +13,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.timilehinaregbesola.composealarm.ui.teall
-import com.timilehinaregbesola.composealarm.ui.unSelectedDay
+import com.timilehinaregbesola.mathalarm.presentation.ui.teall
+import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
 
 @Composable
 fun RingDayChip(

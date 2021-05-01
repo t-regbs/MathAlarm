@@ -1,14 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <navigation xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main_navigation"
     app:startDestination="@id/alarmFragment">
     <fragment
         android:id="@+id/alarmFragment"
         android:name="com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmFragment"
-        android:label="AlarmFragment"
-        tools:layout="@layout/fragment_alarm_list">
+        android:label="AlarmFragment">
         <action
             android:id="@+id/action_alarmFragment_to_alarmSettingsFragment"
             app:destination="@id/alarmSettingsFragment"
@@ -17,8 +15,7 @@
     <fragment
         android:id="@+id/alarmSettingsFragment"
         android:name="com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AlarmSettingsFragment"
-        android:label="AlarmSettingsFragment"
-        tools:layout="@layout/fragment_alarm_settings">
+        android:label="AlarmSettingsFragment">
         <argument
             android:name="alarmKey"
             app:argType="long" />

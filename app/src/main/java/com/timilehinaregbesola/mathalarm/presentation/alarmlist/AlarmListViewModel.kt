@@ -1,5 +1,8 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist
 
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.mutableStateOf
+import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -11,11 +14,15 @@ import java.util.* // ktlint-disable no-wildcard-imports
 
 class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
     var addClicked = MutableLiveData<Boolean?>()
-    val alarms = MutableLiveData<List<Alarm>>()
+    val _alarms = MutableLiveData<List<Alarm>>()
+    val alarms: LiveData<List<Alarm>>
+        get() = _alarms
 
     private val _navigateToAlarmSettings = MutableLiveData<Long?>()
     val navigateToAlarmSettings
         get() = _navigateToAlarmSettings
+
+    val alarm: MutableState<Alarm?> = mutableStateOf(null)
 
     fun onUpdate(alarm: Alarm) {
         viewModelScope.launch {
@@ -27,8 +34,13 @@ class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
     fun getAlarms() {
         viewModelScope.launch {
             val alarmList = interactors.getAlarms()
-            alarms.postValue(alarmList)
+            _alarms.postValue(alarmList)
         }
+    }
+
+    fun getAlarm(key: Long) = viewModelScope.launch {
+        val alarmFound = interactors.findAlarm(key)
+        alarm.value = alarmFound
     }
 
     // Called when add menu is pressed

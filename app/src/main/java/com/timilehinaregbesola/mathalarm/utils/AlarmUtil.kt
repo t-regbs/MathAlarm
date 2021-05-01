@@ -10,6 +10,7 @@ import android.widget.Toast
 import com.timilehinaregbesola.mathalarm.AlarmReceiver
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import timber.log.Timber
 import java.util.*
 
 const val SUN = 0
@@ -37,8 +38,8 @@ fun Alarm.getFormatTime(): CharSequence? {
 }
 
 // Schedules all the alarm of the object at once including repeating ones
-fun Alarm.scheduleAlarm(context: Context): Boolean {
-//    Timber.d("Schedule alarm..")
+fun Alarm.scheduleAlarm(context: Context, reschedule: Boolean): Boolean {
+    Timber.d("Schedule alarm..")
     val alarm = Intent(context, AlarmReceiver::class.java)
     alarm.putExtra(ALARM_EXTRA, alarmId)
     val alarmIntent: MutableList<PendingIntent> = ArrayList()
@@ -67,7 +68,7 @@ fun Alarm.scheduleAlarm(context: Context): Boolean {
             var daysUntilAlarm: Int
             val cal = initCalendar()
             val currentDay = getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
-//            Timber.d("current day: $currentDay")
+            Timber.d("current day: $currentDay")
             if (currentDay > i ||
                 (currentDay == i && cal.timeInMillis < System.currentTimeMillis())
             ) {
@@ -77,27 +78,28 @@ fun Alarm.scheduleAlarm(context: Context): Boolean {
                 // end of week + 1 (to sunday) + day of week alarm is on = 3 + 1 + 2 = 6
                 daysUntilAlarm = SAT - currentDay + 1 + i
                 cal.add(Calendar.DAY_OF_YEAR, daysUntilAlarm)
-//                Timber.d("days until alarm: $daysUntilAlarm")
+                Timber.d("days until alarm: $daysUntilAlarm")
             } else {
                 daysUntilAlarm = i - currentDay
                 cal.add(Calendar.DAY_OF_YEAR, daysUntilAlarm)
-//                Timber.d("days until alarm: $daysUntilAlarm")
+                Timber.d("days until alarm: $daysUntilAlarm")
             }
             val stringId: StringBuilder = StringBuilder().append(i)
                 .append(hour).append(minute)
             val id = stringId.toString().split("-").joinToString("")
             val intentId = id.toInt()
-//            Timber.d("intent id: $intentId")
+            Timber.d("intent id: $intentId")
             // check if a previous alarm has been set
             if (PendingIntent.getBroadcast(
-                    context, intentId, alarm,
-                    PendingIntent.FLAG_NO_CREATE
+                    context, intentId, alarm, PendingIntent.FLAG_NO_CREATE
                 ) != null
             ) {
-                Toast.makeText(
-                    context, context.getString(R.string.alarm_duplicate_toast_text),
-                    Toast.LENGTH_SHORT
-                ).show()
+                if (!reschedule) {
+                    Toast.makeText(
+                        context, context.getString(R.string.alarm_duplicate_toast_text),
+                        Toast.LENGTH_SHORT
+                    ).show()
+                }
                 return false
             }
             val pendingIntent = PendingIntent.getBroadcast(
@@ -112,20 +114,12 @@ fun Alarm.scheduleAlarm(context: Context): Boolean {
         val cal = time[i]
         val alarmManager = context
             .getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        if (repeat) {
-            alarmManager.setRepeating(
-                AlarmManager.RTC_WAKEUP, cal.timeInMillis,
-                AlarmManager.INTERVAL_DAY * 7, pendingIntent
-            )
-//            Timber.d("scheduled new alarm")
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
         } else {
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
-            } else {
-                alarmManager.setExact(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
-            }
-//            Timber.d("scheduled new alarm")
+            alarmManager.setExact(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
         }
+        Timber.d("scheduled new alarm")
     }
     return true
 }

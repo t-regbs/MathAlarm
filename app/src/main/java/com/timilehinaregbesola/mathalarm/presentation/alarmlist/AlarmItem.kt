@@ -88,7 +88,7 @@ fun AlarmItem(
                             checkedState.value = it
                             alarm.isOn = it
                             if (alarm.isOn) {
-                                if (alarm.scheduleAlarm(context)) {
+                                if (alarm.scheduleAlarm(context, false)) {
                                     scope.launch {
                                         when (
                                             scaffoldState.snackbarHostState.showSnackbar(

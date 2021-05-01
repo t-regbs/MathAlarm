@@ -3,6 +3,7 @@ package com.timilehinaregbesola.mathalarm.utils
 import androidx.fragment.app.Fragment
 import androidx.navigation.fragment.findNavController
 import com.timilehinaregbesola.mathalarm.R
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmFragmentDirections
 import java.security.InvalidParameterException
 
 enum class Screen { AlarmList, AlarmSettings, AlarmMath }
@@ -17,7 +18,7 @@ fun Fragment.navigate(to: Screen, from: Screen, alarmId: Long? = null, isAdd: Bo
         }
         Screen.AlarmSettings -> {
             findNavController().navigate(
-                AlarmListFragmentDirections
+                AlarmFragmentDirections
                     .actionAlarmFragmentToAlarmSettingsFragment(alarmId!!, isAdd!!)
             )
         }

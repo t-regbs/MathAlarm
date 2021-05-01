@@ -1,4 +1,4 @@
-package com.timilehinaregbesola.composealarm.ui
+package com.timilehinaregbesola.mathalarm.presentation.ui
 
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.Shapes
