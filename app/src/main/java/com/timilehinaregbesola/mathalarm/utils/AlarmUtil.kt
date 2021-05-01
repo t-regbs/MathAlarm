@@ -10,7 +10,6 @@ import android.widget.Toast
 import com.timilehinaregbesola.mathalarm.AlarmReceiver
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
-import timber.log.Timber
 import java.util.*
 
 const val SUN = 0
@@ -24,6 +23,9 @@ const val EASY = 0
 const val MEDIUM = 1
 const val HARD = 2
 
+val days = listOf("S", "M", "T", "W", "T", "F", "S")
+val fullDays = listOf("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+
 const val ALARM_EXTRA = "alarm_extra"
 
 // Get the formatted time (example: 12:00 AM)
@@ -35,8 +37,8 @@ fun Alarm.getFormatTime(): CharSequence? {
 }
 
 // Schedules all the alarm of the object at once including repeating ones
-fun Alarm.scheduleAlarm(context: Context, reschedule: Boolean): Boolean {
-    Timber.d("Schedule alarm..")
+fun Alarm.scheduleAlarm(context: Context): Boolean {
+//    Timber.d("Schedule alarm..")
     val alarm = Intent(context, AlarmReceiver::class.java)
     alarm.putExtra(ALARM_EXTRA, alarmId)
     val alarmIntent: MutableList<PendingIntent> = ArrayList()
@@ -65,7 +67,7 @@ fun Alarm.scheduleAlarm(context: Context, reschedule: Boolean): Boolean {
             var daysUntilAlarm: Int
             val cal = initCalendar()
             val currentDay = getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
-            Timber.d("current day: $currentDay")
+//            Timber.d("current day: $currentDay")
             if (currentDay > i ||
                 (currentDay == i && cal.timeInMillis < System.currentTimeMillis())
             ) {
@@ -75,28 +77,27 @@ fun Alarm.scheduleAlarm(context: Context, reschedule: Boolean): Boolean {
                 // end of week + 1 (to sunday) + day of week alarm is on = 3 + 1 + 2 = 6
                 daysUntilAlarm = SAT - currentDay + 1 + i
                 cal.add(Calendar.DAY_OF_YEAR, daysUntilAlarm)
-                Timber.d("days until alarm: $daysUntilAlarm")
+//                Timber.d("days until alarm: $daysUntilAlarm")
             } else {
                 daysUntilAlarm = i - currentDay
                 cal.add(Calendar.DAY_OF_YEAR, daysUntilAlarm)
-                Timber.d("days until alarm: $daysUntilAlarm")
+//                Timber.d("days until alarm: $daysUntilAlarm")
             }
             val stringId: StringBuilder = StringBuilder().append(i)
                 .append(hour).append(minute)
             val id = stringId.toString().split("-").joinToString("")
             val intentId = id.toInt()
-            Timber.d("intent id: $intentId")
+//            Timber.d("intent id: $intentId")
             // check if a previous alarm has been set
             if (PendingIntent.getBroadcast(
-                    context, intentId, alarm, PendingIntent.FLAG_NO_CREATE
+                    context, intentId, alarm,
+                    PendingIntent.FLAG_NO_CREATE
                 ) != null
             ) {
-                if (!reschedule) {
-                    Toast.makeText(
-                        context, context.getString(R.string.alarm_duplicate_toast_text),
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
+                Toast.makeText(
+                    context, context.getString(R.string.alarm_duplicate_toast_text),
+                    Toast.LENGTH_SHORT
+                ).show()
                 return false
             }
             val pendingIntent = PendingIntent.getBroadcast(
@@ -111,12 +112,20 @@ fun Alarm.scheduleAlarm(context: Context, reschedule: Boolean): Boolean {
         val cal = time[i]
         val alarmManager = context
             .getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-            alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
+        if (repeat) {
+            alarmManager.setRepeating(
+                AlarmManager.RTC_WAKEUP, cal.timeInMillis,
+                AlarmManager.INTERVAL_DAY * 7, pendingIntent
+            )
+//            Timber.d("scheduled new alarm")
         } else {
-            alarmManager.setExact(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
+            } else {
+                alarmManager.setExact(AlarmManager.RTC_WAKEUP, cal.timeInMillis, pendingIntent)
+            }
+//            Timber.d("scheduled new alarm")
         }
-        Timber.d("scheduled new alarm")
     }
     return true
 }
@@ -174,7 +183,7 @@ fun Alarm.cancelAlarm(context: Context) {
 }
 
 // Used for displaying the toast for the the remaining time until the next alarm
-fun Alarm.getTimeLeftMessage(context: Context): String {
+fun Alarm.getTimeLeftMessage(context: Context): String? {
     val message: String
     val cal = Calendar.getInstance()
     cal[Calendar.HOUR_OF_DAY] = hour
@@ -220,20 +229,17 @@ fun Alarm.getTimeLeftMessage(context: Context): String {
     val minutes = (remainderTime / (1000 * 60) % 60).toInt()
     val hours = (remainderTime / (1000 * 60 * 60) % 24).toInt()
     val days = (remainderTime / (1000 * 60 * 60 * 24)).toInt()
-    val mString: String
-    val hString: String
-    val dString: String
-    mString = if (minutes == 1) {
+    val mString: String = if (minutes == 1) {
         context.getString(R.string.alarm_minute)
     } else {
         context.getString(R.string.alarm_minutes)
     }
-    hString = if (hours == 1) {
+    val hString: String = if (hours == 1) {
         context.getString(R.string.alarm_hour)
     } else {
         context.getString(R.string.alarm_hours)
     }
-    dString = if (days == 1) {
+    val dString: String = if (days == 1) {
         context.getString(R.string.alarm_day)
     } else {
         context.getString(R.string.alarm_days)

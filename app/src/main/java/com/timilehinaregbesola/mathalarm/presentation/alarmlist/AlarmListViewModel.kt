@@ -13,7 +13,7 @@ class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
     var addClicked = MutableLiveData<Boolean?>()
     val alarms = MutableLiveData<List<Alarm>>()
 
-    private val _navigateToAlarmSettings = MutableLiveData<Long>()
+    private val _navigateToAlarmSettings = MutableLiveData<Long?>()
     val navigateToAlarmSettings
         get() = _navigateToAlarmSettings
 
