@@ -4,13 +4,13 @@
 
     <item
         android:id="@+id/fragment_clear_alarm_menu"
-        android:icon="@drawable/ic_clear"
+        android:icon="@drawable/outline_delete_sweep_white_36"
         android:title="@string/clear_alarms"
         app:showAsAction="ifRoom|withText" />
 
     <item
         android:id="@+id/fragment_add_alarm_menu"
-        android:icon="@drawable/ic_content_add"
+        android:icon="@drawable/outline_add_white_36"
         android:title="@string/menu_add_alarm"
         app:showAsAction="ifRoom|withText" />
 
