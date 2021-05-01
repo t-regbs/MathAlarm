@@ -51,7 +51,7 @@ class AlarmFragment : Fragment() {
 //                                navigate(Screen.AlarmSettings, Screen.AlarmList, id, add!!)
 
                             if (alarms.isEmpty()) {
-                                EmptyScreen(alarmListViewModel)
+                                EmptyScreen(alarmListViewModel, alarm)
                             } else {
                                 ListDisplayScreen(alarms, alarmListViewModel, alarmId, add!!, alarm)
                             }

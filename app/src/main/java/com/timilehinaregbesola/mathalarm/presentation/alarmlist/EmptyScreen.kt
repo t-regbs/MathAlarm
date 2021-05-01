@@ -15,20 +15,27 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.timilehinaregbesola.mathalarm.R
+import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.components.AddAlarmFab
 import com.timilehinaregbesola.mathalarm.presentation.components.ClearDialog
 import com.timilehinaregbesola.mathalarm.presentation.components.ListTopAppBar
 
 @ExperimentalMaterialApi
 @Composable
-fun EmptyScreen(viewModel: AlarmListViewModel) {
+fun EmptyScreen(
+    viewModel: AlarmListViewModel,
+    newAlarm: Alarm?
+) {
     val openDialog = remember { mutableStateOf(false) }
     val scaffoldState = rememberBottomSheetScaffoldState()
     val scope = rememberCoroutineScope()
     Surface(modifier = Modifier.fillMaxSize()) {
         BottomSheetScaffold(
-            sheetContent = {},
+            sheetContent = {
+                AlarmBottomSheet(true, newAlarm, viewModel, scope, scaffoldState)
+            },
             sheetPeekHeight = 0.dp,
+            scaffoldState = scaffoldState,
             topBar = {
                 ListTopAppBar(openDialog)
             }
