@@ -20,6 +20,7 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.components.RingDayChip
 import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
 import com.timilehinaregbesola.mathalarm.utils.days
+import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
 import com.timilehinaregbesola.mathalarm.utils.getFormatTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -72,7 +73,12 @@ fun AlarmBottomSheet(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             for (day in days) {
-                val checkedState = remember { mutableStateOf(false) }
+                val index = days.indexOf(day)
+                var sel: Boolean = false
+                if (activeAlarm != null) {
+                    sel = activeAlarm.repeatDays[index] == 'T'
+                }
+                val checkedState = remember { mutableStateOf(sel) }
                 RingDayChip(
                     day = day,
                     selected = checkedState.value,
