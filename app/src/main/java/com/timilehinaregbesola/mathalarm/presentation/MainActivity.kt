@@ -17,25 +17,12 @@ import org.koin.androidx.viewmodel.ext.android.viewModel
 class MainActivity : AppCompatActivity() {
 
     private val mainViewModel by viewModel<AlarmListViewModel>()
-    private var add: Boolean? = false
 
     @ExperimentalFoundationApi
     @ExperimentalMaterialApi
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         window.makeTransparentStatusBar()
-
-//        var alarmId: Long? = null
-//        val alarm = mainViewModel.alarm.value
-//        mainViewModel.addClicked.observe(
-//            this,
-//            {
-//                if (it != null) {
-//                    add = it
-//                }
-//            }
-//        )
-
         setContent {
             MathAlarmTheme {
                 window.statusBarColor = MaterialTheme.colors.background.toArgb()
