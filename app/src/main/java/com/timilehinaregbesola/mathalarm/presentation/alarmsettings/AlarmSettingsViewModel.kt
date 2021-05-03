@@ -36,7 +36,9 @@ class AlarmSettingsViewModel(private val interactors: Interactors) : ViewModel()
     fun onDeleteFromId(alarmId: Long?) {
         viewModelScope.launch {
             val alarm = interactors.findAlarm(alarmId!!)
-            interactors.deleteAlarm(alarm)
+            if (alarm != null) {
+                interactors.deleteAlarm(alarm)
+            }
             _latestAlarm.value = interactors.getLatestAlarm()
         }
     }

@@ -25,10 +25,10 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
-        <activity android:name="com.timilehinaregbesola.mathalarm.presentation.alarmmath.AlarmMathActivity"
-            android:excludeFromRecents="true"
-            android:configChanges="orientation|screenSize">
-        </activity>
+<!--        <activity android:name="com.timilehinaregbesola.mathalarm.presentation.alarmmath.AlarmMathActivity"-->
+<!--            android:excludeFromRecents="true"-->
+<!--            android:configChanges="orientation|screenSize">-->
+<!--        </activity>-->
         <service android:name="com.timilehinaregbesola.mathalarm.AlarmService"
             android:enabled="true"
             android:exported="false"

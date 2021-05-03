@@ -41,7 +41,7 @@ fun AlarmItem(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight()
-            .padding(top = 16.dp, start = 24.dp, end = 24.dp),
+            .padding(top = 8.dp, bottom = 8.dp, start = 24.dp, end = 24.dp),
         elevation = 4.dp,
         shape = MaterialTheme.shapes.medium.copy(CornerSize(8.dp))
     ) {

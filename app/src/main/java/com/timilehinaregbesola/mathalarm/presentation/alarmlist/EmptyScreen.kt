@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
@@ -15,24 +16,32 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.timilehinaregbesola.mathalarm.R
-import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.components.AddAlarmFab
 import com.timilehinaregbesola.mathalarm.presentation.components.ClearDialog
 import com.timilehinaregbesola.mathalarm.presentation.components.ListTopAppBar
+import kotlinx.coroutines.launch
 
 @ExperimentalMaterialApi
 @Composable
 fun EmptyScreen(
-    viewModel: AlarmListViewModel,
-    newAlarm: Alarm?
+    viewModel: AlarmListViewModel
 ) {
     val openDialog = remember { mutableStateOf(false) }
     val scaffoldState = rememberBottomSheetScaffoldState()
     val scope = rememberCoroutineScope()
-    Surface(modifier = Modifier.fillMaxSize()) {
+
+    val fromAdd = viewModel.addClicked.observeAsState()
+    viewModel.navigateToAlarmSettings.observeAsState().value.let { id ->
+        if (id != null) {
+            viewModel.getAlarm(id)
+        }
+    }
+    val alarm = viewModel.alarm.value
+
+    Surface(modifier = Modifier.fillMaxSize().padding(bottom = 24.dp)) {
         BottomSheetScaffold(
             sheetContent = {
-                AlarmBottomSheet(true, newAlarm, viewModel, scope, scaffoldState)
+                fromAdd.value?.let { AlarmBottomSheet(it, alarm, viewModel, scope, scaffoldState) }
             },
             sheetPeekHeight = 0.dp,
             scaffoldState = scaffoldState,
@@ -91,11 +100,15 @@ fun EmptyScreen(
                 }
                 AddAlarmFab(
                     modifier = Modifier
-                        .padding(bottom = 16.dp, end = 32.dp)
+                        .padding(bottom = 24.dp, end = 16.dp)
                         .align(Alignment.BottomEnd),
-                    viewModel,
-                    fabImage,
-                    scaffoldState
+                    fabImage = fabImage,
+                    onClick = {
+                        viewModel.onAdd()
+                        scope.launch {
+                            scaffoldState.bottomSheetState.expand()
+                        }
+                    }
                 )
             }
         }

@@ -7,7 +7,6 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
-import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
@@ -24,7 +23,7 @@ class AlarmFragment : Fragment() {
     ): View {
         return ComposeView(requireContext()).apply {
             // In order for savedState to work, the same ID needs to be used for all instances.
-            id = R.id.alarmFragment
+//            id = R.id.alarmFragment
 
             layoutParams = ViewGroup.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
@@ -50,11 +49,11 @@ class AlarmFragment : Fragment() {
                             }
 //                                navigate(Screen.AlarmSettings, Screen.AlarmList, id, add!!)
 
-                            if (alarms.isEmpty()) {
-                                EmptyScreen(alarmListViewModel, alarm)
-                            } else {
-                                ListDisplayScreen(alarms, alarmListViewModel, alarmId, add!!, alarm)
-                            }
+//                            if (alarms.isEmpty()) {
+//                                EmptyScreen(alarmListViewModel, alarm)
+//                            } else {
+//                                ListDisplayScreen(alarms, alarmListViewModel, alarmId, add!!, alarm)
+//                            }
                         }
                     }
                 }
