@@ -20,7 +20,6 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.components.RingDayChip
 import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
 import com.timilehinaregbesola.mathalarm.utils.days
-import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
 import com.timilehinaregbesola.mathalarm.utils.getFormatTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
@@ -176,7 +175,11 @@ fun AlarmBottomSheet(
             modifier = Modifier
                 .padding(top = 32.dp)
                 .fillMaxWidth(),
-            onClick = { /*TODO*/ },
+            onClick = {
+                if (activeAlarm != null) {
+//                    navController.navigate(Navigation.buildAlarmMathPath(alarmId = activeAlarm.alarmId))
+                }
+            },
             colors = ButtonDefaults.buttonColors(
                 backgroundColor = unSelectedDay,
                 contentColor = Color.Black
