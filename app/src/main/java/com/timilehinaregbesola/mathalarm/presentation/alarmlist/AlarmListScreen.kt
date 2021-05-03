@@ -15,6 +15,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavHostController
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.components.AddAlarmFab
@@ -24,6 +25,15 @@ import com.timilehinaregbesola.mathalarm.presentation.components.TimeLeftSnack
 import com.timilehinaregbesola.mathalarm.utils.SAT
 import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
 import java.util.*
+
+@Composable
+fun AlarmListScreen(navController: NavHostController) {
+    if (alarms.isEmpty()) {
+        EmptyScreen(alarmListViewModel, alarm)
+    } else {
+        ListDisplayScreen(alarms, alarmListViewModel, alarmId, add!!, alarm)
+    }
+}
 
 @ExperimentalFoundationApi
 @ExperimentalMaterialApi

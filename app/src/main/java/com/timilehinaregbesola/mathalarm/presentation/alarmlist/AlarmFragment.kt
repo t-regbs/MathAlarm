@@ -8,7 +8,7 @@ import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.platform.ComposeView
 import androidx.fragment.app.Fragment
 import com.timilehinaregbesola.mathalarm.R
-import com.timilehinaregbesola.mathalarm.presentation.ui.ComposeAlarmTheme
+import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class AlarmFragment : Fragment() {
@@ -41,7 +41,7 @@ class AlarmFragment : Fragment() {
                         }
                     }
                 )
-                ComposeAlarmTheme {
+                MathAlarmTheme {
                     alarmListViewModel._alarms.observeAsState().value?.let { alarms ->
                         alarmListViewModel.navigateToAlarmSettings.observeAsState().value.let { id ->
                             if (id != null) {
