@@ -1,6 +1,7 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material.*
@@ -21,8 +22,13 @@ import com.timilehinaregbesola.mathalarm.presentation.components.RingDayChip
 import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
 import com.timilehinaregbesola.mathalarm.utils.days
 import com.timilehinaregbesola.mathalarm.utils.getFormatTime
+import com.vanpra.composematerialdialogs.MaterialDialog
+import com.vanpra.composematerialdialogs.buttons
+import com.vanpra.composematerialdialogs.datetime.timepicker.timepicker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import java.time.LocalTime
+import java.util.*
 
 @ExperimentalMaterialApi
 @Composable
@@ -33,6 +39,23 @@ fun AlarmBottomSheet(
     scope: CoroutineScope,
     scaffoldState: BottomSheetScaffoldState
 ) {
+    var timeCal = LocalTime.now()
+    if (!fromAdd) {
+        timeCal = timeCal.withHour(activeAlarm!!.hour).withMinute(activeAlarm.minute)
+    }
+    val dialog = remember { MaterialDialog() }
+    dialog.build {
+        timepicker(initialTime = timeCal) { time ->
+            activeAlarm!!.hour = time.hour
+            activeAlarm.minute = time.minute
+            viewModel.onUpdate(activeAlarm)
+        }
+        buttons {
+            positiveButton("Ok")
+            negativeButton("Cancel")
+        }
+    }
+
     Column(
         Modifier
             .background(color = Color.White)
@@ -49,7 +72,13 @@ fun AlarmBottomSheet(
             shape = MaterialTheme.shapes.medium.copy(CornerSize(24.dp))
         ) {
             Row(
-                modifier = Modifier.fillMaxSize(),
+                modifier = Modifier
+                    .fillMaxSize()
+                    .clickable(
+                        onClick = {
+                            dialog.show()
+                        }
+                    ),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
             ) {
