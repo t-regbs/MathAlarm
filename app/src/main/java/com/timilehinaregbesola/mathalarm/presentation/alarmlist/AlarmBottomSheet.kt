@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.EmojiSymbols
+import androidx.compose.material.icons.outlined.Label
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
@@ -39,6 +41,8 @@ fun AlarmBottomSheet(
     scope: CoroutineScope,
     scaffoldState: BottomSheetScaffoldState
 ) {
+//    scaffoldState.bottomSheetState.progress
+
     var timeCal = LocalTime.now()
     if (!fromAdd) {
         timeCal = timeCal.withHour(activeAlarm!!.hour).withMinute(activeAlarm.minute)
@@ -100,18 +104,28 @@ fun AlarmBottomSheet(
                 .padding(horizontal = 16.dp),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
-            for (day in days) {
-                val index = days.indexOf(day)
-                var sel: Boolean = false
+            days.forEachIndexed { index, day ->
                 if (activeAlarm != null) {
-                    sel = activeAlarm.repeatDays[index] == 'T'
+                    val sb = StringBuilder(activeAlarm.repeatDays)
+                    val sel = activeAlarm.repeatDays[index] == 'T'
+                    val checkedState = remember { mutableStateOf(sel) }
+                    RingDayChip(
+                        day = day,
+                        selected = checkedState.value,
+                        onSelectChange = {
+                            checkedState.value = it
+                            if (it) {
+                                sb.setCharAt(index, 'T')
+                                activeAlarm.repeatDays = sb.toString()
+                                viewModel.onUpdate(activeAlarm)
+                            } else {
+                                sb.setCharAt(index, 'F')
+                                activeAlarm.repeatDays = sb.toString()
+                                viewModel.onUpdate(activeAlarm)
+                            }
+                        }
+                    )
                 }
-                val checkedState = remember { mutableStateOf(sel) }
-                RingDayChip(
-                    day = day,
-                    selected = checkedState.value,
-                    onSelectChange = { checkedState.value = it }
-                )
             }
         }
         Divider(
@@ -159,7 +173,7 @@ fun AlarmBottomSheet(
         ) {
             Icon(
                 modifier = Modifier.padding(end = 14.dp),
-                imageVector = Icons.Outlined.Notifications,
+                imageVector = Icons.Outlined.Label,
                 contentDescription = null
             )
             Text(
@@ -191,7 +205,7 @@ fun AlarmBottomSheet(
         ) {
             Icon(
                 modifier = Modifier.padding(end = 14.dp),
-                imageVector = Icons.Outlined.Notifications,
+                imageVector = Icons.Outlined.EmojiSymbols,
                 contentDescription = null
             )
             Text(
