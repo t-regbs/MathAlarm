@@ -89,4 +89,11 @@ class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
     fun onAlarmSettingsNavigated() {
         _navigateToAlarmSettings.value = null
     }
+
+    fun setTone(alert: String?) {
+        if (alarm.value != null && alert != null) {
+            alarm.value!!.alarmTone = alert
+            onUpdate(alarm.value!!)
+        }
+    }
 }

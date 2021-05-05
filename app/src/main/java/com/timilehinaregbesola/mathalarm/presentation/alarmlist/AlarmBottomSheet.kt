@@ -1,5 +1,8 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist
 
+import android.app.Activity
+import android.content.Intent
+import android.media.RingtoneManager
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -15,10 +18,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat.startActivityForResult
+import androidx.core.net.toUri
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.components.RingDayChip
 import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
@@ -43,6 +49,7 @@ fun AlarmBottomSheet(
 ) {
 //    scaffoldState.bottomSheetState.progress
 
+    val activity = LocalContext.current as Activity
     var timeCal = LocalTime.now()
     if (!fromAdd) {
         timeCal = timeCal.withHour(activeAlarm!!.hour).withMinute(activeAlarm.minute)
@@ -193,7 +200,34 @@ fun AlarmBottomSheet(
                 contentDescription = null
             )
             Text(
-                text = "Alarm Tone (Default)",
+                modifier = Modifier
+                    .clickable(
+                        onClick = {
+                            try {
+                                startActivityForResult(
+                                    activity,
+                                    Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+                                        putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, activeAlarm!!.alarmTone)
+
+                                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+                                        putExtra(RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
+
+                                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, true)
+                                        putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
+                                    },
+                                    42, null
+                                )
+                            } catch (e: Exception) {
+//                                Toast.makeText(context, requireContext().getString(R.string.details_no_ringtone_picker), Toast.LENGTH_LONG)
+//                                    .show()
+                            }
+                        }
+                    ),
+                text = if (activeAlarm?.alarmTone == "") {
+                    "Alarm Tone (Default)"
+                } else {
+                    RingtoneManager.getRingtone(activity, activeAlarm?.alarmTone?.toUri()).getTitle(activity)
+                },
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Normal
             )

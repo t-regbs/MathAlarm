@@ -119,12 +119,20 @@ fun AlarmItem(
                         .fillMaxWidth()
                 ) {
                     val sb = StringBuilder()
+                    var daysSet = 0
                     for (day in fullDays.indices) {
                         if (alarm.repeatDays[day] == 'T') {
-                            sb.append("${fullDays[day]},")
+                            daysSet++
+                            if (daysSet < 4) {
+                                sb.append("${fullDays[day]}, ")
+                            }
                         }
                     }
-                    val alarmInfoText = sb.dropLast(1).toString()
+                    val alarmInfoText = if (daysSet < 4) {
+                        sb.dropLast(2).toString()
+                    } else {
+                        "Multiple Days"
+                    }
 
                     val moreInfo = when {
                         alarm.hour < 12 -> {
