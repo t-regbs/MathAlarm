@@ -208,11 +208,7 @@ fun AlarmBottomSheet(
                 imageVector = Icons.Outlined.EmojiSymbols,
                 contentDescription = null
             )
-            Text(
-                text = "Easy Math",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Normal
-            )
+            Difficulty()
         }
         Button(
             modifier = Modifier
@@ -248,6 +244,36 @@ fun AlarmBottomSheet(
                 fontSize = 14.sp,
                 text = "SAVE"
             )
+        }
+    }
+}
+
+@Composable
+fun Difficulty() {
+    var expanded = remember { mutableStateOf(false) }
+    val items = listOf("Easy Math", "Medium Math", "Hard Math")
+    var selectedIndex = remember { mutableStateOf(0) }
+    Box {
+        Text(
+            items[selectedIndex.value],
+            modifier = Modifier
+                .clickable(onClick = { expanded.value = true })
+                .background(unSelectedDay)
+        )
+        DropdownMenu(
+            expanded = expanded.value,
+            onDismissRequest = { expanded.value = false }
+        ) {
+            items.forEachIndexed { index, s ->
+                DropdownMenuItem(
+                    onClick = {
+                        selectedIndex.value = index
+                        expanded.value = false
+                    }
+                ) {
+                    Text(text = s)
+                }
+            }
         }
     }
 }
