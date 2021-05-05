@@ -13,7 +13,7 @@ interface AlarmDataSource {
 
     suspend fun getLatestAlarmFromDatabase(): Alarm?
 
-    suspend fun findAlarm(id: Long): Alarm
+    suspend fun findAlarm(id: Long): Alarm?
 
     suspend fun clear()
 }

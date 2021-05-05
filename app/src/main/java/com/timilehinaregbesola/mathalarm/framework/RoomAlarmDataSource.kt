@@ -26,7 +26,7 @@ class RoomAlarmDataSource(
         mapper.mapToDomainModel(it)
     }
 
-    override suspend fun findAlarm(id: Long): Alarm = mapper.mapToDomainModel(alarmDao.getAlarm(id))
+    override suspend fun findAlarm(id: Long): Alarm? = alarmDao.getAlarm(id)?.let { mapper.mapToDomainModel(it) }
 
     override suspend fun clear() = alarmDao.clear()
 }
