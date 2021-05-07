@@ -18,7 +18,7 @@ import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.AlarmMathActivity
 
 // Notification ID.
-private val NOTIFICATION_ID = 0
+const val NOTIFICATION_ID = 1000
 private val REQUEST_CODE = 0
 private val FLAGS = 0
 
@@ -41,7 +41,7 @@ fun setNotification(
     notificationIntent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
     val notificationPendingIntent = PendingIntent.getActivity(
         applicationContext,
-        NOTIFICATION_ID,
+        extras.toInt(),
         notificationIntent,
         FLAGS
     )

@@ -66,4 +66,8 @@
     <string name="alarm_notification_channel_id">alarm_channel</string>
     <string name="notification_title">Math Alarm</string>
     <string name="math_alarm">Math Alarm!!</string>
+    <string name="details_no_ringtone_picker">No ringtone picker</string>
+    <string name="default_alarm_tone">Alarm Tone (Default)</string>
+    <string name="alert">Ringtone</string>
+    <string name="permissions_external_storage_text">It seems that we cannot play %s, probably because a permission is required. If you want, you can grant the permission. Alternatively, select a different sound. This decision can be changed in System Settings.</string>
 </resources>

@@ -123,8 +123,8 @@ class AlarmMathFragment : Fragment() {
                                 )
                             }
                             prepare()
-                            isLooping = true
                             start()
+                            isLooping = true
                         }
                     } catch (e: IOException) {
                         e.printStackTrace()
@@ -264,6 +264,8 @@ class AlarmMathFragment : Fragment() {
                         ).show()
                     } else {
                         mp.stop()
+                        mp.reset()
+                        mp.release()
                         vibrateRunning = false
                         alarm.scheduleSnooze(requireContext())
                         requireActivity().finish()
@@ -271,7 +273,19 @@ class AlarmMathFragment : Fragment() {
                 }
             }
         }
+
+//        mp.setOnCompletionListener {
+//            mp.start()
+//        }
     }
+
+//    override fun onStop() {
+//        super.onStop()
+//        mp.run {
+//            if (isPlaying) stop()
+//            release()
+//        }
+//    }
 
     // Creates the math problem based on the user-set difficulty
     private fun getMathProblem(difficulty: Int) {

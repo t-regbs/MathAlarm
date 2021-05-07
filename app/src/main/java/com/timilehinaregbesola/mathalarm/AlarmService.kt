@@ -10,6 +10,7 @@ import androidx.core.net.toUri
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmDao
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.utils.ALARM_EXTRA
+import com.timilehinaregbesola.mathalarm.utils.NOTIFICATION_ID
 import com.timilehinaregbesola.mathalarm.utils.scheduleAlarm
 import com.timilehinaregbesola.mathalarm.utils.setNotification
 import org.koin.android.ext.android.inject
@@ -39,14 +40,20 @@ class AlarmService : JobIntentService() {
         val alarm = mapper.mapToDomainModel(dataSource.search(id))
         val tone = alarm.alarmTone
         notification = setNotification(
-            applicationContext, "Time for alarm!!!", (intent.extras ?: throw NullPointerException("Expression 'intent.extras' must not be null"))[ALARM_EXTRA].toString(), tone.toUri()
+            applicationContext,
+            "Time for alarm!!!",
+            (
+                intent.extras
+                    ?: throw NullPointerException("Expression 'intent.extras' must not be null")
+                )[ALARM_EXTRA].toString(),
+            tone.toUri()
         )
         notification.flags = notification.flags or Notification.FLAG_INSISTENT
         val notificationManager = ContextCompat.getSystemService(
             applicationContext,
             NotificationManager::class.java
         ) as NotificationManager
-        notificationManager.notify(0, notification)
+        notificationManager.notify(id!!.toInt() + NOTIFICATION_ID, notification)
         if (alarm.repeat) {
             alarm.scheduleAlarm(applicationContext, true)
         }

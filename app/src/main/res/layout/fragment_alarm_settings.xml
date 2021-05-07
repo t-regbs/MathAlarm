@@ -219,10 +219,22 @@
                     android:layout_weight="1"
                     android:text="@string/settings_tone_text"/>
 
-                <Spinner
-                    android:id="@+id/settings_tone_spinner"
+<!--                <Spinner-->
+<!--                    android:id="@+id/settings_tone_spinner"-->
+<!--                    android:layout_width="match_parent"-->
+<!--                    android:layout_height="match_parent"-->
+<!--                    android:layout_gravity="center_vertical|end"-->
+<!--                    android:layout_marginEnd="20dp"-->
+<!--                    android:layout_weight="1"/>-->
+
+                <TextView
+                    android:id="@+id/settings_tone_text"
                     android:layout_width="match_parent"
                     android:layout_height="match_parent"
+                    android:gravity="center"
+                    android:textColor="@color/colorBlack"
+                    android:background="@color/cardview_light_background"
+                    tools:text="Alarm Tone (Default)"
                     android:layout_gravity="center_vertical|end"
                     android:layout_marginEnd="20dp"
                     android:layout_weight="1"/>

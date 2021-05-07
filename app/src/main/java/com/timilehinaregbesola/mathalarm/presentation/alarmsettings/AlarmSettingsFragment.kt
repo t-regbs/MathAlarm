@@ -10,6 +10,7 @@ import android.text.TextWatcher
 import android.view.*
 import android.widget.ArrayAdapter
 import android.widget.Toast
+import androidx.core.net.toUri
 import androidx.fragment.app.Fragment
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
@@ -26,7 +27,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import org.koin.androidx.viewmodel.ext.android.viewModel
 import java.util.*
-import kotlin.collections.ArrayList
 
 class AlarmSettingsFragment : Fragment() {
 
@@ -70,13 +70,35 @@ class AlarmSettingsFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         settingsViewModel.getAlarm(key!!)
         setupObservers()
+
+        binding.settingsToneText.setOnClickListener {
+            try {
+                startActivityForResult(
+                    Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, mAlarm.alarmTone)
+
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
+
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, true)
+                        putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
+                    },
+                    42
+                )
+            } catch (e: Exception) {
+                Toast.makeText(context, requireContext().getString(R.string.details_no_ringtone_picker), Toast.LENGTH_LONG)
+                    .show()
+            }
+        }
+
         binding.settingsTestButton.setOnClickListener {
             mTestAlarm = Alarm()
             mTestAlarm!!.difficulty = binding.settingsMathDifficultySpinner.selectedItemPosition
-            if (mAlarmTones.isNotEmpty()) {
-                mTestAlarm!!.alarmTone = (
-                    mAlarmTones[binding.settingsToneSpinner.selectedItemPosition].toString()
-                    )
+            val toneText = binding.settingsToneText.text
+            mTestAlarm!!.alarmTone = if (toneText == getString(R.string.default_alarm_tone)) {
+                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString()
+            } else {
+                mAlarm.alarmTone
             }
             mTestAlarm!!.vibrate = binding.settingsVibrateSwitch.isChecked
             mTestAlarm!!.snooze = 0
@@ -96,6 +118,11 @@ class AlarmSettingsFragment : Fragment() {
             it?.let { alarm ->
                 mAlarm = alarm
                 var mRepeat = alarm.repeatDays
+                binding.settingsToneText.text = if (alarm.alarmTone == "") {
+                    getString(R.string.default_alarm_tone)
+                } else {
+                    RingtoneManager.getRingtone(context, alarm.alarmTone.toUri()).getTitle(context)
+                }
                 viewLifecycleOwner.lifecycleScope.launch {
                     binding.settingsTime.text = getTime(mAlarm)
                     settingsViewModel.stopLoading()
@@ -226,57 +253,6 @@ class AlarmSettingsFragment : Fragment() {
                     mAlarm.repeat = (!mAlarm.repeat)
                 }
 
-                // Getting system sound files for tone and displaying in spinner
-                // Getting system sound files for tone and displaying in spinner
-                val toneItems: MutableList<String> =
-                    ArrayList()
-                val ringtoneMgr = RingtoneManager(activity)
-                ringtoneMgr.setType(RingtoneManager.TYPE_ALARM)
-                var alarmsCursor = ringtoneMgr.cursor
-                var alarmsCount = alarmsCursor.count
-
-                if (alarmsCount == 0) { // if there are no alarms, use notification sounds
-                    ringtoneMgr.setType(RingtoneManager.TYPE_NOTIFICATION)
-                    alarmsCursor = ringtoneMgr.cursor
-                    alarmsCount = alarmsCursor.count
-                    if (alarmsCount == 0) { // if no alarms and notification sounds, finally use ringtones
-                        ringtoneMgr.setType(RingtoneManager.TYPE_RINGTONE)
-                        alarmsCursor = ringtoneMgr.cursor
-                        alarmsCount = alarmsCursor.count
-                    }
-                }
-
-                if (alarmsCount == 0 && !alarmsCursor.moveToFirst()) {
-                    Toast.makeText(activity, "No sound files available", Toast.LENGTH_SHORT).show()
-                }
-
-                var previousPosition = 0
-
-                // If there are sound files, add them
-                if (alarmsCount != 0) {
-                    mAlarmTones = arrayOfNulls(alarmsCount)
-                    val currentTone: String = mAlarm.alarmTone
-                    while (!alarmsCursor.isAfterLast && alarmsCursor.moveToNext()) {
-                        val currentPosition = alarmsCursor.position
-                        mAlarmTones[currentPosition] = ringtoneMgr.getRingtoneUri(currentPosition)
-                        toneItems.add(ringtoneMgr.getRingtone(currentPosition).getTitle(activity))
-                        if (currentTone == mAlarmTones[currentPosition].toString()) {
-                            previousPosition = currentPosition
-                        }
-                    }
-                }
-
-                if (toneItems.isEmpty()) {
-                    toneItems.add("Empty")
-                }
-
-                val toneAdapter = ArrayAdapter(
-                    requireActivity(),
-                    android.R.layout.simple_spinner_dropdown_item, toneItems
-                )
-                binding.settingsToneSpinner.adapter = toneAdapter
-                binding.settingsToneSpinner.setSelection(previousPosition)
-
                 val difficultyItems =
                     arrayOf("Easy", "Medium", "Hard")
                 val difficultyAdapter = ArrayAdapter(
@@ -357,6 +333,12 @@ class AlarmSettingsFragment : Fragment() {
         if (requestCode == REQUEST_TEST) {
             settingsViewModel.onDeleteFromId(mTestAlarmId)
         }
+        if (data != null && requestCode == 42) {
+            val alert: String? = data.getParcelableExtra<Uri>(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)?.toString()
+            checkPermissions(requireActivity(), listOf(alert!!))
+            mAlarm.alarmTone = alert!!
+            binding.settingsToneText.text = RingtoneManager.getRingtone(context, alert.toUri()).getTitle(context)
+        }
     }
 
     override fun onCreateOptionsMenu(menu: Menu, inflater: MenuInflater) {
@@ -369,12 +351,8 @@ class AlarmSettingsFragment : Fragment() {
             R.id.fragment_settings_done -> {
                 // Setting difficulty + alarm tone
                 mAlarm.difficulty = (binding.settingsMathDifficultySpinner.selectedItemPosition)
-                if (mAlarmTones.isNotEmpty()) {
-                    mAlarm.alarmTone = (
-                        mAlarmTones[binding.settingsToneSpinner.selectedItemPosition].toString()
-                        )
-                }
                 // schedule alarm, update to database and close settings
+                binding.settingsToneText.text
                 if (isFromAdd!!) {
                     scheduleAndMessage()
                     settingsViewModel.onUpdate(mAlarm)
