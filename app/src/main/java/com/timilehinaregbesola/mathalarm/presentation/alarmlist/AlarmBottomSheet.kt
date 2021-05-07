@@ -29,6 +29,7 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.components.RingDayChip
 import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
 import com.timilehinaregbesola.mathalarm.utils.days
+import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
 import com.timilehinaregbesola.mathalarm.utils.getFormatTime
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.buttons
@@ -49,17 +50,27 @@ fun AlarmBottomSheet(
 ) {
 //    scaffoldState.bottomSheetState.progress
 
+    var alarm: Alarm?
     val activity = LocalContext.current as Activity
     var timeCal = LocalTime.now()
     if (!fromAdd) {
-        timeCal = timeCal.withHour(activeAlarm!!.hour).withMinute(activeAlarm.minute)
+        alarm = activeAlarm
+    } else {
+        alarm = Alarm()
+        val sb = StringBuilder("FFFFFFF")
+        val cal = initCalendar(alarm)
+        val dayOfTheWeek =
+            getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
+        sb.setCharAt(dayOfTheWeek, 'T')
+        alarm.repeatDays = sb.toString()
     }
+    timeCal = timeCal.withHour(alarm!!.hour).withMinute(alarm.minute)
     val dialog = remember { MaterialDialog() }
     dialog.build {
         timepicker(initialTime = timeCal) { time ->
-            activeAlarm!!.hour = time.hour
-            activeAlarm.minute = time.minute
-            viewModel.onUpdate(activeAlarm)
+            alarm.hour = time.hour
+            alarm.minute = time.minute
+//            viewModel.onUpdate(alarm)
         }
         buttons {
             positiveButton("Ok")
@@ -97,7 +108,7 @@ fun AlarmBottomSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(30.dp),
-                    text = if (fromAdd) activeAlarm?.getFormatTime().toString() else "Dummy AM",
+                    text = alarm.getFormatTime().toString(),
                     fontSize = 50.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
@@ -112,9 +123,9 @@ fun AlarmBottomSheet(
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             days.forEachIndexed { index, day ->
-                if (activeAlarm != null) {
-                    val sb = StringBuilder(activeAlarm.repeatDays)
-                    val sel = activeAlarm.repeatDays[index] == 'T'
+                if (alarm != null) {
+                    val sb = StringBuilder(alarm.repeatDays)
+                    val sel = alarm.repeatDays[index] == 'T'
                     val checkedState = remember { mutableStateOf(sel) }
                     RingDayChip(
                         day = day,
@@ -123,12 +134,12 @@ fun AlarmBottomSheet(
                             checkedState.value = it
                             if (it) {
                                 sb.setCharAt(index, 'T')
-                                activeAlarm.repeatDays = sb.toString()
-                                viewModel.onUpdate(activeAlarm)
+                                alarm.repeatDays = sb.toString()
+                                viewModel.onUpdate(alarm)
                             } else {
                                 sb.setCharAt(index, 'F')
-                                activeAlarm.repeatDays = sb.toString()
-                                viewModel.onUpdate(activeAlarm)
+                                alarm.repeatDays = sb.toString()
+                                viewModel.onUpdate(alarm)
                             }
                         }
                     )
@@ -207,7 +218,7 @@ fun AlarmBottomSheet(
                                 startActivityForResult(
                                     activity,
                                     Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
-                                        putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, activeAlarm!!.alarmTone)
+                                        putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, alarm!!.alarmTone)
 
                                         putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
                                         putExtra(RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
@@ -223,10 +234,10 @@ fun AlarmBottomSheet(
                             }
                         }
                     ),
-                text = if (activeAlarm?.alarmTone == "") {
+                text = if (alarm?.alarmTone == "") {
                     "Alarm Tone (Default)"
                 } else {
-                    RingtoneManager.getRingtone(activity, activeAlarm?.alarmTone?.toUri()).getTitle(activity)
+                    RingtoneManager.getRingtone(activity, alarm?.alarmTone?.toUri()).getTitle(activity)
                 },
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Normal
@@ -242,15 +253,15 @@ fun AlarmBottomSheet(
                 imageVector = Icons.Outlined.EmojiSymbols,
                 contentDescription = null
             )
-            Difficulty()
+            Difficulty(alarm)
         }
         Button(
             modifier = Modifier
                 .padding(top = 32.dp)
                 .fillMaxWidth(),
             onClick = {
-                if (activeAlarm != null) {
-//                    navController.navigate(Navigation.buildAlarmMathPath(alarmId = activeAlarm.alarmId))
+                if (alarm != null) {
+//                    navController.navigate(Navigation.buildAlarmMathPath(alarmId = alarm.alarmId))
                 }
             },
             colors = ButtonDefaults.buttonColors(
@@ -270,6 +281,12 @@ fun AlarmBottomSheet(
             onClick = {
                 viewModel.getAlarms()
                 scope.launch {
+                    if (fromAdd) {
+                        viewModel.onAdd(alarm)
+                    } else {
+                        viewModel.onUpdate(alarm)
+                    }
+                    // TODO: Schedule Alarm
                     scaffoldState.bottomSheetState.collapse()
                 }
             }
@@ -283,7 +300,7 @@ fun AlarmBottomSheet(
 }
 
 @Composable
-fun Difficulty() {
+fun Difficulty(alarm: Alarm) {
     var expanded = remember { mutableStateOf(false) }
     val items = listOf("Easy Math", "Medium Math", "Hard Math")
     var selectedIndex = remember { mutableStateOf(0) }
@@ -302,6 +319,7 @@ fun Difficulty() {
                 DropdownMenuItem(
                     onClick = {
                         selectedIndex.value = index
+                        alarm.difficulty = index
                         expanded.value = false
                     }
                 ) {
@@ -310,4 +328,12 @@ fun Difficulty() {
             }
         }
     }
+}
+
+private fun initCalendar(alarm: Alarm): Calendar {
+    val cal = Calendar.getInstance()
+    cal[Calendar.HOUR_OF_DAY] = alarm.hour
+    cal[Calendar.MINUTE] = alarm.minute
+    cal[Calendar.SECOND] = 0
+    return cal
 }

@@ -154,7 +154,7 @@ fun ListDisplayScreen(
                         .align(Alignment.BottomEnd),
                     fabImage = fabImage,
                     onClick = {
-                        viewModel.onAdd()
+                        viewModel.onFabClicked()
                         scope.launch {
                             scaffoldState.bottomSheetState.expand()
                         }
