@@ -2,6 +2,8 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-kapt'
 apply plugin: 'androidx.navigation.safeargs'
+apply plugin: 'com.google.gms.google-services'
+apply plugin: 'com.google.firebase.crashlytics'
 
 android {
     compileSdkVersion 30
@@ -105,4 +107,9 @@ dependencies {
     def material_dialogs_version = "3.3.0"
     implementation "com.afollestad.material-dialogs:core:$material_dialogs_version"
     implementation "com.afollestad.material-dialogs:datetime:$material_dialogs_version"
+
+    //Firebase
+    implementation platform('com.google.firebase:firebase-bom:27.1.0')
+    implementation 'com.google.firebase:firebase-analytics-ktx'
+    implementation 'com.google.firebase:firebase-crashlytics'
 }

@@ -1,0 +1,68 @@
+{
+  "project_info": {
+    "project_number": "406930270459",
+    "project_id": "math-alarm-clock",
+    "storage_bucket": "math-alarm-clock.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:406930270459:android:91263401338179d44c685e",
+        "android_client_info": {
+          "package_name": "com.timilehinaregbesola.mathalarm"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "406930270459-102am9l0q4feq1b3d4q6hv8316nqvlcg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_3y3HaTBCjvr62lTbXOmVFOUwoZQj8ow"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "406930270459-102am9l0q4feq1b3d4q6hv8316nqvlcg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:406930270459:android:69a779f6ddd5dfe74c685e",
+        "android_client_info": {
+          "package_name": "com.timilehinaregbesola.mathalarm.debug"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "406930270459-102am9l0q4feq1b3d4q6hv8316nqvlcg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA_3y3HaTBCjvr62lTbXOmVFOUwoZQj8ow"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "406930270459-102am9l0q4feq1b3d4q6hv8316nqvlcg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
