@@ -26,6 +26,7 @@ import com.timilehinaregbesola.mathalarm.presentation.components.TimeLeftSnack
 import com.timilehinaregbesola.mathalarm.utils.SAT
 import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.util.*
 
 @ExperimentalFoundationApi
@@ -60,8 +61,9 @@ fun ListDisplayScreen(
     val scaffoldState = rememberBottomSheetScaffoldState()
     val alarms = viewModel.alarms.observeAsState()
     val fromAdd = viewModel.addClicked.observeAsState()
-    viewModel.navigateToAlarmSettings.observeAsState().value.let { id ->
+    viewModel.openEditSettings.observeAsState().value.let { id ->
         if (id != null) {
+            Timber.d("alarmId = $id")
             viewModel.getAlarm(id)
         }
     }
@@ -71,7 +73,9 @@ fun ListDisplayScreen(
     Surface(modifier = Modifier.fillMaxSize().padding(bottom = 24.dp)) {
         BottomSheetScaffold(
             sheetContent = {
-                fromAdd.value?.let { AlarmBottomSheet(it, alarm, viewModel, scope, scaffoldState) }
+                fromAdd.value?.let { fromAdd ->
+                    alarm?.let { AlarmBottomSheet(fromAdd, it, viewModel, scope, scaffoldState) }
+                }
             },
             sheetPeekHeight = 0.dp,
             sheetShape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp),
@@ -135,7 +139,10 @@ fun ListDisplayScreen(
                             items(alarms.value!!) { alarm ->
                                 AlarmItem(
                                     alarm = alarm,
-                                    onClick = { viewModel.onAlarmClicked(alarm.alarmId) },
+                                    onEditAlarm = {
+                                        viewModel.onEditAlarmClicked(alarm.alarmId)
+                                        scope.launch { scaffoldState.bottomSheetState.expand() }
+                                    },
                                     onUpdateAlarm = viewModel::onUpdate,
                                     scaffoldState = scaffoldState,
                                     onDeleteAlarm = {

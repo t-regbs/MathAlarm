@@ -9,7 +9,6 @@ import androidx.lifecycle.viewModelScope
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.Interactors
 import kotlinx.coroutines.* // ktlint-disable no-wildcard-imports
-import java.util.* // ktlint-disable no-wildcard-imports
 
 class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
     var addClicked = MutableLiveData<Boolean?>()
@@ -17,9 +16,9 @@ class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
     val alarms: LiveData<List<Alarm>>
         get() = _alarms
 
-    private val _navigateToAlarmSettings = MutableLiveData<Long?>()
-    val navigateToAlarmSettings
-        get() = _navigateToAlarmSettings
+    private val _openEditSettings = MutableLiveData<Long?>()
+    val openEditSettings
+        get() = _openEditSettings
 
     val alarm: MutableState<Alarm?> = mutableStateOf(null)
 
@@ -75,13 +74,14 @@ class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
         }
     }
 
-    fun onAlarmClicked(id: Long) {
+    fun onEditAlarmClicked(id: Long) {
         addClicked.value = false
-        _navigateToAlarmSettings.value = id
+        _openEditSettings.value = id
     }
 
-    fun onAlarmSettingsNavigated() {
-        _navigateToAlarmSettings.value = null
+    fun onEditSettingsNavigated() {
+        _openEditSettings.value = null
+        addClicked.value = null
     }
 
     fun setTone(alert: String?) {

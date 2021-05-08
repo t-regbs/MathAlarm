@@ -30,7 +30,7 @@ import kotlinx.coroutines.launch
 @Composable
 fun AlarmItem(
     alarm: Alarm,
-    onClick: () -> Unit,
+    onEditAlarm: () -> Unit,
     onUpdateAlarm: (Alarm) -> Unit,
     onDeleteAlarm: (Alarm) -> Unit,
     scaffoldState: BottomSheetScaffoldState
@@ -193,7 +193,7 @@ fun AlarmItem(
                             )
                         }
                         Row(
-                            Modifier.clickable(onClick = onClick)
+                            Modifier.clickable(onClick = onEditAlarm)
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Edit,

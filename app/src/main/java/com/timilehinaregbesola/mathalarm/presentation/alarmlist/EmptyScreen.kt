@@ -31,7 +31,7 @@ fun EmptyScreen(
     val scope = rememberCoroutineScope()
 
     val fromAdd = viewModel.addClicked.observeAsState()
-    viewModel.navigateToAlarmSettings.observeAsState().value.let { id ->
+    viewModel.openEditSettings.observeAsState().value.let { id ->
         if (id != null) {
             viewModel.getAlarm(id)
         }

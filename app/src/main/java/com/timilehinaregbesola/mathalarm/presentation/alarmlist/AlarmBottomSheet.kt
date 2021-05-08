@@ -50,7 +50,7 @@ fun AlarmBottomSheet(
 ) {
 //    scaffoldState.bottomSheetState.progress
 
-    var alarm: Alarm?
+    val alarm: Alarm?
     val activity = LocalContext.current as Activity
     var timeCal = LocalTime.now()
     if (!fromAdd) {
