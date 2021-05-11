@@ -143,7 +143,7 @@ class AlarmMathFragment : Fragment() {
                         Runnable {
                             while (vibrateRunning) {
                                 val v =
-                                    activity?.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+                                    context?.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
                                 if (Build.VERSION.SDK_INT >= 26) {
                                     v.vibrate(VibrationEffect.createOneShot(1000, 10))
                                 } else {
