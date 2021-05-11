@@ -20,7 +20,7 @@ interface AlarmDao {
     suspend fun getAlarm(alarmUid: Long?): AlarmEntity?
 
     @Query("SELECT * FROM alarms WHERE alarmid = :alarmUid LIMIT 1")
-    fun search(alarmUid: Long?): AlarmEntity
+    fun search(alarmUid: Long?): AlarmEntity?
 
     @Query("SELECT * FROM alarms ORDER BY alarmid DESC LIMIT 1")
     suspend fun getLastAlarm(): AlarmEntity?

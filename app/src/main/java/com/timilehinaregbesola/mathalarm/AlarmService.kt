@@ -37,25 +37,28 @@ class AlarmService : JobIntentService() {
         val dataSource: AlarmDao by inject()
         val mapper: AlarmMapper by inject()
         val id = intent.extras?.getString(ALARM_EXTRA)?.toLong()
-        val alarm = mapper.mapToDomainModel(dataSource.search(id))
-        val tone = alarm.alarmTone
-        notification = setNotification(
-            applicationContext,
-            "Time for alarm!!!",
-            (
-                intent.extras
-                    ?: throw NullPointerException("Expression 'intent.extras' must not be null")
-                )[ALARM_EXTRA].toString(),
-            tone.toUri()
-        )
-        notification.flags = notification.flags or Notification.FLAG_INSISTENT
-        val notificationManager = ContextCompat.getSystemService(
-            applicationContext,
-            NotificationManager::class.java
-        ) as NotificationManager
-        notificationManager.notify(id!!.toInt() + NOTIFICATION_ID, notification)
-        if (alarm.repeat) {
-            alarm.scheduleAlarm(applicationContext, true)
+        val entity = dataSource.search(id)
+        entity?.let {
+            val alarm = mapper.mapToDomainModel(entity)
+            val tone = alarm.alarmTone
+            notification = setNotification(
+                applicationContext,
+                "Time for alarm!!!",
+                (
+                    intent.extras
+                        ?: throw NullPointerException("Expression 'intent.extras' must not be null")
+                    )[ALARM_EXTRA].toString(),
+                tone.toUri()
+            )
+            notification.flags = notification.flags or Notification.FLAG_INSISTENT
+            val notificationManager = ContextCompat.getSystemService(
+                applicationContext,
+                NotificationManager::class.java
+            ) as NotificationManager
+            notificationManager.notify(id!!.toInt() + NOTIFICATION_ID, notification)
+            if (alarm.repeat) {
+                alarm.scheduleAlarm(applicationContext, true)
+            }
         }
     }
 }
