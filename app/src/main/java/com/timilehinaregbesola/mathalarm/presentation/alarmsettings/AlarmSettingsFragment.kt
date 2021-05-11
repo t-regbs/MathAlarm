@@ -334,9 +334,11 @@ class AlarmSettingsFragment : Fragment() {
             settingsViewModel.onDeleteFromId(mTestAlarmId)
         }
         if (data != null && requestCode == 42) {
-            val alert: String? = data.getParcelableExtra<Uri>(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)?.toString()
-            checkPermissions(requireActivity(), listOf(alert!!))
-            mAlarm.alarmTone = alert!!
+            val alert: String =
+                data.getParcelableExtra<Uri>(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)?.toString()
+                    ?: RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString()
+            checkPermissions(requireActivity(), listOf(alert))
+            mAlarm.alarmTone = alert
             binding.settingsToneText.text = RingtoneManager.getRingtone(context, alert.toUri()).getTitle(context)
         }
     }
