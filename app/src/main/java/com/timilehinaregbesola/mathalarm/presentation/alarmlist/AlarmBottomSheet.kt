@@ -13,6 +13,7 @@ import androidx.compose.material.icons.outlined.EmojiSymbols
 import androidx.compose.material.icons.outlined.Label
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -36,6 +37,7 @@ import com.vanpra.composematerialdialogs.buttons
 import com.vanpra.composematerialdialogs.datetime.timepicker.timepicker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import timber.log.Timber
 import java.time.LocalTime
 import java.util.*
 
@@ -48,29 +50,37 @@ fun AlarmBottomSheet(
     scope: CoroutineScope,
     scaffoldState: BottomSheetScaffoldState
 ) {
-//    scaffoldState.bottomSheetState.progress
 
-    val alarm: Alarm?
+    var alarm: Alarm?
+    val alarmText: MutableState<String>
     val activity = LocalContext.current as Activity
     var timeCal = LocalTime.now()
     if (!fromAdd) {
-        alarm = activeAlarm
+        Timber.d("fromAdd: $fromAdd")
+        alarm = remember { activeAlarm }
+        Timber.d("current alarm: $alarm")
+        alarmText = remember { mutableStateOf(alarm!!.getFormatTime().toString()) }
+//        viewModel.onEditSettingsNavigated()
     } else {
-        alarm = Alarm()
+        Timber.d("fromAdd: $fromAdd")
+        alarm = remember { Alarm() }
         val sb = StringBuilder("FFFFFFF")
         val cal = initCalendar(alarm)
         val dayOfTheWeek =
             getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
         sb.setCharAt(dayOfTheWeek, 'T')
         alarm.repeatDays = sb.toString()
+        Timber.d("new alarm: $alarm")
+        alarmText = remember { mutableStateOf(alarm!!.getFormatTime().toString()) }
     }
-    timeCal = timeCal.withHour(alarm!!.hour).withMinute(alarm.minute)
     val dialog = remember { MaterialDialog() }
     dialog.build {
+        timeCal = timeCal.withHour(alarm!!.hour).withMinute(alarm!!.minute)
         timepicker(initialTime = timeCal) { time ->
-            alarm.hour = time.hour
-            alarm.minute = time.minute
-//            viewModel.onUpdate(alarm)
+            alarm!!.hour = time.hour
+            alarm!!.minute = time.minute
+            alarmText.value = alarm!!.getFormatTime().toString()
+            timeCal = timeCal.withHour(alarm!!.hour).withMinute(alarm!!.minute)
         }
         buttons {
             positiveButton("Ok")
@@ -99,7 +109,7 @@ fun AlarmBottomSheet(
                     .clickable(
                         onClick = {
                             dialog.show()
-                        }
+                        },
                     ),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
@@ -108,7 +118,7 @@ fun AlarmBottomSheet(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(30.dp),
-                    text = alarm.getFormatTime().toString(),
+                    text = alarmText.value,
                     fontSize = 50.sp,
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center
@@ -116,36 +126,7 @@ fun AlarmBottomSheet(
             }
         }
         Spacer(modifier = Modifier.height(12.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
-            horizontalArrangement = Arrangement.SpaceBetween
-        ) {
-            days.forEachIndexed { index, day ->
-                if (alarm != null) {
-                    val sb = StringBuilder(alarm.repeatDays)
-                    val sel = alarm.repeatDays[index] == 'T'
-                    val checkedState = remember { mutableStateOf(sel) }
-                    RingDayChip(
-                        day = day,
-                        selected = checkedState.value,
-                        onSelectChange = {
-                            checkedState.value = it
-                            if (it) {
-                                sb.setCharAt(index, 'T')
-                                alarm.repeatDays = sb.toString()
-                                viewModel.onUpdate(alarm)
-                            } else {
-                                sb.setCharAt(index, 'F')
-                                alarm.repeatDays = sb.toString()
-                                viewModel.onUpdate(alarm)
-                            }
-                        }
-                    )
-                }
-            }
-        }
+        AlarmDays(alarm = alarm)
         Divider(
             modifier = Modifier
                 .padding(top = 17.dp, start = 16.dp, end = 16.dp),
@@ -253,14 +234,14 @@ fun AlarmBottomSheet(
                 imageVector = Icons.Outlined.EmojiSymbols,
                 contentDescription = null
             )
-            Difficulty(alarm)
+            alarm?.let { Difficulty(it) }
         }
         Button(
             modifier = Modifier
                 .padding(top = 32.dp)
                 .fillMaxWidth(),
             onClick = {
-                if (alarm != null) {
+                if (alarm!! != null) {
 //                    navController.navigate(Navigation.buildAlarmMathPath(alarmId = alarm.alarmId))
                 }
             },
@@ -282,11 +263,13 @@ fun AlarmBottomSheet(
                 viewModel.getAlarms()
                 scope.launch {
                     if (fromAdd) {
-                        viewModel.onAdd(alarm)
+                        viewModel.onAdd(alarm!!)
                     } else {
-                        viewModel.onUpdate(alarm)
+                        viewModel.onUpdate(alarm!!)
+                        Timber.d("Save alarm with id: ${alarm!!.alarmId}")
                     }
                     // TODO: Schedule Alarm
+                    alarm = null
                     scaffoldState.bottomSheetState.collapse()
                 }
             }
@@ -295,6 +278,38 @@ fun AlarmBottomSheet(
                 fontSize = 14.sp,
                 text = "SAVE"
             )
+        }
+    }
+}
+
+@Composable
+private fun AlarmDays(alarm: Alarm?) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        horizontalArrangement = Arrangement.SpaceBetween
+    ) {
+        days.forEachIndexed { index, day ->
+            if (alarm != null) {
+                val sb = StringBuilder(alarm!!.repeatDays)
+                val sel = alarm!!.repeatDays[index] == 'T'
+                val checkedState = remember { mutableStateOf(sel) }
+                RingDayChip(
+                    day = day,
+                    selected = checkedState.value,
+                    onSelectChange = {
+                        checkedState.value = it
+                        if (it) {
+                            sb.setCharAt(index, 'T')
+                            alarm!!.repeatDays = sb.toString()
+                        } else {
+                            sb.setCharAt(index, 'F')
+                            alarm!!.repeatDays = sb.toString()
+                        }
+                    }
+                )
+            }
         }
     }
 }

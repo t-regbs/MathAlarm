@@ -43,13 +43,6 @@ class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
 
     // Called when add menu is pressed
     fun onAdd(new: Alarm) {
-//        val new = Alarm()
-//        val sb = StringBuilder("FFFFFFF")
-//        val cal = initCalendar(new)
-//        val dayOfTheWeek =
-//            getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
-//        sb.setCharAt(dayOfTheWeek, 'T')
-//        new.repeatDays = sb.toString()
         viewModelScope.launch {
             interactors.addAlarm(new)
 //            _navigateToAlarmSettings.value = id

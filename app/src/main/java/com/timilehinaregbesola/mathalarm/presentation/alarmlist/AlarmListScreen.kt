@@ -67,14 +67,16 @@ fun ListDisplayScreen(
             viewModel.getAlarm(id)
         }
     }
-    val alarm = viewModel.alarm.value
+    val alarm = viewModel.alarm
 
     val scope = rememberCoroutineScope()
     Surface(modifier = Modifier.fillMaxSize().padding(bottom = 24.dp)) {
         BottomSheetScaffold(
             sheetContent = {
                 fromAdd.value?.let { fromAdd ->
-                    alarm?.let { AlarmBottomSheet(fromAdd, it, viewModel, scope, scaffoldState) }
+                    if (alarm.value != null) {
+                        AlarmBottomSheet(fromAdd, alarm.value, viewModel, scope, scaffoldState)
+                    }
                 }
             },
             sheetPeekHeight = 0.dp,
