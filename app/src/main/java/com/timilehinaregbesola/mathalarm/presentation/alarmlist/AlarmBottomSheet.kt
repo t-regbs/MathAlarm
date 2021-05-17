@@ -3,6 +3,8 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmlist
 import android.app.Activity
 import android.content.Intent
 import android.media.RingtoneManager
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -26,12 +28,11 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat.startActivityForResult
 import androidx.core.net.toUri
+import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.components.RingDayChip
 import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
-import com.timilehinaregbesola.mathalarm.utils.days
-import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
-import com.timilehinaregbesola.mathalarm.utils.getFormatTime
+import com.timilehinaregbesola.mathalarm.utils.*
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.buttons
 import com.vanpra.composematerialdialogs.datetime.timepicker.timepicker
@@ -49,7 +50,6 @@ fun AlarmBottomSheet(
     scope: CoroutineScope,
     scaffoldState: BottomSheetScaffoldState
 ) {
-
     var alarm: Alarm?
     val alarmText: MutableState<String>
     val activity = LocalContext.current as Activity
@@ -190,6 +190,17 @@ fun AlarmBottomSheet(
                 .padding(top = 30.dp, start = 16.dp, end = 16.dp)
                 .fillMaxWidth()
         ) {
+            val toneText = remember { mutableStateOf<String?>(null) }
+            val result = remember { mutableStateOf<Uri?>(null) }
+            val launcher = rememberLauncherForActivityResult(PickRingtone(alarm)) {
+                result.value = it
+            }
+            result.value?.let {
+                val alert = it.toString()
+                checkPermissions(activity, listOf(alert))
+                alarm!!.alarmTone = alert
+                toneText.value = RingtoneManager.getRingtone(activity, alert.toUri()).getTitle(activity)
+            }
             Icon(
                 modifier = Modifier.padding(end = 14.dp),
                 imageVector = Icons.Outlined.Notifications,
@@ -200,29 +211,24 @@ fun AlarmBottomSheet(
                     .clickable(
                         onClick = {
                             try {
-                                startActivityForResult(
-                                    activity,
-                                    Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
-                                        putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, alarm!!.alarmTone)
-
-                                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
-                                        putExtra(RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM))
-
-                                        putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, true)
-                                        putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
-                                    },
-                                    42, null
-                                )
+                                launcher.launch(null)
                             } catch (e: Exception) {
+                                Timber.e(e)
 //                                Toast.makeText(context, requireContext().getString(R.string.details_no_ringtone_picker), Toast.LENGTH_LONG)
 //                                    .show()
                             }
                         }
                     ),
-                text = if (alarm?.alarmTone == "") {
-                    "Alarm Tone (Default)"
-                } else {
-                    RingtoneManager.getRingtone(activity, alarm?.alarmTone?.toUri()).getTitle(activity)
+                text = when {
+                    toneText.value != null -> {
+                        toneText.value!!
+                    }
+                    alarm?.alarmTone == "" -> {
+                        activity.getString(R.string.default_alarm_tone)
+                    }
+                    else -> {
+                        RingtoneManager.getRingtone(activity, alarm?.alarmTone?.toUri()).getTitle(activity)
+                    }
                 },
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Normal
@@ -267,6 +273,7 @@ fun AlarmBottomSheet(
                 viewModel.getAlarms()
                 scope.launch {
                     if (state is SheetState.NewAlarm) {
+                        if (alarm!!.alarmTone == "") alarm!!.alarmTone = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString()
                         viewModel.onAdd(alarm!!)
                     } else {
                         viewModel.onUpdate(alarm!!)
@@ -287,6 +294,28 @@ fun AlarmBottomSheet(
     }
 }
 
+private fun pickRingtone(
+    activity: Activity,
+    alarm: Alarm?
+) {
+    startActivityForResult(
+        activity,
+        Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
+            putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, alarm!!.alarmTone)
+
+            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
+            putExtra(
+                RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI,
+                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+            )
+
+            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, true)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
+        },
+        42, null
+    )
+}
+
 @Composable
 private fun AlarmDays(alarm: Alarm?) {
     Row(
@@ -297,8 +326,8 @@ private fun AlarmDays(alarm: Alarm?) {
     ) {
         days.forEachIndexed { index, day ->
             if (alarm != null) {
-                val sb = StringBuilder(alarm!!.repeatDays)
-                val sel = alarm!!.repeatDays[index] == 'T'
+                val sb = StringBuilder(alarm.repeatDays)
+                val sel = alarm.repeatDays[index] == 'T'
                 val checkedState = remember { mutableStateOf(sel) }
                 RingDayChip(
                     day = day,
@@ -307,10 +336,10 @@ private fun AlarmDays(alarm: Alarm?) {
                         checkedState.value = it
                         if (it) {
                             sb.setCharAt(index, 'T')
-                            alarm!!.repeatDays = sb.toString()
+                            alarm.repeatDays = sb.toString()
                         } else {
                             sb.setCharAt(index, 'F')
-                            alarm!!.repeatDays = sb.toString()
+                            alarm.repeatDays = sb.toString()
                         }
                     }
                 )
@@ -321,9 +350,9 @@ private fun AlarmDays(alarm: Alarm?) {
 
 @Composable
 fun Difficulty(alarm: Alarm) {
-    var expanded = remember { mutableStateOf(false) }
+    val expanded = remember { mutableStateOf(false) }
     val items = listOf("Easy Math", "Medium Math", "Hard Math")
-    var selectedIndex = remember { mutableStateOf(0) }
+    val selectedIndex = remember { mutableStateOf(0) }
     Box {
         Text(
             items[selectedIndex.value],
