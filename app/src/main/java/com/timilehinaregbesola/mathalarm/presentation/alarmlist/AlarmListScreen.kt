@@ -1,6 +1,7 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,7 +27,6 @@ import com.timilehinaregbesola.mathalarm.presentation.components.TimeLeftSnack
 import com.timilehinaregbesola.mathalarm.utils.SAT
 import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
 import kotlinx.coroutines.launch
-import timber.log.Timber
 import java.util.*
 
 @ExperimentalFoundationApi
@@ -42,12 +42,7 @@ fun AlarmListScreen(
             .fillMaxSize()
     ) {
         viewModel.getAlarms()
-        val alarms = viewModel.alarms.observeAsState()
-        if (alarms.value?.isEmpty() == true) {
-            EmptyScreen(viewModel)
-        } else {
-            ListDisplayScreen(viewModel)
-        }
+        ListDisplayScreen(viewModel)
     }
 }
 
@@ -60,23 +55,15 @@ fun ListDisplayScreen(
     val openDialog = remember { mutableStateOf(false) }
     val scaffoldState = rememberBottomSheetScaffoldState()
     val alarms = viewModel.alarms.observeAsState()
-    val fromAdd = viewModel.addClicked.observeAsState()
-    viewModel.openEditSettings.observeAsState().value.let { id ->
-        if (id != null) {
-            Timber.d("alarmId = $id")
-            viewModel.getAlarm(id)
-        }
-    }
-    val alarm = viewModel.alarm
+    val sheetOpen = viewModel.isSheetOpen.observeAsState(false)
 
     val scope = rememberCoroutineScope()
+    val sheetState by viewModel.sheetState.observeAsState(SheetState.Init)
     Surface(modifier = Modifier.fillMaxSize().padding(bottom = 24.dp)) {
         BottomSheetScaffold(
             sheetContent = {
-                fromAdd.value?.let { fromAdd ->
-                    if (alarm.value != null) {
-                        AlarmBottomSheet(fromAdd, alarm.value, viewModel, scope, scaffoldState)
-                    }
+                if (sheetOpen.value == true && sheetState != SheetState.Init) {
+                    AlarmBottomSheet(sheetState, viewModel, scope, scaffoldState)
                 }
             },
             sheetPeekHeight = 0.dp,
@@ -91,71 +78,108 @@ fun ListDisplayScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
-//                    .padding(top = 16.dp)
-                    .background(color = Color.LightGray.copy(alpha = 0.1f)),
-                contentAlignment = Alignment.Center
+                    .background(
+                        color = if (alarms.value?.isEmpty() == true) {
+                            Color.White
+                        } else {
+                            Color.LightGray.copy(alpha = 0.1f)
+                        }
+                    ),
+                contentAlignment = if (alarms.value?.isEmpty() == true) {
+                    Alignment.Center
+                } else {
+                    Alignment.TopStart
+                }
             ) {
-                var enabled = false
-                var nearestAlarmMessage = ""
-                if (alarms.value != null && alarms.value!!.isNotEmpty()) {
-                    enabled = alarms.value!!.any { it.isOn }
-                    val now = System.currentTimeMillis()
-                    var nearest = alarms.value!![0].let { it1 -> getCal(it1).timeInMillis }
-                    var nearestIndex = 0
-                    alarms.value?.forEachIndexed { index, alarm ->
-                        val cal = getCal(alarm)
-                        val time = cal.timeInMillis
-                        if ((time - now) < nearest.minus(now)) {
-                            nearest = time
-                            nearestIndex = index
-                        }
-                    }
-                    nearestAlarmMessage = nearest.let { it1 ->
-                        alarms.value!![nearestIndex].getTimeLeft(it1)
-                    }
-                }
-                Surface(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(bottom = 16.dp),
-                ) {
-                    LazyColumn(
-                        horizontalAlignment = Alignment.CenterHorizontally,
+                val emptyImage = painterResource(id = R.drawable.search_icon)
+                if (alarms.value?.isEmpty() == true) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .fillMaxHeight()
+                            .align(Alignment.TopCenter)
                     ) {
-                        stickyHeader {
-                            Surface(
+                        Box(
+                            modifier = Modifier
+                                .padding(top = 143.dp)
+                                .align(Alignment.CenterHorizontally),
+                            contentAlignment = Alignment.TopEnd
+                        ) {
+                            Image(
+                                painter = emptyImage,
+                                contentDescription = "Empty Alarm List",
                                 modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(color = Color.LightGray.copy(alpha = 0.1f)),
-                                elevation = 4.dp
-                            ) {
-                                Text(
-                                    text = if (enabled) "Next alarm in $nearestAlarmMessage" else "No upcoming alarms",
-                                    modifier = Modifier
-                                        .padding(start = 24.dp, top = 16.dp, bottom = 8.dp),
-                                    fontSize = 16.sp
-                                )
+                                    .width(167.dp)
+                                    .height(228.dp)
+                            )
+                            Image(
+                                painter = emptyImage,
+                                contentDescription = "Empty Alarm List",
+                                modifier = Modifier
+                                    .padding(top = 24.dp, end = 40.dp)
+                                    .width(167.dp)
+                                    .height(228.dp)
+                            )
+                        }
+
+                        Text(
+                            modifier = Modifier
+                                .padding(top = 29.dp)
+                                .align(Alignment.CenterHorizontally),
+                            text = "Nothing to see here",
+                            fontSize = 16.sp
+                        )
+                    }
+                } else {
+                    var enabled = false
+                    var nearestAlarmMessage = ""
+                    if (alarms.value != null && alarms.value!!.isNotEmpty()) {
+                        enabled = alarms.value!!.any { it.isOn }
+                        val now = System.currentTimeMillis()
+                        var nearest = alarms.value!![0].let { it1 -> getCal(it1).timeInMillis }
+                        var nearestIndex = 0
+                        alarms.value?.forEachIndexed { index, alarm ->
+                            val cal = getCal(alarm)
+                            val time = cal.timeInMillis
+                            if ((time - now) < nearest.minus(now)) {
+                                nearest = time
+                                nearestIndex = index
                             }
                         }
-                        if (alarms.value != null) {
-                            items(alarms.value!!) { alarm ->
-                                AlarmItem(
-                                    alarm = alarm,
-                                    onEditAlarm = {
-                                        viewModel.onEditAlarmClicked(alarm.alarmId)
-                                        scope.launch { scaffoldState.bottomSheetState.expand() }
-                                    },
-                                    onUpdateAlarm = viewModel::onUpdate,
-                                    scaffoldState = scaffoldState,
-                                    onDeleteAlarm = {
-                                        viewModel.onDelete(alarm)
-                                    }
-                                )
+                        nearestAlarmMessage = nearest.let { it1 ->
+                            alarms.value!![nearestIndex].getTimeLeft(it1)
+                        }
+                    }
+                    Surface(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(bottom = 16.dp),
+                    ) {
+                        LazyColumn(
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                        ) {
+                            stickyHeader {
+                                ListHeader(enabled, nearestAlarmMessage)
+                            }
+                            if (alarms.value != null) {
+                                items(alarms.value!!) { alarm ->
+                                    AlarmItem(
+                                        alarm = alarm,
+                                        onEditAlarm = {
+                                            viewModel.onEditAlarmClicked(alarm.alarmId)
+                                            scope.launch { scaffoldState.bottomSheetState.expand() }
+                                        },
+                                        onUpdateAlarm = viewModel::onUpdate,
+                                        scaffoldState = scaffoldState,
+                                        onDeleteAlarm = {
+                                            viewModel.onDelete(alarm)
+                                        }
+                                    )
+                                }
                             }
                         }
                     }
                 }
-
                 val fabImage = painterResource(id = R.drawable.fabb)
                 AddAlarmFab(
                     modifier = Modifier
@@ -171,6 +195,23 @@ fun ListDisplayScreen(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun ListHeader(enabled: Boolean, nearestAlarmMessage: String) {
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .background(color = Color.LightGray.copy(alpha = 0.1f)),
+        elevation = 4.dp
+    ) {
+        Text(
+            text = if (enabled) "Next alarm in $nearestAlarmMessage" else "No upcoming alarms",
+            modifier = Modifier
+                .padding(start = 24.dp, top = 16.dp, bottom = 8.dp),
+            fontSize = 16.sp
+        )
     }
 }
 

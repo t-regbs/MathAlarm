@@ -44,8 +44,7 @@ import java.util.*
 @ExperimentalMaterialApi
 @Composable
 fun AlarmBottomSheet(
-    fromAdd: Boolean,
-    activeAlarm: Alarm?,
+    state: SheetState,
     viewModel: AlarmListViewModel,
     scope: CoroutineScope,
     scaffoldState: BottomSheetScaffoldState
@@ -55,23 +54,28 @@ fun AlarmBottomSheet(
     val alarmText: MutableState<String>
     val activity = LocalContext.current as Activity
     var timeCal = LocalTime.now()
-    if (!fromAdd) {
-        Timber.d("fromAdd: $fromAdd")
-        alarm = remember { activeAlarm }
-        Timber.d("current alarm: $alarm")
-        alarmText = remember { mutableStateOf(alarm!!.getFormatTime().toString()) }
-//        viewModel.onEditSettingsNavigated()
-    } else {
-        Timber.d("fromAdd: $fromAdd")
-        alarm = remember { Alarm() }
-        val sb = StringBuilder("FFFFFFF")
-        val cal = initCalendar(alarm)
-        val dayOfTheWeek =
-            getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
-        sb.setCharAt(dayOfTheWeek, 'T')
-        alarm.repeatDays = sb.toString()
-        Timber.d("new alarm: $alarm")
-        alarmText = remember { mutableStateOf(alarm!!.getFormatTime().toString()) }
+    when (state) {
+        is SheetState.EditAlarm -> {
+            alarm = remember { viewModel.retrieveAlarm(state.alarmId) }
+            Timber.d("current alarm: $alarm")
+            alarmText = remember { mutableStateOf(alarm!!.getFormatTime().toString()) }
+        }
+        is SheetState.NewAlarm -> {
+            alarm = remember { Alarm() }
+            val sb = StringBuilder("FFFFFFF")
+            val cal = initCalendar(alarm)
+            val dayOfTheWeek =
+                getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
+            sb.setCharAt(dayOfTheWeek, 'T')
+            alarm.repeatDays = sb.toString()
+            Timber.d("new alarm: $alarm")
+            alarmText = remember { mutableStateOf(alarm!!.getFormatTime().toString()) }
+        }
+        else -> {
+            alarm = remember { Alarm() }
+            alarmText = remember { mutableStateOf(alarm!!.getFormatTime().toString()) }
+            Timber.d("illegal state")
+        }
     }
     val dialog = remember { MaterialDialog() }
     dialog.build {
@@ -262,7 +266,7 @@ fun AlarmBottomSheet(
             onClick = {
                 viewModel.getAlarms()
                 scope.launch {
-                    if (fromAdd) {
+                    if (state is SheetState.NewAlarm) {
                         viewModel.onAdd(alarm!!)
                     } else {
                         viewModel.onUpdate(alarm!!)
@@ -270,6 +274,7 @@ fun AlarmBottomSheet(
                     }
                     // TODO: Schedule Alarm
                     alarm = null
+                    viewModel.onSheetClose()
                     scaffoldState.bottomSheetState.collapse()
                 }
             }
@@ -351,4 +356,12 @@ private fun initCalendar(alarm: Alarm): Calendar {
     cal[Calendar.MINUTE] = alarm.minute
     cal[Calendar.SECOND] = 0
     return cal
+}
+
+sealed class SheetState(val alarmId: Long = 0L) {
+    class NewAlarm() : SheetState()
+
+    object Init : SheetState()
+
+    class EditAlarm(id: Long) : SheetState(id)
 }

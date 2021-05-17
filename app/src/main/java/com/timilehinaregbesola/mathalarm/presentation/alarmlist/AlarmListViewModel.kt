@@ -1,7 +1,5 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist
 
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -11,16 +9,17 @@ import com.timilehinaregbesola.mathalarm.framework.Interactors
 import kotlinx.coroutines.* // ktlint-disable no-wildcard-imports
 
 class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
-    var addClicked = MutableLiveData<Boolean?>()
-    val _alarms = MutableLiveData<List<Alarm>>()
+    private val _alarms = MutableLiveData<List<Alarm>>()
     val alarms: LiveData<List<Alarm>>
         get() = _alarms
 
-    private val _openEditSettings = MutableLiveData<Long?>()
-    val openEditSettings
-        get() = _openEditSettings
+    private val _sheetState = MutableLiveData<SheetState>(SheetState.Init)
+    val sheetState
+        get() = _sheetState
 
-    val alarm: MutableState<Alarm?> = mutableStateOf(null)
+    private val _isSheetOpen = MutableLiveData(false)
+    val isSheetOpen
+        get() = _isSheetOpen
 
     fun onUpdate(alarm: Alarm) {
         viewModelScope.launch {
@@ -38,19 +37,24 @@ class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
 
     fun getAlarm(key: Long) = viewModelScope.launch {
         val alarmFound = interactors.findAlarm(key)
-        alarm.value = alarmFound
     }
 
-    // Called when add menu is pressed
+    fun retrieveAlarm(key: Long) = runBlocking {
+        val alarmFound = interactors.findAlarm(key)
+        alarmFound
+    }
+
+    // Called when add fab is pressed
     fun onAdd(new: Alarm) {
         viewModelScope.launch {
             interactors.addAlarm(new)
-//            _navigateToAlarmSettings.value = id
+            getAlarms()
         }
     }
 
     fun onFabClicked() {
-        addClicked.value = true
+        _sheetState.value = SheetState.NewAlarm()
+        _isSheetOpen.value = true
     }
 
     fun onDelete(alarm: Alarm) {
@@ -68,19 +72,20 @@ class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
     }
 
     fun onEditAlarmClicked(id: Long) {
-        addClicked.value = false
-        _openEditSettings.value = id
-    }
-
-    fun onEditSettingsNavigated() {
-        _openEditSettings.value = null
-        addClicked.value = null
+        _sheetState.value = SheetState.EditAlarm(id)
+        _isSheetOpen.value = true
     }
 
     fun setTone(alert: String?) {
-        if (alarm.value != null && alert != null) {
-            alarm.value!!.alarmTone = alert
-            onUpdate(alarm.value!!)
+        val alarm = retrieveAlarm(_sheetState.value!!.alarmId)
+        if (alarm != null && alert != null) {
+            alarm.alarmTone = alert
+            onUpdate(alarm)
         }
+    }
+
+    fun onSheetClose() {
+        _isSheetOpen.value = false
+        _sheetState.value = SheetState.Init
     }
 }
