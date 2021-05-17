@@ -1,7 +1,6 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist
 
 import android.app.Activity
-import android.content.Intent
 import android.media.RingtoneManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -26,7 +25,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.app.ActivityCompat.startActivityForResult
 import androidx.core.net.toUri
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
@@ -142,31 +140,13 @@ fun AlarmBottomSheet(
                 .padding(top = 38.dp, start = 16.dp, end = 16.dp)
                 .fillMaxWidth()
         ) {
-            Row(modifier = Modifier.padding(end = 38.dp)) {
-                val repeatWeekCheckboxState = remember { mutableStateOf(true) }
-                Checkbox(
-                    modifier = Modifier.padding(end = 14.dp),
-                    checked = repeatWeekCheckboxState.value,
-                    onCheckedChange = { repeatWeekCheckboxState.value = it }
-                )
-                Text(
-                    text = "Repeat Weekly",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Normal
-                )
-            }
-            Row {
-                val vibrateCheckboxState = remember { mutableStateOf(true) }
-                Checkbox(
-                    modifier = Modifier.padding(end = 14.dp),
-                    checked = vibrateCheckboxState.value,
-                    onCheckedChange = { vibrateCheckboxState.value = it }
-                )
-                Text(
-                    text = "Vibrate",
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Normal
-                )
+            TextWithCheckbox(
+                modifier = Modifier.padding(end = 38.dp),
+                text = "Repeat Weekly",
+                initialState = alarm!!.repeat
+            ) { alarm!!.repeat = it }
+            TextWithCheckbox(text = "Vibrate", initialState = alarm!!.vibrate) {
+                alarm!!.vibrate = it
             }
         }
         Row(
@@ -294,26 +274,29 @@ fun AlarmBottomSheet(
     }
 }
 
-private fun pickRingtone(
-    activity: Activity,
-    alarm: Alarm?
+@Composable
+private fun TextWithCheckbox(
+    modifier: Modifier = Modifier,
+    text: String,
+    initialState: Boolean,
+    onCheckChange: (Boolean) -> Unit
 ) {
-    startActivityForResult(
-        activity,
-        Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
-            putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, alarm!!.alarmTone)
-
-            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
-            putExtra(
-                RingtoneManager.EXTRA_RINGTONE_DEFAULT_URI,
-                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-            )
-
-            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, true)
-            putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
-        },
-        42, null
-    )
+    Row(modifier = modifier) {
+        val checkboxState = remember { mutableStateOf(initialState) }
+        Checkbox(
+            modifier = Modifier.padding(end = 14.dp),
+            checked = checkboxState.value,
+            onCheckedChange = {
+                checkboxState.value = it
+                onCheckChange(it)
+            }
+        )
+        Text(
+            text = text,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Normal
+        )
+    }
 }
 
 @Composable
@@ -352,7 +335,7 @@ private fun AlarmDays(alarm: Alarm?) {
 fun Difficulty(alarm: Alarm) {
     val expanded = remember { mutableStateOf(false) }
     val items = listOf("Easy Math", "Medium Math", "Hard Math")
-    val selectedIndex = remember { mutableStateOf(0) }
+    val selectedIndex = remember { mutableStateOf(alarm.difficulty) }
     Box {
         Text(
             items[selectedIndex.value],
