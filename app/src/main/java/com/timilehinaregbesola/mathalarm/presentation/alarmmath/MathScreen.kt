@@ -1,6 +1,13 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmmath
 
+import android.content.Context
+import android.media.AudioAttributes
+import android.media.AudioManager
 import android.media.MediaPlayer
+import android.net.Uri
+import android.os.Build
+import android.os.VibrationEffect
+import android.os.Vibrator
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.text.KeyboardActions
@@ -14,7 +21,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -24,16 +33,19 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
+import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewModel
 import com.timilehinaregbesola.mathalarm.presentation.ui.*
 import com.timilehinaregbesola.mathalarm.utils.EASY
 import com.timilehinaregbesola.mathalarm.utils.HARD
+import java.io.IOException
 import kotlin.random.Random
 
 private const val ADD = 0
 private const val SUBTRACT = 1
 private const val TIMES = 2
 private const val DIVIDE = 3
+var vibrateRunning = false
 
 @ExperimentalComposeUiApi
 @Composable
@@ -43,16 +55,70 @@ fun MathScreen(
     viewModel: AlarmListViewModel
 ) {
     val alarm = viewModel.retrieveAlarm(alarmId)
-    val question: MutableState<String?> = remember { mutableStateOf(null) }
-    val mp = MediaPlayer()
-    var vibrateRunning = false
-
+    val context = LocalContext.current
     alarm?.let {
+        val mp = MediaPlayer()
+        if (alarm.alarmTone.isNotEmpty()) {
+            val alarmUri = Uri.parse(alarm.alarmTone)
+            try {
+                mp.apply {
+                    reset()
+                    setDataSource(context, alarmUri)
+                    if (Build.VERSION.SDK_INT < 21) {
+                        @Suppress("DEPRECATION")
+                        setAudioStreamType(AudioManager.STREAM_ALARM)
+                    } else {
+                        setAudioAttributes(
+                            AudioAttributes.Builder()
+                                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                                .setUsage(AudioAttributes.USAGE_ALARM)
+                                .build()
+                        )
+                    }
+                    prepare()
+                    isLooping = true
+                    start()
+                }
+            } catch (e: IOException) {
+                e.printStackTrace()
+            }
+        } else {
+//            Toast.makeText(
+//                activity, getString(R.string.tone_not_available),
+//                Toast.LENGTH_SHORT
+//            ).show()
+        }
+
+        // Vibrate phone
+        if (alarm.vibrate) {
+            vibrateRunning = true
+            val thread = Thread(
+                Runnable {
+                    while (vibrateRunning) {
+                        val v =
+                            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+                        if (Build.VERSION.SDK_INT >= 26) {
+                            v.vibrate(VibrationEffect.createOneShot(1000, 10))
+                        } else {
+                            @Suppress("DEPRECATION")
+                            v.vibrate(1000)
+                        }
+                        try {
+                            Thread.sleep(5000)
+                        } catch (e: InterruptedException) {
+                        }
+                    }
+                    if (!vibrateRunning) {
+                        return@Runnable
+                    }
+                }
+            )
+            thread.start()
+        }
+
         // Get difficulty
         val problem = remember { getMathProblem(it.difficulty) }
-
-        // Initialize the buttons and the on click actions
-        question.value = getMathString(problem)
+        val question = remember { mutableStateOf(getMathString(problem)) }
 
         Surface(
             Modifier
@@ -108,12 +174,14 @@ fun MathScreen(
                     ),
                     keyboardActions = KeyboardActions(
                         onDone = {
-                            if (validateAnswer(answerText, problem)) {
-                                keyboardController?.hide()
-                                navController
-                                    .previousBackStackEntry?.savedStateHandle?.set("testAlarmId", alarm.alarmId)
-                                navController.popBackStack()
-                            }
+                            dismissAlarm(
+                                answerText,
+                                problem,
+                                mp,
+                                keyboardController,
+                                navController,
+                                alarm
+                            )
                         }
                     ),
                     textStyle = TextStyle(
@@ -168,12 +236,14 @@ fun MathScreen(
                             .height(120.dp)
                             .width(120.dp),
                         onClick = {
-                            if (validateAnswer(answerText, problem)) {
-                                keyboardController?.hide()
-                                navController
-                                    .previousBackStackEntry?.savedStateHandle?.set("testAlarmId", alarm.alarmId)
-                                navController.popBackStack()
-                            }
+                            dismissAlarm(
+                                answerText,
+                                problem,
+                                mp,
+                                keyboardController,
+                                navController,
+                                alarm
+                            )
                         },
                         colors = ButtonDefaults.buttonColors(
                             backgroundColor = enterButtonColor,
@@ -185,6 +255,28 @@ fun MathScreen(
                 }
             }
         }
+    }
+}
+
+@ExperimentalComposeUiApi
+private fun dismissAlarm(
+    answerText: MutableState<String>,
+    problem: MathProblem,
+    mp: MediaPlayer,
+    keyboardController: SoftwareKeyboardController?,
+    navController: NavHostController,
+    alarm: Alarm
+) {
+    if (validateAnswer(answerText, problem)) {
+        mp.stop()
+        vibrateRunning = false
+//                        TODO: cancel notification
+        keyboardController?.hide()
+        navController
+            .previousBackStackEntry?.savedStateHandle?.set("testAlarmId", alarm.alarmId)
+        navController.popBackStack()
+    } else {
+        // Show Wrong Snack
     }
 }
 
