@@ -74,11 +74,11 @@ fun AlarmBottomSheet(
         is SheetState.NewAlarm -> {
             alarm = remember { Alarm() }
             val sb = StringBuilder("FFFFFFF")
-            val cal = initCalendar(alarm)
+            val cal = initCalendar(alarm!!)
             val dayOfTheWeek =
                 getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
             sb.setCharAt(dayOfTheWeek, 'T')
-            alarm.repeatDays = sb.toString()
+            alarm!!.repeatDays = sb.toString()
             Timber.d("new alarm: $alarm")
             alarmText = remember { mutableStateOf(alarm!!.getFormatTime().toString()) }
         }
@@ -88,6 +88,26 @@ fun AlarmBottomSheet(
             Timber.d("illegal state")
         }
     }
+
+    navController.currentBackStackEntry?.savedStateHandle?.getLiveData<String>("tone")?.observeAsState()?.value.let { alar ->
+        alar?.let { alarm!!.alarmTone = it }
+    }
+    navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Int>("hour")?.observeAsState()?.value.let { alar ->
+        alar?.let { alarm!!.hour = it }
+    }
+    navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Int>("minute")?.observeAsState()?.value.let { alar ->
+        alar?.let { alarm!!.minute = it }
+    }
+    navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Boolean>("vibrate")?.observeAsState()?.value.let { alar ->
+        alar?.let { alarm!!.vibrate = it }
+    }
+    navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Boolean>("repeat")?.observeAsState()?.value.let { alar ->
+        alar?.let { alarm!!.repeat = it }
+    }
+    navController.currentBackStackEntry?.savedStateHandle?.getLiveData<String>("repeatDays")?.observeAsState()?.value.let { alar ->
+        alar?.let { alarm!!.repeatDays = it }
+    }
+
     val dialog = remember { MaterialDialog() }
     dialog.build {
         timeCal = timeCal.withHour(alarm!!.hour).withMinute(alarm!!.minute)
@@ -244,6 +264,15 @@ fun AlarmBottomSheet(
                 .padding(top = 32.dp)
                 .fillMaxWidth(),
             onClick = {
+                navController.currentBackStackEntry?.savedStateHandle?.apply {
+                    set("tone", alarm!!.alarmTone)
+                    set("hour", alarm!!.hour)
+                    set("minute", alarm!!.minute)
+                    set("difficulty", alarm!!.difficulty)
+                    set("vibrate", alarm!!.vibrate)
+                    set("repeat", alarm!!.repeat)
+                    set("repeatDays", alarm!!.repeatDays)
+                }
                 val testAlarm = Alarm()
                 testAlarm.apply {
                     difficulty = alarm!!.difficulty
@@ -273,6 +302,15 @@ fun AlarmBottomSheet(
                 .padding(top = 12.dp)
                 .fillMaxWidth(),
             onClick = {
+                navController.currentBackStackEntry?.savedStateHandle?.apply {
+                    remove<String>("tone")
+                    remove<Int>("hour")
+                    remove<Int>("minute")
+                    remove<Int>("difficulty")
+                    remove<Boolean>("vibrate")
+                    remove<Boolean>("repeat")
+                    remove<String>("repeatDays")
+                }
                 viewModel.getAlarms()
                 scope.launch {
                     if (state is SheetState.NewAlarm) {

@@ -16,7 +16,9 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewMod
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathScreen
 import com.timilehinaregbesola.mathalarm.utils.Navigation
 import com.timilehinaregbesola.mathalarm.utils.getAlarmIdArgument
+import kotlinx.coroutines.InternalCoroutinesApi
 
+@InternalCoroutinesApi
 @ExperimentalComposeUiApi
 @ExperimentalMaterialApi
 @ExperimentalFoundationApi

@@ -6,7 +6,11 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.Interactors
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.ToneState
 import kotlinx.coroutines.* // ktlint-disable no-wildcard-imports
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
 
 class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
     private val _alarms = MutableLiveData<List<Alarm>>()
@@ -20,6 +24,10 @@ class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
     private val _isSheetOpen = MutableLiveData(false)
     val isSheetOpen
         get() = _isSheetOpen
+
+    private val _state = MutableLiveData<ToneState>(ToneState.Stopped())
+    val state: LiveData<ToneState> = _state
+    private var currentTimer: Job? = null
 
     fun onUpdate(alarm: Alarm) {
         viewModelScope.launch {
@@ -92,8 +100,40 @@ class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
         }
     }
 
+    @InternalCoroutinesApi
+    fun startTimer() {
+        val currentState = _state.value
+        if (currentState !is ToneState.Stopped) {
+            return
+        }
+        val seconds = 1000
+        _state.value = ToneState.Countdown(seconds, seconds)
+        this.currentTimer = viewModelScope.launch {
+            timer(seconds).collect {
+                _state.value = if (it == 0) {
+                    ToneState.Stopped(0)
+                } else {
+//                    secondDown()
+                    ToneState.Countdown(seconds, it)
+                }
+            }
+        }
+    }
+
+    fun stopTimer() {
+        currentTimer?.cancel()
+        _state.value = ToneState.Stopped(0)
+    }
+
     fun onSheetClose() {
         _isSheetOpen.value = false
         _sheetState.value = SheetState.Init
+    }
+
+    private fun timer(seconds: Int): Flow<Int> = flow {
+        for (s in 0 until (seconds + 1)) {
+            delay(1000L)
+            emit(s)
+        }
     }
 }

@@ -2,12 +2,12 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmmath
 
 import android.content.Context
 import android.media.AudioAttributes
-import android.media.AudioManager
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.text.KeyboardActions
@@ -15,6 +15,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -38,6 +39,8 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewMod
 import com.timilehinaregbesola.mathalarm.presentation.ui.*
 import com.timilehinaregbesola.mathalarm.utils.EASY
 import com.timilehinaregbesola.mathalarm.utils.HARD
+import kotlinx.coroutines.InternalCoroutinesApi
+import timber.log.Timber
 import java.io.IOException
 import kotlin.random.Random
 
@@ -47,6 +50,7 @@ private const val TIMES = 2
 private const val DIVIDE = 3
 var vibrateRunning = false
 
+@InternalCoroutinesApi
 @ExperimentalComposeUiApi
 @Composable
 fun MathScreen(
@@ -64,20 +68,16 @@ fun MathScreen(
                 mp.apply {
                     reset()
                     setDataSource(context, alarmUri)
-                    if (Build.VERSION.SDK_INT < 21) {
-                        @Suppress("DEPRECATION")
-                        setAudioStreamType(AudioManager.STREAM_ALARM)
-                    } else {
-                        setAudioAttributes(
-                            AudioAttributes.Builder()
-                                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                                .setUsage(AudioAttributes.USAGE_ALARM)
-                                .build()
-                        )
-                    }
+                    setAudioAttributes(
+                        AudioAttributes.Builder()
+                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                            .setUsage(AudioAttributes.USAGE_ALARM)
+                            .build()
+                    )
                     prepare()
                     isLooping = true
                     start()
+                    viewModel.startTimer()
                 }
             } catch (e: IOException) {
                 e.printStackTrace()
@@ -126,18 +126,33 @@ fun MathScreen(
                 .padding(vertical = 24.dp)
         ) {
             Column {
+                val toneState = viewModel.state.observeAsState()
                 val answerText = remember { mutableStateOf("") }
                 val keyboardController = LocalSoftwareKeyboardController.current
                 val maxChar = 8
+
+                val progress = remember { mutableStateOf(0.1f) }
+                val animatedProgress = animateFloatAsState(
+                    targetValue = progress.value,
+                    animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
+                ).value
+
                 Spacer(modifier = Modifier.height(24.dp))
-                LinearProgressIndicator(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(10.dp)
-                        .padding(horizontal = 24.dp),
-                    color = indicatorColor,
-                    progress = 0.7f
-                )
+                if (toneState.value is ToneState.Countdown) {
+                    val ts = toneState.value as ToneState.Countdown
+                    Timber.d("seconds: ${ts.seconds}")
+                    Timber.d("total: ${ts.total}")
+                    progress.value = ((mp.currentPosition / 1000).toFloat() / (mp.duration / 1000).toFloat())
+                    Timber.d("progrss: ${progress.value}")
+                    LinearProgressIndicator(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(10.dp)
+                            .padding(horizontal = 24.dp),
+                        color = indicatorColor,
+                        progress = animatedProgress
+                    )
+                }
                 Spacer(modifier = Modifier.height(32.dp))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
@@ -180,7 +195,8 @@ fun MathScreen(
                                 mp,
                                 keyboardController,
                                 navController,
-                                alarm
+                                alarm,
+                                viewModel
                             )
                         }
                     ),
@@ -242,7 +258,8 @@ fun MathScreen(
                                 mp,
                                 keyboardController,
                                 navController,
-                                alarm
+                                alarm,
+                                viewModel
                             )
                         },
                         colors = ButtonDefaults.buttonColors(
@@ -265,10 +282,12 @@ private fun dismissAlarm(
     mp: MediaPlayer,
     keyboardController: SoftwareKeyboardController?,
     navController: NavHostController,
-    alarm: Alarm
+    alarm: Alarm,
+    viewModel: AlarmListViewModel
 ) {
     if (validateAnswer(answerText, problem)) {
         mp.stop()
+        viewModel.stopTimer()
         vibrateRunning = false
 //                        TODO: cancel notification
         keyboardController?.hide()
@@ -369,6 +388,12 @@ data class MathProblem(
     var numTwo: Int = 0,
     var answer: Int = 0
 )
+
+sealed class ToneState(val total: Int) {
+    class Stopped(seconds: Int = 0) : ToneState(seconds)
+    class Countdown(total: Int, val seconds: Int) : ToneState(total)
+}
+
 @Preview
 @Composable
 fun MathScreenPreview() {
