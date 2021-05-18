@@ -42,7 +42,7 @@ fun AlarmListScreen(
             .fillMaxSize()
     ) {
         viewModel.getAlarms()
-        ListDisplayScreen(viewModel)
+        ListDisplayScreen(viewModel, navController)
     }
 }
 
@@ -50,7 +50,8 @@ fun AlarmListScreen(
 @ExperimentalMaterialApi
 @Composable
 fun ListDisplayScreen(
-    viewModel: AlarmListViewModel
+    viewModel: AlarmListViewModel,
+    navController: NavHostController
 ) {
     val openDialog = remember { mutableStateOf(false) }
     val scaffoldState = rememberBottomSheetScaffoldState()
@@ -63,7 +64,7 @@ fun ListDisplayScreen(
         BottomSheetScaffold(
             sheetContent = {
                 if (sheetOpen.value == true && sheetState != SheetState.Init) {
-                    AlarmBottomSheet(sheetState, viewModel, scope, scaffoldState)
+                    AlarmBottomSheet(sheetState, viewModel, scope, scaffoldState, navController)
                 }
             },
             sheetPeekHeight = 0.dp,

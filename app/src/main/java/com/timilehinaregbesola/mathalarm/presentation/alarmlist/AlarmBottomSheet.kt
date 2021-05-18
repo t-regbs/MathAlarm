@@ -26,6 +26,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.navigate
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.components.RingDayChip
@@ -46,7 +48,8 @@ fun AlarmBottomSheet(
     state: SheetState,
     viewModel: AlarmListViewModel,
     scope: CoroutineScope,
-    scaffoldState: BottomSheetScaffoldState
+    scaffoldState: BottomSheetScaffoldState,
+    navController: NavHostController
 ) {
     var alarm: Alarm?
     val alarmText: MutableState<String>
@@ -231,9 +234,7 @@ fun AlarmBottomSheet(
                 .padding(top = 32.dp)
                 .fillMaxWidth(),
             onClick = {
-                if (alarm!! != null) {
-//                    navController.navigate(Navigation.buildAlarmMathPath(alarmId = alarm.alarmId))
-                }
+                navController.navigate(Navigation.buildAlarmMathPath(alarmId = alarm!!.alarmId))
             },
             colors = ButtonDefaults.buttonColors(
                 backgroundColor = unSelectedDay,

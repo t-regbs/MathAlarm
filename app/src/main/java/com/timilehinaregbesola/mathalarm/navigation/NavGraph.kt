@@ -5,6 +5,7 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -16,6 +17,7 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathScreen
 import com.timilehinaregbesola.mathalarm.utils.Navigation
 import com.timilehinaregbesola.mathalarm.utils.getAlarmIdArgument
 
+@ExperimentalComposeUiApi
 @ExperimentalMaterialApi
 @ExperimentalFoundationApi
 @Composable
@@ -38,6 +40,7 @@ fun NavGraph(
             ) {
                 MathScreen(
                     navController = navController,
+                    viewModel = viewModel,
                     alarmId = it.getAlarmIdArgument(Navigation.NAV_ALARM_MATH_ARGUMENT)
                 )
             }
