@@ -52,6 +52,14 @@ class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
         }
     }
 
+    fun onAddTestAlarm(new: Alarm): Long {
+        var id: Long
+        runBlocking {
+            id = interactors.addAlarm(new)
+        }
+        return id
+    }
+
     fun onFabClicked() {
         _sheetState.value = SheetState.NewAlarm()
         _isSheetOpen.value = true

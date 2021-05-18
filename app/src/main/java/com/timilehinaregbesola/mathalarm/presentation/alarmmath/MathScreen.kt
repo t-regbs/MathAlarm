@@ -110,6 +110,8 @@ fun MathScreen(
                         onDone = {
                             if (validateAnswer(answerText, problem)) {
                                 keyboardController?.hide()
+                                navController
+                                    .previousBackStackEntry?.savedStateHandle?.set("testAlarmId", alarm.alarmId)
                                 navController.popBackStack()
                             }
                         }
@@ -168,6 +170,8 @@ fun MathScreen(
                         onClick = {
                             if (validateAnswer(answerText, problem)) {
                                 keyboardController?.hide()
+                                navController
+                                    .previousBackStackEntry?.savedStateHandle?.set("testAlarmId", alarm.alarmId)
                                 navController.popBackStack()
                             }
                         },

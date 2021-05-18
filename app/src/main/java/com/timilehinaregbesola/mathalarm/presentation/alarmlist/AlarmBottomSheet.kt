@@ -15,6 +15,7 @@ import androidx.compose.material.icons.outlined.Label
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -55,6 +56,15 @@ fun AlarmBottomSheet(
     val alarmText: MutableState<String>
     val activity = LocalContext.current as Activity
     var timeCal = LocalTime.now()
+
+    val testScreenResult = navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Long>("testAlarmId")?.observeAsState()
+    testScreenResult?.value?.let {
+        val testAlarm = viewModel.retrieveAlarm(it)
+        if (testAlarm != null) {
+            viewModel.onDelete(testAlarm)
+        }
+    }
+
     when (state) {
         is SheetState.EditAlarm -> {
             alarm = remember { viewModel.retrieveAlarm(state.alarmId) }
@@ -234,7 +244,19 @@ fun AlarmBottomSheet(
                 .padding(top = 32.dp)
                 .fillMaxWidth(),
             onClick = {
-                navController.navigate(Navigation.buildAlarmMathPath(alarmId = alarm!!.alarmId))
+                val testAlarm = Alarm()
+                testAlarm.apply {
+                    difficulty = alarm!!.difficulty
+                    alarmTone = if (alarm!!.alarmTone.isBlank()) {
+                        RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString()
+                    } else {
+                        alarm!!.alarmTone
+                    }
+                    snooze = 0
+                    vibrate = alarm!!.vibrate
+                }
+                val id = viewModel.onAddTestAlarm(testAlarm)
+                navController.navigate(Navigation.buildAlarmMathPath(alarmId = id))
             },
             colors = ButtonDefaults.buttonColors(
                 backgroundColor = unSelectedDay,
