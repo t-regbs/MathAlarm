@@ -1,6 +1,8 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist
 
 import android.util.Log
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -26,6 +28,7 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.utils.*
 import kotlinx.coroutines.launch
 
+@ExperimentalAnimationApi
 @ExperimentalMaterialApi
 @Composable
 fun AlarmItem(
@@ -164,58 +167,60 @@ fun AlarmItem(
                     }
                 }
             }
-            if (expandItem.value) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Divider(
-                    thickness = 3.dp,
-                    modifier = Modifier
-                        .padding(start = 8.dp, end = 8.dp)
-                )
-                Spacer(modifier = Modifier.height(20.dp))
-                Row(modifier = Modifier.padding(start = 24.dp, bottom = 16.dp)) {
-                    Row(modifier = Modifier.weight(3f)) {
-                        Row(
-                            Modifier
-                                .padding(end = 24.dp)
-                                .clickable(onClick = { onDeleteAlarm(alarm) })
-                        ) {
-                            Icon(
-                                imageVector = Icons.Outlined.Delete,
-                                contentDescription = "Delete",
-                                modifier = Modifier
-                                    .padding(end = 4.dp)
-                                    .clickable(onClick = { onDeleteAlarm(alarm) })
-                            )
-                            Text(
-                                text = "Delete",
-                                modifier = Modifier
-                                    .align(Alignment.CenterVertically)
-                            )
-                        }
-                        Row(
-                            Modifier.clickable(onClick = onEditAlarm)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = "Edit",
-                                modifier = Modifier
-                                    .padding(end = 4.dp)
-                            )
-                            Text(
-                                text = "Edit",
-                                modifier = Modifier
-                                    .align(Alignment.CenterVertically)
-                            )
-                        }
-                    }
-                    Icon(
-                        imageVector = Icons.Default.KeyboardArrowUp,
-                        contentDescription = "Collapse",
+            AnimatedVisibility(expandItem.value) {
+                Column {
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Divider(
+                        thickness = 3.dp,
                         modifier = Modifier
-                            .weight(1f)
-                            .align(Alignment.CenterVertically)
-                            .clickable(onClick = { expandItem.value = false })
+                            .padding(start = 8.dp, end = 8.dp)
                     )
+                    Spacer(modifier = Modifier.height(20.dp))
+                    Row(modifier = Modifier.padding(start = 24.dp, bottom = 16.dp)) {
+                        Row(modifier = Modifier.weight(3f)) {
+                            Row(
+                                Modifier
+                                    .padding(end = 24.dp)
+                                    .clickable(onClick = { onDeleteAlarm(alarm) })
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Outlined.Delete,
+                                    contentDescription = "Delete",
+                                    modifier = Modifier
+                                        .padding(end = 4.dp)
+                                        .clickable(onClick = { onDeleteAlarm(alarm) })
+                                )
+                                Text(
+                                    text = "Delete",
+                                    modifier = Modifier
+                                        .align(Alignment.CenterVertically)
+                                )
+                            }
+                            Row(
+                                Modifier.clickable(onClick = onEditAlarm)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Edit,
+                                    contentDescription = "Edit",
+                                    modifier = Modifier
+                                        .padding(end = 4.dp)
+                                )
+                                Text(
+                                    text = "Edit",
+                                    modifier = Modifier
+                                        .align(Alignment.CenterVertically)
+                                )
+                            }
+                        }
+                        Icon(
+                            imageVector = Icons.Default.KeyboardArrowUp,
+                            contentDescription = "Collapse",
+                            modifier = Modifier
+                                .weight(1f)
+                                .align(Alignment.CenterVertically)
+                                .clickable(onClick = { expandItem.value = false })
+                        )
+                    }
                 }
             }
         }
