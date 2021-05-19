@@ -85,6 +85,7 @@ fun MathScreen(
                 e.printStackTrace()
             }
         } else {
+            Timber.d("Tone not available")
 //            Toast.makeText(
 //                activity, getString(R.string.tone_not_available),
 //                Toast.LENGTH_SHORT
@@ -175,65 +176,57 @@ fun MathScreen(
                         )
                     }
                     Spacer(modifier = Modifier.height(16.dp))
-                    Box {
-                        TextField(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(90.dp)
-                                .padding(horizontal = 56.dp),
-                            value = answerText.value,
-                            onValueChange = { if (it.length <= maxChar) answerText.value = it },
-                            singleLine = true,
-                            placeholder = {
-                                Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.Center,
-                                    verticalAlignment = Alignment.CenterVertically
+                    TextField(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(90.dp)
+                            .padding(horizontal = 56.dp),
+                        value = answerText.value,
+                        onValueChange = { if (it.length <= maxChar) answerText.value = it },
+                        singleLine = true,
+                        placeholder = {
+                            Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                Text(text = "=", fontSize = 30.sp)
+                            }
+                        },
+                        keyboardOptions = KeyboardOptions(
+                            keyboardType = KeyboardType.Number,
+                            imeAction = ImeAction.Done
+                        ),
+                        keyboardActions = KeyboardActions(
+                            onDone = {
+                                dismissAlarm(
+                                    answerText,
+                                    problem,
+                                    mp,
+                                    keyboardController,
+                                    navController,
+                                    alarm,
+                                    viewModel
                                 ) {
-                                    Text(text = "=", fontSize = 30.sp)
-                                }
-                            },
-                            keyboardOptions = KeyboardOptions(
-                                keyboardType = KeyboardType.Number,
-                                imeAction = ImeAction.Done
-                            ),
-                            keyboardActions = KeyboardActions(
-                                onDone = {
-                                    dismissAlarm(
-                                        answerText,
-                                        problem,
-                                        mp,
-                                        keyboardController,
-                                        navController,
-                                        alarm,
-                                        viewModel
-                                    ) {
-                                        scope.launch {
-                                            scaffoldState.snackbarHostState.showSnackbar("Incorrect!")
-                                        }
+                                    scope.launch {
+                                        scaffoldState.snackbarHostState.showSnackbar("Incorrect!")
                                     }
                                 }
-                            ),
-                            textStyle = TextStyle(
-                                color = MaterialTheme.colors.onSurface,
-                                fontSize = 30.sp,
-                                textAlign = TextAlign.Center
-                            ),
-                            colors = TextFieldDefaults.textFieldColors(
-                                backgroundColor = unSelectedDay,
-                                focusedIndicatorColor = Color.Transparent,
-                                unfocusedIndicatorColor = Color.Transparent,
-                                disabledIndicatorColor = Color.Transparent
-                            ),
-                            shape = MaterialTheme.shapes.medium.copy(CornerSize(24.dp))
-                        )
-                        if (showSnack.value) {
-                            Snackbar {
-                                Text(text = "Incorrect!")
                             }
-                            showSnack.value = false
-                        }
-                    }
+                        ),
+                        textStyle = TextStyle(
+                            color = MaterialTheme.colors.onSurface,
+                            fontSize = 30.sp,
+                            textAlign = TextAlign.Center
+                        ),
+                        colors = TextFieldDefaults.textFieldColors(
+                            backgroundColor = unSelectedDay,
+                            focusedIndicatorColor = Color.Transparent,
+                            unfocusedIndicatorColor = Color.Transparent,
+                            disabledIndicatorColor = Color.Transparent
+                        ),
+                        shape = MaterialTheme.shapes.medium.copy(CornerSize(24.dp))
+                    )
                     Spacer(modifier = Modifier.height(16.dp))
                     Row(
                         modifier = Modifier
