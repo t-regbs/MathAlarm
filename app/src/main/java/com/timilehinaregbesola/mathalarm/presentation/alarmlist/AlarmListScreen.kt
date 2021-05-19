@@ -1,5 +1,6 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist
 
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -21,14 +22,15 @@ import androidx.navigation.NavHostController
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.components.AddAlarmFab
+import com.timilehinaregbesola.mathalarm.presentation.components.AlarmSnack
 import com.timilehinaregbesola.mathalarm.presentation.components.ClearDialog
 import com.timilehinaregbesola.mathalarm.presentation.components.ListTopAppBar
-import com.timilehinaregbesola.mathalarm.presentation.components.TimeLeftSnack
 import com.timilehinaregbesola.mathalarm.utils.SAT
 import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
 import kotlinx.coroutines.launch
 import java.util.*
 
+@ExperimentalAnimationApi
 @ExperimentalFoundationApi
 @ExperimentalMaterialApi
 @Composable
@@ -46,6 +48,7 @@ fun AlarmListScreen(
     }
 }
 
+@ExperimentalAnimationApi
 @ExperimentalFoundationApi
 @ExperimentalMaterialApi
 @Composable
@@ -73,7 +76,7 @@ fun ListDisplayScreen(
             topBar = {
                 ListTopAppBar(openDialog = openDialog)
             },
-            snackbarHost = { state -> TimeLeftSnack(state) }
+            snackbarHost = { state -> AlarmSnack(state) }
         ) {
             if (openDialog.value) ClearDialog(openDialog)
             Box(

@@ -31,9 +31,9 @@ fun ClearDialog(openDialog: MutableState<Boolean>) {
 
 @ExperimentalMaterialApi
 @Composable
-fun TimeLeftSnack(state: SnackbarHostState) {
+fun AlarmSnack(state: SnackbarHostState) {
     SnackbarHost(
         hostState = state,
-        snackbar = { data -> Snackbar(data) }
+        snackbar = { data -> Snackbar(snackbarData = data) }
     )
 }

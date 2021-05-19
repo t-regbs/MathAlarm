@@ -7,17 +7,15 @@ import android.net.Uri
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
+import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -36,10 +34,12 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation.NavHostController
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewModel
+import com.timilehinaregbesola.mathalarm.presentation.components.AlarmSnack
 import com.timilehinaregbesola.mathalarm.presentation.ui.*
 import com.timilehinaregbesola.mathalarm.utils.EASY
 import com.timilehinaregbesola.mathalarm.utils.HARD
 import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.IOException
 import kotlin.random.Random
@@ -50,6 +50,7 @@ private const val TIMES = 2
 private const val DIVIDE = 3
 var vibrateRunning = false
 
+@ExperimentalMaterialApi
 @InternalCoroutinesApi
 @ExperimentalComposeUiApi
 @Composable
@@ -58,6 +59,7 @@ fun MathScreen(
     alarmId: Long,
     viewModel: AlarmListViewModel
 ) {
+    BackHandler { }
     val alarm = viewModel.retrieveAlarm(alarmId)
     val context = LocalContext.current
     alarm?.let {
@@ -119,155 +121,179 @@ fun MathScreen(
         // Get difficulty
         val problem = remember { getMathProblem(it.difficulty) }
         val question = remember { mutableStateOf(getMathString(problem)) }
+        val scaffoldState = rememberScaffoldState()
+        val scope = rememberCoroutineScope()
 
-        Surface(
-            Modifier
-                .fillMaxSize()
-                .padding(vertical = 24.dp)
+        Scaffold(
+            scaffoldState = scaffoldState,
+            snackbarHost = { state -> AlarmSnack(state) }
         ) {
-            Column {
-                val toneState = viewModel.state.observeAsState()
-                val answerText = remember { mutableStateOf("") }
-                val keyboardController = LocalSoftwareKeyboardController.current
-                val maxChar = 8
+            Surface(
+                Modifier
+                    .fillMaxSize()
+                    .padding(vertical = 24.dp)
+            ) {
+                Column {
+                    val toneState = viewModel.state.observeAsState()
+                    val answerText = remember { mutableStateOf("") }
+                    val keyboardController = LocalSoftwareKeyboardController.current
+                    val maxChar = 8
 
-                val progress = remember { mutableStateOf(0.1f) }
-                val animatedProgress = animateFloatAsState(
-                    targetValue = progress.value,
-                    animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
-                ).value
+                    val progress = remember { mutableStateOf(0.1f) }
+                    val animatedProgress = animateFloatAsState(
+                        targetValue = progress.value,
+                        animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
+                    ).value
+                    val showSnack = remember { mutableStateOf(false) }
 
-                Spacer(modifier = Modifier.height(24.dp))
-                if (toneState.value is ToneState.Countdown) {
-                    val ts = toneState.value as ToneState.Countdown
-                    Timber.d("seconds: ${ts.seconds}")
-                    Timber.d("total: ${ts.total}")
-                    progress.value = ((mp.currentPosition / 1000).toFloat() / (mp.duration / 1000).toFloat())
-                    Timber.d("progrss: ${progress.value}")
-                    LinearProgressIndicator(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(10.dp)
-                            .padding(horizontal = 24.dp),
-                        color = indicatorColor,
-                        progress = animatedProgress
-                    )
-                }
-                Spacer(modifier = Modifier.height(32.dp))
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
-                ) {
-                    Text(
-                        text = question.value ?: "",
-                        fontSize = 70.sp,
-                        color = Color(0xFF272727),
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-                Spacer(modifier = Modifier.height(16.dp))
-                TextField(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(90.dp)
-                        .padding(horizontal = 56.dp),
-                    value = answerText.value,
-                    onValueChange = { if (it.length <= maxChar) answerText.value = it },
-                    singleLine = true,
-                    placeholder = {
-                        Row(
-                            modifier = Modifier.fillMaxWidth(),
-                            horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            Text(text = "=", fontSize = 30.sp)
-                        }
-                    },
-                    keyboardOptions = KeyboardOptions(
-                        keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Done
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onDone = {
-                            dismissAlarm(
-                                answerText,
-                                problem,
-                                mp,
-                                keyboardController,
-                                navController,
-                                alarm,
-                                viewModel
-                            )
-                        }
-                    ),
-                    textStyle = TextStyle(
-                        color = MaterialTheme.colors.onSurface,
-                        fontSize = 30.sp,
-                        textAlign = TextAlign.Center
-                    ),
-                    colors = TextFieldDefaults.textFieldColors(
-                        backgroundColor = unSelectedDay,
-                        focusedIndicatorColor = Color.Transparent,
-                        unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent
-                    ),
-                    shape = MaterialTheme.shapes.medium.copy(CornerSize(24.dp))
-                )
-                Spacer(modifier = Modifier.height(16.dp))
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 56.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
-                ) {
-                    Column(modifier = Modifier.height(120.dp)) {
-                        Button(
+                    Spacer(modifier = Modifier.height(24.dp))
+                    if (toneState.value is ToneState.Countdown) {
+                        val ts = toneState.value as ToneState.Countdown
+                        Timber.d("seconds: ${ts.seconds}")
+                        Timber.d("total: ${ts.total}")
+                        progress.value = ((mp.currentPosition / 1000).toFloat() / (mp.duration / 1000).toFloat())
+                        Timber.d("progrss: ${progress.value}")
+                        LinearProgressIndicator(
                             modifier = Modifier
-                                .height(55.dp)
-                                .width(120.dp),
-                            onClick = { answerText.value = "" },
-                            colors = ButtonDefaults.buttonColors(
-                                backgroundColor = clearButtonColor,
-                                contentColor = Color.White
-                            )
-                        ) {
-                            Text(text = "CLEAR", fontSize = 19.sp)
-                        }
-                        Spacer(modifier = Modifier.height(10.dp))
-                        Button(
+                                .fillMaxWidth()
+                                .height(10.dp)
+                                .padding(horizontal = 24.dp),
+                            color = indicatorColor,
+                            progress = animatedProgress
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(32.dp))
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.Center
+                    ) {
+                        Text(
+                            text = question.value ?: "",
+                            fontSize = 70.sp,
+                            color = Color(0xFF272727),
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Box {
+                        TextField(
                             modifier = Modifier
-                                .height(55.dp)
-                                .width(120.dp),
-                            onClick = { /*TODO*/ },
-                            colors = ButtonDefaults.buttonColors(
-                                backgroundColor = snoozeButtonColor,
-                                contentColor = Color.White
-                            )
-                        ) {
-                            Text(text = "SNOOZE", fontSize = 19.sp)
+                                .fillMaxWidth()
+                                .height(90.dp)
+                                .padding(horizontal = 56.dp),
+                            value = answerText.value,
+                            onValueChange = { if (it.length <= maxChar) answerText.value = it },
+                            singleLine = true,
+                            placeholder = {
+                                Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    Text(text = "=", fontSize = 30.sp)
+                                }
+                            },
+                            keyboardOptions = KeyboardOptions(
+                                keyboardType = KeyboardType.Number,
+                                imeAction = ImeAction.Done
+                            ),
+                            keyboardActions = KeyboardActions(
+                                onDone = {
+                                    dismissAlarm(
+                                        answerText,
+                                        problem,
+                                        mp,
+                                        keyboardController,
+                                        navController,
+                                        alarm,
+                                        viewModel
+                                    ) {
+                                        scope.launch {
+                                            scaffoldState.snackbarHostState.showSnackbar("Incorrect!")
+                                        }
+                                    }
+                                }
+                            ),
+                            textStyle = TextStyle(
+                                color = MaterialTheme.colors.onSurface,
+                                fontSize = 30.sp,
+                                textAlign = TextAlign.Center
+                            ),
+                            colors = TextFieldDefaults.textFieldColors(
+                                backgroundColor = unSelectedDay,
+                                focusedIndicatorColor = Color.Transparent,
+                                unfocusedIndicatorColor = Color.Transparent,
+                                disabledIndicatorColor = Color.Transparent
+                            ),
+                            shape = MaterialTheme.shapes.medium.copy(CornerSize(24.dp))
+                        )
+                        if (showSnack.value) {
+                            Snackbar {
+                                Text(text = "Incorrect!")
+                            }
+                            showSnack.value = false
                         }
                     }
-                    Button(
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Row(
                         modifier = Modifier
-                            .height(120.dp)
-                            .width(120.dp),
-                        onClick = {
-                            dismissAlarm(
-                                answerText,
-                                problem,
-                                mp,
-                                keyboardController,
-                                navController,
-                                alarm,
-                                viewModel
-                            )
-                        },
-                        colors = ButtonDefaults.buttonColors(
-                            backgroundColor = enterButtonColor,
-                            contentColor = Color.White
-                        )
+                            .fillMaxWidth()
+                            .padding(horizontal = 56.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween
                     ) {
-                        Text(text = "ENTER", fontSize = 19.sp)
+                        Column(modifier = Modifier.height(120.dp)) {
+                            Button(
+                                modifier = Modifier
+                                    .height(55.dp)
+                                    .width(120.dp),
+                                onClick = { answerText.value = "" },
+                                colors = ButtonDefaults.buttonColors(
+                                    backgroundColor = clearButtonColor,
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Text(text = "CLEAR", fontSize = 19.sp)
+                            }
+                            Spacer(modifier = Modifier.height(10.dp))
+                            Button(
+                                modifier = Modifier
+                                    .height(55.dp)
+                                    .width(120.dp),
+                                onClick = { /*TODO*/ },
+                                colors = ButtonDefaults.buttonColors(
+                                    backgroundColor = snoozeButtonColor,
+                                    contentColor = Color.White
+                                )
+                            ) {
+                                Text(text = "SNOOZE", fontSize = 19.sp)
+                            }
+                        }
+                        Button(
+                            modifier = Modifier
+                                .height(120.dp)
+                                .width(120.dp),
+                            onClick = {
+                                dismissAlarm(
+                                    answerText,
+                                    problem,
+                                    mp,
+                                    keyboardController,
+                                    navController,
+                                    alarm,
+                                    viewModel
+                                ) {
+                                    scope.launch {
+                                        scaffoldState.snackbarHostState.showSnackbar("Incorrect!")
+                                    }
+                                }
+                            },
+                            colors = ButtonDefaults.buttonColors(
+                                backgroundColor = enterButtonColor,
+                                contentColor = Color.White
+                            )
+                        ) {
+                            Text(text = "ENTER", fontSize = 19.sp)
+                        }
                     }
                 }
             }
@@ -283,7 +309,8 @@ private fun dismissAlarm(
     keyboardController: SoftwareKeyboardController?,
     navController: NavHostController,
     alarm: Alarm,
-    viewModel: AlarmListViewModel
+    viewModel: AlarmListViewModel,
+    onWrongAnswer: () -> Unit
 ) {
     if (validateAnswer(answerText, problem)) {
         mp.stop()
@@ -295,7 +322,7 @@ private fun dismissAlarm(
             .previousBackStackEntry?.savedStateHandle?.set("testAlarmId", alarm.alarmId)
         navController.popBackStack()
     } else {
-        // Show Wrong Snack
+        onWrongAnswer.invoke()
     }
 }
 

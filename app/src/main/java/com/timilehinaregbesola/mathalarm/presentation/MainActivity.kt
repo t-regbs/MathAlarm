@@ -1,8 +1,5 @@
 package com.timilehinaregbesola.mathalarm.presentation
 
-import android.content.Intent
-import android.media.RingtoneManager
-import android.net.Uri
 import android.os.Bundle
 import android.view.Window
 import android.view.WindowManager
@@ -35,30 +32,6 @@ class MainActivity : AppCompatActivity() {
                 window.statusBarColor = MaterialTheme.colors.background.toArgb()
                 NavGraph(mainViewModel)
             }
-        }
-    }
-
-    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
-        super.onActivityResult(requestCode, resultCode, data)
-        if (data != null && requestCode == 42) {
-            val alert: String? = data.getParcelableExtra<Uri>(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)?.toString()
-            mainViewModel.setTone(alert)
-
-//            logger.debug { "Got ringtone: $alert" }
-
-//            val alarmtone = when (alert) {
-//                null -> Alarmtone.Silent()
-//                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString() -> Alarmtone.Default()
-//                else -> Alarmtone.Sound(alert)
-//            }
-
-//            logger.debug { "onActivityResult $alert -> $alarmtone" }
-//
-//            checkPermissions(requireActivity(), listOf(alarmtone))
-
-//            modify("Ringtone picker") { prev ->
-//                prev.copy(alarmtone = alarmtone, isEnabled = true)
-//            }
         }
     }
 }
