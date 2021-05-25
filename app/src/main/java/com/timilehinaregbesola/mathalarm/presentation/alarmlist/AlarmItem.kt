@@ -1,6 +1,5 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist
 
-import android.util.Log
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.background
@@ -27,6 +26,7 @@ import androidx.compose.ui.unit.sp
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.utils.*
 import kotlinx.coroutines.launch
+import timber.log.Timber
 
 @ExperimentalAnimationApi
 @ExperimentalMaterialApi
@@ -100,9 +100,9 @@ fun AlarmItem(
                                             )
                                         ) {
                                             SnackbarResult.Dismissed ->
-                                                Log.d("Track", "Dismissed")
+                                                Timber.d("Track: Dismissed")
                                             SnackbarResult.ActionPerformed ->
-                                                Log.d("Track", "Action!")
+                                                Timber.d("Track: Action!")
                                         }
                                     }
                                 } else {

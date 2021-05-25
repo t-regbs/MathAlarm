@@ -53,18 +53,19 @@ class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
     }
 
     // Called when add fab is pressed
-    fun onAdd(new: Alarm) {
-        viewModelScope.launch {
-            interactors.addAlarm(new)
-            getAlarms()
-        }
-    }
+//    fun onAdd(new: Alarm) {
+//        viewModelScope.launch {
+//            interactors.addAlarm(new)
+//            getAlarms()
+//        }
+//    }
 
     fun onAddTestAlarm(new: Alarm): Long {
         var id: Long
         runBlocking {
             id = interactors.addAlarm(new)
         }
+        getAlarms()
         return id
     }
 
@@ -76,6 +77,13 @@ class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
     fun onDelete(alarm: Alarm) {
         viewModelScope.launch {
             interactors.deleteAlarm(alarm)
+            getAlarms()
+        }
+    }
+
+    fun onDeleteWithId(alarmId: Long) {
+        viewModelScope.launch {
+            interactors.deleteAlarmWithId(alarmId)
             getAlarms()
         }
     }

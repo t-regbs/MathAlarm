@@ -30,9 +30,9 @@ import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
 import kotlinx.coroutines.launch
 import java.util.*
 
-@ExperimentalAnimationApi
 @ExperimentalFoundationApi
 @ExperimentalMaterialApi
+@ExperimentalAnimationApi
 @Composable
 fun AlarmListScreen(
     navController: NavHostController,
@@ -63,7 +63,11 @@ fun ListDisplayScreen(
 
     val scope = rememberCoroutineScope()
     val sheetState by viewModel.sheetState.observeAsState(SheetState.Init)
-    Surface(modifier = Modifier.fillMaxSize().padding(bottom = 24.dp)) {
+    Surface(
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(bottom = 24.dp)
+    ) {
         BottomSheetScaffold(
             sheetContent = {
                 if (sheetOpen.value == true && sheetState != SheetState.Init) {

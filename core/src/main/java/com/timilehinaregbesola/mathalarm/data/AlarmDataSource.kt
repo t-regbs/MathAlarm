@@ -7,6 +7,8 @@ interface AlarmDataSource {
 
     suspend fun deleteAlarm(alarm: Alarm)
 
+    suspend fun deleteAlarmFromId(id: Long)
+
     suspend fun updateAlarm(alarm: Alarm)
 
     suspend fun getAlarms(): List<Alarm>

@@ -59,10 +59,7 @@ fun AlarmBottomSheet(
 
     val testScreenResult = navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Long>("testAlarmId")?.observeAsState()
     testScreenResult?.value?.let {
-        val testAlarm = viewModel.retrieveAlarm(it)
-        if (testAlarm != null) {
-            viewModel.onDelete(testAlarm)
-        }
+        viewModel.onDeleteWithId(it)
     }
 
     when (state) {
@@ -315,14 +312,24 @@ fun AlarmBottomSheet(
                 scope.launch {
                     if (state is SheetState.NewAlarm) {
                         if (alarm!!.alarmTone == "") alarm!!.alarmTone = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString()
-                        viewModel.onAdd(alarm!!)
+                        alarm!!.isOn = true
+                        val id = viewModel.onAddTestAlarm(alarm!!)
+                        alarm!!.alarmId = id
+                        alarm!!.scheduleAlarm(activity, alarm!!.repeat)
                     } else {
+                        if (alarm!!.isOn) {
+                            alarm!!.cancelAlarm(activity)
+                        }
+                        alarm!!.isOn = alarm!!.scheduleAlarm(activity, alarm!!.repeat)
                         viewModel.onUpdate(alarm!!)
                         Timber.d("Save alarm with id: ${alarm!!.alarmId}")
                     }
-                    // TODO: Schedule Alarm
                     alarm = null
                     viewModel.onSheetClose()
+//                    scaffoldState.snackbarHostState.showSnackbar(
+//                        message = alarm!!.getTimeLeftMessage(activity)!!,
+//                        duration = SnackbarDuration.Short
+//                    )
                     scaffoldState.bottomSheetState.collapse()
                 }
             }

@@ -1,5 +1,6 @@
 package com.timilehinaregbesola.mathalarm.navigation
 
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.MaterialTheme
@@ -11,6 +12,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.navArgument
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navDeepLink
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListScreen
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathScreen
@@ -18,6 +20,7 @@ import com.timilehinaregbesola.mathalarm.utils.Navigation
 import com.timilehinaregbesola.mathalarm.utils.getAlarmIdArgument
 import kotlinx.coroutines.InternalCoroutinesApi
 
+@ExperimentalAnimationApi
 @InternalCoroutinesApi
 @ExperimentalComposeUiApi
 @ExperimentalMaterialApi
@@ -38,7 +41,8 @@ fun NavGraph(
                     navArgument(Navigation.NAV_ALARM_MATH_ARGUMENT) {
                         type = NavType.LongType
                     }
-                )
+                ),
+                deepLinks = listOf(navDeepLink { uriPattern = Navigation.NAV_ALARM_MATH_URI })
             ) {
                 MathScreen(
                     navController = navController,

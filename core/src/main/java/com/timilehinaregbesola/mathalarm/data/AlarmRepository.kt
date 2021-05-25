@@ -7,6 +7,8 @@ class AlarmRepository(private val dataSource: AlarmDataSource) {
 
     suspend fun deleteAlarm(alarm: Alarm) = dataSource.deleteAlarm(alarm)
 
+    suspend fun deleteAlarmWithId(id: Long) = dataSource.deleteAlarmFromId(id)
+
     suspend fun updateAlarm(alarm: Alarm) = dataSource.updateAlarm(alarm)
 
     suspend fun getAlarms() = dataSource.getAlarms()

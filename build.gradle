@@ -9,15 +9,15 @@ buildscript {
         coroutine_version = '1.3.7'
         gradleVersion = '4.1.0-alpha10'
         nav_version = '2.3.5'
+        koin_version = '2.2.2'
         dataBindingCompilerVersion = gradleVersion // Always need to be the same.
     }
     repositories {
         google()
         jcenter()
-        
     }
     dependencies {
-        classpath 'com.android.tools.build:gradle:7.0.0-alpha15'
+        classpath 'com.android.tools.build:gradle:7.1.0-alpha01'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         classpath "androidx.navigation:navigation-safe-args-gradle-plugin:$nav_version"
         classpath 'com.google.gms:google-services:4.3.5'

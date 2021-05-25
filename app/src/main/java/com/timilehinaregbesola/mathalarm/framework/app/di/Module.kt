@@ -39,12 +39,13 @@ val databaseModule = module {
         addAlarm: AddAlarm,
         clearAlarms: ClearAlarms,
         deleteAlarm: DeleteAlarm,
+        deleteAlarmWithId: DeleteAlarmWithId,
         findAlarm: FindAlarm,
         getAlarms: GetAlarms,
         getLatestAlarm: GetLatestAlarm,
         updateAlarm: UpdateAlarm
     ): Interactors {
-        return Interactors(addAlarm, clearAlarms, deleteAlarm, findAlarm, getAlarms, getLatestAlarm, updateAlarm)
+        return Interactors(addAlarm, clearAlarms, deleteAlarm, deleteAlarmWithId, findAlarm, getAlarms, getLatestAlarm, updateAlarm)
     }
 
     fun provideAlarmMapper(): AlarmMapper {
@@ -59,6 +60,7 @@ val databaseModule = module {
             AddAlarm(get()),
             ClearAlarms(get()),
             DeleteAlarm(get()),
+            DeleteAlarmWithId(get()),
             FindAlarm(get()),
             GetAlarms(get()),
             GetLatestAlarm(get()),

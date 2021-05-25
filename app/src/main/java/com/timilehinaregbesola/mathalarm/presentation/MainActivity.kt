@@ -5,6 +5,7 @@ import android.view.Window
 import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.MaterialTheme
@@ -20,6 +21,7 @@ class MainActivity : AppCompatActivity() {
 
     private val mainViewModel by viewModel<AlarmListViewModel>()
 
+    @ExperimentalAnimationApi
     @ExperimentalComposeUiApi
     @InternalCoroutinesApi
     @ExperimentalFoundationApi
