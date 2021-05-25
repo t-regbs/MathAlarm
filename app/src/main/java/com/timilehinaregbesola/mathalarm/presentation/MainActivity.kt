@@ -1,6 +1,8 @@
 package com.timilehinaregbesola.mathalarm.presentation
 
+import android.os.Build
 import android.os.Bundle
+import android.view.View
 import android.view.Window
 import android.view.WindowManager
 import androidx.activity.compose.setContent
@@ -39,12 +41,12 @@ class MainActivity : AppCompatActivity() {
 }
 
 fun Window.makeTransparentStatusBar() {
-    setFlags(
-        WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS,
-        WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
-    )
-    setFlags(
-        WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
-        WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS
-    )
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+        decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+    } else {
+        setFlags(
+            WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS,
+            WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
+        )
+    }
 }

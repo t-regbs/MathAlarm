@@ -21,10 +21,6 @@ class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
     val sheetState
         get() = _sheetState
 
-    private val _isSheetOpen = MutableLiveData(false)
-    val isSheetOpen
-        get() = _isSheetOpen
-
     private val _state = MutableLiveData<ToneState>(ToneState.Stopped())
     val state: LiveData<ToneState> = _state
     private var currentTimer: Job? = null
@@ -53,12 +49,12 @@ class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
     }
 
     // Called when add fab is pressed
-//    fun onAdd(new: Alarm) {
-//        viewModelScope.launch {
-//            interactors.addAlarm(new)
-//            getAlarms()
-//        }
-//    }
+    fun onAdd(new: Alarm) {
+        viewModelScope.launch {
+            interactors.addAlarm(new)
+            getAlarms()
+        }
+    }
 
     fun onAddTestAlarm(new: Alarm): Long {
         var id: Long
@@ -71,7 +67,6 @@ class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
 
     fun onFabClicked() {
         _sheetState.value = SheetState.NewAlarm()
-        _isSheetOpen.value = true
     }
 
     fun onDelete(alarm: Alarm) {
@@ -97,15 +92,6 @@ class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
 
     fun onEditAlarmClicked(id: Long) {
         _sheetState.value = SheetState.EditAlarm(id)
-        _isSheetOpen.value = true
-    }
-
-    fun setTone(alert: String?) {
-        val alarm = retrieveAlarm(_sheetState.value!!.alarmId)
-        if (alarm != null && alert != null) {
-            alarm.alarmTone = alert
-            onUpdate(alarm)
-        }
     }
 
     @InternalCoroutinesApi
@@ -134,7 +120,6 @@ class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
     }
 
     fun onSheetClose() {
-        _isSheetOpen.value = false
         _sheetState.value = SheetState.Init
     }
 

@@ -13,8 +13,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.navArgument
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navDeepLink
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListScreen
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewModel
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.ListDisplayScreen
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathScreen
 import com.timilehinaregbesola.mathalarm.utils.Navigation
 import com.timilehinaregbesola.mathalarm.utils.getAlarmIdArgument
@@ -33,7 +33,7 @@ fun NavGraph(
     Surface(color = MaterialTheme.colors.background) {
         NavHost(navController = navController, startDestination = Navigation.NAV_ALARM_LIST) {
             composable(Navigation.NAV_ALARM_LIST) {
-                AlarmListScreen(navController, viewModel)
+                ListDisplayScreen(viewModel, navController)
             }
             composable(
                 route = Navigation.NAV_ALARM_MATH,

@@ -30,24 +30,6 @@ import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
 import kotlinx.coroutines.launch
 import java.util.*
 
-@ExperimentalFoundationApi
-@ExperimentalMaterialApi
-@ExperimentalAnimationApi
-@Composable
-fun AlarmListScreen(
-    navController: NavHostController,
-    viewModel: AlarmListViewModel
-) {
-    Surface(
-        Modifier
-            .padding(top = 24.dp)
-            .fillMaxSize()
-    ) {
-        viewModel.getAlarms()
-        ListDisplayScreen(viewModel, navController)
-    }
-}
-
 @ExperimentalAnimationApi
 @ExperimentalFoundationApi
 @ExperimentalMaterialApi
@@ -56,21 +38,21 @@ fun ListDisplayScreen(
     viewModel: AlarmListViewModel,
     navController: NavHostController
 ) {
+    viewModel.getAlarms()
     val openDialog = remember { mutableStateOf(false) }
     val scaffoldState = rememberBottomSheetScaffoldState()
     val alarms = viewModel.alarms.observeAsState()
-    val sheetOpen = viewModel.isSheetOpen.observeAsState(false)
 
     val scope = rememberCoroutineScope()
     val sheetState by viewModel.sheetState.observeAsState(SheetState.Init)
     Surface(
         modifier = Modifier
             .fillMaxSize()
-            .padding(bottom = 24.dp)
+//            .padding(bottom = 24.dp)
     ) {
         BottomSheetScaffold(
             sheetContent = {
-                if (sheetOpen.value == true && sheetState != SheetState.Init) {
+                if (sheetState != SheetState.Init) {
                     AlarmBottomSheet(sheetState, viewModel, scope, scaffoldState, navController)
                 }
             },
@@ -86,6 +68,7 @@ fun ListDisplayScreen(
             Box(
                 modifier = Modifier
                     .fillMaxSize()
+                    .padding(top = 16.dp)
                     .background(
                         color = if (alarms.value?.isEmpty() == true) {
                             Color.White
@@ -191,7 +174,7 @@ fun ListDisplayScreen(
                 val fabImage = painterResource(id = R.drawable.fabb)
                 AddAlarmFab(
                     modifier = Modifier
-                        .padding(bottom = 16.dp, end = 8.dp)
+                        .padding(bottom = 16.dp, end = 16.dp)
                         .align(Alignment.BottomEnd),
                     fabImage = fabImage,
                     onClick = {
