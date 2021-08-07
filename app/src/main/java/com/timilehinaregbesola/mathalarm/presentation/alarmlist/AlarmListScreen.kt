@@ -123,7 +123,7 @@ fun ListDisplayScreen(
                     }
                 } else {
                     var enabled = false
-                    var nearestAlarmMessage = ""
+                    var nearestAlarmMessage = remember { mutableStateOf("") }
                     if (alarms.value != null && alarms.value!!.isNotEmpty()) {
                         enabled = alarms.value!!.any { it.isOn }
                         val now = System.currentTimeMillis()
@@ -137,7 +137,7 @@ fun ListDisplayScreen(
                                 nearestIndex = index
                             }
                         }
-                        nearestAlarmMessage = nearest.let { it1 ->
+                        nearestAlarmMessage.value = nearest.let { it1 ->
                             alarms.value!![nearestIndex].getTimeLeft(it1)
                         }
                     }
@@ -150,7 +150,7 @@ fun ListDisplayScreen(
                             horizontalAlignment = Alignment.CenterHorizontally,
                         ) {
                             stickyHeader {
-                                ListHeader(enabled, nearestAlarmMessage)
+                                ListHeader(enabled, nearestAlarmMessage.value)
                             }
                             if (alarms.value != null) {
                                 items(alarms.value!!) { alarm ->
@@ -163,7 +163,10 @@ fun ListDisplayScreen(
                                         onUpdateAlarm = viewModel::onUpdate,
                                         scaffoldState = scaffoldState,
                                         onDeleteAlarm = {
-                                            viewModel.onDelete(alarm)
+                                            viewModel.onDelete(it)
+                                        },
+                                        onScheduleAlarm = { curAlarm: Alarm, b: Boolean ->
+                                            viewModel.scheduleAlarm(curAlarm, b)
                                         }
                                     )
                                 }

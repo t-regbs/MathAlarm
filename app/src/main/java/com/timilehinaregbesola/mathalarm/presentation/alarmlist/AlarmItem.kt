@@ -25,8 +25,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.utils.*
-import kotlinx.coroutines.launch
-import timber.log.Timber
 
 @ExperimentalAnimationApi
 @ExperimentalMaterialApi
@@ -36,6 +34,7 @@ fun AlarmItem(
     onEditAlarm: () -> Unit,
     onUpdateAlarm: (Alarm) -> Unit,
     onDeleteAlarm: (Alarm) -> Unit,
+    onScheduleAlarm: (Alarm, Boolean) -> Unit,
     scaffoldState: BottomSheetScaffoldState
 ) {
     val context = LocalContext.current
@@ -59,6 +58,7 @@ fun AlarmItem(
                     val time = alarm.getFormatTime().toString()
                     val actualTime = time.substring(0, time.length - 3)
                     val timeOfDay = time.substring(time.length - 2)
+                    val checkedState = remember { mutableStateOf(alarm.isOn) }
                     Row(
                         modifier = Modifier
                             .padding(start = 24.dp, top = 8.dp, bottom = 8.dp)
@@ -68,19 +68,18 @@ fun AlarmItem(
                             text = actualTime,
                             fontSize = 40.sp,
                             color = Color.Black,
-                            fontWeight = if (alarm.isOn) FontWeight.Bold else FontWeight.Normal
+                            fontWeight = if (checkedState.value) FontWeight.Bold else FontWeight.Normal
                         )
                         Text(
                             text = timeOfDay,
                             fontSize = 16.sp,
                             color = Color.Gray,
-                            fontWeight = if (alarm.isOn) FontWeight.Bold else FontWeight.Normal,
+                            fontWeight = if (checkedState.value) FontWeight.Bold else FontWeight.Normal,
                             modifier = Modifier
                                 .align(Alignment.Bottom)
                                 .padding(bottom = 8.dp)
                         )
                     }
-                    val checkedState = remember { mutableStateOf(alarm.isOn) }
                     Switch(
                         modifier = Modifier
                             .weight(1f)
@@ -91,28 +90,30 @@ fun AlarmItem(
                             checkedState.value = it
                             alarm.isOn = it
                             if (alarm.isOn) {
-                                if (alarm.scheduleAlarm(context, false)) {
-                                    scope.launch {
-                                        when (
-                                            scaffoldState.snackbarHostState.showSnackbar(
-                                                message = alarm.getTimeLeftMessage(context)!!,
-                                                duration = SnackbarDuration.Short
-                                            )
-                                        ) {
-                                            SnackbarResult.Dismissed ->
-                                                Timber.d("Track: Dismissed")
-                                            SnackbarResult.ActionPerformed ->
-                                                Timber.d("Track: Action!")
-                                        }
-                                    }
-                                } else {
-                                    alarm.isOn = false
-                                    checkedState.value = false
-                                }
+//                                if (alarm.scheduleAlarm(context, false)) {
+//                                    scope.launch {
+//                                        when (
+//                                            scaffoldState.snackbarHostState.showSnackbar(
+//                                                message = alarm.getTimeLeftMessage(context)!!,
+//                                                duration = SnackbarDuration.Short
+//                                            )
+//                                        ) {
+//                                            SnackbarResult.Dismissed ->
+//                                                Timber.d("Track: Dismissed")
+//                                            SnackbarResult.ActionPerformed ->
+//                                                Timber.d("Track: Action!")
+//                                        }
+//                                    }
+//                                } else {
+//                                    alarm.isOn = false
+//                                    checkedState.value = false
+//                                }
+                                onUpdateAlarm(alarm)
+                                onScheduleAlarm(alarm, false)
                             } else {
                                 alarm.cancelAlarm(context)
+                                onUpdateAlarm(alarm)
                             }
-                            onUpdateAlarm(alarm)
                         }
                     )
                 }

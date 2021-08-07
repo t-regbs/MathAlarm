@@ -5,14 +5,14 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
-import com.timilehinaregbesola.mathalarm.framework.Interactors
+import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.ToneState
 import kotlinx.coroutines.* // ktlint-disable no-wildcard-imports
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
 
-class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
+class AlarmListViewModel(private val usecases: Usecases) : ViewModel() {
     private val _alarms = MutableLiveData<List<Alarm>>()
     val alarms: LiveData<List<Alarm>>
         get() = _alarms
@@ -27,31 +27,37 @@ class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
 
     fun onUpdate(alarm: Alarm) {
         viewModelScope.launch {
-            interactors.updateAlarm(alarm)
+            usecases.updateAlarm(alarm)
             getAlarms()
         }
     }
 
     fun getAlarms() {
         viewModelScope.launch {
-            val alarmList = interactors.getAlarms()
+            val alarmList = usecases.getAlarms()
             _alarms.postValue(alarmList)
         }
     }
 
     fun getAlarm(key: Long) = viewModelScope.launch {
-        val alarmFound = interactors.findAlarm(key)
+        val alarmFound = usecases.findAlarm(key)
+    }
+
+    fun scheduleAlarm(alarm: Alarm, reschedule: Boolean) {
+        viewModelScope.launch {
+            usecases.scheduleAlarm(alarm, reschedule)
+        }
     }
 
     fun retrieveAlarm(key: Long) = runBlocking {
-        val alarmFound = interactors.findAlarm(key)
+        val alarmFound = usecases.findAlarm(key)
         alarmFound
     }
 
     // Called when add fab is pressed
     fun onAdd(new: Alarm) {
         viewModelScope.launch {
-            interactors.addAlarm(new)
+            usecases.addAlarm(new)
             getAlarms()
         }
     }
@@ -59,7 +65,7 @@ class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
     fun onAddTestAlarm(new: Alarm): Long {
         var id: Long
         runBlocking {
-            id = interactors.addAlarm(new)
+            id = usecases.addAlarm(new)
         }
         getAlarms()
         return id
@@ -71,21 +77,21 @@ class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
 
     fun onDelete(alarm: Alarm) {
         viewModelScope.launch {
-            interactors.deleteAlarm(alarm)
+            usecases.deleteAlarm(alarm)
             getAlarms()
         }
     }
 
     fun onDeleteWithId(alarmId: Long) {
         viewModelScope.launch {
-            interactors.deleteAlarmWithId(alarmId)
+            usecases.deleteAlarmWithId(alarmId)
             getAlarms()
         }
     }
 
     fun onClear() {
         viewModelScope.launch {
-            interactors.clearAlarms()
+            usecases.clearAlarms()
             getAlarms()
         }
     }
@@ -107,7 +113,6 @@ class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
                 _state.value = if (it == 0) {
                     ToneState.Stopped(0)
                 } else {
-//                    secondDown()
                     ToneState.Countdown(seconds, it)
                 }
             }

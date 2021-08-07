@@ -1,4 +1,4 @@
-package com.timilehinaregbesola.mathalarm.interactors
+package com.timilehinaregbesola.mathalarm.usecases
 
 import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm

@@ -312,16 +312,18 @@ fun AlarmBottomSheet(
                 scope.launch {
                     if (state is SheetState.NewAlarm) {
                         if (alarm!!.alarmTone == "") alarm!!.alarmTone = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString()
-                        alarm!!.isOn = true
+//                        alarm!!.isOn = true
                         val id = viewModel.onAddTestAlarm(alarm!!)
                         alarm!!.alarmId = id
-                        alarm!!.scheduleAlarm(activity, alarm!!.repeat)
+//                        alarm!!.scheduleAlarm(activity, alarm!!.repeat)
+                        viewModel.scheduleAlarm(alarm!!, alarm!!.repeat)
                     } else {
+                        viewModel.onUpdate(alarm!!)
                         if (alarm!!.isOn) {
                             alarm!!.cancelAlarm(activity)
                         }
-                        alarm!!.isOn = alarm!!.scheduleAlarm(activity, alarm!!.repeat)
-                        viewModel.onUpdate(alarm!!)
+//                        alarm!!.isOn = alarm!!.scheduleAlarm(activity, alarm!!.repeat)
+                        viewModel.scheduleAlarm(alarm!!, alarm!!.repeat)
                         Timber.d("Save alarm with id: ${alarm!!.alarmId}")
                     }
                     alarm = null

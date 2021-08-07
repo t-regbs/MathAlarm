@@ -1,8 +1,8 @@
 package com.timilehinaregbesola.mathalarm.framework
 
-import com.timilehinaregbesola.mathalarm.interactors.*
+import com.timilehinaregbesola.mathalarm.usecases.*
 
-data class Interactors(
+data class Usecases(
     val addAlarm: AddAlarm,
     val clearAlarms: ClearAlarms,
     val deleteAlarm: DeleteAlarm,
@@ -10,5 +10,6 @@ data class Interactors(
     val findAlarm: FindAlarm,
     val getAlarms: GetAlarms,
     val getLatestAlarm: GetLatestAlarm,
-    val updateAlarm: UpdateAlarm
+    val updateAlarm: UpdateAlarm,
+    val scheduleAlarm: ScheduleAlarm
 )

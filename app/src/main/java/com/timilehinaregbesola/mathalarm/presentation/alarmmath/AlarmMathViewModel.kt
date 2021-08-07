@@ -1,10 +1,9 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmmath
 
 import androidx.lifecycle.ViewModel
-import com.timilehinaregbesola.mathalarm.framework.Interactors
-import kotlinx.coroutines.*
+import com.timilehinaregbesola.mathalarm.framework.Usecases
 
-class AlarmMathViewModel(private val interactors: Interactors) : ViewModel() {
+class AlarmMathViewModel(private val usecases: Usecases) : ViewModel() {
 //    var alarm = MutableLiveData<Alarm?>()
 //    var currentAlarm = MutableLiveData<Alarm?>()
 //
