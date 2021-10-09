@@ -28,15 +28,13 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.navigate
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.components.RingDayChip
 import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
 import com.timilehinaregbesola.mathalarm.utils.*
 import com.vanpra.composematerialdialogs.MaterialDialog
-import com.vanpra.composematerialdialogs.buttons
-import com.vanpra.composematerialdialogs.datetime.timepicker.timepicker
+import com.vanpra.composematerialdialogs.datetime.time.timepicker
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import timber.log.Timber
@@ -106,17 +104,18 @@ fun AlarmBottomSheet(
     }
 
     val dialog = remember { MaterialDialog() }
-    dialog.build {
+    dialog.build(
+        buttons = {
+            positiveButton("Ok")
+            negativeButton("Cancel")
+        }
+    ) {
         timeCal = timeCal.withHour(alarm!!.hour).withMinute(alarm!!.minute)
         timepicker(initialTime = timeCal) { time ->
             alarm!!.hour = time.hour
             alarm!!.minute = time.minute
             alarmText.value = alarm!!.getFormatTime().toString()
             timeCal = timeCal.withHour(alarm!!.hour).withMinute(alarm!!.minute)
-        }
-        buttons {
-            positiveButton("Ok")
-            negativeButton("Cancel")
         }
     }
 

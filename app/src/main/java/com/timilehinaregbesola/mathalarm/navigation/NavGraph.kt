@@ -10,8 +10,8 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
-import androidx.navigation.compose.navArgument
 import androidx.navigation.compose.rememberNavController
+import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.ListDisplayScreen

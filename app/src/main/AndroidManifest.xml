@@ -18,7 +18,8 @@
         android:roundIcon="@mipmap/ic_launcher_round"
         android:supportsRtl="true"
         android:theme="@style/AppTheme.NoActionBar">
-        <activity android:name="com.timilehinaregbesola.mathalarm.presentation.MainActivity">
+        <activity android:name="com.timilehinaregbesola.mathalarm.presentation.MainActivity"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
 
@@ -34,7 +35,8 @@
             android:exported="false"
             android:permission="android.permission.BIND_JOB_SERVICE"/>
         <receiver android:name="com.timilehinaregbesola.mathalarm.AlarmReceiver" />
-        <receiver android:name="com.timilehinaregbesola.mathalarm.RebootReceiver">
+        <receiver android:name="com.timilehinaregbesola.mathalarm.RebootReceiver"
+            android:exported="true">
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.QUICKBOOT_POWERON"/>

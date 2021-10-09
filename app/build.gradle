@@ -6,12 +6,12 @@ apply plugin: 'com.google.gms.google-services'
 apply plugin: 'com.google.firebase.crashlytics'
 
 android {
-    compileSdkVersion 30
-    buildToolsVersion "30.0.2"
+    compileSdkVersion 31
+    buildToolsVersion "30.0.3"
     defaultConfig {
         applicationId "com.timilehinaregbesola.mathalarm"
         minSdkVersion 21
-        targetSdkVersion 30
+        targetSdkVersion 31
         versionCode 10
         versionName "2.0.0"
         testInstrumentationRunner "androidx.test.runner.AndroidJUnitRunner"
@@ -73,18 +73,18 @@ dependencies {
     coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.1.5'
 
     //Compose
-    implementation 'com.google.android.material:material:1.3.0'
+    implementation 'com.google.android.material:material:1.4.0'
     implementation "androidx.compose.ui:ui:$compose_version"
     implementation "androidx.compose.material:material:$compose_version"
     implementation "androidx.compose.material:material-icons-extended:$compose_version"
-    implementation "androidx.compose.ui:ui-tooling:1.0.0-beta05"
+    implementation "androidx.compose.ui:ui-tooling:1.1.0-alpha05"
     implementation "androidx.compose.runtime:runtime:$compose_version"
     implementation "androidx.compose.runtime:runtime-saveable:$compose_version"
     implementation "androidx.compose.runtime:runtime-livedata:$compose_version"
-    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.4.0-alpha01'
+    implementation 'androidx.lifecycle:lifecycle-runtime-ktx:2.4.0-rc01'
 
     //KTX
-    implementation 'androidx.core:core-ktx:1.3.2'
+    implementation 'androidx.core:core-ktx:1.6.0'
 
     //Testing
     testImplementation 'junit:junit:4.13.1'
@@ -110,8 +110,8 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutine_version"
 
     // Navigation
-    implementation "androidx.navigation:navigation-compose:1.0.0-alpha10"
-    implementation "androidx.activity:activity-compose:1.3.0-alpha07"
+    implementation "androidx.navigation:navigation-compose:2.4.0-alpha10"
+    implementation "androidx.activity:activity-compose:1.4.0-beta01"
 
     //Timber
     implementation 'com.jakewharton.timber:timber:4.7.1'
@@ -122,7 +122,7 @@ dependencies {
     implementation 'org.koin:koin-androidx-scope:2.1.5'
 
     // material dialogs
-    implementation "io.github.vanpra.compose-material-dialogs:datetime:0.3.4"
+    implementation "io.github.vanpra.compose-material-dialogs:datetime:0.5.1"
 
     //Firebase
     implementation platform('com.google.firebase:firebase-bom:27.1.0')
