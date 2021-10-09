@@ -9,6 +9,7 @@ import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmDao
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmDatabase
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
+import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_2_3
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractorImpl
 import com.timilehinaregbesola.mathalarm.notification.AlarmNotificationScheduler
@@ -33,7 +34,7 @@ val databaseModule = module {
             application,
             AlarmDatabase::class.java,
             "alarm_history_database"
-        ).build()
+        ).addMigrations(MIGRATION_2_3).build()
     }
 
     fun provideAlarmDao(database: AlarmDatabase): AlarmDao {
