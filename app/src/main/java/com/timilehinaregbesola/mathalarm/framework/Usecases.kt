@@ -11,5 +11,10 @@ data class Usecases(
     val getAlarms: GetAlarms,
     val getLatestAlarm: GetLatestAlarm,
     val updateAlarm: UpdateAlarm,
-    val scheduleAlarm: ScheduleAlarm
+    val scheduleAlarm: ScheduleAlarm,
+    val completeAlarm: CompleteAlarm,
+    val rescheduleFutureAlarms: RescheduleFutureAlarms,
+    val scheduleNextAlarm: ScheduleNextAlarm,
+    val showAlarm: ShowAlarm,
+    val snoozeAlarm: SnoozeAlarm
 )

@@ -1,9 +1,7 @@
 package com.timilehinaregbesola.mathalarm.framework.app
 
 import android.app.Application
-import com.timilehinaregbesola.mathalarm.framework.app.di.databaseModule
-import com.timilehinaregbesola.mathalarm.framework.app.di.repositoryModule
-import com.timilehinaregbesola.mathalarm.framework.app.di.viewModelModule
+import com.timilehinaregbesola.mathalarm.framework.app.di.*
 import org.koin.android.ext.koin.androidContext
 import org.koin.android.ext.koin.androidLogger
 import org.koin.core.context.startKoin
@@ -17,7 +15,7 @@ class AlarmApplication : Application() {
         startKoin {
             androidLogger(Level.ERROR)
             androidContext(this@AlarmApplication)
-            modules(listOf(databaseModule, repositoryModule, viewModelModule))
+            modules(listOf(databaseModule, repositoryModule, viewModelModule, notificationModule, domainModule))
         }
     }
 }

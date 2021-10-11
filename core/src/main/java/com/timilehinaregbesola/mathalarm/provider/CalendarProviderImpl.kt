@@ -5,7 +5,7 @@ import java.util.Calendar
 /**
  * Provide the date and time to be used on the alarm use cases, respecting the Inversion of Control.
  */
-internal class CalendarProviderImpl : CalendarProvider {
+class CalendarProviderImpl : CalendarProvider {
 
     /**
      * Gets the current [Calendar].

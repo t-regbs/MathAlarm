@@ -12,10 +12,16 @@ import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_2_3
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractorImpl
+import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractor
+import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractorImpl
 import com.timilehinaregbesola.mathalarm.notification.AlarmNotificationScheduler
+import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotification
+import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotificationChannel
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.AlarmMathViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AlarmSettingsViewModel
+import com.timilehinaregbesola.mathalarm.provider.CalendarProvider
+import com.timilehinaregbesola.mathalarm.provider.CalendarProviderImpl
 import com.timilehinaregbesola.mathalarm.usecases.*
 import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
@@ -41,6 +47,21 @@ val databaseModule = module {
         return database.alarmDatabaseDao
     }
 
+    fun provideAlarmMapper(): AlarmMapper {
+        return AlarmMapper()
+    }
+
+    single { provideDatabase(androidApplication()) }
+    single { provideAlarmDao(get()) }
+    single { provideAlarmMapper() }
+}
+
+val domainModule = module {
+
+    fun provideCalenderProvider(): CalendarProvider {
+        return CalendarProviderImpl()
+    }
+
     fun provideInteractors(
         addAlarm: AddAlarm,
         clearAlarms: ClearAlarms,
@@ -50,7 +71,12 @@ val databaseModule = module {
         getAlarms: GetAlarms,
         getLatestAlarm: GetLatestAlarm,
         updateAlarm: UpdateAlarm,
-        scheduleAlarm: ScheduleAlarm
+        scheduleAlarm: ScheduleAlarm,
+        completeAlarm: CompleteAlarm,
+        rescheduleFutureAlarms: RescheduleFutureAlarms,
+        scheduleNextAlarm: ScheduleNextAlarm,
+        showAlarm: ShowAlarm,
+        snoozeAlarm: SnoozeAlarm
     ): Usecases {
         return Usecases(
             addAlarm,
@@ -60,17 +86,13 @@ val databaseModule = module {
             findAlarm,
             getAlarms,
             getLatestAlarm,
-            updateAlarm, scheduleAlarm
+            updateAlarm,
+            scheduleAlarm,
+            completeAlarm, rescheduleFutureAlarms, scheduleNextAlarm, showAlarm, snoozeAlarm
         )
     }
 
-    fun provideAlarmMapper(): AlarmMapper {
-        return AlarmMapper()
-    }
-
-    single { provideDatabase(androidApplication()) }
-    single { provideAlarmDao(get()) }
-    single { provideAlarmMapper() }
+    single { provideCalenderProvider() }
     single {
         provideInteractors(
             AddAlarm(get()),
@@ -81,7 +103,12 @@ val databaseModule = module {
             GetAlarms(get()),
             GetLatestAlarm(get()),
             UpdateAlarm(get()),
-            ScheduleAlarm(get(), get())
+            ScheduleAlarm(get(), get()),
+            CompleteAlarm(get(), get(), get()),
+            RescheduleFutureAlarms(get(), get(), get(), get()),
+            ScheduleNextAlarm(get()),
+            ShowAlarm(get(), get(), get()),
+            SnoozeAlarm(get(), get(), get(), get())
         )
     }
 }
@@ -91,10 +118,6 @@ val repositoryModule = module {
         return RoomAlarmDataSource(alarmDao, mapper)
     }
 
-    fun provideNotificationScheduler(context: Context): AlarmNotificationScheduler {
-        return AlarmNotificationScheduler(context)
-    }
-
     fun provideRepository(alarmDataSource: RoomAlarmDataSource): AlarmRepository {
         return AlarmRepository(alarmDataSource)
     }
@@ -102,9 +125,29 @@ val repositoryModule = module {
     fun provideAlarmInteractor(alarmManager: AlarmNotificationScheduler): AlarmInteractor {
         return AlarmInteractorImpl(alarmManager)
     }
-
     single { provideDataSource(get(), get()) }
-    single { provideNotificationScheduler(androidContext()) }
     single { provideRepository(get()) }
     single { provideAlarmInteractor(get()) }
+}
+
+val notificationModule = module {
+    fun provideAlarmNotification(context: Context, channel: MathAlarmNotificationChannel): MathAlarmNotification {
+        return MathAlarmNotification(context, channel)
+    }
+
+    fun provideAlarmNotificationChannel(context: Context): MathAlarmNotificationChannel {
+        return MathAlarmNotificationChannel(context)
+    }
+
+    fun provideNotificationInteractor(alarmNotification: MathAlarmNotification): NotificationInteractor {
+        return NotificationInteractorImpl(alarmNotification)
+    }
+
+    fun provideNotificationScheduler(context: Context): AlarmNotificationScheduler {
+        return AlarmNotificationScheduler(context)
+    }
+    single { provideNotificationScheduler(androidContext()) }
+    single { provideAlarmNotificationChannel(androidContext()) }
+    single { provideAlarmNotification(androidContext(), get()) }
+    single { provideNotificationInteractor(get()) }
 }
