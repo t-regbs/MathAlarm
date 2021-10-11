@@ -70,4 +70,10 @@
     <string name="default_alarm_tone">Alarm Tone (Default)</string>
     <string name="alert">Ringtone</string>
     <string name="permissions_external_storage_text">It seems that we cannot play %s, probably because a permission is required. If you want, you can grant the permission. Alternatively, select a different sound. This decision can be changed in System Settings.</string>
+
+    <string name="channel_alarm_name">Math alarms</string>
+    <string name="channel_alarm_description">Notifications for alarms</string>
+
+    <string name="notification_action_completed">Done</string>
+    <string name="notification_action_snooze">In a few mins</string>
 </resources>

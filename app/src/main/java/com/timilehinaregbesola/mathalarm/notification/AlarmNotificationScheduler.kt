@@ -4,6 +4,8 @@ import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
 import com.timilehinaregbesola.mathalarm.AlarmReceiver
+import com.timilehinaregbesola.mathalarm.AlarmReceiver.Companion.ALARM_ACTION
+import com.timilehinaregbesola.mathalarm.AlarmReceiver.Companion.EXTRA_TASK
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.utils.*
@@ -23,9 +25,11 @@ class AlarmNotificationScheduler(private val context: Context) {
      */
     fun scheduleAlarm(passedAlarm: Alarm, reschedule: Boolean): Boolean {
         Timber.d("Schedule alarm..")
-        val alarm = Intent(context, AlarmReceiver::class.java)
-        alarm.putExtra(ALARM_EXTRA, passedAlarm.alarmId)
-        val alarmIntent: MutableList<PendingIntent> = ArrayList()
+        val alarmIntent = Intent(context, AlarmReceiver::class.java).apply {
+            action = AlarmReceiver.ALARM_ACTION
+            putExtra(EXTRA_TASK, passedAlarm.alarmId)
+        }
+        val alarmIntentList: MutableList<PendingIntent> = ArrayList()
         val time: MutableList<Calendar> = ArrayList()
         // If there is no day set, set the alarm on the closest possible date
         if (passedAlarm.repeatDays == "FFFFFFF") {
@@ -46,9 +50,9 @@ class AlarmNotificationScheduler(private val context: Context) {
                 passedAlarm.repeatDays = sb.toString()
             }
         }
-        for (i in SUN..SAT) {
+        (SUN..SAT).forEach { i ->
             if (passedAlarm.repeatDays[i] == 'T') {
-                var daysUntilAlarm: Int
+                val daysUntilAlarm: Int
                 val cal = passedAlarm.initCalendar()
                 val currentDay = getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
                 Timber.d("current day: $currentDay")
@@ -67,14 +71,15 @@ class AlarmNotificationScheduler(private val context: Context) {
                     cal.add(Calendar.DAY_OF_YEAR, daysUntilAlarm)
                     Timber.d("days until alarm: $daysUntilAlarm")
                 }
-                val stringId: StringBuilder = StringBuilder().append(i)
-                    .append(passedAlarm.hour).append(passedAlarm.minute)
+//                val stringId: StringBuilder = StringBuilder().append(i)
+//                    .append(passedAlarm.hour).append(passedAlarm.minute)
+                val stringId: StringBuilder = StringBuilder().append(passedAlarm.alarmId).append(i)
                 val id = stringId.toString().split("-").joinToString("")
                 val intentId = id.toInt()
                 Timber.d("intent id: $intentId")
                 // check if a previous alarm has been set
                 if (PendingIntent.getBroadcast(
-                        context, intentId, alarm, PendingIntent.FLAG_NO_CREATE
+                        context, intentId, alarmIntent, PendingIntent.FLAG_NO_CREATE
                     ) != null
                 ) {
                     if (!reschedule) {
@@ -83,14 +88,14 @@ class AlarmNotificationScheduler(private val context: Context) {
                     return false
                 }
                 val pendingIntent = PendingIntent.getBroadcast(
-                    context, intentId, alarm, PendingIntent.FLAG_CANCEL_CURRENT
+                    context, intentId, alarmIntent, PendingIntent.FLAG_CANCEL_CURRENT
                 )
-                alarmIntent.add(pendingIntent)
+                alarmIntentList.add(pendingIntent)
                 time.add(cal)
             }
         }
-        for (i in alarmIntent.indices) {
-            val pendingIntent = alarmIntent[i]
+        for (i in alarmIntentList.indices) {
+            val pendingIntent = alarmIntentList[i]
             val cal = time[i]
             context.setAlarm(cal.timeInMillis, pendingIntent)
             Timber.d("scheduled new alarm")
@@ -104,15 +109,17 @@ class AlarmNotificationScheduler(private val context: Context) {
      * @param alarm alarm to be canceled
      */
     fun cancelAlarm(alarm: Alarm) {
-        val cancel = Intent(context, AlarmReceiver::class.java)
+        val receiverIntent = Intent(context, AlarmReceiver::class.java)
+        receiverIntent.action = ALARM_ACTION
         for (i in 0..6) { // For each day of the week
             if (alarm.repeatDays[i] == 'T') {
-                val stringId: StringBuilder = StringBuilder().append(i)
-                    .append(alarm.hour).append(alarm.minute)
+//                val stringId: StringBuilder = StringBuilder().append(i)
+//                    .append(alarm.hour).append(alarm.minute)
+                val stringId: StringBuilder = StringBuilder().append(alarm.alarmId).append(i)
                 val intentId = stringId.toString().toInt()
                 val cancelPendingIntent = PendingIntent.getBroadcast(
-                    context, intentId, cancel,
-                    PendingIntent.FLAG_CANCEL_CURRENT
+                    context, intentId, receiverIntent,
+                    PendingIntent.FLAG_UPDATE_CURRENT
                 )
                 context.cancelAlarm(cancelPendingIntent)
                 cancelPendingIntent.cancel()
