@@ -2,6 +2,7 @@ package com.timilehinaregbesola.mathalarm.framework.app.di
 
 import android.app.Application
 import android.content.Context
+import android.media.MediaPlayer
 import androidx.room.Room
 import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.framework.RoomAlarmDataSource
@@ -10,9 +11,7 @@ import com.timilehinaregbesola.mathalarm.framework.database.AlarmDao
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmDatabase
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_2_3
-import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
-import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractorImpl
-import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractor
+import com.timilehinaregbesola.mathalarm.interactors.*
 import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractorImpl
 import com.timilehinaregbesola.mathalarm.notification.AlarmNotificationScheduler
 import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotification
@@ -92,7 +91,11 @@ val domainModule = module {
         )
     }
 
+    fun provideScheduleNextAlarm(interactor: AlarmInteractor): ScheduleNextAlarm {
+        return ScheduleNextAlarm(interactor)
+    }
     single { provideCalenderProvider() }
+    single { provideScheduleNextAlarm(get()) }
     single {
         provideInteractors(
             AddAlarm(get()),
@@ -131,8 +134,12 @@ val repositoryModule = module {
 }
 
 val notificationModule = module {
-    fun provideAlarmNotification(context: Context, channel: MathAlarmNotificationChannel): MathAlarmNotification {
-        return MathAlarmNotification(context, channel)
+    fun provideAlarmNotification(context: Context, channel: MathAlarmNotificationChannel, player: MediaPlayer): MathAlarmNotification {
+        return MathAlarmNotification(context, channel, player)
+    }
+
+    fun provideAudioPlayer(): MediaPlayer {
+        return MediaPlayer()
     }
 
     fun provideAlarmNotificationChannel(context: Context): MathAlarmNotificationChannel {
@@ -147,7 +154,8 @@ val notificationModule = module {
         return AlarmNotificationScheduler(context)
     }
     single { provideNotificationScheduler(androidContext()) }
+    single { provideAudioPlayer() }
     single { provideAlarmNotificationChannel(androidContext()) }
-    single { provideAlarmNotification(androidContext(), get()) }
+    single { provideAlarmNotification(androidContext(), get(), get()) }
     single { provideNotificationInteractor(get()) }
 }

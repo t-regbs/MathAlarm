@@ -5,6 +5,8 @@ import android.app.TaskStackBuilder
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
+import android.media.AudioAttributes
+import android.media.MediaPlayer
 import androidx.core.app.NotificationCompat
 import androidx.core.net.toUri
 import com.timilehinaregbesola.mathalarm.AlarmReceiver
@@ -19,9 +21,9 @@ import timber.log.Timber
  */
 internal class MathAlarmNotification(
     private val context: Context,
-    private val channel: MathAlarmNotificationChannel
+    private val channel: MathAlarmNotificationChannel,
+    private val player: MediaPlayer
 ) {
-
     /**
      * Shows the [MathAlarmNotification] based on the given Alarm.
      *
@@ -30,7 +32,23 @@ internal class MathAlarmNotification(
     fun show(alarm: Alarm) {
         Timber.d("Showing notification for '${alarm.title}'")
         val builder = buildNotification(alarm)
-        builder.addAction(getCompleteAction(alarm))
+//        builder.addAction(getCompleteAction(alarm))
+//        player.setDataSource(alarm.alarmTone)
+//        player.startAlarmAudio()
+        player.setDataSource(context, alarm.alarmTone.toUri())
+        player.apply {
+//            reset()
+//            setDataSource(context, alarmUri)
+            setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .setUsage(AudioAttributes.USAGE_ALARM)
+                    .build()
+            )
+            prepare()
+            isLooping = true
+            start()
+        }
         context.getNotificationManager()?.notify(alarm.alarmId.toInt(), builder.build())
     }
 
@@ -52,6 +70,7 @@ internal class MathAlarmNotification(
      */
     fun dismiss(notificationId: Long) {
         Timber.d("Dismissing notification id '$notificationId'")
+        player.stop()
         context.getNotificationManager()?.cancel(notificationId.toInt())
     }
 
@@ -63,12 +82,12 @@ internal class MathAlarmNotification(
                 .bigPicture(alarmImage)
                 .bigLargeIcon(null)
 //            setContentIntent(buildPendingIntent(task))
-
             setSmallIcon(R.drawable.icon)
             setContentTitle(context.getString(R.string.notification_title))
             setContentText(alarm.title)
             setFullScreenIntent(buildPendingIntent(alarm), true)
             setStyle(bigPicStyle)
+            setSound(null)
             setLargeIcon(alarmImage)
             setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             setCategory(NotificationCompat.CATEGORY_ALARM)
@@ -85,7 +104,6 @@ internal class MathAlarmNotification(
             context,
             MainActivity::class.java
         )
-
         return TaskStackBuilder.create(context).run {
             addNextIntentWithParentStack(notificationIntent)
             getPendingIntent(REQUEST_CODE_OPEN_TASK, PendingIntent.FLAG_UPDATE_CURRENT)

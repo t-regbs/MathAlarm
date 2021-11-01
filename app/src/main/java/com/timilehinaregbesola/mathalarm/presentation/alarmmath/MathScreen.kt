@@ -44,6 +44,8 @@ import timber.log.Timber
 import java.io.IOException
 import kotlin.random.Random
 
+// import org.koin.androidx.compose
+
 private const val ADD = 0
 private const val SUBTRACT = 1
 private const val TIMES = 2
@@ -57,32 +59,37 @@ var vibrateRunning = false
 fun MathScreen(
     navController: NavHostController,
     alarmId: Long,
-    viewModel: AlarmListViewModel
+    viewModel: AlarmListViewModel,
 ) {
     BackHandler { }
     val alarm = viewModel.retrieveAlarm(alarmId)
     val context = LocalContext.current
+    val audioPlayer = org.koin.androidx.compose.get<MediaPlayer>()
+//    audioPlayer.stop()
     alarm?.let {
-        val mp = MediaPlayer()
+//        val mp = MediaPlayer()
         if (alarm.alarmTone.isNotEmpty()) {
             val alarmUri = Uri.parse(alarm.alarmTone)
-            try {
-                mp.apply {
-                    reset()
-                    setDataSource(context, alarmUri)
-                    setAudioAttributes(
-                        AudioAttributes.Builder()
-                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                            .setUsage(AudioAttributes.USAGE_ALARM)
-                            .build()
-                    )
-                    prepare()
-                    isLooping = true
-                    start()
-                    viewModel.startTimer()
+            println(navController.previousBackStackEntry?.destination?.id)
+            if (navController.previousBackStackEntry?.destination?.id == 1143682591) {
+                try {
+                    audioPlayer.apply {
+                        reset()
+                        setDataSource(context, alarmUri)
+                        setAudioAttributes(
+                            AudioAttributes.Builder()
+                                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                                .setUsage(AudioAttributes.USAGE_ALARM)
+                                .build()
+                        )
+                        prepare()
+                        isLooping = true
+                        start()
+                        viewModel.startTimer()
+                    }
+                } catch (e: IOException) {
+                    e.printStackTrace()
                 }
-            } catch (e: IOException) {
-                e.printStackTrace()
             }
         } else {
             Timber.d("Tone not available")
@@ -152,7 +159,7 @@ fun MathScreen(
                         val ts = toneState.value as ToneState.Countdown
                         Timber.d("seconds: ${ts.seconds}")
                         Timber.d("total: ${ts.total}")
-                        progress.value = ((mp.currentPosition / 1000).toFloat() / (mp.duration / 1000).toFloat())
+                        progress.value = ((audioPlayer.currentPosition / 1000).toFloat() / (audioPlayer.duration / 1000).toFloat())
                         Timber.d("progrss: ${progress.value}")
                         LinearProgressIndicator(
                             modifier = Modifier
@@ -202,7 +209,7 @@ fun MathScreen(
                                 dismissAlarm(
                                     answerText,
                                     problem,
-                                    mp,
+                                    audioPlayer,
                                     keyboardController,
                                     navController,
                                     alarm,
@@ -269,7 +276,7 @@ fun MathScreen(
                                 dismissAlarm(
                                     answerText,
                                     problem,
-                                    mp,
+                                    audioPlayer,
                                     keyboardController,
                                     navController,
                                     alarm,
@@ -306,7 +313,10 @@ private fun dismissAlarm(
     onWrongAnswer: () -> Unit
 ) {
     if (validateAnswer(answerText, problem)) {
-        mp.stop()
+        mp.run {
+            if (isPlaying) stop()
+            release()
+        }
         viewModel.stopTimer()
         vibrateRunning = false
 //                        TODO: cancel notification

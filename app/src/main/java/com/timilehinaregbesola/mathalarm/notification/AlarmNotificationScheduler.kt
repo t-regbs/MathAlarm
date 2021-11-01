@@ -26,7 +26,7 @@ class AlarmNotificationScheduler(private val context: Context) {
     fun scheduleAlarm(passedAlarm: Alarm, reschedule: Boolean): Boolean {
         Timber.d("Schedule alarm..")
         val alarmIntent = Intent(context, AlarmReceiver::class.java).apply {
-            action = AlarmReceiver.ALARM_ACTION
+            action = ALARM_ACTION
             putExtra(EXTRA_TASK, passedAlarm.alarmId)
         }
         val alarmIntentList: MutableList<PendingIntent> = ArrayList()
@@ -74,6 +74,7 @@ class AlarmNotificationScheduler(private val context: Context) {
 //                val stringId: StringBuilder = StringBuilder().append(i)
 //                    .append(passedAlarm.hour).append(passedAlarm.minute)
                 val stringId: StringBuilder = StringBuilder().append(passedAlarm.alarmId).append(i)
+                    .append(passedAlarm.hour).append(passedAlarm.minute)
                 val id = stringId.toString().split("-").joinToString("")
                 val intentId = id.toInt()
                 Timber.d("intent id: $intentId")

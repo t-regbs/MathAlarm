@@ -5,34 +5,18 @@ package com.timilehinaregbesola.mathalarm
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
-import com.timilehinaregbesola.mathalarm.usecases.CompleteAlarm
-import com.timilehinaregbesola.mathalarm.usecases.RescheduleFutureAlarms
-import com.timilehinaregbesola.mathalarm.usecases.ShowAlarm
-import com.timilehinaregbesola.mathalarm.usecases.SnoozeAlarm
+import com.timilehinaregbesola.mathalarm.framework.Usecases
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import org.koin.core.KoinComponent
-import org.koin.core.inject
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import timber.log.Timber
 
 /**
  * [BroadcastReceiver] to be notified by the [android.app.AlarmManager].
  */
 class AlarmReceiver : BroadcastReceiver(), KoinComponent {
-
-//    override fun onReceive(context: Context, intent: Intent) {
-//        val service = Intent(context, AlarmService::class.java)
-//        service.putExtra(ALARM_EXTRA, intent.extras!![ALARM_EXTRA].toString())
-//        AlarmService.enqueueWork(context, service)
-//    }
-
-    private val completeTaskUseCase: CompleteAlarm by inject()
-
-    private val showAlarmUseCase: ShowAlarm by inject()
-
-    private val snoozeAlarmUseCase: SnoozeAlarm by inject()
-
-    private val rescheduleUseCase: RescheduleFutureAlarms by inject()
+    private val usecases: Usecases by inject()
 
     @Suppress("GlobalCoroutineUsage")
     override fun onReceive(context: Context?, intent: Intent?) {
@@ -45,10 +29,10 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
 
     private suspend fun handleIntent(intent: Intent?) =
         when (intent?.action) {
-            ALARM_ACTION -> getAlarmId(intent)?.let { showAlarmUseCase(it) }
-            COMPLETE_ACTION -> getAlarmId(intent)?.let { completeTaskUseCase(it) }
-            SNOOZE_ACTION -> getAlarmId(intent)?.let { snoozeAlarmUseCase(it) }
-            Intent.ACTION_BOOT_COMPLETED -> rescheduleUseCase()
+            ALARM_ACTION -> getAlarmId(intent)?.let { usecases.showAlarm(it) }
+            COMPLETE_ACTION -> getAlarmId(intent)?.let { usecases.completeAlarm(it) }
+            SNOOZE_ACTION -> getAlarmId(intent)?.let { usecases.snoozeAlarm(it) }
+            Intent.ACTION_BOOT_COMPLETED -> usecases.rescheduleFutureAlarms()
             else -> Timber.e("Action not supported")
         }
 

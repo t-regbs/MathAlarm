@@ -20,6 +20,7 @@ internal class MathAlarmNotificationChannel(context: Context) {
 
             NotificationChannel(CHANNEL_ID, name, importance).apply {
                 this.description = description
+//                setSound(null, null)
                 context.getNotificationManager()?.createNotificationChannel(this)
             }
         }

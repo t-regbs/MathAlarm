@@ -8,8 +8,8 @@ import com.timilehinaregbesola.mathalarm.framework.database.AlarmDao
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.utils.scheduleAlarm
 import kotlinx.coroutines.*
-import org.koin.core.KoinComponent
-import org.koin.core.inject
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 
 class RebootReceiver : BroadcastReceiver() {
     private val myHelper: MyHelper by lazy { MyHelper() }
