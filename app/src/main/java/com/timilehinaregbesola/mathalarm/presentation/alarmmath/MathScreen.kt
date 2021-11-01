@@ -65,9 +65,7 @@ fun MathScreen(
     val alarm = viewModel.retrieveAlarm(alarmId)
     val context = LocalContext.current
     val audioPlayer = org.koin.androidx.compose.get<MediaPlayer>()
-//    audioPlayer.stop()
     alarm?.let {
-//        val mp = MediaPlayer()
         if (alarm.alarmTone.isNotEmpty()) {
             val alarmUri = Uri.parse(alarm.alarmTone)
             println(navController.previousBackStackEntry?.destination?.id)
