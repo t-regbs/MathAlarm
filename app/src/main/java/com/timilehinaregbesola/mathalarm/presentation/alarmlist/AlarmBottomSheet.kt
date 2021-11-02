@@ -6,7 +6,10 @@ import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
@@ -21,9 +24,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
@@ -31,6 +36,7 @@ import androidx.navigation.NavHostController
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.components.RingDayChip
+import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
 import com.timilehinaregbesola.mathalarm.utils.*
 import com.vanpra.composematerialdialogs.MaterialDialog
@@ -124,6 +130,7 @@ fun AlarmBottomSheet(
             .background(color = Color.White)
             .fillMaxWidth()
             .padding(24.dp)
+            .scrollable(rememberScrollState(), Orientation.Vertical)
     ) {
         Card(
             modifier = Modifier
@@ -166,11 +173,11 @@ fun AlarmBottomSheet(
         )
         Row(
             modifier = Modifier
-                .padding(top = 38.dp, start = 16.dp, end = 16.dp)
-                .fillMaxWidth()
+                .padding(top = 38.dp)
+                .fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween
         ) {
             TextWithCheckbox(
-                modifier = Modifier.padding(end = 38.dp),
                 text = "Repeat Weekly",
                 initialState = alarm!!.repeat
             ) { alarm!!.repeat = it }
@@ -178,71 +185,41 @@ fun AlarmBottomSheet(
                 alarm!!.vibrate = it
             }
         }
-        Row(
-            modifier = Modifier
-                .padding(top = 30.dp, start = 16.dp, end = 16.dp)
-                .fillMaxWidth()
-        ) {
-            Icon(
-                modifier = Modifier.padding(end = 14.dp),
-                imageVector = Icons.Outlined.Label,
-                contentDescription = null
-            )
-            Text(
-                text = "Good Morning",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Normal
-            )
+        TextWithIcon(image = Icons.Outlined.Label, text = "Good Morning")
+        val toneText = remember { mutableStateOf<String?>(null) }
+        val result = remember { mutableStateOf<Uri?>(null) }
+        val launcher = rememberLauncherForActivityResult(PickRingtone(alarm)) {
+            result.value = it
         }
-        Row(
-            modifier = Modifier
-                .padding(top = 30.dp, start = 16.dp, end = 16.dp)
-                .fillMaxWidth()
-        ) {
-            val toneText = remember { mutableStateOf<String?>(null) }
-            val result = remember { mutableStateOf<Uri?>(null) }
-            val launcher = rememberLauncherForActivityResult(PickRingtone(alarm)) {
-                result.value = it
-            }
-            result.value?.let {
-                val alert = it.toString()
-                checkPermissions(activity, listOf(alert))
-                alarm!!.alarmTone = alert
-                toneText.value = RingtoneManager.getRingtone(activity, alert.toUri()).getTitle(activity)
-            }
-            Icon(
-                modifier = Modifier.padding(end = 14.dp),
-                imageVector = Icons.Outlined.Notifications,
-                contentDescription = null
-            )
-            Text(
-                modifier = Modifier
-                    .clickable(
-                        onClick = {
-                            try {
-                                launcher.launch(null)
-                            } catch (e: Exception) {
-                                Timber.e(e)
+        result.value?.let {
+            val alert = it.toString()
+            checkPermissions(activity, listOf(alert))
+            alarm!!.alarmTone = alert
+            toneText.value = RingtoneManager.getRingtone(activity, alert.toUri()).getTitle(activity)
+        }
+        TextWithIcon(
+            text = when {
+                toneText.value != null -> {
+                    toneText.value!!
+                }
+                alarm?.alarmTone == "" -> {
+                    activity.getString(R.string.default_alarm_tone)
+                }
+                else -> {
+                    RingtoneManager.getRingtone(activity, alarm?.alarmTone?.toUri()).getTitle(activity)
+                }
+            },
+            image = Icons.Outlined.Notifications,
+            onClick = {
+                try {
+                    launcher.launch(null)
+                } catch (e: Exception) {
+                    Timber.e(e)
 //                                Toast.makeText(context, requireContext().getString(R.string.details_no_ringtone_picker), Toast.LENGTH_LONG)
 //                                    .show()
-                            }
-                        }
-                    ),
-                text = when {
-                    toneText.value != null -> {
-                        toneText.value!!
-                    }
-                    alarm?.alarmTone == "" -> {
-                        activity.getString(R.string.default_alarm_tone)
-                    }
-                    else -> {
-                        RingtoneManager.getRingtone(activity, alarm?.alarmTone?.toUri()).getTitle(activity)
-                    }
-                },
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Normal
-            )
-        }
+                }
+            }
+        )
         Row(
             modifier = Modifier
                 .padding(top = 30.dp, start = 16.dp, end = 16.dp)
@@ -260,15 +237,7 @@ fun AlarmBottomSheet(
                 .padding(top = 32.dp)
                 .fillMaxWidth(),
             onClick = {
-                navController.currentBackStackEntry?.savedStateHandle?.apply {
-                    set("tone", alarm!!.alarmTone)
-                    set("hour", alarm!!.hour)
-                    set("minute", alarm!!.minute)
-                    set("difficulty", alarm!!.difficulty)
-                    set("vibrate", alarm!!.vibrate)
-                    set("repeat", alarm!!.repeat)
-                    set("repeatDays", alarm!!.repeatDays)
-                }
+                updateSavedStateHandle(navController, alarm)
                 val testAlarm = Alarm()
                 testAlarm.apply {
                     difficulty = alarm!!.difficulty
@@ -343,6 +312,47 @@ fun AlarmBottomSheet(
     }
 }
 
+private fun updateSavedStateHandle(
+    navController: NavHostController,
+    alarm: Alarm?
+) {
+    navController.currentBackStackEntry?.savedStateHandle?.apply {
+        set("tone", alarm!!.alarmTone)
+        set("hour", alarm!!.hour)
+        set("minute", alarm!!.minute)
+        set("difficulty", alarm!!.difficulty)
+        set("vibrate", alarm!!.vibrate)
+        set("repeat", alarm!!.repeat)
+        set("repeatDays", alarm!!.repeatDays)
+    }
+}
+
+@Composable
+private fun TextWithIcon(
+    image: ImageVector,
+    text: String,
+    modifier: Modifier = Modifier,
+    onClick: (() -> Unit)? = null
+) {
+    Row(
+        modifier = modifier
+            .padding(top = 30.dp, start = 16.dp, end = 16.dp)
+            .fillMaxWidth()
+    ) {
+        Icon(
+            modifier = Modifier.padding(end = 14.dp),
+            imageVector = image,
+            contentDescription = null
+        )
+        Text(
+            modifier = Modifier.clickable { onClick?.invoke() },
+            text = text,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Normal
+        )
+    }
+}
+
 @Composable
 private fun TextWithCheckbox(
     modifier: Modifier = Modifier,
@@ -350,10 +360,13 @@ private fun TextWithCheckbox(
     initialState: Boolean,
     onCheckChange: (Boolean) -> Unit
 ) {
-    Row(modifier = modifier) {
+    Row(
+        modifier = modifier,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
         val checkboxState = remember { mutableStateOf(initialState) }
         Checkbox(
-            modifier = Modifier.padding(end = 14.dp),
+            modifier = Modifier.padding(end = 10.dp),
             checked = checkboxState.value,
             onCheckedChange = {
                 checkboxState.value = it
@@ -445,4 +458,15 @@ sealed class SheetState(val alarmId: Long = 0L) {
     object Init : SheetState()
 
     class EditAlarm(id: Long) : SheetState(id)
+}
+
+@Preview
+@Composable
+fun TextCheckboxPreview() {
+    MathAlarmTheme {
+        TextWithCheckbox(
+            text = "Repeat Weekly",
+            initialState = false
+        ) { }
+    }
 }
