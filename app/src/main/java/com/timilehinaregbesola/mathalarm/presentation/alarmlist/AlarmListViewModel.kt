@@ -49,6 +49,12 @@ class AlarmListViewModel(private val usecases: Usecases) : ViewModel() {
         }
     }
 
+    fun snoozeAlarm(alarmId: Long) {
+        viewModelScope.launch {
+            usecases.snoozeAlarm(alarmId)
+        }
+    }
+
     fun retrieveAlarm(key: Long) = runBlocking {
         val alarmFound = usecases.findAlarm(key)
         alarmFound

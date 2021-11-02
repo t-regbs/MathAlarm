@@ -62,6 +62,7 @@ fun MathScreen(
     viewModel: AlarmListViewModel,
 ) {
     BackHandler { }
+    val settingsId = 1143682591
     val alarm = viewModel.retrieveAlarm(alarmId)
     val context = LocalContext.current
     val audioPlayer = org.koin.androidx.compose.get<MediaPlayer>()
@@ -69,7 +70,7 @@ fun MathScreen(
         if (alarm.alarmTone.isNotEmpty()) {
             val alarmUri = Uri.parse(alarm.alarmTone)
             println(navController.previousBackStackEntry?.destination?.id)
-            if (navController.previousBackStackEntry?.destination?.id == 1143682591) {
+            if (navController.previousBackStackEntry?.destination?.id == settingsId) {
                 try {
                     audioPlayer.apply {
                         reset()
@@ -257,7 +258,12 @@ fun MathScreen(
                                 modifier = Modifier
                                     .height(55.dp)
                                     .width(120.dp),
-                                onClick = { /*TODO*/ },
+                                enabled = alarm.snooze != 0,
+                                onClick = {
+                                    stopMusicAndHideKeyboard(audioPlayer, viewModel, keyboardController)
+                                    viewModel.snoozeAlarm(alarmId)
+                                    navController.popBackStack()
+                                },
                                 colors = ButtonDefaults.buttonColors(
                                     backgroundColor = snoozeButtonColor,
                                     contentColor = Color.White
@@ -311,20 +317,29 @@ private fun dismissAlarm(
     onWrongAnswer: () -> Unit
 ) {
     if (validateAnswer(answerText, problem)) {
-        mp.run {
-            if (isPlaying) stop()
-            release()
-        }
-        viewModel.stopTimer()
-        vibrateRunning = false
-//                        TODO: cancel notification
-        keyboardController?.hide()
+        stopMusicAndHideKeyboard(mp, viewModel, keyboardController)
         navController
             .previousBackStackEntry?.savedStateHandle?.set("testAlarmId", alarm.alarmId)
         navController.popBackStack()
     } else {
         onWrongAnswer.invoke()
     }
+}
+
+@OptIn(ExperimentalComposeUiApi::class)
+private fun stopMusicAndHideKeyboard(
+    mp: MediaPlayer,
+    viewModel: AlarmListViewModel,
+    keyboardController: SoftwareKeyboardController?
+) {
+    mp.run {
+        if (isPlaying) stop()
+//        release()
+    }
+    viewModel.stopTimer()
+    vibrateRunning = false
+//                        TODO: cancel notification
+    keyboardController?.hide()
 }
 
 private fun validateAnswer(

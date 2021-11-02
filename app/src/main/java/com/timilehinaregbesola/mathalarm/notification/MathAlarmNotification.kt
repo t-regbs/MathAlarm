@@ -33,12 +33,9 @@ internal class MathAlarmNotification(
         Timber.d("Showing notification for '${alarm.title}'")
         val builder = buildNotification(alarm)
 //        builder.addAction(getCompleteAction(alarm))
-//        player.setDataSource(alarm.alarmTone)
-//        player.startAlarmAudio()
-        player.setDataSource(context, alarm.alarmTone.toUri())
         player.apply {
-//            reset()
-//            setDataSource(context, alarmUri)
+            reset()
+            setDataSource(context, alarm.alarmTone.toUri())
             setAudioAttributes(
                 AudioAttributes.Builder()
                     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
@@ -70,7 +67,8 @@ internal class MathAlarmNotification(
      */
     fun dismiss(notificationId: Long) {
         Timber.d("Dismissing notification id '$notificationId'")
-        player.stop()
+        if (player.isPlaying)
+            player.stop()
         context.getNotificationManager()?.cancel(notificationId.toInt())
     }
 
