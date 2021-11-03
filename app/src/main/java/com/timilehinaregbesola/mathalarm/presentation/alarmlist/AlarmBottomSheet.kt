@@ -171,7 +171,7 @@ fun AlarmBottomSheet(
         )
         Row(
             modifier = Modifier
-                .padding(top = 38.dp)
+                .padding(top = 28.dp, start = 16.dp, end = 16.dp)
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -197,6 +197,7 @@ fun AlarmBottomSheet(
             toneText.value = RingtoneManager.getRingtone(activity, alert.toUri()).getTitle(activity)
         }
         TextWithIcon(
+            modifier = Modifier.padding(horizontal = 16.dp),
             text = when {
                 toneText.value != null -> {
                     toneText.value!!
@@ -221,7 +222,7 @@ fun AlarmBottomSheet(
         )
         Row(
             modifier = Modifier
-                .padding(top = 30.dp, start = 16.dp, end = 16.dp)
+                .padding(top = 30.dp, start = 26.dp, end = 26.dp)
                 .fillMaxWidth()
         ) {
             Icon(
@@ -335,7 +336,7 @@ private fun TextWithIcon(
 ) {
     Row(
         modifier = modifier
-            .padding(top = 30.dp, start = 16.dp, end = 16.dp)
+            .padding(top = 30.dp, start = 10.dp, end = 10.dp)
             .fillMaxWidth()
     ) {
         Icon(
@@ -388,7 +389,7 @@ private fun LabelTextField() {
         onValueChange = { newValue -> text = newValue },
         leadingIcon = { Icon(imageVector = Icons.Outlined.Label, contentDescription = null) },
         modifier = Modifier
-//            .padding(8.dp)
+            .padding(horizontal = 16.dp)
             .fillMaxWidth(),
         label = { Text("Alarm title") },
         placeholder = { Text("Good day") },
