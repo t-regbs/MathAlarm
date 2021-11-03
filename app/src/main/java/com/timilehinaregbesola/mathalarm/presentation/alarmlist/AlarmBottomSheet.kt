@@ -16,17 +16,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.EmojiSymbols
 import androidx.compose.material.icons.outlined.Label
 import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -185,7 +183,8 @@ fun AlarmBottomSheet(
                 alarm!!.vibrate = it
             }
         }
-        TextWithIcon(image = Icons.Outlined.Label, text = "Good Morning")
+//        TextWithIcon(image = Icons.Outlined.Label, text = "Good Morning")
+        LabelTextField()
         val toneText = remember { mutableStateOf<String?>(null) }
         val result = remember { mutableStateOf<Uri?>(null) }
         val launcher = rememberLauncherForActivityResult(PickRingtone(alarm)) {
@@ -382,6 +381,23 @@ private fun TextWithCheckbox(
 }
 
 @Composable
+private fun LabelTextField() {
+    var text by remember { mutableStateOf(TextFieldValue("")) }
+    TextField(
+        value = text,
+        onValueChange = { newValue -> text = newValue },
+        leadingIcon = { Icon(imageVector = Icons.Outlined.Label, contentDescription = null) },
+        modifier = Modifier
+            .padding(8.dp)
+            .fillMaxWidth(),
+        label = { Text("Add a Title") },
+        placeholder = { Text("Good day") },
+        singleLine = true,
+        colors = TextFieldDefaults.textFieldColors(backgroundColor = Color.Transparent),
+    )
+}
+
+@Composable
 private fun AlarmDays(alarm: Alarm?) {
     Row(
         modifier = Modifier
@@ -468,5 +484,13 @@ fun TextCheckboxPreview() {
             text = "Repeat Weekly",
             initialState = false
         ) { }
+    }
+}
+
+@Preview
+@Composable
+fun LabelTextViewPreview() {
+    MathAlarmTheme {
+        LabelTextField()
     }
 }
