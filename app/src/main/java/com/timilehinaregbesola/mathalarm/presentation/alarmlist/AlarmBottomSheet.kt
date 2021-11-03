@@ -365,7 +365,7 @@ private fun TextWithCheckbox(
     ) {
         val checkboxState = remember { mutableStateOf(initialState) }
         Checkbox(
-            modifier = Modifier.padding(end = 10.dp),
+            modifier = Modifier.padding(end = 8.dp),
             checked = checkboxState.value,
             onCheckedChange = {
                 checkboxState.value = it
@@ -388,9 +388,9 @@ private fun LabelTextField() {
         onValueChange = { newValue -> text = newValue },
         leadingIcon = { Icon(imageVector = Icons.Outlined.Label, contentDescription = null) },
         modifier = Modifier
-            .padding(8.dp)
+//            .padding(8.dp)
             .fillMaxWidth(),
-        label = { Text("Add a Title") },
+        label = { Text("Alarm title") },
         placeholder = { Text("Good day") },
         singleLine = true,
         colors = TextFieldDefaults.textFieldColors(backgroundColor = Color.Transparent),
