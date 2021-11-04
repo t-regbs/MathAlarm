@@ -183,8 +183,11 @@ fun AlarmBottomSheet(
                 alarm!!.vibrate = it
             }
         }
-//        TextWithIcon(image = Icons.Outlined.Label, text = "Good Morning")
-        LabelTextField()
+        var txtFieldText by remember { mutableStateOf(TextFieldValue("")) }
+        LabelTextField(
+            text = txtFieldText,
+            onValueChange = { newValue -> txtFieldText = newValue }
+        )
         val toneText = remember { mutableStateOf<String?>(null) }
         val result = remember { mutableStateOf<Uri?>(null) }
         val launcher = rememberLauncherForActivityResult(PickRingtone(alarm)) {
@@ -382,11 +385,13 @@ private fun TextWithCheckbox(
 }
 
 @Composable
-private fun LabelTextField() {
-    var text by remember { mutableStateOf(TextFieldValue("")) }
+private fun LabelTextField(
+    text: TextFieldValue,
+    onValueChange: (TextFieldValue) -> Unit
+) {
     TextField(
         value = text,
-        onValueChange = { newValue -> text = newValue },
+        onValueChange = onValueChange,
         leadingIcon = { Icon(imageVector = Icons.Outlined.Label, contentDescription = null) },
         modifier = Modifier
             .padding(horizontal = 16.dp)
@@ -492,6 +497,6 @@ fun TextCheckboxPreview() {
 @Composable
 fun LabelTextViewPreview() {
     MathAlarmTheme {
-        LabelTextField()
+        LabelTextField(text = TextFieldValue(""), {})
     }
 }
