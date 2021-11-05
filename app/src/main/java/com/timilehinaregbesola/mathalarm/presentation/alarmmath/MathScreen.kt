@@ -332,12 +332,12 @@ private fun stopMusicAndHideKeyboard(
     viewModel: AlarmListViewModel,
     keyboardController: SoftwareKeyboardController?
 ) {
+    vibrateRunning = false
     mp.run {
         if (isPlaying) stop()
 //        release()
     }
     viewModel.stopTimer()
-    vibrateRunning = false
 //                        TODO: cancel notification
     keyboardController?.hide()
 }

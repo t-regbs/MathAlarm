@@ -11,7 +11,7 @@ import kotlinx.coroutines.*
 class AlarmSettingsViewModel(private val usecases: Usecases) : ViewModel() {
     var alarm = MutableLiveData<Alarm?>()
 
-    private val _navigateToAlarmMath = MutableLiveData<Long>()
+    private val _navigateToAlarmMath = MutableLiveData<Long?>()
     val navigateToAlarmMath
         get() = _navigateToAlarmMath
     private val _removeSpinner = MutableLiveData<Boolean>()

@@ -369,7 +369,7 @@ private fun TextWithCheckbox(
     ) {
         val checkboxState = remember { mutableStateOf(initialState) }
         Checkbox(
-            modifier = Modifier.padding(end = 8.dp),
+            modifier = Modifier,
             checked = checkboxState.value,
             onCheckedChange = {
                 checkboxState.value = it

@@ -33,6 +33,7 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
             COMPLETE_ACTION -> getAlarmId(intent)?.let { usecases.completeAlarm(it) }
             SNOOZE_ACTION -> getAlarmId(intent)?.let { usecases.snoozeAlarm(it) }
             Intent.ACTION_BOOT_COMPLETED -> usecases.rescheduleFutureAlarms()
+            "android.intent.action.QUICKBOOT_POWERON" -> usecases.rescheduleFutureAlarms()
             else -> Timber.e("Action not supported")
         }
 

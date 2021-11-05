@@ -35,7 +35,7 @@ fun Context.setAlarm(
 
     val manager = getAlarmManager()
     manager?.let {
-        AlarmManagerCompat.setAndAllowWhileIdle(it, type, triggerAtMillis, operation)
+        AlarmManagerCompat.setExactAndAllowWhileIdle(it, type, triggerAtMillis, operation)
     }
 }
 
