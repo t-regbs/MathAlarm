@@ -48,7 +48,6 @@ fun ListDisplayScreen(
     Surface(
         modifier = Modifier
             .fillMaxSize()
-//            .padding(bottom = 24.dp)
     ) {
         BottomSheetScaffold(
             sheetContent = {
@@ -127,17 +126,17 @@ fun ListDisplayScreen(
                     if (alarms.value != null && alarms.value!!.isNotEmpty()) {
                         enabled = alarms.value!!.any { it.isOn }
                         val now = System.currentTimeMillis()
-                        var nearest = alarms.value!![0].let { it1 -> getCal(it1).timeInMillis }
+                        var nearestTime = alarms.value!![0].let { it1 -> getCal(it1).timeInMillis }
                         var nearestIndex = 0
                         alarms.value?.forEachIndexed { index, alarm ->
                             val cal = getCal(alarm)
                             val time = cal.timeInMillis
-                            if ((time - now) < nearest.minus(now)) {
-                                nearest = time
+                            if ((time - now) < nearestTime.minus(now)) {
+                                nearestTime = time
                                 nearestIndex = index
                             }
                         }
-                        nearestAlarmMessage.value = nearest.let { it1 ->
+                        nearestAlarmMessage.value = nearestTime.let { it1 ->
                             alarms.value!![nearestIndex].getTimeLeft(it1)
                         }
                     }

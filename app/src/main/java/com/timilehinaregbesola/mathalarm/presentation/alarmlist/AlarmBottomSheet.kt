@@ -171,7 +171,7 @@ fun AlarmBottomSheet(
         )
         Row(
             modifier = Modifier
-                .padding(top = 28.dp, start = 16.dp, end = 16.dp)
+                .padding(top = 28.dp, start = 26.dp, end = 26.dp)
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -369,7 +369,7 @@ private fun TextWithCheckbox(
     ) {
         val checkboxState = remember { mutableStateOf(initialState) }
         Checkbox(
-            modifier = Modifier,
+            modifier = Modifier.padding(end = 14.dp),
             checked = checkboxState.value,
             onCheckedChange = {
                 checkboxState.value = it
