@@ -26,6 +26,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
+import com.timilehinaregbesola.mathalarm.presentation.ui.enterButtonColor
 import com.timilehinaregbesola.mathalarm.utils.*
 
 @ExperimentalAnimationApi
@@ -88,6 +89,9 @@ fun AlarmItem(
                             .padding(4.dp)
                             .align(Alignment.CenterVertically),
                         checked = checkedState.value,
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = enterButtonColor
+                        ),
                         onCheckedChange = {
                             checkedState.value = it
                             alarm.isOn = it
