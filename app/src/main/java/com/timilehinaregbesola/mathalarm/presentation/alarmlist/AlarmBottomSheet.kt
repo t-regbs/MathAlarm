@@ -279,7 +279,7 @@ fun AlarmBottomSheet(
                     remove<Boolean>("repeat")
                     remove<String>("repeatDays")
                 }
-                viewModel.getAlarms()
+//                viewModel.getAlarms()
                 scope.launch {
                     alarm!!.title = txtFieldText.text
                     if (state is SheetState.NewAlarm) {

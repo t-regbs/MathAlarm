@@ -1,6 +1,7 @@
 package com.timilehinaregbesola.mathalarm.framework.database
 
 import androidx.room.* // ktlint-disable no-wildcard-imports
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AlarmDao {
@@ -29,7 +30,7 @@ interface AlarmDao {
     suspend fun getLastAlarm(): AlarmEntity?
 
     @Query("SELECT * FROM alarms ORDER BY alarmid DESC")
-    suspend fun getAlarms(): List<AlarmEntity>
+    fun getAlarms(): Flow<List<AlarmEntity>>
 
     @Query("SELECT * FROM alarms WHERE ison = :state")
     fun getActiveAlarms(state: Boolean = true): List<AlarmEntity>

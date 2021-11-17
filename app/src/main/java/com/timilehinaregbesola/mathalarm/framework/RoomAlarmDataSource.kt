@@ -4,6 +4,8 @@ import com.timilehinaregbesola.mathalarm.data.AlarmDataSource
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmDao
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.map
 
 class RoomAlarmDataSource(
     private val alarmDao: AlarmDao,
@@ -24,7 +26,9 @@ class RoomAlarmDataSource(
     override suspend fun updateAlarm(alarm: Alarm) =
         alarmDao.updateAlarm(mapper.mapFromDomainModel(alarm))
 
-    override suspend fun getAlarms(): List<Alarm> = mapper.toDomainList(alarmDao.getAlarms())
+    override fun getAlarms(): Flow<List<Alarm>> = alarmDao.getAlarms().map { entityList ->
+        mapper.toDomainList(entityList)
+    }
 
     override suspend fun getLatestAlarmFromDatabase(): Alarm? = alarmDao.getLastAlarm()?.let {
         mapper.mapToDomainModel(it)

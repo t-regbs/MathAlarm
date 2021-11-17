@@ -8,18 +8,19 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.ToneState
 import kotlinx.coroutines.* // ktlint-disable no-wildcard-imports
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
 
 class AlarmListViewModel(private val usecases: Usecases) : ViewModel() {
-    private val _alarms = MutableLiveData<List<Alarm>>()
-    val alarms: LiveData<List<Alarm>>
-        get() = _alarms
+    val alarms: StateFlow<List<Alarm>> =
+        usecases.getAlarms().stateIn(
+            scope = viewModelScope,
+            started = WhileSubscribed(5000),
+            initialValue = emptyList()
+        )
 
-    private val _sheetState = MutableLiveData<SheetState>(SheetState.Init)
-    val sheetState
-        get() = _sheetState
+    private val _sheetState = MutableStateFlow<SheetState>(SheetState.Init)
+    val sheetState: StateFlow<SheetState> = _sheetState
 
     private val _state = MutableLiveData<ToneState>(ToneState.Stopped())
     val state: LiveData<ToneState> = _state
@@ -28,16 +29,9 @@ class AlarmListViewModel(private val usecases: Usecases) : ViewModel() {
     fun onUpdate(alarm: Alarm) {
         viewModelScope.launch {
             usecases.updateAlarm(alarm)
-            getAlarms()
         }
     }
 
-    fun getAlarms() {
-        viewModelScope.launch {
-            val alarmList = usecases.getAlarms()
-            _alarms.postValue(alarmList)
-        }
-    }
 
     fun getAlarm(key: Long) = viewModelScope.launch {
         val alarmFound = usecases.findAlarm(key)
@@ -64,7 +58,6 @@ class AlarmListViewModel(private val usecases: Usecases) : ViewModel() {
     fun onAdd(new: Alarm) {
         viewModelScope.launch {
             usecases.addAlarm(new)
-            getAlarms()
         }
     }
 
@@ -73,7 +66,6 @@ class AlarmListViewModel(private val usecases: Usecases) : ViewModel() {
         runBlocking {
             id = usecases.addAlarm(new)
         }
-        getAlarms()
         return id
     }
 
@@ -84,21 +76,18 @@ class AlarmListViewModel(private val usecases: Usecases) : ViewModel() {
     fun onDelete(alarm: Alarm) {
         viewModelScope.launch {
             usecases.deleteAlarm(alarm)
-            getAlarms()
         }
     }
 
     fun onDeleteWithId(alarmId: Long) {
         viewModelScope.launch {
             usecases.deleteAlarmWithId(alarmId)
-            getAlarms()
         }
     }
 
     fun onClear() {
         viewModelScope.launch {
             usecases.clearAlarms()
-            getAlarms()
         }
     }
 

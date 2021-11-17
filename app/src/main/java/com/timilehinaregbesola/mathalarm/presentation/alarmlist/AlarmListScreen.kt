@@ -10,7 +10,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -38,13 +37,13 @@ fun ListDisplayScreen(
     viewModel: AlarmListViewModel,
     navController: NavHostController
 ) {
-    viewModel.getAlarms()
+//    viewModel.getAlarms()
     val openDialog = remember { mutableStateOf(false) }
     val scaffoldState = rememberBottomSheetScaffoldState()
-    val alarms = viewModel.alarms.observeAsState()
+    val alarms = viewModel.alarms.collectAsState()
 
     val scope = rememberCoroutineScope()
-    val sheetState by viewModel.sheetState.observeAsState(SheetState.Init)
+    val sheetState by viewModel.sheetState.collectAsState(SheetState.Init)
     Surface(
         modifier = Modifier
             .fillMaxSize()

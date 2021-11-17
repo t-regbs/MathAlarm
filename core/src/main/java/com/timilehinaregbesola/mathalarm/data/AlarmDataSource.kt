@@ -1,6 +1,7 @@
 package com.timilehinaregbesola.mathalarm.data
 
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import kotlinx.coroutines.flow.Flow
 
 interface AlarmDataSource {
     suspend fun addAlarm(alarm: Alarm): Long
@@ -11,7 +12,7 @@ interface AlarmDataSource {
 
     suspend fun updateAlarm(alarm: Alarm)
 
-    suspend fun getAlarms(): List<Alarm>
+    fun getAlarms(): Flow<List<Alarm>>
 
     suspend fun getLatestAlarmFromDatabase(): Alarm?
 

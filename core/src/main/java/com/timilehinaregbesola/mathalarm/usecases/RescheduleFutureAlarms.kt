@@ -20,12 +20,12 @@ class RescheduleFutureAlarms(
      * Reschedule scheduled and misses repeating tasks.
      */
     suspend operator fun invoke() {
-        val uncompletedAlarms = alarmRepository.getAlarms().filter { it.isOn }
-        val futureAlarms = uncompletedAlarms.filter { isInFuture(it.initCalendar()) }
-        val missedRepeating = uncompletedAlarms.filter { isMissedRepeating(it) }
-
-        futureAlarms.forEach { rescheduleFutureAlarm(it) }
-        missedRepeating.forEach { rescheduleRepeatingAlarm(it) }
+//        val uncompletedAlarms = alarmRepository.getAlarms().filter { it.isOn }
+//        val futureAlarms = uncompletedAlarms.filter { isInFuture(it.initCalendar()) }
+//        val missedRepeating = uncompletedAlarms.filter { isMissedRepeating(it) }
+//
+//        futureAlarms.forEach { rescheduleFutureAlarm(it) }
+//        missedRepeating.forEach { rescheduleRepeatingAlarm(it) }
     }
 
     private fun isInFuture(calendar: Calendar?): Boolean {
