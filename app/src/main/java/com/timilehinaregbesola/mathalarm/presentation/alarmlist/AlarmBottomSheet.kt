@@ -183,7 +183,7 @@ fun AlarmBottomSheet(
                 alarm!!.vibrate = it
             }
         }
-        var txtFieldText by remember { mutableStateOf(TextFieldValue("")) }
+        var txtFieldText by remember { mutableStateOf(TextFieldValue(alarm!!.title)) }
         LabelTextField(
             text = txtFieldText,
             onValueChange = { newValue -> txtFieldText = newValue }
@@ -281,8 +281,12 @@ fun AlarmBottomSheet(
                 }
                 viewModel.getAlarms()
                 scope.launch {
+                    alarm!!.title = txtFieldText.text
                     if (state is SheetState.NewAlarm) {
-                        if (alarm!!.alarmTone == "") alarm!!.alarmTone = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString()
+                        if (alarm!!.alarmTone == "") {
+                            alarm!!.alarmTone =
+                                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString()
+                        }
 //                        alarm!!.isOn = true
                         val id = viewModel.onAddTestAlarm(alarm!!)
                         alarm!!.alarmId = id

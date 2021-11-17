@@ -21,9 +21,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.utils.*
 
 @ExperimentalAnimationApi
@@ -117,9 +119,15 @@ fun AlarmItem(
                         }
                     )
                 }
+                Text(
+                    modifier = Modifier.padding(start = 24.dp),
+                    text = alarm.title,
+                    color = Color.Black,
+                    fontSize = 15.sp,
+                )
                 Row(
                     modifier = Modifier
-                        .padding(bottom = 16.dp, top = 24.dp, start = 24.dp)
+                        .padding(bottom = 16.dp, top = 16.dp, start = 24.dp)
                         .fillMaxWidth()
                 ) {
                     val sb = StringBuilder()
@@ -224,6 +232,24 @@ fun AlarmItem(
                     }
                 }
             }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterialApi::class, ExperimentalAnimationApi::class)
+@Preview
+@Composable
+fun ItemPreview() {
+    MathAlarmTheme {
+        Column(modifier = Modifier.height(200.dp)) {
+            AlarmItem(
+                alarm = Alarm(title = "Testing testing"),
+                onEditAlarm = {},
+                onUpdateAlarm = {},
+                onDeleteAlarm = {},
+                onScheduleAlarm = { alarm: Alarm, b: Boolean -> },
+                scaffoldState = rememberBottomSheetScaffoldState()
+            )
         }
     }
 }
