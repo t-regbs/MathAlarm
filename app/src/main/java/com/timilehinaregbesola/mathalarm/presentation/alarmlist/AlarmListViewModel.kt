@@ -9,15 +9,9 @@ import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.ToneState
 import kotlinx.coroutines.* // ktlint-disable no-wildcard-imports
 import kotlinx.coroutines.flow.*
-import kotlinx.coroutines.flow.SharingStarted.Companion.WhileSubscribed
 
 class AlarmListViewModel(private val usecases: Usecases) : ViewModel() {
-    val alarms: StateFlow<List<Alarm>> =
-        usecases.getAlarms().stateIn(
-            scope = viewModelScope,
-            started = WhileSubscribed(5000),
-            initialValue = emptyList()
-        )
+    val alarms = usecases.getAlarms()
 
     private val _sheetState = MutableStateFlow<SheetState>(SheetState.Init)
     val sheetState: StateFlow<SheetState> = _sheetState
@@ -26,12 +20,34 @@ class AlarmListViewModel(private val usecases: Usecases) : ViewModel() {
     val state: LiveData<ToneState> = _state
     private var currentTimer: Job? = null
 
+    fun onEvent(event: AlarmListEvent) {
+        when (event) {
+            is AlarmListEvent.OnEditAlarmClick -> {
+            }
+            is AlarmListEvent.OnAlarmOnChange -> {
+                viewModelScope.launch {
+                    usecases.addAlarm(event.alarm.copy(isOn = event.isOn))
+                    if (event.isOn) {
+                        usecases.scheduleAlarm(event.alarm, false)
+                    } else {
+                        // Cancel
+                    }
+                }
+            }
+            is AlarmListEvent.OnAddAlarmClick -> {
+            }
+            is AlarmListEvent.OnUndoDeleteClick -> {
+            }
+            is AlarmListEvent.OnDeleteAlarmClick -> {
+            }
+        }
+    }
+
     fun onUpdate(alarm: Alarm) {
         viewModelScope.launch {
             usecases.updateAlarm(alarm)
         }
     }
-
 
     fun getAlarm(key: Long) = viewModelScope.launch {
         val alarmFound = usecases.findAlarm(key)

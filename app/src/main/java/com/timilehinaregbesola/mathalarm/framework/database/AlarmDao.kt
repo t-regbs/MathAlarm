@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AlarmDao {
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun addAlarm(alarm: AlarmEntity?): Long
 
     @Update

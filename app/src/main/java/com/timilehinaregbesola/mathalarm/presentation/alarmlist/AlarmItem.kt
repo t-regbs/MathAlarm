@@ -136,7 +136,7 @@ fun AlarmItem(
                 ) {
                     val sb = StringBuilder()
                     var daysSet = 0
-                    for (day in fullDays.indices) {
+                    fullDays.indices.forEach { day ->
                         if (alarm.repeatDays[day] == 'T') {
                             daysSet++
                             if (daysSet < 4) {
