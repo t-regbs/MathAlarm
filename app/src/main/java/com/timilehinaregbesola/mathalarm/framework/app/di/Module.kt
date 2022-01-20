@@ -29,7 +29,7 @@ import org.koin.dsl.module
 
 val viewModelModule = module {
     viewModel { AlarmListViewModel(get()) }
-    viewModel { AlarmSettingsViewModel(get()) }
+    viewModel { AlarmSettingsViewModel(get(), get()) }
     viewModel { AlarmMathViewModel(get()) }
 }
 

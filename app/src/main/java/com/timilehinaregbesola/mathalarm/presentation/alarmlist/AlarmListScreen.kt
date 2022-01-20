@@ -25,22 +25,45 @@ import com.timilehinaregbesola.mathalarm.presentation.components.AlarmSnack
 import com.timilehinaregbesola.mathalarm.presentation.components.ClearDialog
 import com.timilehinaregbesola.mathalarm.presentation.components.ListTopAppBar
 import com.timilehinaregbesola.mathalarm.utils.SAT
+import com.timilehinaregbesola.mathalarm.utils.UiEvent
 import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
+import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.get
 import java.util.*
+import kotlinx.coroutines.flow.collect
 
+@OptIn(InternalCoroutinesApi::class)
 @ExperimentalAnimationApi
 @ExperimentalFoundationApi
 @ExperimentalMaterialApi
 @Composable
 fun ListDisplayScreen(
-    viewModel: AlarmListViewModel,
-    navController: NavHostController
+    viewModel: AlarmListViewModel = get(),
+    onNavigate: (UiEvent.Navigate) -> Unit,
+//    navController: NavHostController
 ) {
 //    viewModel.getAlarms()
     val openDialog = remember { mutableStateOf(false) }
     val scaffoldState = rememberBottomSheetScaffoldState()
-    val alarms = viewModel.alarms.collectAsState()
+    val alarms = viewModel.alarms.collectAsState(emptyList())
+    LaunchedEffect(key1 = true) {
+        viewModel.uiEvent.collect { event ->
+            when(event) {
+                is UiEvent.ShowSnackbar -> {
+                    val result = scaffoldState.snackbarHostState.showSnackbar(
+                        message = event.message,
+                        actionLabel = event.action
+                    )
+                    if (result == SnackbarResult.ActionPerformed) {
+//                        viewModel.onEvent(AlarmListEvent.OnUndoDeleteClick)
+                    }
+                }
+                is UiEvent.Navigate -> onNavigate(event)
+                else -> Unit
+            }
+        }
+    }
 
     val scope = rememberCoroutineScope()
     val sheetState by viewModel.sheetState.collectAsState(SheetState.Init)
@@ -50,9 +73,9 @@ fun ListDisplayScreen(
     ) {
         BottomSheetScaffold(
             sheetContent = {
-                if (sheetState != SheetState.Init) {
-                    AlarmBottomSheet(sheetState, viewModel, scope, scaffoldState, navController)
-                }
+//                if (sheetState != SheetState.Init) {
+//                    AlarmBottomSheet(sheetState, viewModel, scope, scaffoldState, navController)
+//                }
             },
             sheetPeekHeight = 0.dp,
             sheetShape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp),
@@ -179,10 +202,11 @@ fun ListDisplayScreen(
                         .align(Alignment.BottomEnd),
                     fabImage = fabImage,
                     onClick = {
-                        viewModel.onFabClicked()
-                        scope.launch {
-                            scaffoldState.bottomSheetState.expand()
-                        }
+//                        viewModel.onFabClicked()
+//                        scope.launch {
+//                            scaffoldState.bottomSheetState.expand()
+//                        }
+                        viewModel.onEvent(AlarmListEvent.OnAddAlarmClick)
                     }
                 )
             }

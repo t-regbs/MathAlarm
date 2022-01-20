@@ -40,6 +40,7 @@ import com.timilehinaregbesola.mathalarm.utils.EASY
 import com.timilehinaregbesola.mathalarm.utils.HARD
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.get
 import timber.log.Timber
 import java.io.IOException
 import kotlin.random.Random
@@ -59,7 +60,7 @@ var vibrateRunning = false
 fun MathScreen(
     navController: NavHostController,
     alarmId: Long,
-    viewModel: AlarmListViewModel,
+    viewModel: AlarmListViewModel = get(),
 ) {
     BackHandler { }
     val settingsId = 1143682591

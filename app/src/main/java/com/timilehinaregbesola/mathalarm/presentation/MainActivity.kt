@@ -14,14 +14,12 @@ import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.graphics.toArgb
 import com.timilehinaregbesola.mathalarm.navigation.NavGraph
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewModel
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import kotlinx.coroutines.InternalCoroutinesApi
-import org.koin.androidx.viewmodel.ext.android.viewModel
 
 class MainActivity : AppCompatActivity() {
 
-    private val mainViewModel by viewModel<AlarmListViewModel>()
+//    private val mainViewModel by viewModel<AlarmListViewModel>()
 
     @ExperimentalAnimationApi
     @ExperimentalComposeUiApi
@@ -34,7 +32,7 @@ class MainActivity : AppCompatActivity() {
         setContent {
             MathAlarmTheme {
                 window.statusBarColor = MaterialTheme.colors.background.toArgb()
-                NavGraph(mainViewModel)
+                NavGraph()
             }
         }
     }

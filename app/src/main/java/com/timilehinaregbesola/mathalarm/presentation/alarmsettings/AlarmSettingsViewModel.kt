@@ -1,80 +1,61 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmsettings
 
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.Usecases
+import com.timilehinaregbesola.mathalarm.utils.Navigation
+import com.timilehinaregbesola.mathalarm.utils.UiEvent
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.receiveAsFlow
 
-class AlarmSettingsViewModel(private val usecases: Usecases) : ViewModel() {
-    var alarm = MutableLiveData<Alarm?>()
+class AlarmSettingsViewModel(
+    savedStateHandle: SavedStateHandle,
+    private val usecases: Usecases
+) : ViewModel() {
 
-    private val _navigateToAlarmMath = MutableLiveData<Long?>()
-    val navigateToAlarmMath
-        get() = _navigateToAlarmMath
-    private val _removeSpinner = MutableLiveData<Boolean>()
-    val removeSpinner
-        get() = _removeSpinner
-    private var _latestAlarm = MutableLiveData<Alarm?>()
-    val latestAlarm: LiveData<Alarm?>
-        get() = _latestAlarm
+    var alarm by mutableStateOf<Alarm?>(null)
+        private set
+
+    private val _uiEvent = Channel<UiEvent>()
+    val uiEvent = _uiEvent.receiveAsFlow()
 
     init {
-//        getAlarm(alarmKey)
-        initializeCurrentAlarm()
+        val alarmId = savedStateHandle.get<Long>(Navigation.NAV_SETTINGS_SHEET_ARGUMENT)
+        println(savedStateHandle.keys())
+        println(alarmId)
+
     }
 
-    fun onUpdate(alarm: Alarm) {
-        viewModelScope.launch {
-            usecases.updateAlarm(alarm)
-            _latestAlarm.value = usecases.getLatestAlarm()
-        }
-    }
-
-    fun onDeleteFromId(alarmId: Long?) {
-        viewModelScope.launch {
-            val alarm = usecases.findAlarm(alarmId!!)
-            if (alarm != null) {
-                usecases.deleteAlarm(alarm)
+    fun onEvent(event: AddEditAlarmEvent) {
+        when (event) {
+            is AddEditAlarmEvent.OnSaveTodoClick -> {
+                viewModelScope.launch {
+//                    usecases.addAlarm()
+                    sendUiEvent(UiEvent.PopBackStack)
+                }
             }
-            _latestAlarm.value = usecases.getLatestAlarm()
         }
     }
 
-    fun onDeleteAlarm(alarm: Alarm) {
+    private fun sendUiEvent(event: UiEvent) {
         viewModelScope.launch {
-            usecases.deleteAlarm(alarm)
-            _latestAlarm.value = usecases.getLatestAlarm()
+            _uiEvent.send(event)
         }
     }
 
-    fun getAlarm(key: Long) = viewModelScope.launch {
-        val alarmFound = usecases.findAlarm(key)
-        alarm.postValue(alarmFound)
-    }
-
-    private fun initializeCurrentAlarm() {
-        viewModelScope.launch {
-            _latestAlarm.value = usecases.getLatestAlarm()
+    fun setupAlarm(id: Long) {
+        if (id != -1L) {
+            viewModelScope.launch {
+                usecases.findAlarm(id)?.let { alarm ->
+                    this@AlarmSettingsViewModel.alarm = alarm
+                }
+            }
         }
-    }
-
-    // Called when add menu is pressed
-    fun onAdd(newAlarm: Alarm) {
-        viewModelScope.launch {
-            val id = usecases.addAlarm(newAlarm)
-            _navigateToAlarmMath.value = id
-            _latestAlarm.value = usecases.getLatestAlarm()
-        }
-    }
-
-    fun onAlarmMathNavigated() {
-        _navigateToAlarmMath.value = null
-    }
-
-    fun stopLoading() {
-        _removeSpinner.postValue(true)
     }
 }

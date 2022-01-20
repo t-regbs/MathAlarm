@@ -33,14 +33,17 @@ import androidx.core.net.toUri
 import androidx.navigation.NavHostController
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarmEvent
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AlarmSettingsViewModel
 import com.timilehinaregbesola.mathalarm.presentation.components.RingDayChip
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
 import com.timilehinaregbesola.mathalarm.utils.*
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
+import org.koin.androidx.compose.get
+import org.koin.androidx.compose.getViewModel
 import timber.log.Timber
 import java.time.LocalTime
 import java.util.*
@@ -48,45 +51,50 @@ import java.util.*
 @ExperimentalMaterialApi
 @Composable
 fun AlarmBottomSheet(
-    state: SheetState,
-    viewModel: AlarmListViewModel,
-    scope: CoroutineScope,
-    scaffoldState: BottomSheetScaffoldState,
-    navController: NavHostController
+//    state: SheetState,
+    viewModel: AlarmSettingsViewModel = getViewModel(),
+//    scope: CoroutineScope,
+//    scaffoldState: BottomSheetScaffoldState,
+    navController: NavHostController,
+    alarmArg: Long?
 ) {
+    val scope = rememberCoroutineScope()
     var alarm: Alarm?
     val alarmText: MutableState<String>
     val activity = LocalContext.current as Activity
     var timeCal = LocalTime.now()
 
+    viewModel.setupAlarm(alarmArg!!)
     val testScreenResult = navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Long>("testAlarmId")?.observeAsState()
     testScreenResult?.value?.let {
-        viewModel.onDeleteWithId(it)
+//        viewModel.onDeleteWithId(it)
     }
 
-    when (state) {
-        is SheetState.EditAlarm -> {
-            alarm = remember { viewModel.retrieveAlarm(state.alarmId) }
-            Timber.d("current alarm: $alarm")
-            alarmText = remember { mutableStateOf(alarm!!.getFormatTime().toString()) }
-        }
-        is SheetState.NewAlarm -> {
-            alarm = remember { Alarm() }
-            val sb = StringBuilder("FFFFFFF")
-            val cal = initCalendar(alarm!!)
-            val dayOfTheWeek =
-                getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
-            sb.setCharAt(dayOfTheWeek, 'T')
-            alarm!!.repeatDays = sb.toString()
-            Timber.d("new alarm: $alarm")
-            alarmText = remember { mutableStateOf(alarm!!.getFormatTime().toString()) }
-        }
-        else -> {
-            alarm = remember { Alarm() }
-            alarmText = remember { mutableStateOf(alarm!!.getFormatTime().toString()) }
-            Timber.d("illegal state")
-        }
-    }
+//    when (state) {
+//        is SheetState.EditAlarm -> {
+//            alarm = remember { viewModel.retrieveAlarm(state.alarmId) }
+//            Timber.d("current alarm: $alarm")
+//            alarmText = remember { mutableStateOf(alarm!!.getFormatTime().toString()) }
+//        }
+//        is SheetState.NewAlarm -> {
+//            alarm = remember { Alarm() }
+//            val sb = StringBuilder("FFFFFFF")
+//            val cal = initCalendar(alarm!!)
+//            val dayOfTheWeek =
+//                getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
+//            sb.setCharAt(dayOfTheWeek, 'T')
+//            alarm!!.repeatDays = sb.toString()
+//            Timber.d("new alarm: $alarm")
+//            alarmText = remember { mutableStateOf(alarm!!.getFormatTime().toString()) }
+//        }
+//        else -> {
+//            alarm = remember { Alarm() }
+//            alarmText = remember { mutableStateOf(alarm!!.getFormatTime().toString()) }
+//            Timber.d("illegal state")
+//        }
+//    }
+    alarm = remember { viewModel.alarm }
+    Timber.d("current alarm: $alarm")
 
     navController.currentBackStackEntry?.savedStateHandle?.getLiveData<String>("tone")?.observeAsState()?.value.let { alar ->
         alar?.let { alarm!!.alarmTone = it }
@@ -107,6 +115,7 @@ fun AlarmBottomSheet(
         alar?.let { alarm!!.repeatDays = it }
     }
 
+    alarmText = remember { mutableStateOf(alarm?.getFormatTime().toString()) }
     val dialog = remember { MaterialDialog() }
     dialog.build(
         buttons = {
@@ -114,12 +123,12 @@ fun AlarmBottomSheet(
             negativeButton("Cancel")
         }
     ) {
-        timeCal = timeCal.withHour(alarm!!.hour).withMinute(alarm!!.minute)
+        timeCal = alarm?.minute?.let { timeCal.withHour(alarm.hour).withMinute(it) }
         timepicker(initialTime = timeCal) { time ->
-            alarm!!.hour = time.hour
-            alarm!!.minute = time.minute
-            alarmText.value = alarm!!.getFormatTime().toString()
-            timeCal = timeCal.withHour(alarm!!.hour).withMinute(alarm!!.minute)
+            alarm?.hour = time.hour
+            alarm?.minute = time.minute
+            alarmText.value = alarm?.getFormatTime().toString()
+            timeCal = alarm?.hour?.let { timeCal.withHour(it).withMinute(alarm.minute) }
         }
     }
 
@@ -171,19 +180,19 @@ fun AlarmBottomSheet(
         )
         Row(
             modifier = Modifier
-                .padding(top = 28.dp, start = 26.dp, end = 26.dp)
+                .padding(top = 28.dp)
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
             TextWithCheckbox(
                 text = "Repeat Weekly",
-                initialState = alarm!!.repeat
-            ) { alarm!!.repeat = it }
-            TextWithCheckbox(text = "Vibrate", initialState = alarm!!.vibrate) {
-                alarm!!.vibrate = it
+                initialState = alarm?.repeat ?: false
+            ) { alarm?.repeat = it }
+            TextWithCheckbox(text = "Vibrate", initialState = alarm?.vibrate ?: false) {
+                alarm?.vibrate = it
             }
         }
-        var txtFieldText by remember { mutableStateOf(TextFieldValue(alarm!!.title)) }
+        var txtFieldText by remember { mutableStateOf(TextFieldValue(alarm?.title ?: "")) }
         LabelTextField(
             text = txtFieldText,
             onValueChange = { newValue -> txtFieldText = newValue }
@@ -196,7 +205,7 @@ fun AlarmBottomSheet(
         result.value?.let {
             val alert = it.toString()
             checkPermissions(activity, listOf(alert))
-            alarm!!.alarmTone = alert
+            alarm?.alarmTone = alert
             toneText.value = RingtoneManager.getRingtone(activity, alert.toUri()).getTitle(activity)
         }
         TextWithIcon(
@@ -233,7 +242,7 @@ fun AlarmBottomSheet(
                 imageVector = Icons.Outlined.EmojiSymbols,
                 contentDescription = null
             )
-            alarm?.let { Difficulty(it) }
+            Difficulty(alarm)
         }
         Button(
             modifier = Modifier
@@ -244,16 +253,14 @@ fun AlarmBottomSheet(
                 val testAlarm = Alarm()
                 testAlarm.apply {
                     difficulty = alarm!!.difficulty
-                    alarmTone = if (alarm!!.alarmTone.isBlank()) {
+                    alarmTone = alarm.alarmTone.ifBlank {
                         RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString()
-                    } else {
-                        alarm!!.alarmTone
                     }
                     snooze = 0
-                    vibrate = alarm!!.vibrate
+                    vibrate = alarm.vibrate
                 }
-                val id = viewModel.onAddTestAlarm(testAlarm)
-                navController.navigate(Navigation.buildAlarmMathPath(alarmId = id))
+//                val id = viewModel.onAddTestAlarm(testAlarm)
+//                navController.navigate(Navigation.buildAlarmMathPath(alarmId = id))
             },
             colors = ButtonDefaults.buttonColors(
                 backgroundColor = unSelectedDay,
@@ -280,35 +287,36 @@ fun AlarmBottomSheet(
                     remove<String>("repeatDays")
                 }
 //                viewModel.getAlarms()
-                scope.launch {
-                    alarm!!.title = txtFieldText.text
-                    if (state is SheetState.NewAlarm) {
-                        if (alarm!!.alarmTone == "") {
-                            alarm!!.alarmTone =
-                                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString()
-                        }
-//                        alarm!!.isOn = true
-                        val id = viewModel.onAddTestAlarm(alarm!!)
-                        alarm!!.alarmId = id
-//                        alarm!!.scheduleAlarm(activity, alarm!!.repeat)
-                        viewModel.scheduleAlarm(alarm!!, alarm!!.repeat)
-                    } else {
-                        viewModel.onUpdate(alarm!!)
-                        if (alarm!!.isOn) {
-                            alarm!!.cancelAlarm(activity)
-                        }
-//                        alarm!!.isOn = alarm!!.scheduleAlarm(activity, alarm!!.repeat)
-                        viewModel.scheduleAlarm(alarm!!, alarm!!.repeat)
-                        Timber.d("Save alarm with id: ${alarm!!.alarmId}")
-                    }
-                    alarm = null
-                    viewModel.onSheetClose()
-//                    scaffoldState.snackbarHostState.showSnackbar(
-//                        message = alarm!!.getTimeLeftMessage(activity)!!,
-//                        duration = SnackbarDuration.Short
-//                    )
-                    scaffoldState.bottomSheetState.collapse()
-                }
+//                scope.launch {
+//                    alarm!!.title = txtFieldText.text
+//                    if (state is SheetState.NewAlarm) {
+//                        if (alarm!!.alarmTone == "") {
+//                            alarm!!.alarmTone =
+//                                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString()
+//                        }
+// //                        alarm!!.isOn = true
+//                        val id = viewModel.onAddTestAlarm(alarm!!)
+//                        alarm!!.alarmId = id
+// //                        alarm!!.scheduleAlarm(activity, alarm!!.repeat)
+//                        viewModel.scheduleAlarm(alarm!!, alarm!!.repeat)
+//                    } else {
+//                        viewModel.onUpdate(alarm!!)
+//                        if (alarm!!.isOn) {
+//                            alarm!!.cancelAlarm(activity)
+//                        }
+// //                        alarm!!.isOn = alarm!!.scheduleAlarm(activity, alarm!!.repeat)
+//                        viewModel.scheduleAlarm(alarm!!, alarm!!.repeat)
+//                        Timber.d("Save alarm with id: ${alarm!!.alarmId}")
+//                    }
+//                    alarm = null
+//                    viewModel.onSheetClose()
+// //                    scaffoldState.snackbarHostState.showSnackbar(
+// //                        message = alarm!!.getTimeLeftMessage(activity)!!,
+// //                        duration = SnackbarDuration.Short
+// //                    )
+// //                    scaffoldState.bottomSheetState.collapse()
+//                }
+                viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
             }
         ) {
             Text(
@@ -440,10 +448,10 @@ private fun AlarmDays(alarm: Alarm?) {
 }
 
 @Composable
-fun Difficulty(alarm: Alarm) {
+fun Difficulty(alarm: Alarm?) {
     val expanded = remember { mutableStateOf(false) }
     val items = listOf("Easy Math", "Medium Math", "Hard Math")
-    val selectedIndex = remember { mutableStateOf(alarm.difficulty) }
+    val selectedIndex = remember { mutableStateOf(alarm?.difficulty ?: 0) }
     Box {
         Text(
             items[selectedIndex.value],
@@ -459,7 +467,7 @@ fun Difficulty(alarm: Alarm) {
                 DropdownMenuItem(
                     onClick = {
                         selectedIndex.value = index
-                        alarm.difficulty = index
+                        alarm?.difficulty = index
                         expanded.value = false
                     }
                 ) {

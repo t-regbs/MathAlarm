@@ -7,7 +7,10 @@ import androidx.lifecycle.viewModelScope
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.ToneState
+import com.timilehinaregbesola.mathalarm.utils.Navigation
+import com.timilehinaregbesola.mathalarm.utils.UiEvent
 import kotlinx.coroutines.* // ktlint-disable no-wildcard-imports
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
 
 class AlarmListViewModel(private val usecases: Usecases) : ViewModel() {
@@ -20,9 +23,14 @@ class AlarmListViewModel(private val usecases: Usecases) : ViewModel() {
     val state: LiveData<ToneState> = _state
     private var currentTimer: Job? = null
 
+    private val _uiEvent = Channel<UiEvent>()
+    val uiEvent = _uiEvent.receiveAsFlow()
+
     fun onEvent(event: AlarmListEvent) {
         when (event) {
             is AlarmListEvent.OnEditAlarmClick -> {
+                //Navigate to bottom sheet
+//                sendUiEvent(UiEvent.Navigate())
             }
             is AlarmListEvent.OnAlarmOnChange -> {
                 viewModelScope.launch {
@@ -35,11 +43,22 @@ class AlarmListViewModel(private val usecases: Usecases) : ViewModel() {
                 }
             }
             is AlarmListEvent.OnAddAlarmClick -> {
+                // Navigate to bottom sheet
+                viewModelScope.launch {
+                    val id = usecases.addAlarm(Alarm())
+                    sendUiEvent(UiEvent.Navigate(Navigation.buildSettingsPath(id)))
+                }
             }
             is AlarmListEvent.OnUndoDeleteClick -> {
             }
             is AlarmListEvent.OnDeleteAlarmClick -> {
             }
+        }
+    }
+
+    private fun sendUiEvent(event: UiEvent) {
+        viewModelScope.launch {
+            _uiEvent.send(event)
         }
     }
 
