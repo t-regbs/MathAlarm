@@ -8,8 +8,7 @@ import com.timilehinaregbesola.mathalarm.framework.database.AlarmDao
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.utils.scheduleAlarm
 import kotlinx.coroutines.*
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
+import javax.inject.Inject
 
 class RebootReceiver : BroadcastReceiver() {
     private val myHelper: MyHelper by lazy { MyHelper() }
@@ -22,8 +21,8 @@ class RebootReceiver : BroadcastReceiver() {
     }
 }
 
-class MyHelper : KoinComponent {
-    private val dataSource: AlarmDao by inject()
+class MyHelper {
+    @Inject lateinit var dataSource: AlarmDao
 
     fun onReceive(context: Context, intent: Intent) {
         GlobalScope.launch(Dispatchers.IO) {

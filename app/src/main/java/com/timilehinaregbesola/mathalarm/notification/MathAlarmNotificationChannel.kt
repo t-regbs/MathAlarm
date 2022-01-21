@@ -10,7 +10,7 @@ import com.timilehinaregbesola.mathalarm.utils.getNotificationManager
 /**
  * [NotificationChannel] to send Alarm notifications in Android O and above.
  */
-internal class MathAlarmNotificationChannel(context: Context) {
+class MathAlarmNotificationChannel(context: Context) {
 
     init {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {

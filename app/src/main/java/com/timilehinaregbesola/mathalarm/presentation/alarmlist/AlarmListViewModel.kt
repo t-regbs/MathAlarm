@@ -1,5 +1,6 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist
 
+import android.media.MediaPlayer
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -9,11 +10,14 @@ import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.ToneState
 import com.timilehinaregbesola.mathalarm.utils.Navigation
 import com.timilehinaregbesola.mathalarm.utils.UiEvent
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.* // ktlint-disable no-wildcard-imports
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
+import javax.inject.Inject
 
-class AlarmListViewModel(private val usecases: Usecases) : ViewModel() {
+@HiltViewModel
+class AlarmListViewModel @Inject constructor(private val usecases: Usecases, val audioPlayer: MediaPlayer) : ViewModel() {
     val alarms = usecases.getAlarms()
 
     private val _sheetState = MutableStateFlow<SheetState>(SheetState.Init)
@@ -29,7 +33,7 @@ class AlarmListViewModel(private val usecases: Usecases) : ViewModel() {
     fun onEvent(event: AlarmListEvent) {
         when (event) {
             is AlarmListEvent.OnEditAlarmClick -> {
-                //Navigate to bottom sheet
+                // Navigate to bottom sheet
 //                sendUiEvent(UiEvent.Navigate())
             }
             is AlarmListEvent.OnAlarmOnChange -> {

@@ -10,13 +10,16 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.utils.Navigation
 import com.timilehinaregbesola.mathalarm.utils.UiEvent
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.receiveAsFlow
+import javax.inject.Inject
 
-class AlarmSettingsViewModel(
-    savedStateHandle: SavedStateHandle,
-    private val usecases: Usecases
+@HiltViewModel
+class AlarmSettingsViewModel @Inject constructor(
+    private val usecases: Usecases,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     var alarm by mutableStateOf<Alarm?>(null)
@@ -29,7 +32,6 @@ class AlarmSettingsViewModel(
         val alarmId = savedStateHandle.get<Long>(Navigation.NAV_SETTINGS_SHEET_ARGUMENT)
         println(savedStateHandle.keys())
         println(alarmId)
-
     }
 
     fun onEvent(event: AddEditAlarmEvent) {

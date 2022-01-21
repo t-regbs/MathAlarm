@@ -17,7 +17,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.navigation.NavHostController
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.components.AddAlarmFab
@@ -28,10 +28,9 @@ import com.timilehinaregbesola.mathalarm.utils.SAT
 import com.timilehinaregbesola.mathalarm.utils.UiEvent
 import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
 import kotlinx.coroutines.InternalCoroutinesApi
-import kotlinx.coroutines.launch
-import org.koin.androidx.compose.get
-import java.util.*
 import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.launch
+import java.util.*
 
 @OptIn(InternalCoroutinesApi::class)
 @ExperimentalAnimationApi
@@ -39,7 +38,7 @@ import kotlinx.coroutines.flow.collect
 @ExperimentalMaterialApi
 @Composable
 fun ListDisplayScreen(
-    viewModel: AlarmListViewModel = get(),
+    viewModel: AlarmListViewModel = hiltViewModel(),
     onNavigate: (UiEvent.Navigate) -> Unit,
 //    navController: NavHostController
 ) {
@@ -49,7 +48,7 @@ fun ListDisplayScreen(
     val alarms = viewModel.alarms.collectAsState(emptyList())
     LaunchedEffect(key1 = true) {
         viewModel.uiEvent.collect { event ->
-            when(event) {
+            when (event) {
                 is UiEvent.ShowSnackbar -> {
                     val result = scaffoldState.snackbarHostState.showSnackbar(
                         message = event.message,

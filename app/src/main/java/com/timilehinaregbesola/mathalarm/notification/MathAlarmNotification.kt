@@ -19,7 +19,7 @@ import timber.log.Timber
 /**
  * Handles the notification related to the Task reminders.
  */
-internal class MathAlarmNotification(
+class MathAlarmNotification(
     private val context: Context,
     private val channel: MathAlarmNotificationChannel,
     private val player: MediaPlayer

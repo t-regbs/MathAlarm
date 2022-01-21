@@ -31,6 +31,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewModel
@@ -40,7 +41,6 @@ import com.timilehinaregbesola.mathalarm.utils.EASY
 import com.timilehinaregbesola.mathalarm.utils.HARD
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.launch
-import org.koin.androidx.compose.get
 import timber.log.Timber
 import java.io.IOException
 import kotlin.random.Random
@@ -60,20 +60,19 @@ var vibrateRunning = false
 fun MathScreen(
     navController: NavHostController,
     alarmId: Long,
-    viewModel: AlarmListViewModel = get(),
+    viewModel: AlarmListViewModel = hiltViewModel(),
 ) {
     BackHandler { }
     val settingsId = 1143682591
     val alarm = viewModel.retrieveAlarm(alarmId)
     val context = LocalContext.current
-    val audioPlayer = org.koin.androidx.compose.get<MediaPlayer>()
     alarm?.let {
         if (alarm.alarmTone.isNotEmpty()) {
             val alarmUri = Uri.parse(alarm.alarmTone)
             println(navController.previousBackStackEntry?.destination?.id)
             if (navController.previousBackStackEntry?.destination?.id == settingsId) {
                 try {
-                    audioPlayer.apply {
+                    viewModel.audioPlayer.apply {
                         reset()
                         setDataSource(context, alarmUri)
                         setAudioAttributes(
@@ -159,7 +158,7 @@ fun MathScreen(
                         val ts = toneState.value as ToneState.Countdown
                         Timber.d("seconds: ${ts.seconds}")
                         Timber.d("total: ${ts.total}")
-                        progress.value = ((audioPlayer.currentPosition / 1000).toFloat() / (audioPlayer.duration / 1000).toFloat())
+                        progress.value = ((viewModel.audioPlayer.currentPosition / 1000).toFloat() / (viewModel.audioPlayer.duration / 1000).toFloat())
                         Timber.d("progrss: ${progress.value}")
                         LinearProgressIndicator(
                             modifier = Modifier
@@ -209,7 +208,7 @@ fun MathScreen(
                                 dismissAlarm(
                                     answerText,
                                     problem,
-                                    audioPlayer,
+                                    viewModel.audioPlayer,
                                     keyboardController,
                                     navController,
                                     alarm,
@@ -261,7 +260,7 @@ fun MathScreen(
                                     .width(120.dp),
                                 enabled = alarm.snooze != 0,
                                 onClick = {
-                                    stopMusicAndHideKeyboard(audioPlayer, viewModel, keyboardController)
+                                    stopMusicAndHideKeyboard(viewModel.audioPlayer, viewModel, keyboardController)
                                     viewModel.snoozeAlarm(alarmId)
                                     navController.popBackStack()
                                 },
@@ -281,7 +280,7 @@ fun MathScreen(
                                 dismissAlarm(
                                     answerText,
                                     problem,
-                                    audioPlayer,
+                                    viewModel.audioPlayer,
                                     keyboardController,
                                     navController,
                                     alarm,

@@ -30,6 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
@@ -41,9 +42,6 @@ import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
 import com.timilehinaregbesola.mathalarm.utils.*
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
-import kotlinx.coroutines.launch
-import org.koin.androidx.compose.get
-import org.koin.androidx.compose.getViewModel
 import timber.log.Timber
 import java.time.LocalTime
 import java.util.*
@@ -52,7 +50,7 @@ import java.util.*
 @Composable
 fun AlarmBottomSheet(
 //    state: SheetState,
-    viewModel: AlarmSettingsViewModel = getViewModel(),
+    viewModel: AlarmSettingsViewModel = hiltViewModel(),
 //    scope: CoroutineScope,
 //    scaffoldState: BottomSheetScaffoldState,
     navController: NavHostController,
