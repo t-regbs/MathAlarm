@@ -1,19 +1,23 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmsettings
 
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.setValue
+import android.media.RingtoneManager
+import androidx.compose.runtime.*
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.utils.Navigation
-import com.timilehinaregbesola.mathalarm.utils.UiEvent
+import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
+import com.timilehinaregbesola.mathalarm.utils.getFormatTime
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.receiveAsFlow
+import java.util.*
 import javax.inject.Inject
 
 @HiltViewModel
@@ -28,19 +32,110 @@ class AlarmSettingsViewModel @Inject constructor(
     private val _uiEvent = Channel<UiEvent>()
     val uiEvent = _uiEvent.receiveAsFlow()
 
+    private val _alarmTime = mutableStateOf(TimeState())
+    val alarmTime: State<TimeState> = _alarmTime
+
+    private val _alarmTitle = mutableStateOf(TextFieldValue("Good day"))
+    val alarmTitle: MutableState<TextFieldValue> = _alarmTitle
+
+    private val _dayChooser = mutableStateOf("FFFFFFF")
+    val dayChooser: State<String> = _dayChooser
+
+    private val _repeatWeekly = mutableStateOf(false)
+    val repeatWeekly: State<Boolean> = _repeatWeekly
+
+    private val _vibrate = mutableStateOf(false)
+    val vibrate: State<Boolean> = _vibrate
+
+    private val _difficulty = mutableStateOf(0)
+    val difficulty: State<Int> = _difficulty
+
+    private val _tone = mutableStateOf("")
+    val tone: State<String> = _tone
+
+    private val _eventFlow = MutableSharedFlow<UiEvent>()
+    val eventFlow = _eventFlow.asSharedFlow()
+
+    private var currentAlarmId: Long? = null
+
     init {
-        val alarmId = savedStateHandle.get<Long>(Navigation.NAV_SETTINGS_SHEET_ARGUMENT)
-        println(savedStateHandle.keys())
-        println(alarmId)
+        savedStateHandle.get<Long>(Navigation.NAV_SETTINGS_SHEET_ARGUMENT)?.let { alarmId ->
+            if (alarmId != -1L) {
+                viewModelScope.launch {
+                    usecases.findAlarm(alarmId)?.also { alarm ->
+                        currentAlarmId = alarm.alarmId
+                        _alarmTime.value = TimeState(
+                            hour = alarm.hour,
+                            minute = alarm.minute,
+                            formattedTime = alarm.getFormatTime().toString()
+                        )
+                        if (alarm.repeatDays == "FFFFFFF") {
+                            val sb = StringBuilder("FFFFFFF")
+                            val cal = initCalendar(alarm)
+                            val dayOfTheWeek =
+                                getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
+                            sb.setCharAt(dayOfTheWeek, 'T')
+                            _dayChooser.value = sb.toString()
+                        } else {
+                            _dayChooser.value = alarm.repeatDays
+                        }
+                        _repeatWeekly.value = alarm.repeat
+                        _vibrate.value = alarm.vibrate
+                        _difficulty.value = alarm.difficulty
+                        if (alarm.alarmTone == "") {
+                            _tone.value = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString()
+                        } else {
+                            _tone.value = alarm.alarmTone
+                        }
+                        _alarmTitle.value = TextFieldValue(alarm.title)
+                        this@AlarmSettingsViewModel.alarm = alarm
+                    }
+                }
+            }
+        }
     }
 
     fun onEvent(event: AddEditAlarmEvent) {
         when (event) {
             is AddEditAlarmEvent.OnSaveTodoClick -> {
                 viewModelScope.launch {
-//                    usecases.addAlarm()
-                    sendUiEvent(UiEvent.PopBackStack)
+                    usecases.addAlarm(
+                        Alarm(
+                            alarmId = currentAlarmId!!,
+                            hour = _alarmTime.value.hour,
+                            minute = _alarmTime.value.minute,
+                            repeat = _repeatWeekly.value,
+                            repeatDays = _dayChooser.value,
+                            isOn = true,
+                            vibrate = _vibrate.value,
+                            title = _alarmTitle.value.text,
+                            difficulty = _difficulty.value,
+                            alarmTone = _tone.value
+                        )
+                    )
+                    _eventFlow.emit(UiEvent.SaveAlarm)
                 }
+            }
+            is AddEditAlarmEvent.ChangeTime -> {
+                _alarmTime.value = event.value
+            }
+            is AddEditAlarmEvent.EnteredTitle -> {
+                _alarmTitle.value = event.value
+            }
+            is AddEditAlarmEvent.ToggleRepeat -> {
+                _repeatWeekly.value = event.value
+            }
+            is AddEditAlarmEvent.ToggleVibrate -> {
+                _vibrate.value = event.value
+            }
+            is AddEditAlarmEvent.ToggleDayChooser -> {
+                _dayChooser.value = event.value
+            }
+            is AddEditAlarmEvent.OnDifficultyChange -> {
+                _difficulty.value = event.value
+            }
+            is AddEditAlarmEvent.OnToneChange -> {
+                _tone.value = event.value
             }
         }
     }
@@ -51,13 +146,16 @@ class AlarmSettingsViewModel @Inject constructor(
         }
     }
 
-    fun setupAlarm(id: Long) {
-        if (id != -1L) {
-            viewModelScope.launch {
-                usecases.findAlarm(id)?.let { alarm ->
-                    this@AlarmSettingsViewModel.alarm = alarm
-                }
-            }
-        }
+    private fun initCalendar(alarm: Alarm): Calendar {
+        val cal = Calendar.getInstance()
+        cal[Calendar.HOUR_OF_DAY] = alarm.hour
+        cal[Calendar.MINUTE] = alarm.minute
+        cal[Calendar.SECOND] = 0
+        return cal
+    }
+
+    sealed class UiEvent {
+//        data class ShowSnackbar(val message: String): UiEvent()
+        object SaveAlarm : UiEvent()
     }
 }

@@ -34,7 +34,7 @@ class AlarmListViewModel @Inject constructor(private val usecases: Usecases, val
         when (event) {
             is AlarmListEvent.OnEditAlarmClick -> {
                 // Navigate to bottom sheet
-//                sendUiEvent(UiEvent.Navigate())
+                sendUiEvent(UiEvent.Navigate(Navigation.buildSettingsPath(event.alarmId)))
             }
             is AlarmListEvent.OnAlarmOnChange -> {
                 viewModelScope.launch {

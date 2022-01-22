@@ -67,7 +67,6 @@ fun NavGraph() {
                 ) { backstackEntry ->
                     AlarmBottomSheet(
                         navController = navController,
-                        alarmArg = backstackEntry.arguments?.getLong(Navigation.NAV_SETTINGS_SHEET_ARGUMENT)
                     )
                 }
             }

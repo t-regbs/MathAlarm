@@ -29,7 +29,6 @@ import com.timilehinaregbesola.mathalarm.utils.UiEvent
 import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.flow.collect
-import kotlinx.coroutines.launch
 import java.util.*
 
 @OptIn(InternalCoroutinesApi::class)
@@ -177,8 +176,9 @@ fun ListDisplayScreen(
                                     AlarmItem(
                                         alarm = alarm,
                                         onEditAlarm = {
-                                            viewModel.onEditAlarmClicked(alarm.alarmId)
-                                            scope.launch { scaffoldState.bottomSheetState.expand() }
+//                                            viewModel.onEditAlarmClicked(alarm.alarmId)
+//                                            scope.launch { scaffoldState.bottomSheetState.expand() }
+                                            viewModel.onEvent(AlarmListEvent.OnEditAlarmClick(alarm.alarmId))
                                         },
                                         onUpdateAlarm = viewModel::onUpdate,
                                         scaffoldState = scaffoldState,
