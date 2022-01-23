@@ -43,7 +43,6 @@ fun ListDisplayScreen(
     onNavigate: (UiEvent.Navigate) -> Unit,
     navController: NavHostController
 ) {
-//    viewModel.getAlarms()
     val alarms = viewModel.alarms.collectAsState(emptyList())
     val openDialog = remember { mutableStateOf(false) }
     println("ListScreen")
@@ -186,13 +185,12 @@ fun ListDisplayScreen(
                                 AlarmItem(
                                     alarm = alarm,
                                     onEditAlarm = {
-//                                            viewModel.onEditAlarmClicked(alarm.alarmId)
                                         viewModel.onEvent(AlarmListEvent.OnEditAlarmClick(alarm.alarmId))
                                     },
                                     onUpdateAlarm = viewModel::onUpdate,
                                     scaffoldState = scaffoldState,
                                     onDeleteAlarm = {
-                                        viewModel.onDelete(it)
+                                        viewModel.onEvent(AlarmListEvent.OnDeleteAlarmClick(it))
                                     },
                                     onScheduleAlarm = { curAlarm: Alarm, b: Boolean ->
                                         viewModel.scheduleAlarm(curAlarm, b)
@@ -209,10 +207,6 @@ fun ListDisplayScreen(
                         .align(Alignment.BottomEnd),
                     fabImage = fabImage,
                     onClick = {
-//                        viewModel.onFabClicked()
-//                        scope.launch {
-//                            scaffoldState.bottomSheetState.expand()
-//                        }
                         viewModel.onEvent(AlarmListEvent.OnAddAlarmClick)
                     }
                 )

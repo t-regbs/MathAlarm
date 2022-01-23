@@ -34,7 +34,6 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewModel
 import com.timilehinaregbesola.mathalarm.presentation.components.AlarmSnack
 import com.timilehinaregbesola.mathalarm.presentation.ui.*
 import com.timilehinaregbesola.mathalarm.utils.EASY
@@ -60,7 +59,7 @@ var vibrateRunning = false
 fun MathScreen(
     navController: NavHostController,
     alarmId: Long,
-    viewModel: AlarmListViewModel = hiltViewModel(),
+    viewModel: AlarmMathViewModel = hiltViewModel(),
 ) {
     BackHandler { }
     val settingsId = 1143682591
@@ -313,7 +312,7 @@ private fun dismissAlarm(
     keyboardController: SoftwareKeyboardController?,
     navController: NavHostController,
     alarm: Alarm,
-    viewModel: AlarmListViewModel,
+    viewModel: AlarmMathViewModel,
     onWrongAnswer: () -> Unit
 ) {
     if (validateAnswer(answerText, problem)) {
@@ -329,7 +328,7 @@ private fun dismissAlarm(
 @OptIn(ExperimentalComposeUiApi::class)
 private fun stopMusicAndHideKeyboard(
     mp: MediaPlayer,
-    viewModel: AlarmListViewModel,
+    viewModel: AlarmMathViewModel,
     keyboardController: SoftwareKeyboardController?
 ) {
     vibrateRunning = false

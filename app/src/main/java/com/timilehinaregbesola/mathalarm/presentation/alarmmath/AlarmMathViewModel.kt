@@ -1,49 +1,66 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmmath
 
+import android.media.MediaPlayer
+import androidx.lifecycle.LiveData
+import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
 import com.timilehinaregbesola.mathalarm.framework.Usecases
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.flow
+import javax.inject.Inject
 
-class AlarmMathViewModel(private val usecases: Usecases) : ViewModel() {
-//    var alarm = MutableLiveData<Alarm?>()
-//    var currentAlarm = MutableLiveData<Alarm?>()
-//
-//    fun getAlarm(key: Long) = viewModelScope.launch {
-//        val al = interactors.getLatestAlarm()
-//        val alarmFound = if (key == 0L) interactors.findAlarm(al!!.alarmId) else interactors.findAlarm(key)
-//        alarm.postValue(alarmFound)
-//    }
-//
-//    fun onUpdate(alarm: Alarm) {
-//        viewModelScope.launch {
-//            interactors.updateAlarm(alarm)
-//            currentAlarm.value = interactors.getLatestAlarm()
-//        }
-//    }
-//
-//    // Cancels an alarm - Called when an alarm is turned off, deleted, and rescheduled
-//    fun cancelAlarm(context: Context?) {
-//        val cancel = Intent(context, com.timilehinaregbesola.mathalarm.AlarmReceiver::class.java)
-//        for (i in 0..6) { // For each day of the week
-//            if (currentAlarm.value!!.repeatDays[i] == 'T') {
-//                val stringId: StringBuilder = StringBuilder().append(i)
-//                    .append(currentAlarm.value!!.hour).append(currentAlarm.value!!.minute)
-//                val intentId = stringId.toString().toInt()
-//                val cancelAlarmPI = PendingIntent.getBroadcast(
-//                    context, intentId, cancel,
-//                    PendingIntent.FLAG_CANCEL_CURRENT
-//                )
-//                val alarmManager = context
-//                    ?.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-//                alarmManager.cancel(cancelAlarmPI)
-//                cancelAlarmPI.cancel()
-//            }
-//        }
-//    }
-//
-//    fun onClear() {
-//        viewModelScope.launch {
-//            interactors.clearAlarms()
-//            currentAlarm.value = null
-//        }
-//    }
+@HiltViewModel
+class AlarmMathViewModel @Inject constructor(
+    private val usecases: Usecases,
+    val audioPlayer: MediaPlayer
+) : ViewModel() {
+    private val _state = MutableLiveData<ToneState>(ToneState.Stopped())
+    val state: LiveData<ToneState> = _state
+    private var currentTimer: Job? = null
+
+    fun retrieveAlarm(key: Long) = runBlocking {
+        val alarmFound = usecases.findAlarm(key)
+        alarmFound
+    }
+
+    fun snoozeAlarm(alarmId: Long) {
+        viewModelScope.launch {
+            usecases.snoozeAlarm(alarmId)
+        }
+    }
+
+    @InternalCoroutinesApi
+    fun startTimer() {
+        val currentState = _state.value
+        if (currentState !is ToneState.Stopped) {
+            return
+        }
+        val seconds = 1000
+        _state.value = ToneState.Countdown(seconds, seconds)
+        this.currentTimer = viewModelScope.launch {
+            timer(seconds).collect {
+                _state.value = if (it == 0) {
+                    ToneState.Stopped(0)
+                } else {
+                    ToneState.Countdown(seconds, it)
+                }
+            }
+        }
+    }
+
+    fun stopTimer() {
+        currentTimer?.cancel()
+        _state.value = ToneState.Stopped(0)
+    }
+
+    private fun timer(seconds: Int): Flow<Int> = flow {
+        for (s in 0 until (seconds + 1)) {
+            delay(1000L)
+            emit(s)
+        }
+    }
 }

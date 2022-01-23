@@ -2,6 +2,8 @@ package com.timilehinaregbesola.mathalarm.fake
 
 import com.timilehinaregbesola.mathalarm.data.AlarmDataSource
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flowOf
 import java.util.*
 
 class AlarmRepositoryFake : AlarmDataSource {
@@ -31,7 +33,7 @@ class AlarmRepositoryFake : AlarmDataSource {
         alarmMap[alarm.alarmId] = alarm
     }
 
-    override suspend fun getAlarms(): List<Alarm> = alarmMap.values.toList()
+    override fun getAlarms(): Flow<List<Alarm>> = flowOf(alarmMap.values.toList())
 
     override suspend fun getLatestAlarmFromDatabase(): Alarm? = alarmMap[alarmMap.lastKey()]
 
