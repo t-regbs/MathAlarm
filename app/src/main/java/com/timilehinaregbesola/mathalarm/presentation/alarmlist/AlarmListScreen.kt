@@ -45,8 +45,6 @@ fun ListDisplayScreen(
 ) {
     val alarms = viewModel.alarms.collectAsState(emptyList())
     val openDialog = remember { mutableStateOf(false) }
-    println("ListScreen")
-    println(navController.currentBackStackEntry?.destination)
     val scaffoldState = rememberScaffoldState()
     LaunchedEffect(key1 = true) {
         viewModel.uiEvent.collect { event ->

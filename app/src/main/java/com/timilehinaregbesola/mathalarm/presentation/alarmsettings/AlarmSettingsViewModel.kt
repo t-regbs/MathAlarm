@@ -24,6 +24,8 @@ class AlarmSettingsViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
+    private var isNewAlarm: Boolean? = null
+
     private val _alarmTime = mutableStateOf(TimeState())
     val alarmTime: State<TimeState> = _alarmTime
 
@@ -45,6 +47,9 @@ class AlarmSettingsViewModel @Inject constructor(
     private val _tone = mutableStateOf("")
     val tone: State<String> = _tone
 
+    private val _isOn = mutableStateOf(false)
+    val isOn: State<Boolean> = _isOn
+
     private val _eventFlow = MutableSharedFlow<UiEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
 
@@ -62,6 +67,7 @@ class AlarmSettingsViewModel @Inject constructor(
                             formattedTime = alarm.getFormatTime().toString()
                         )
                         if (alarm.repeatDays == "FFFFFFF") {
+                            isNewAlarm = true
                             val sb = StringBuilder("FFFFFFF")
                             val cal = initCalendar(alarm)
                             val dayOfTheWeek =
@@ -69,6 +75,7 @@ class AlarmSettingsViewModel @Inject constructor(
                             sb.setCharAt(dayOfTheWeek, 'T')
                             _dayChooser.value = sb.toString()
                         } else {
+                            isNewAlarm = false
                             _dayChooser.value = alarm.repeatDays
                         }
                         _repeatWeekly.value = alarm.repeat
@@ -80,6 +87,12 @@ class AlarmSettingsViewModel @Inject constructor(
                             _tone.value = alarm.alarmTone
                         }
                         _alarmTitle.value = TextFieldValue(alarm.title)
+                        _isOn.value = alarm.isOn
+                        isNewAlarm?.let {
+                            if (it) {
+                                usecases.deleteAlarmWithId(currentAlarmId!!)
+                            }
+                        }
                     }
                 }
             }
@@ -90,21 +103,15 @@ class AlarmSettingsViewModel @Inject constructor(
         when (event) {
             is AddEditAlarmEvent.OnSaveTodoClick -> {
                 viewModelScope.launch {
-                    val alarm = Alarm(
-                        alarmId = currentAlarmId!!,
-                        hour = _alarmTime.value.hour,
-                        minute = _alarmTime.value.minute,
-                        repeat = _repeatWeekly.value,
-                        repeatDays = _dayChooser.value,
-                        isOn = true,
-                        vibrate = _vibrate.value,
-                        title = _alarmTitle.value.text,
-                        difficulty = _difficulty.value,
-                        alarmTone = _tone.value
-                    )
+                    val alarm = createAlarm()
                     usecases.addAlarm(alarm)
                     usecases.scheduleAlarm(alarm, _repeatWeekly.value)
                     _eventFlow.emit(UiEvent.SaveAlarm)
+                }
+            }
+            is AddEditAlarmEvent.OnTestClick -> {
+                runBlocking {
+                    usecases.addAlarm(createAlarm())
                 }
             }
             is AddEditAlarmEvent.ChangeTime -> {
@@ -143,6 +150,21 @@ class AlarmSettingsViewModel @Inject constructor(
         }
         return id
     }
+
+    private fun createAlarm() = Alarm(
+        alarmId = currentAlarmId!!,
+        hour = _alarmTime.value.hour,
+        minute = _alarmTime.value.minute,
+        repeat = _repeatWeekly.value,
+        repeatDays = _dayChooser.value,
+        isOn = isNewAlarm?.let {
+            if (it) true else _isOn.value
+        } ?: false,
+        vibrate = _vibrate.value,
+        title = _alarmTitle.value.text,
+        difficulty = _difficulty.value,
+        alarmTone = _tone.value
+    )
 
     private fun initCalendar(alarm: Alarm): Calendar {
         val cal = Calendar.getInstance()

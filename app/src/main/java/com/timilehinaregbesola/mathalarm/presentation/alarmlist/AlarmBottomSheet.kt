@@ -74,6 +74,8 @@ fun AlarmBottomSheet(
     }
 
     val alarmTimeText: State<TimeState> = viewModel.alarmTime
+    navController
+        .currentBackStackEntry?.savedStateHandle?.set("current", viewModel.currentAlarmId)
     val dialog = remember { MaterialDialog() }
     dialog.build(
         buttons = {
@@ -165,7 +167,9 @@ fun AlarmBottomSheet(
             text = viewModel.alarmTitle.value,
             onValueChange = { newValue ->
                 viewModel.onEvent(AddEditAlarmEvent.EnteredTitle(newValue))
-            }
+            },
+            label = { Text("Alarm title") },
+            placeholder = { Text("Good day") },
         )
         val toneText = remember { mutableStateOf<String?>(null) }
         val result = remember { mutableStateOf<Uri?>(null) }
@@ -224,6 +228,7 @@ fun AlarmBottomSheet(
                 .padding(top = 32.dp)
                 .fillMaxWidth(),
             onClick = {
+                viewModel.onEvent(AddEditAlarmEvent.OnTestClick)
                 val testAlarm = Alarm()
                 testAlarm.apply {
                     difficulty = viewModel.difficulty.value
@@ -319,7 +324,9 @@ private fun TextWithCheckbox(
 @Composable
 private fun LabelTextField(
     text: TextFieldValue,
-    onValueChange: (TextFieldValue) -> Unit
+    onValueChange: (TextFieldValue) -> Unit,
+    label: @Composable (() -> Unit)? = null,
+    placeholder: @Composable (() -> Unit)? = null,
 ) {
     TextField(
         value = text,
@@ -328,8 +335,8 @@ private fun LabelTextField(
         modifier = Modifier
             .padding(horizontal = 16.dp)
             .fillMaxWidth(),
-        label = { Text("Alarm title") },
-        placeholder = { Text("Good day") },
+        label = label,
+        placeholder = placeholder,
         singleLine = true,
         colors = TextFieldDefaults.textFieldColors(backgroundColor = Color.Transparent),
     )
@@ -395,14 +402,6 @@ fun Difficulty(initialDiff: Int, onValueChange: (Int) -> Unit) {
             }
         }
     }
-}
-
-sealed class SheetState(val alarmId: Long = 0L) {
-    class NewAlarm() : SheetState()
-
-    object Init : SheetState()
-
-    class EditAlarm(id: Long) : SheetState(id)
 }
 
 @Preview
