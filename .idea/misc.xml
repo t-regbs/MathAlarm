@@ -3,6 +3,7 @@
   <component name="DesignSurface">
     <option name="filePathToZoomLevelMap">
       <map>
+        <entry key="..\:/Users/Timilehin/StudioProjects/MathAlarm/app/src/main/res/drawable-xhdpi/bottom_sheet_bg.xml" value="0.1" />
         <entry key="..\:/Users/Timilehin/StudioProjects/MathAlarm/app/src/main/res/layout/activity_math.xml" value="0.14479166666666668" />
         <entry key="..\:/Users/Timilehin/StudioProjects/MathAlarm/app/src/main/res/layout/fragment_alarm_list.xml" value="0.2222222222222222" />
         <entry key="..\:/Users/Timilehin/StudioProjects/MathAlarm/app/src/main/res/layout/fragment_alarm_settings.xml" value="0.14427083333333332" />

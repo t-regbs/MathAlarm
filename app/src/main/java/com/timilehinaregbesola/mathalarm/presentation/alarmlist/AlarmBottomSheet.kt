@@ -17,7 +17,6 @@ import androidx.compose.material.icons.outlined.EmojiSymbols
 import androidx.compose.material.icons.outlined.Label
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -55,20 +54,18 @@ fun AlarmBottomSheet(
 //    scaffoldState: BottomSheetScaffoldState,
     navController: NavHostController,
 ) {
-    val scope = rememberCoroutineScope()
-    var alarm: Alarm?
-    val alarmTimeText: State<TimeState>
+    val scaffoldState = rememberBottomSheetScaffoldState()
     val activity = LocalContext.current as Activity
     var timeCal = LocalTime.now()
 
     LaunchedEffect(key1 = true) {
         viewModel.eventFlow.collectLatest { event ->
             when (event) {
-//                is AlarmSettingsViewModel.UiEvent.ShowSnackbar -> {
-//                    scaffoldState.snackbarHostState.showSnackbar(
-//                        message = event.message
-//                    )
-//                }
+                is AlarmSettingsViewModel.UiEvent.ShowSnackbar -> {
+                    scaffoldState.snackbarHostState.showSnackbar(
+                        message = event.message
+                    )
+                }
                 is AlarmSettingsViewModel.UiEvent.SaveAlarm -> {
                     navController.navigateUp()
                 }
@@ -76,35 +73,7 @@ fun AlarmBottomSheet(
         }
     }
 
-    val testScreenResult = navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Long>("testAlarmId")?.observeAsState()
-    testScreenResult?.value?.let {
-//        viewModel.onDeleteWithId(it)
-    }
-
-    alarm = viewModel.alarm
-    Timber.d("current alarm: $alarm")
-
-    navController.currentBackStackEntry?.savedStateHandle?.getLiveData<String>("tone")?.observeAsState()?.value.let { alar ->
-        alar?.let { alarm!!.alarmTone = it }
-    }
-    navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Int>("hour")?.observeAsState()?.value.let { alar ->
-        alar?.let { alarm!!.hour = it }
-    }
-    navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Int>("minute")?.observeAsState()?.value.let { alar ->
-        alar?.let { alarm!!.minute = it }
-    }
-    navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Boolean>("vibrate")?.observeAsState()?.value.let { alar ->
-        alar?.let { alarm!!.vibrate = it }
-    }
-    navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Boolean>("repeat")?.observeAsState()?.value.let { alar ->
-        alar?.let { alarm!!.repeat = it }
-    }
-    navController.currentBackStackEntry?.savedStateHandle?.getLiveData<String>("repeatDays")?.observeAsState()?.value.let { alar ->
-        alar?.let { alarm!!.repeatDays = it }
-    }
-
-//    alarmText = remember { mutableStateOf(alarm?.getFormatTime().toString()) }
-    alarmTimeText = viewModel.alarmTime
+    val alarmTimeText: State<TimeState> = viewModel.alarmTime
     val dialog = remember { MaterialDialog() }
     dialog.build(
         buttons = {
@@ -112,11 +81,8 @@ fun AlarmBottomSheet(
             negativeButton("Cancel")
         }
     ) {
-        timeCal = alarm?.minute?.let { timeCal.withHour(alarm.hour).withMinute(it) }
+        timeCal = timeCal.withHour(alarmTimeText.value.hour).withMinute(alarmTimeText.value.minute)
         timepicker(initialTime = timeCal) { time ->
-            alarm?.hour = time.hour
-            alarm?.minute = time.minute
-//            alarmText.value = alarm?.getFormatTime().toString()
             val dtf = DateTimeFormatter.ofPattern("hh:mm a")
             viewModel.onEvent(
                 AddEditAlarmEvent.ChangeTime(
@@ -127,7 +93,7 @@ fun AlarmBottomSheet(
                     )
                 )
             )
-            timeCal = alarm?.hour?.let { timeCal.withHour(it).withMinute(alarm.minute) }
+            timeCal = timeCal.withHour(alarmTimeText.value.hour).withMinute(alarmTimeText.value.minute)
         }
     }
 
@@ -203,7 +169,7 @@ fun AlarmBottomSheet(
         )
         val toneText = remember { mutableStateOf<String?>(null) }
         val result = remember { mutableStateOf<Uri?>(null) }
-        val launcher = rememberLauncherForActivityResult(PickRingtone(alarm)) {
+        val launcher = rememberLauncherForActivityResult(PickRingtone(viewModel.tone.value)) {
             result.value = it
         }
         result.value?.let {
@@ -231,8 +197,11 @@ fun AlarmBottomSheet(
                     launcher.launch(null)
                 } catch (e: Exception) {
                     Timber.e(e)
-//                                Toast.makeText(context, requireContext().getString(R.string.details_no_ringtone_picker), Toast.LENGTH_LONG)
-//                                    .show()
+                    viewModel.onEvent(
+                        AddEditAlarmEvent.OnToneError(
+                            activity.getString(R.string.details_no_ringtone_picker)
+                        )
+                    )
                 }
             }
         )
@@ -255,18 +224,19 @@ fun AlarmBottomSheet(
                 .padding(top = 32.dp)
                 .fillMaxWidth(),
             onClick = {
-                updateSavedStateHandle(navController, alarm)
                 val testAlarm = Alarm()
                 testAlarm.apply {
-                    difficulty = alarm!!.difficulty
-                    alarmTone = alarm.alarmTone.ifBlank {
+                    difficulty = viewModel.difficulty.value
+                    alarmTone = viewModel.tone.value.ifBlank {
                         RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString()
                     }
                     snooze = 0
-                    vibrate = alarm.vibrate
+                    vibrate = viewModel.vibrate.value
                 }
-//                val id = viewModel.onAddTestAlarm(testAlarm)
-//                navController.navigate(Navigation.buildAlarmMathPath(alarmId = id))
+                navController
+                    .previousBackStackEntry?.savedStateHandle?.set("currentEditAlarm", viewModel.currentAlarmId)
+                val id = viewModel.onAddTestAlarm(testAlarm)
+                navController.navigate(Navigation.buildAlarmMathPath(alarmId = id))
             },
             colors = ButtonDefaults.buttonColors(
                 backgroundColor = unSelectedDay,
@@ -283,44 +253,6 @@ fun AlarmBottomSheet(
                 .padding(top = 12.dp)
                 .fillMaxWidth(),
             onClick = {
-                navController.currentBackStackEntry?.savedStateHandle?.apply {
-                    remove<String>("tone")
-                    remove<Int>("hour")
-                    remove<Int>("minute")
-                    remove<Int>("difficulty")
-                    remove<Boolean>("vibrate")
-                    remove<Boolean>("repeat")
-                    remove<String>("repeatDays")
-                }
-//                scope.launch {
-//                    alarm!!.title = txtFieldText.text
-//                    if (state is SheetState.NewAlarm) {
-//                        if (alarm!!.alarmTone == "") {
-//                            alarm!!.alarmTone =
-//                                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString()
-//                        }
-// //                        alarm!!.isOn = true
-//                        val id = viewModel.onAddTestAlarm(alarm!!)
-//                        alarm!!.alarmId = id
-// //                        alarm!!.scheduleAlarm(activity, alarm!!.repeat)
-//                        viewModel.scheduleAlarm(alarm!!, alarm!!.repeat)
-//                    } else {
-//                        viewModel.onUpdate(alarm!!)
-//                        if (alarm!!.isOn) {
-//                            alarm!!.cancelAlarm(activity)
-//                        }
-// //                        alarm!!.isOn = alarm!!.scheduleAlarm(activity, alarm!!.repeat)
-//                        viewModel.scheduleAlarm(alarm!!, alarm!!.repeat)
-//                        Timber.d("Save alarm with id: ${alarm!!.alarmId}")
-//                    }
-//                    alarm = null
-//                    viewModel.onSheetClose()
-// //                    scaffoldState.snackbarHostState.showSnackbar(
-// //                        message = alarm!!.getTimeLeftMessage(activity)!!,
-// //                        duration = SnackbarDuration.Short
-// //                    )
-// //                    scaffoldState.bottomSheetState.collapse()
-//                }
                 viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
             }
         ) {
@@ -329,21 +261,6 @@ fun AlarmBottomSheet(
                 text = "SAVE"
             )
         }
-    }
-}
-
-private fun updateSavedStateHandle(
-    navController: NavHostController,
-    alarm: Alarm?
-) {
-    navController.currentBackStackEntry?.savedStateHandle?.apply {
-        set("tone", alarm!!.alarmTone)
-        set("hour", alarm!!.hour)
-        set("minute", alarm!!.minute)
-        set("difficulty", alarm!!.difficulty)
-        set("vibrate", alarm!!.vibrate)
-        set("repeat", alarm!!.repeat)
-        set("repeatDays", alarm!!.repeatDays)
     }
 }
 

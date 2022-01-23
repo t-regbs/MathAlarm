@@ -1,10 +1,7 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist
 
 import android.media.MediaPlayer
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.ToneState
@@ -17,11 +14,12 @@ import kotlinx.coroutines.flow.*
 import javax.inject.Inject
 
 @HiltViewModel
-class AlarmListViewModel @Inject constructor(private val usecases: Usecases, val audioPlayer: MediaPlayer) : ViewModel() {
+class AlarmListViewModel @Inject constructor(
+    private val usecases: Usecases,
+    val audioPlayer: MediaPlayer,
+    val savedStateHandle: SavedStateHandle
+) : ViewModel() {
     val alarms = usecases.getAlarms()
-
-    private val _sheetState = MutableStateFlow<SheetState>(SheetState.Init)
-    val sheetState: StateFlow<SheetState> = _sheetState
 
     private val _state = MutableLiveData<ToneState>(ToneState.Stopped())
     val state: LiveData<ToneState> = _state
@@ -56,6 +54,11 @@ class AlarmListViewModel @Inject constructor(private val usecases: Usecases, val
             is AlarmListEvent.OnUndoDeleteClick -> {
             }
             is AlarmListEvent.OnDeleteAlarmClick -> {
+            }
+            is AlarmListEvent.DeleteTestAlarm -> {
+                runBlocking {
+                    usecases.deleteAlarmWithId(event.alarmId)
+                }
             }
         }
     }
@@ -108,19 +111,9 @@ class AlarmListViewModel @Inject constructor(private val usecases: Usecases, val
         return id
     }
 
-    fun onFabClicked() {
-        _sheetState.value = SheetState.NewAlarm()
-    }
-
     fun onDelete(alarm: Alarm) {
         viewModelScope.launch {
             usecases.deleteAlarm(alarm)
-        }
-    }
-
-    fun onDeleteWithId(alarmId: Long) {
-        viewModelScope.launch {
-            usecases.deleteAlarmWithId(alarmId)
         }
     }
 
@@ -128,10 +121,6 @@ class AlarmListViewModel @Inject constructor(private val usecases: Usecases, val
         viewModelScope.launch {
             usecases.clearAlarms()
         }
-    }
-
-    fun onEditAlarmClicked(id: Long) {
-        _sheetState.value = SheetState.EditAlarm(id)
     }
 
     @InternalCoroutinesApi
@@ -158,14 +147,14 @@ class AlarmListViewModel @Inject constructor(private val usecases: Usecases, val
         _state.value = ToneState.Stopped(0)
     }
 
-    fun onSheetClose() {
-        _sheetState.value = SheetState.Init
-    }
-
     private fun timer(seconds: Int): Flow<Int> = flow {
         for (s in 0 until (seconds + 1)) {
             delay(1000L)
             emit(s)
         }
+    }
+
+    fun arrangeDelete(alarmId: Long) {
+        savedStateHandle.set("testAlarmId", alarmId)
     }
 }

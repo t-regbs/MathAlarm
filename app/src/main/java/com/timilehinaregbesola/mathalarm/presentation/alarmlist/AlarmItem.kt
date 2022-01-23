@@ -38,7 +38,7 @@ fun AlarmItem(
     onUpdateAlarm: (Alarm) -> Unit,
     onDeleteAlarm: (Alarm) -> Unit,
     onScheduleAlarm: (Alarm, Boolean) -> Unit,
-    scaffoldState: BottomSheetScaffoldState
+    scaffoldState: ScaffoldState
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -252,7 +252,7 @@ fun ItemPreview() {
                 onUpdateAlarm = {},
                 onDeleteAlarm = {},
                 onScheduleAlarm = { alarm: Alarm, b: Boolean -> },
-                scaffoldState = rememberBottomSheetScaffoldState()
+                scaffoldState = rememberScaffoldState()
             )
         }
     }

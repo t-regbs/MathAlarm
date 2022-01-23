@@ -11,4 +11,5 @@ sealed class AddEditAlarmEvent {
     data class ToggleDayChooser(val value: String) : AddEditAlarmEvent()
     data class OnDifficultyChange(val value: Int) : AddEditAlarmEvent()
     data class OnToneChange(val value: String) : AddEditAlarmEvent()
+    data class OnToneError(val message: String) : AddEditAlarmEvent()
 }

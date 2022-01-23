@@ -6,12 +6,11 @@ import android.content.Intent
 import android.media.RingtoneManager
 import android.net.Uri
 import androidx.activity.result.contract.ActivityResultContract
-import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 
-class PickRingtone(val alarm: Alarm?) : ActivityResultContract<Int?, Uri?>() {
-    override fun createIntent(context: Context, ringtoneType: Int?) =
+class PickRingtone(val alarmTone: String) : ActivityResultContract<Int?, Uri?>() {
+    override fun createIntent(context: Context, input: Int?) =
         Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
-            putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, alarm!!.alarmTone)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, alarmTone)
 
             putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
             putExtra(
@@ -23,10 +22,10 @@ class PickRingtone(val alarm: Alarm?) : ActivityResultContract<Int?, Uri?>() {
             putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
         }
 
-    override fun parseResult(resultCode: Int, result: Intent?): Uri? {
+    override fun parseResult(resultCode: Int, intent: Intent?): Uri? {
         if (resultCode != Activity.RESULT_OK) {
             return null
         }
-        return result?.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
+        return intent?.getParcelableExtra(RingtoneManager.EXTRA_RINGTONE_PICKED_URI)
     }
 }

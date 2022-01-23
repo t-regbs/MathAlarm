@@ -13,10 +13,8 @@ import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
 import com.timilehinaregbesola.mathalarm.utils.getFormatTime
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
-import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.receiveAsFlow
 import java.util.*
 import javax.inject.Inject
 
@@ -25,12 +23,6 @@ class AlarmSettingsViewModel @Inject constructor(
     private val usecases: Usecases,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
-
-    var alarm by mutableStateOf<Alarm?>(null)
-        private set
-
-    private val _uiEvent = Channel<UiEvent>()
-    val uiEvent = _uiEvent.receiveAsFlow()
 
     private val _alarmTime = mutableStateOf(TimeState())
     val alarmTime: State<TimeState> = _alarmTime
@@ -56,7 +48,7 @@ class AlarmSettingsViewModel @Inject constructor(
     private val _eventFlow = MutableSharedFlow<UiEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
 
-    private var currentAlarmId: Long? = null
+    var currentAlarmId: Long? = null
 
     init {
         savedStateHandle.get<Long>(Navigation.NAV_SETTINGS_SHEET_ARGUMENT)?.let { alarmId ->
@@ -88,7 +80,6 @@ class AlarmSettingsViewModel @Inject constructor(
                             _tone.value = alarm.alarmTone
                         }
                         _alarmTitle.value = TextFieldValue(alarm.title)
-                        this@AlarmSettingsViewModel.alarm = alarm
                     }
                 }
             }
@@ -99,20 +90,20 @@ class AlarmSettingsViewModel @Inject constructor(
         when (event) {
             is AddEditAlarmEvent.OnSaveTodoClick -> {
                 viewModelScope.launch {
-                    usecases.addAlarm(
-                        Alarm(
-                            alarmId = currentAlarmId!!,
-                            hour = _alarmTime.value.hour,
-                            minute = _alarmTime.value.minute,
-                            repeat = _repeatWeekly.value,
-                            repeatDays = _dayChooser.value,
-                            isOn = true,
-                            vibrate = _vibrate.value,
-                            title = _alarmTitle.value.text,
-                            difficulty = _difficulty.value,
-                            alarmTone = _tone.value
-                        )
+                    val alarm = Alarm(
+                        alarmId = currentAlarmId!!,
+                        hour = _alarmTime.value.hour,
+                        minute = _alarmTime.value.minute,
+                        repeat = _repeatWeekly.value,
+                        repeatDays = _dayChooser.value,
+                        isOn = true,
+                        vibrate = _vibrate.value,
+                        title = _alarmTitle.value.text,
+                        difficulty = _difficulty.value,
+                        alarmTone = _tone.value
                     )
+                    usecases.addAlarm(alarm)
+                    usecases.scheduleAlarm(alarm, _repeatWeekly.value)
                     _eventFlow.emit(UiEvent.SaveAlarm)
                 }
             }
@@ -137,13 +128,20 @@ class AlarmSettingsViewModel @Inject constructor(
             is AddEditAlarmEvent.OnToneChange -> {
                 _tone.value = event.value
             }
+            is AddEditAlarmEvent.OnToneError -> {
+                viewModelScope.launch {
+                    _eventFlow.emit(UiEvent.ShowSnackbar(event.message))
+                }
+            }
         }
     }
 
-    private fun sendUiEvent(event: UiEvent) {
-        viewModelScope.launch {
-            _uiEvent.send(event)
+    fun onAddTestAlarm(new: Alarm): Long {
+        var id: Long
+        runBlocking {
+            id = usecases.addAlarm(new)
         }
+        return id
     }
 
     private fun initCalendar(alarm: Alarm): Calendar {
@@ -155,7 +153,7 @@ class AlarmSettingsViewModel @Inject constructor(
     }
 
     sealed class UiEvent {
-//        data class ShowSnackbar(val message: String): UiEvent()
+        data class ShowSnackbar(val message: String) : UiEvent()
         object SaveAlarm : UiEvent()
     }
 }

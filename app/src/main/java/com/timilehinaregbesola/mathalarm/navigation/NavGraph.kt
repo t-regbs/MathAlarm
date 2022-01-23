@@ -2,11 +2,13 @@ package com.timilehinaregbesola.mathalarm.navigation
 
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.unit.dp
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -35,11 +37,15 @@ fun NavGraph() {
     val bottomSheetNavigator = rememberBottomSheetNavigator()
     val navController = rememberNavController(bottomSheetNavigator)
     Surface(color = MaterialTheme.colors.background) {
-        ModalBottomSheetLayout(bottomSheetNavigator) {
+        ModalBottomSheetLayout(
+            bottomSheetNavigator = bottomSheetNavigator,
+            sheetShape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp),
+        ) {
             NavHost(navController = navController, startDestination = Navigation.NAV_ALARM_LIST) {
                 composable(Navigation.NAV_ALARM_LIST) {
                     ListDisplayScreen(
-                        onNavigate = { navController.navigate(it.route) }
+                        onNavigate = { navController.navigate(it.route) },
+                        navController = navController
                     )
                 }
                 composable(
@@ -64,7 +70,7 @@ fun NavGraph() {
                             defaultValue = -1L
                         }
                     )
-                ) { backstackEntry ->
+                ) {
                     AlarmBottomSheet(
                         navController = navController,
                     )

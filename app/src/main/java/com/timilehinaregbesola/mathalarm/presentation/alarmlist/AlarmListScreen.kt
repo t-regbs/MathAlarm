@@ -7,9 +7,9 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,12 +18,14 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.navigation.NavHostController
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.components.AddAlarmFab
 import com.timilehinaregbesola.mathalarm.presentation.components.AlarmSnack
 import com.timilehinaregbesola.mathalarm.presentation.components.ClearDialog
 import com.timilehinaregbesola.mathalarm.presentation.components.ListTopAppBar
+import com.timilehinaregbesola.mathalarm.utils.Navigation
 import com.timilehinaregbesola.mathalarm.utils.SAT
 import com.timilehinaregbesola.mathalarm.utils.UiEvent
 import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
@@ -39,12 +41,14 @@ import java.util.*
 fun ListDisplayScreen(
     viewModel: AlarmListViewModel = hiltViewModel(),
     onNavigate: (UiEvent.Navigate) -> Unit,
-//    navController: NavHostController
+    navController: NavHostController
 ) {
 //    viewModel.getAlarms()
-    val openDialog = remember { mutableStateOf(false) }
-    val scaffoldState = rememberBottomSheetScaffoldState()
     val alarms = viewModel.alarms.collectAsState(emptyList())
+    val openDialog = remember { mutableStateOf(false) }
+    println("ListScreen")
+    println(navController.currentBackStackEntry?.destination)
+    val scaffoldState = rememberScaffoldState()
     LaunchedEffect(key1 = true) {
         viewModel.uiEvent.collect { event ->
             when (event) {
@@ -63,20 +67,27 @@ fun ListDisplayScreen(
         }
     }
 
-    val scope = rememberCoroutineScope()
-    val sheetState by viewModel.sheetState.collectAsState(SheetState.Init)
+    val testScreenResult = navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Long>("testAlarmId")?.observeAsState()
+    val currEditAlarm = navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Long>("currentEditAlarm")?.observeAsState()
+    val previousRoute = navController.previousBackStackEntry?.destination?.route
+    testScreenResult?.value?.let { testId ->
+        navController
+            .currentBackStackEntry?.savedStateHandle?.remove<Long>("currentEditAlarm")
+        navController
+            .currentBackStackEntry?.savedStateHandle?.remove<Long>("testAlarmId")
+        viewModel.onEvent(AlarmListEvent.DeleteTestAlarm(testId))
+        if (previousRoute != Navigation.NAV_ALARM_LIST) {
+            currEditAlarm?.value?.let {
+                println(previousRoute)
+                viewModel.onEvent(AlarmListEvent.OnEditAlarmClick(it))
+            }
+        }
+    }
     Surface(
         modifier = Modifier
             .fillMaxSize()
     ) {
-        BottomSheetScaffold(
-            sheetContent = {
-//                if (sheetState != SheetState.Init) {
-//                    AlarmBottomSheet(sheetState, viewModel, scope, scaffoldState, navController)
-//                }
-            },
-            sheetPeekHeight = 0.dp,
-            sheetShape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp),
+        Scaffold(
             scaffoldState = scaffoldState,
             topBar = {
                 ListTopAppBar(openDialog = openDialog)
@@ -89,20 +100,20 @@ fun ListDisplayScreen(
                     .fillMaxSize()
                     .padding(top = 16.dp)
                     .background(
-                        color = if (alarms.value?.isEmpty() == true) {
+                        color = if (alarms.value.isEmpty()) {
                             Color.White
                         } else {
                             Color.LightGray.copy(alpha = 0.1f)
                         }
                     ),
-                contentAlignment = if (alarms.value?.isEmpty() == true) {
+                contentAlignment = if (alarms.value.isEmpty()) {
                     Alignment.Center
                 } else {
                     Alignment.TopStart
                 }
             ) {
                 val emptyImage = painterResource(id = R.drawable.search_icon)
-                if (alarms.value?.isEmpty() == true) {
+                if (alarms.value.isEmpty()) {
                     Column(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -142,13 +153,13 @@ fun ListDisplayScreen(
                     }
                 } else {
                     var enabled = false
-                    var nearestAlarmMessage = remember { mutableStateOf("") }
-                    if (alarms.value != null && alarms.value!!.isNotEmpty()) {
-                        enabled = alarms.value!!.any { it.isOn }
+                    val nearestAlarmMessage = remember { mutableStateOf("") }
+                    if (alarms.value.isNotEmpty()) {
+                        enabled = alarms.value.any { it.isOn }
                         val now = System.currentTimeMillis()
-                        var nearestTime = alarms.value!![0].let { it1 -> getCal(it1).timeInMillis }
+                        var nearestTime = alarms.value[0].let { it1 -> getCal(it1).timeInMillis }
                         var nearestIndex = 0
-                        alarms.value?.forEachIndexed { index, alarm ->
+                        alarms.value.forEachIndexed { index, alarm ->
                             val cal = getCal(alarm)
                             val time = cal.timeInMillis
                             if ((time - now) < nearestTime.minus(now)) {
@@ -157,7 +168,7 @@ fun ListDisplayScreen(
                             }
                         }
                         nearestAlarmMessage.value = nearestTime.let { it1 ->
-                            alarms.value!![nearestIndex].getTimeLeft(it1)
+                            alarms.value[nearestIndex].getTimeLeft(it1)
                         }
                     }
                     Surface(
@@ -171,25 +182,22 @@ fun ListDisplayScreen(
                             stickyHeader {
                                 ListHeader(enabled, nearestAlarmMessage.value)
                             }
-                            if (alarms.value != null) {
-                                items(alarms.value!!) { alarm ->
-                                    AlarmItem(
-                                        alarm = alarm,
-                                        onEditAlarm = {
+                            items(alarms.value) { alarm ->
+                                AlarmItem(
+                                    alarm = alarm,
+                                    onEditAlarm = {
 //                                            viewModel.onEditAlarmClicked(alarm.alarmId)
-//                                            scope.launch { scaffoldState.bottomSheetState.expand() }
-                                            viewModel.onEvent(AlarmListEvent.OnEditAlarmClick(alarm.alarmId))
-                                        },
-                                        onUpdateAlarm = viewModel::onUpdate,
-                                        scaffoldState = scaffoldState,
-                                        onDeleteAlarm = {
-                                            viewModel.onDelete(it)
-                                        },
-                                        onScheduleAlarm = { curAlarm: Alarm, b: Boolean ->
-                                            viewModel.scheduleAlarm(curAlarm, b)
-                                        }
-                                    )
-                                }
+                                        viewModel.onEvent(AlarmListEvent.OnEditAlarmClick(alarm.alarmId))
+                                    },
+                                    onUpdateAlarm = viewModel::onUpdate,
+                                    scaffoldState = scaffoldState,
+                                    onDeleteAlarm = {
+                                        viewModel.onDelete(it)
+                                    },
+                                    onScheduleAlarm = { curAlarm: Alarm, b: Boolean ->
+                                        viewModel.scheduleAlarm(curAlarm, b)
+                                    }
+                                )
                             }
                         }
                     }
