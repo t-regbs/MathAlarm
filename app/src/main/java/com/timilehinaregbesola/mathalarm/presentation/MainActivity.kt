@@ -13,6 +13,7 @@ import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.MaterialTheme
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.graphics.toArgb
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.timilehinaregbesola.mathalarm.navigation.NavGraph
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import dagger.hilt.android.AndroidEntryPoint
@@ -21,14 +22,13 @@ import kotlinx.coroutines.InternalCoroutinesApi
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
 
-//    private val mainViewModel by viewModel<AlarmListViewModel>()
-
     @ExperimentalAnimationApi
     @ExperimentalComposeUiApi
     @InternalCoroutinesApi
     @ExperimentalFoundationApi
     @ExperimentalMaterialApi
     override fun onCreate(savedInstanceState: Bundle?) {
+        val splashScreen = installSplashScreen()
         super.onCreate(savedInstanceState)
         window.makeTransparentStatusBar()
         setContent {

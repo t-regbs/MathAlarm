@@ -78,6 +78,11 @@ class AlarmSettingsViewModel @Inject constructor(
                             isNewAlarm = false
                             _dayChooser.value = alarm.repeatDays
                         }
+                        isNewAlarm?.let {
+                            if (it) {
+                                usecases.deleteAlarmWithId(currentAlarmId!!)
+                            }
+                        }
                         _repeatWeekly.value = alarm.repeat
                         _vibrate.value = alarm.vibrate
                         _difficulty.value = alarm.difficulty
@@ -88,11 +93,6 @@ class AlarmSettingsViewModel @Inject constructor(
                         }
                         _alarmTitle.value = TextFieldValue(alarm.title)
                         _isOn.value = alarm.isOn
-                        isNewAlarm?.let {
-                            if (it) {
-                                usecases.deleteAlarmWithId(currentAlarmId!!)
-                            }
-                        }
                     }
                 }
             }

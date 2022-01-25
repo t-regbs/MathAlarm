@@ -14,8 +14,8 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -50,7 +50,7 @@ fun AlarmItem(
         elevation = 4.dp,
         shape = MaterialTheme.shapes.medium.copy(CornerSize(8.dp))
     ) {
-        val expandItem = remember { mutableStateOf(false) }
+        val expandItem = rememberSaveable { mutableStateOf(false) }
         Column(
             Modifier
                 .background(Color(0x99FFFFFF))
@@ -61,7 +61,6 @@ fun AlarmItem(
                     val time = alarm.getFormatTime().toString()
                     val actualTime = time.substring(0, time.length - 3)
                     val timeOfDay = time.substring(time.length - 2)
-                    val checkedState = remember { mutableStateOf(alarm.isOn) }
                     Row(
                         modifier = Modifier
                             .padding(start = 24.dp, top = 8.dp, bottom = 8.dp)
@@ -71,13 +70,13 @@ fun AlarmItem(
                             text = actualTime,
                             fontSize = 40.sp,
                             color = Color.Black,
-                            fontWeight = if (checkedState.value) FontWeight.Bold else FontWeight.Normal
+                            fontWeight = if (alarm.isOn) FontWeight.Bold else FontWeight.Normal
                         )
                         Text(
                             text = timeOfDay,
                             fontSize = 16.sp,
                             color = Color.Gray,
-                            fontWeight = if (checkedState.value) FontWeight.Bold else FontWeight.Normal,
+                            fontWeight = if (alarm.isOn) FontWeight.Bold else FontWeight.Normal,
                             modifier = Modifier
                                 .align(Alignment.Bottom)
                                 .padding(bottom = 8.dp)
@@ -88,12 +87,11 @@ fun AlarmItem(
                             .weight(1f)
                             .padding(4.dp)
                             .align(Alignment.CenterVertically),
-                        checked = checkedState.value,
+                        checked = alarm.isOn,
                         colors = SwitchDefaults.colors(
                             checkedThumbColor = enterButtonColor
                         ),
                         onCheckedChange = {
-                            checkedState.value = it
                             alarm.isOn = it
                             if (alarm.isOn) {
 //                                if (alarm.scheduleAlarm(context, false)) {

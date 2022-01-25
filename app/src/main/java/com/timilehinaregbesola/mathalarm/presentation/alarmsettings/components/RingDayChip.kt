@@ -1,4 +1,4 @@
-package com.timilehinaregbesola.mathalarm.presentation.components
+package com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.size

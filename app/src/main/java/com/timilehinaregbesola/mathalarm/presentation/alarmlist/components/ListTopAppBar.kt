@@ -1,4 +1,4 @@
-package com.timilehinaregbesola.mathalarm.presentation.components
+package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
