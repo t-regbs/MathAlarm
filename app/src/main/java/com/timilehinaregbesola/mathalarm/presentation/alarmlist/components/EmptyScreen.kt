@@ -1,4 +1,4 @@
-package com.timilehinaregbesola.mathalarm.presentation.alarmlist
+package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -13,7 +13,6 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.timilehinaregbesola.mathalarm.R
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AddAlarmFab
 
 @OptIn(ExperimentalMaterialApi::class)
 @Composable

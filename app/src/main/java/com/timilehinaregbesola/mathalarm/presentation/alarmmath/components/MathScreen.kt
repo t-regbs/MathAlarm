@@ -1,4 +1,4 @@
-package com.timilehinaregbesola.mathalarm.presentation.alarmmath
+package com.timilehinaregbesola.mathalarm.presentation.alarmmath.components
 
 import android.content.Context
 import android.media.AudioAttributes
@@ -28,12 +28,12 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.AlarmMathViewModel
 import com.timilehinaregbesola.mathalarm.presentation.components.AlarmSnack
 import com.timilehinaregbesola.mathalarm.presentation.ui.*
 import com.timilehinaregbesola.mathalarm.utils.EASY
@@ -43,8 +43,6 @@ import kotlinx.coroutines.launch
 import timber.log.Timber
 import java.io.IOException
 import kotlin.random.Random
-
-// import org.koin.androidx.compose
 
 private const val ADD = 0
 private const val SUBTRACT = 1
@@ -434,16 +432,4 @@ data class MathProblem(
 sealed class ToneState(val total: Int) {
     class Stopped(seconds: Int = 0) : ToneState(seconds)
     class Countdown(total: Int, val seconds: Int) : ToneState(total)
-}
-
-@Preview
-@Composable
-fun MathScreenPreview() {
-    MathAlarmTheme {
-//        MathScreen(
-//            rememberNavController(),
-//            1L,
-//            viewModel
-//        )
-    }
 }

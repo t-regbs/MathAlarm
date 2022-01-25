@@ -1,4 +1,4 @@
-package com.timilehinaregbesola.mathalarm.presentation.alarmlist
+package com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components
 
 import android.app.Activity
 import android.media.RingtoneManager
@@ -14,13 +14,11 @@ import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.EmojiSymbols
-import androidx.compose.material.icons.outlined.Label
 import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
@@ -36,7 +34,6 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarmEvent
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AlarmSettingsViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.TimeState
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.RingDayChip
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
 import com.timilehinaregbesola.mathalarm.utils.*
@@ -51,7 +48,6 @@ import java.time.format.DateTimeFormatter
 @Composable
 fun AlarmBottomSheet(
     viewModel: AlarmSettingsViewModel = hiltViewModel(),
-//    scaffoldState: BottomSheetScaffoldState,
     navController: NavHostController,
 ) {
     val scaffoldState = rememberBottomSheetScaffoldState()
@@ -219,7 +215,7 @@ fun AlarmBottomSheet(
                 imageVector = Icons.Outlined.EmojiSymbols,
                 contentDescription = null
             )
-            Difficulty(viewModel.difficulty.value) {
+            DifficultyChooser(viewModel.difficulty.value) {
                 viewModel.onEvent(AddEditAlarmEvent.OnDifficultyChange(it))
             }
         }
@@ -265,141 +261,6 @@ fun AlarmBottomSheet(
                 fontSize = 14.sp,
                 text = "SAVE"
             )
-        }
-    }
-}
-
-@Composable
-private fun TextWithIcon(
-    image: ImageVector,
-    text: String,
-    modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null
-) {
-    Row(
-        modifier = modifier
-            .padding(top = 30.dp, start = 10.dp, end = 10.dp)
-            .fillMaxWidth()
-    ) {
-        Icon(
-            modifier = Modifier.padding(end = 14.dp),
-            imageVector = image,
-            contentDescription = null
-        )
-        Text(
-            modifier = Modifier.clickable { onClick?.invoke() },
-            text = text,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Normal
-        )
-    }
-}
-
-@Composable
-private fun TextWithCheckbox(
-    modifier: Modifier = Modifier,
-    text: String,
-    initialState: Boolean,
-    onCheckChange: (Boolean) -> Unit
-) {
-    Row(
-        modifier = modifier,
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Checkbox(
-            modifier = Modifier.padding(end = 14.dp),
-            checked = initialState,
-            onCheckedChange = {
-                onCheckChange(it)
-            }
-        )
-        Text(
-            text = text,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Normal
-        )
-    }
-}
-
-@Composable
-private fun LabelTextField(
-    text: TextFieldValue,
-    onValueChange: (TextFieldValue) -> Unit,
-    label: @Composable (() -> Unit)? = null,
-    placeholder: @Composable (() -> Unit)? = null,
-) {
-    TextField(
-        value = text,
-        onValueChange = onValueChange,
-        leadingIcon = { Icon(imageVector = Icons.Outlined.Label, contentDescription = null) },
-        modifier = Modifier
-            .padding(horizontal = 16.dp)
-            .fillMaxWidth(),
-        label = label,
-        placeholder = placeholder,
-        singleLine = true,
-        colors = TextFieldDefaults.textFieldColors(backgroundColor = Color.Transparent),
-    )
-}
-
-@Composable
-private fun AlarmDays(
-    currentDays: String,
-    onValueChange: (String) -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 16.dp),
-        horizontalArrangement = Arrangement.SpaceBetween
-    ) {
-        days.forEachIndexed { index, day ->
-            val sb = StringBuilder(currentDays)
-            val sel = currentDays[index] == 'T'
-            val checkedState = mutableStateOf(sel)
-            RingDayChip(
-                day = day,
-                selected = checkedState.value,
-                onSelectChange = {
-                    checkedState.value = it
-                    if (it) {
-                        sb.setCharAt(index, 'T')
-                        onValueChange(sb.toString())
-                    } else {
-                        sb.setCharAt(index, 'F')
-                        onValueChange(sb.toString())
-                    }
-                }
-            )
-        }
-    }
-}
-
-@Composable
-fun Difficulty(initialDiff: Int, onValueChange: (Int) -> Unit) {
-    val expanded = remember { mutableStateOf(false) }
-    val items = listOf("Easy Math", "Medium Math", "Hard Math")
-    Box {
-        Text(
-            items[initialDiff],
-            modifier = Modifier
-                .clickable(onClick = { expanded.value = true })
-                .background(unSelectedDay)
-        )
-        DropdownMenu(
-            expanded = expanded.value,
-            onDismissRequest = { expanded.value = false }
-        ) {
-            items.forEachIndexed { index, s ->
-                DropdownMenuItem(
-                    onClick = {
-                        expanded.value = false
-                        onValueChange(index)
-                    }
-                ) {
-                    Text(text = s)
-                }
-            }
         }
     }
 }

@@ -19,9 +19,9 @@ import com.google.accompanist.navigation.material.ExperimentalMaterialNavigation
 import com.google.accompanist.navigation.material.ModalBottomSheetLayout
 import com.google.accompanist.navigation.material.bottomSheet
 import com.google.accompanist.navigation.material.rememberBottomSheetNavigator
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmBottomSheet
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.ListDisplayScreen
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathScreen
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.ListDisplayScreen
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet
 import com.timilehinaregbesola.mathalarm.utils.Navigation
 import com.timilehinaregbesola.mathalarm.utils.getAlarmIdArgument
 import kotlinx.coroutines.InternalCoroutinesApi
