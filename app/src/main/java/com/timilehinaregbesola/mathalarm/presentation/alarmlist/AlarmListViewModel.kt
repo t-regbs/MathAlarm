@@ -16,9 +16,7 @@ class AlarmListViewModel @Inject constructor(
     private val usecases: Usecases,
     val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
-    private val _isLoading = MutableStateFlow(true)
-    val isLoading = _isLoading.asStateFlow()
-    var alarms = usecases.getAlarms()
+    var alarms = usecases.getSavedAlarms()
 
     private val _uiEvent = Channel<UiEvent>()
     val uiEvent = _uiEvent.receiveAsFlow()

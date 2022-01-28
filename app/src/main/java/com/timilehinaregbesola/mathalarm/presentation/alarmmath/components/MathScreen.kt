@@ -315,8 +315,10 @@ private fun dismissAlarm(
 ) {
     if (validateAnswer(answerText, problem)) {
         stopMusicAndHideKeyboard(mp, viewModel, keyboardController)
-        navController
-            .previousBackStackEntry?.savedStateHandle?.set("testAlarmId", alarm.alarmId)
+        if (!alarm.isSaved) {
+            navController
+                .previousBackStackEntry?.savedStateHandle?.set("testAlarmId", alarm.alarmId)
+        }
         navController.popBackStack()
     } else {
         onWrongAnswer.invoke()

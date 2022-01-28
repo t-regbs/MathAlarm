@@ -16,7 +16,8 @@ class AlarmMapper : DomainMapper<AlarmEntity, Alarm> {
             alarmTone = model.alarmTone,
             vibrate = model.vibrate,
             snooze = model.snooze,
-            title = model.title
+            title = model.title,
+            isSaved = model.isSaved
         )
     }
 
@@ -32,7 +33,8 @@ class AlarmMapper : DomainMapper<AlarmEntity, Alarm> {
             alarmTone = domainModel.alarmTone,
             vibrate = domainModel.vibrate,
             snooze = domainModel.snooze,
-            title = domainModel.title
+            title = domainModel.title,
+            isSaved = domainModel.isSaved
         )
     }
 

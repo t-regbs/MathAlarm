@@ -45,6 +45,7 @@ fun ListDisplayScreen(
 ) {
     val alarms = viewModel.alarms.collectAsState(null)
     val openDialog = remember { mutableStateOf(false) }
+    val shouldOpenSheet = remember { mutableStateOf(true) }
     val scaffoldState = rememberScaffoldState()
     LaunchedEffect(key1 = true) {
         viewModel.uiEvent.collect { event ->
@@ -73,9 +74,10 @@ fun ListDisplayScreen(
         navController
             .currentBackStackEntry?.savedStateHandle?.remove<Long>("testAlarmId")
         viewModel.onEvent(AlarmListEvent.DeleteTestAlarm(testId))
-        if (previousRoute != Navigation.NAV_ALARM_LIST) {
+        if (previousRoute != Navigation.NAV_ALARM_LIST && shouldOpenSheet.value) {
             currEditAlarm?.value?.let {
-                println(previousRoute)
+                println("Prev: $previousRoute")
+                shouldOpenSheet.value = false
                 viewModel.onEvent(AlarmListEvent.OnEditAlarmClick(it))
             }
         }

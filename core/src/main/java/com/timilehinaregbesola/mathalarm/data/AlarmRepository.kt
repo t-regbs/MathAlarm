@@ -13,7 +13,7 @@ class AlarmRepository(private val dataSource: AlarmDataSource) {
 
     fun getAlarms() = dataSource.getAlarms()
 
-    suspend fun getLatestAlarmFromDatabase() = dataSource.getLatestAlarmFromDatabase()
+    fun getSavedAlarms() = dataSource.getSavedAlarms()
 
     suspend fun findAlarm(id: Long) = dataSource.findAlarm(id)
 
