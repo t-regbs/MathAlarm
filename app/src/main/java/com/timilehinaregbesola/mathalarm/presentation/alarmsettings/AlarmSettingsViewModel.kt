@@ -50,6 +50,9 @@ class AlarmSettingsViewModel @Inject constructor(
     private val _isOn = mutableStateOf(false)
     val isOn: State<Boolean> = _isOn
 
+    private val _isSaved = mutableStateOf(false)
+    val isSaved: State<Boolean> = _isSaved
+
     private val _eventFlow = MutableSharedFlow<UiEvent>()
     val eventFlow = _eventFlow.asSharedFlow()
 
@@ -93,6 +96,7 @@ class AlarmSettingsViewModel @Inject constructor(
                         }
                         _alarmTitle.value = TextFieldValue(alarm.title)
                         _isOn.value = alarm.isOn
+                        _isSaved.value = alarm.isSaved
                     }
                 }
             }
@@ -104,6 +108,7 @@ class AlarmSettingsViewModel @Inject constructor(
             is AddEditAlarmEvent.OnSaveTodoClick -> {
                 viewModelScope.launch {
                     val alarm = createAlarm()
+                    alarm.isSaved = true
                     usecases.addAlarm(alarm)
                     usecases.scheduleAlarm(alarm, _repeatWeekly.value)
                     _eventFlow.emit(UiEvent.SaveAlarm)
@@ -163,7 +168,8 @@ class AlarmSettingsViewModel @Inject constructor(
         vibrate = _vibrate.value,
         title = _alarmTitle.value.text,
         difficulty = _difficulty.value,
-        alarmTone = _tone.value
+        alarmTone = _tone.value,
+        isSaved = _isSaved.value
     )
 
     private fun initCalendar(alarm: Alarm): Calendar {

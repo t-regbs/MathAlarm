@@ -5,7 +5,7 @@ import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
 
-@Database(entities = [AlarmEntity::class], version = 3, exportSchema = false)
+@Database(entities = [AlarmEntity::class], version = 4, exportSchema = false)
 abstract class AlarmDatabase : RoomDatabase() {
     abstract val alarmDatabaseDao: AlarmDao
 }
@@ -56,7 +56,7 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
                     vibrate INTEGER NOT NULL,
                     snooze INTEGER NOT NULL,
                     title TEXT NOT NULL DEFAULT '',
-                    isSaved INTEGER NOT NULL
+                    isSaved INTEGER NOT NULL DEFAULT 1
                 )
             """.trimIndent()
         )
