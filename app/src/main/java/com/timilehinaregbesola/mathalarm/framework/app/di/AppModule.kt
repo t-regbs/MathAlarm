@@ -96,7 +96,7 @@ object AppModule {
             deleteAlarmWithId = DeleteAlarmWithId(repository),
             findAlarm = FindAlarm(repository),
             getAlarms = GetAlarms(repository),
-            getLatestAlarm = GetLatestAlarm(repository),
+            getSavedAlarms = GetSavedAlarms(repository),
             updateAlarm = UpdateAlarm(repository),
             scheduleAlarm = ScheduleAlarm(repository, alarmInteractor),
             completeAlarm = CompleteAlarm(repository, alarmInteractor, notificationInteractor),

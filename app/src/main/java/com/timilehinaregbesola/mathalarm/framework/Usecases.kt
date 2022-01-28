@@ -9,7 +9,7 @@ data class Usecases(
     val deleteAlarmWithId: DeleteAlarmWithId,
     val findAlarm: FindAlarm,
     val getAlarms: GetAlarms,
-    val getLatestAlarm: GetLatestAlarm,
+    val getSavedAlarms: GetSavedAlarms,
     val updateAlarm: UpdateAlarm,
     val scheduleAlarm: ScheduleAlarm,
     val completeAlarm: CompleteAlarm,
