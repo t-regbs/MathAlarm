@@ -7,10 +7,7 @@ import androidx.room.Room
 import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.framework.RoomAlarmDataSource
 import com.timilehinaregbesola.mathalarm.framework.Usecases
-import com.timilehinaregbesola.mathalarm.framework.database.AlarmDao
-import com.timilehinaregbesola.mathalarm.framework.database.AlarmDatabase
-import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
-import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_2_3
+import com.timilehinaregbesola.mathalarm.framework.database.*
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractorImpl
 import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractor
@@ -38,7 +35,7 @@ object AppModule {
             app,
             AlarmDatabase::class.java,
             "alarm_history_database"
-        ).addMigrations(MIGRATION_2_3).build()
+        ).addMigrations(MIGRATION_2_3, MIGRATION_3_4).build()
     }
 
     @Provides
