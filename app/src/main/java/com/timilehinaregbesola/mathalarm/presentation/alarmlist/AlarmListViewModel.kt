@@ -56,6 +56,15 @@ class AlarmListViewModel @Inject constructor(
                     usecases.deleteAlarmWithId(event.alarmId)
                 }
             }
+            is AlarmListEvent.OnClearAlarmsClick -> {
+                viewModelScope.launch {
+                    alarms.collect { list ->
+                        for (alarm in list) {
+                            usecases.deleteAlarm(alarm)
+                        }
+                    }
+                }
+            }
         }
     }
 

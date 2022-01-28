@@ -23,8 +23,6 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmItem
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewModel
-import com.timilehinaregbesola.mathalarm.presentation.components.AlarmSnack
-import com.timilehinaregbesola.mathalarm.presentation.components.ClearDialog
 import com.timilehinaregbesola.mathalarm.utils.Navigation
 import com.timilehinaregbesola.mathalarm.utils.SAT
 import com.timilehinaregbesola.mathalarm.utils.UiEvent
@@ -97,7 +95,11 @@ fun ListDisplayScreen(
                 },
                 snackbarHost = { state -> AlarmSnack(state) }
             ) {
-                if (openDialog.value) ClearDialog(openDialog)
+                if (openDialog.value) {
+                    ClearDialog(
+                        openDialog
+                    ) { viewModel.onEvent(AlarmListEvent.OnClearAlarmsClick) }
+                }
                 if (alarmList.isEmpty()) {
                     AlarmEmptyScreen(
                         onClickFab = {

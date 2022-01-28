@@ -8,5 +8,6 @@ sealed class AlarmListEvent {
     object OnUndoDeleteClick : AlarmListEvent()
     data class OnEditAlarmClick(val alarmId: Long) : AlarmListEvent()
     object OnAddAlarmClick : AlarmListEvent()
+    object OnClearAlarmsClick : AlarmListEvent()
     data class DeleteTestAlarm(val alarmId: Long) : AlarmListEvent()
 }
