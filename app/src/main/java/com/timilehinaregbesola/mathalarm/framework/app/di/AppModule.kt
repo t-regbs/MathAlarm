@@ -91,8 +91,8 @@ object AppModule {
     ): Usecases {
         return Usecases(
             addAlarm = AddAlarm(repository),
-            clearAlarms = ClearAlarms(repository),
-            deleteAlarm = DeleteAlarm(repository),
+            clearAlarms = ClearAlarms(repository, alarmInteractor),
+            deleteAlarm = DeleteAlarm(repository, alarmInteractor),
             deleteAlarmWithId = DeleteAlarmWithId(repository),
             findAlarm = FindAlarm(repository),
             getAlarms = GetAlarms(repository),

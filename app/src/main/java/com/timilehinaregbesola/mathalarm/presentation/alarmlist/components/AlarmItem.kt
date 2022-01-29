@@ -115,7 +115,6 @@ fun AlarmItem(
                                 onUpdateAlarm(alarm)
                                 onScheduleAlarm(alarm, false)
                             } else {
-                                alarm.cancelAlarm(context)
                                 onUpdateAlarm(alarm)
                             }
                         }
