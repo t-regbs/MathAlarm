@@ -1,11 +1,14 @@
-package com.timilehinaregbesola.mathalarm.presentation.components
+package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 
 import androidx.compose.material.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
 
 @Composable
-fun ClearDialog(openDialog: MutableState<Boolean>) {
+fun ClearDialog(
+    openDialog: MutableState<Boolean>,
+    onClear: () -> Unit
+) {
     AlertDialog(
         onDismissRequest = {
             openDialog.value = false
@@ -17,7 +20,10 @@ fun ClearDialog(openDialog: MutableState<Boolean>) {
             Text("Are you sure you want to clear the alarms?")
         },
         confirmButton = {
-            Button(onClick = { openDialog.value = false }) {
+            Button(onClick = {
+                openDialog.value = false
+                onClear.invoke()
+            }) {
                 Text("Yes")
             }
         },

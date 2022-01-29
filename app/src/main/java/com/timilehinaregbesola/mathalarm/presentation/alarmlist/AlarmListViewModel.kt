@@ -52,8 +52,15 @@ class AlarmListViewModel @Inject constructor(
                 }
             }
             is AlarmListEvent.DeleteTestAlarm -> {
-                runBlocking {
+                viewModelScope.launch {
                     usecases.deleteAlarmWithId(event.alarmId)
+                }
+            }
+            is AlarmListEvent.OnClearAlarmsClick -> {
+                viewModelScope.launch {
+                    alarms.collect { list ->
+                        usecases.clearAlarms(list)
+                    }
                 }
             }
         }
@@ -74,12 +81,6 @@ class AlarmListViewModel @Inject constructor(
     fun scheduleAlarm(alarm: Alarm, reschedule: Boolean) {
         viewModelScope.launch {
             usecases.scheduleAlarm(alarm, reschedule)
-        }
-    }
-
-    fun onClear() {
-        viewModelScope.launch {
-            usecases.clearAlarms()
         }
     }
 }

@@ -112,12 +112,13 @@ class AlarmNotificationScheduler(private val context: Context) {
     fun cancelAlarm(alarm: Alarm) {
         val receiverIntent = Intent(context, AlarmReceiver::class.java)
         receiverIntent.action = ALARM_ACTION
+        receiverIntent.putExtra(EXTRA_TASK, alarm.alarmId)
         for (i in 0..6) { // For each day of the week
             if (alarm.repeatDays[i] == 'T') {
-//                val stringId: StringBuilder = StringBuilder().append(i)
-//                    .append(alarm.hour).append(alarm.minute)
                 val stringId: StringBuilder = StringBuilder().append(alarm.alarmId).append(i)
-                val intentId = stringId.toString().toInt()
+                    .append(alarm.hour).append(alarm.minute)
+                val id = stringId.toString().split("-").joinToString("")
+                val intentId = id.toInt()
                 val cancelPendingIntent = PendingIntent.getBroadcast(
                     context, intentId, receiverIntent,
                     PendingIntent.FLAG_UPDATE_CURRENT
