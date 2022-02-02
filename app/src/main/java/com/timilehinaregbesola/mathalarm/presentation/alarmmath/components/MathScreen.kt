@@ -9,6 +9,7 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.text.KeyboardActions
@@ -28,13 +29,15 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.AlarmMathViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmSnack
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.AlarmMathViewModel
 import com.timilehinaregbesola.mathalarm.presentation.ui.*
 import com.timilehinaregbesola.mathalarm.utils.EASY
 import com.timilehinaregbesola.mathalarm.utils.HARD
@@ -174,7 +177,7 @@ fun MathScreen(
                         Text(
                             text = question.value ?: "",
                             fontSize = 70.sp,
-                            color = Color(0xFF272727),
+//                            color = Color(0xFF272727),
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -223,7 +226,7 @@ fun MathScreen(
                             textAlign = TextAlign.Center
                         ),
                         colors = TextFieldDefaults.textFieldColors(
-                            backgroundColor = unSelectedDay,
+                            backgroundColor = if (isSystemInDarkTheme()) Color.DarkGray else unSelectedDay,
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent,
                             disabledIndicatorColor = Color.Transparent
@@ -434,4 +437,16 @@ data class MathProblem(
 sealed class ToneState(val total: Int) {
     class Stopped(seconds: Int = 0) : ToneState(seconds)
     class Countdown(total: Int, val seconds: Int) : ToneState(total)
+}
+
+@OptIn(ExperimentalMaterialApi::class, InternalCoroutinesApi::class, ExperimentalComposeUiApi::class)
+@Preview
+@Composable
+fun MathPreview() {
+    MathAlarmTheme(darkTheme = true) {
+        MathScreen(
+            navController = rememberNavController(),
+            alarmId = 1L
+        )
+    }
 }

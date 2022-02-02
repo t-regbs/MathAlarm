@@ -1,9 +1,10 @@
-package com.timilehinaregbesola.mathalarm.presentation.alarmlist
+package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material.*
@@ -26,7 +27,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
-import com.timilehinaregbesola.mathalarm.presentation.ui.enterButtonColor
+import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimaryLight
 import com.timilehinaregbesola.mathalarm.utils.*
 
 @ExperimentalAnimationApi
@@ -48,12 +49,13 @@ fun AlarmItem(
             .fillMaxHeight()
             .padding(top = 8.dp, bottom = 8.dp, start = 24.dp, end = 24.dp),
         elevation = 4.dp,
+//        backgroundColor = darkPrimaryLight,
         shape = MaterialTheme.shapes.medium.copy(CornerSize(8.dp))
     ) {
         val expandItem = rememberSaveable { mutableStateOf(false) }
         Column(
             Modifier
-                .background(Color(0x99FFFFFF))
+                .background(if (isSystemInDarkTheme()) darkPrimaryLight else Color(0x99FFFFFF))
                 .clickable(onClick = { expandItem.value = !expandItem.value })
         ) {
             Column(modifier = Modifier) {
@@ -69,13 +71,12 @@ fun AlarmItem(
                         Text(
                             text = actualTime,
                             fontSize = 40.sp,
-                            color = Color.Black,
                             fontWeight = if (alarm.isOn) FontWeight.Bold else FontWeight.Normal
                         )
                         Text(
                             text = timeOfDay,
                             fontSize = 16.sp,
-                            color = Color.Gray,
+                            color = if (isSystemInDarkTheme()) Color.LightGray else Color.Gray,
                             fontWeight = if (alarm.isOn) FontWeight.Bold else FontWeight.Normal,
                             modifier = Modifier
                                 .align(Alignment.Bottom)
@@ -88,9 +89,9 @@ fun AlarmItem(
                             .padding(4.dp)
                             .align(Alignment.CenterVertically),
                         checked = alarm.isOn,
-                        colors = SwitchDefaults.colors(
-                            checkedThumbColor = enterButtonColor
-                        ),
+//                        colors = SwitchDefaults.colors(
+//                            checkedThumbColor = enterButtonColor
+//                        ),
                         onCheckedChange = {
                             alarm.isOn = it
                             if (alarm.isOn) {
@@ -123,7 +124,6 @@ fun AlarmItem(
                 Text(
                     modifier = Modifier.padding(start = 24.dp),
                     text = alarm.title,
-                    color = Color.Black,
                     fontSize = 15.sp,
                 )
                 Row(
@@ -161,7 +161,6 @@ fun AlarmItem(
 
                     Text(
                         text = "$alarmInfoText | $moreInfo",
-                        color = Color.Black,
                         fontSize = 14.sp,
                         modifier = Modifier.weight(3f)
                     )
@@ -241,7 +240,7 @@ fun AlarmItem(
 @Preview
 @Composable
 fun ItemPreview() {
-    MathAlarmTheme {
+    MathAlarmTheme(darkTheme = true) {
         Column(modifier = Modifier.height(200.dp)) {
             AlarmItem(
                 alarm = Alarm(title = "Testing testing"),
