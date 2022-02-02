@@ -4,10 +4,10 @@ import android.app.Activity
 import android.media.RingtoneManager
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CornerSize
@@ -35,8 +35,11 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarm
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AlarmSettingsViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.TimeState
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
+import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimaryLight
 import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
-import com.timilehinaregbesola.mathalarm.utils.*
+import com.timilehinaregbesola.mathalarm.utils.Navigation
+import com.timilehinaregbesola.mathalarm.utils.PickRingtone
+import com.timilehinaregbesola.mathalarm.utils.checkPermissions
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
 import kotlinx.coroutines.flow.collectLatest
@@ -97,7 +100,6 @@ fun AlarmBottomSheet(
 
     Column(
         Modifier
-            .background(color = Color.White)
             .fillMaxWidth()
             .padding(24.dp)
             .scrollable(rememberScrollState(), Orientation.Vertical)
@@ -107,7 +109,7 @@ fun AlarmBottomSheet(
                 .fillMaxWidth()
                 .height(150.dp)
                 .padding(horizontal = 16.dp),
-            backgroundColor = unSelectedDay,
+            backgroundColor = if (isSystemInDarkTheme()) darkPrimaryLight else unSelectedDay,
             elevation = 0.dp,
             shape = MaterialTheme.shapes.medium.copy(CornerSize(24.dp))
         ) {
@@ -255,7 +257,8 @@ fun AlarmBottomSheet(
                 .fillMaxWidth(),
             onClick = {
                 viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
-            }
+            },
+            colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.secondary)
         ) {
             Text(
                 fontSize = 14.sp,

@@ -20,7 +20,6 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmItem
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewModel
 import com.timilehinaregbesola.mathalarm.utils.Navigation
@@ -138,7 +137,6 @@ fun ListDisplayScreen(
                         Surface(
                             modifier = Modifier
                                 .fillMaxSize()
-                                .padding(bottom = 16.dp),
                         ) {
                             LazyColumn(
                                 horizontalAlignment = Alignment.CenterHorizontally,
