@@ -18,10 +18,10 @@ import com.timilehinaregbesola.mathalarm.BuildConfig
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotificationChannel
 import com.timilehinaregbesola.mathalarm.presentation.MainActivity
-import dagger.hilt.EntryPoint
+import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
 
-@EntryPoint
+@AndroidEntryPoint
 class FirebaseMessagingService : FirebaseMessagingService() {
     @Inject lateinit var channel: MathAlarmNotificationChannel
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
@@ -43,7 +43,7 @@ class FirebaseMessagingService : FirebaseMessagingService() {
     private fun sendUpdateApp(title: String, body: String) {
         val sharingIntent = Intent()
         sharingIntent.action = Intent.ACTION_VIEW
-        sharingIntent.data = Uri.parse("market://details?id=$packageName")
+        sharingIntent.data = Uri.parse("https://play.google.com/store/apps/details?id=$packageName")
         val sendIntent =
             PendingIntent.getActivity(this, 0, sharingIntent, PendingIntent.FLAG_ONE_SHOT)
         val notificationManager = getNotificationManager()
@@ -81,7 +81,7 @@ class FirebaseMessagingService : FirebaseMessagingService() {
                     .setPriority(NotificationManager.IMPORTANCE_MAX)
                     .setOnlyAlertOnce(true)
                     .setChannelId("channel_id")
-                    .setColor(ContextCompat.getColor(applicationContext, R.color.colorPrimaryDark))
+                    .setColor(ContextCompat.getColor(applicationContext, R.color.white))
             } else {
                 NotificationCompat.Builder(this, "channel_id")
                     .setSmallIcon(R.drawable.icon)
@@ -99,7 +99,7 @@ class FirebaseMessagingService : FirebaseMessagingService() {
                     .setDefaults(Notification.DEFAULT_ALL)
                     .setOnlyAlertOnce(true)
                     .setChannelId("channel_id")
-                    .setColor(ContextCompat.getColor(applicationContext, R.color.colorPrimaryDark))
+                    .setColor(ContextCompat.getColor(applicationContext, R.color.white))
             }
         if (notificationManager != null) {
             val id = System.currentTimeMillis().toInt()

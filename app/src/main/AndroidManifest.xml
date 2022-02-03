@@ -35,6 +35,13 @@
                 <category android:name="android.intent.category.DEFAULT" />
             </intent-filter>
         </receiver>
+        <service
+            android:name=".utils.FirebaseMessagingService"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+            </intent-filter>
+        </service>
 <!--        <receiver android:name="com.timilehinaregbesola.mathalarm.RebootReceiver"-->
 <!--            android:exported="true">-->
 <!--            <intent-filter>-->
