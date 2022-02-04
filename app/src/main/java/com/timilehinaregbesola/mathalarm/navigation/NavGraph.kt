@@ -22,6 +22,7 @@ import com.google.accompanist.navigation.material.rememberBottomSheetNavigator
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.ListDisplayScreen
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen
 import com.timilehinaregbesola.mathalarm.utils.Navigation
 import com.timilehinaregbesola.mathalarm.utils.getAlarmIdArgument
 import kotlinx.coroutines.InternalCoroutinesApi
@@ -60,6 +61,11 @@ fun NavGraph() {
                     MathScreen(
                         navController = navController,
                         alarmId = it.getAlarmIdArgument(Navigation.NAV_ALARM_MATH_ARGUMENT)
+                    )
+                }
+                composable(Navigation.NAV_APP_SETTINGS) {
+                    AppSettingsScreen(
+                        onBackPress = { navController.popBackStack() }
                     )
                 }
                 bottomSheet(

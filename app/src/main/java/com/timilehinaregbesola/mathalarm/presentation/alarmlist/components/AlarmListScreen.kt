@@ -90,7 +90,12 @@ fun ListDisplayScreen(
             Scaffold(
                 scaffoldState = scaffoldState,
                 topBar = {
-                    ListTopAppBar(openDialog = openDialog)
+                    ListTopAppBar(
+                        openDialog = openDialog,
+                        onSettingsClick = {
+                            navController.navigate(Navigation.NAV_APP_SETTINGS)
+                        }
+                    )
                 },
                 snackbarHost = { state -> AlarmSnack(state) }
             ) {

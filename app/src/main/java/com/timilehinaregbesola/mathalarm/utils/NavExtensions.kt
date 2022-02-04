@@ -8,6 +8,7 @@ fun NavBackStackEntry.getAlarmIdArgument(key: String) =
     } ?: error("$key not provided")
 
 object Navigation {
+    const val NAV_APP_SETTINGS = "app_settings_screen"
     const val NAV_ALARM_LIST = "home_screen"
     const val NAV_SETTINGS_SHEET_ARGUMENT = "settingsAlarmId"
     const val NAV_SETTINGS_SHEET = "settings_screen/{$NAV_SETTINGS_SHEET_ARGUMENT}"

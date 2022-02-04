@@ -18,7 +18,8 @@ import androidx.compose.ui.unit.sp
 
 @Composable
 fun ListTopAppBar(
-    openDialog: MutableState<Boolean>
+    openDialog: MutableState<Boolean>,
+    onSettingsClick: () -> Unit
 ) {
     val showSettings = rememberSaveable { mutableStateOf(false) }
     TopAppBar(
@@ -45,6 +46,7 @@ fun ListTopAppBar(
                     onClick = {
                         // Navigate to settings
                         showSettings.value = false
+                        onSettingsClick.invoke()
                     }
                 ) {
                     Text(text = "Settings")
@@ -59,5 +61,5 @@ fun ListTopAppBar(
 fun AppBarPreview() {
     ListTopAppBar(
         openDialog = remember { mutableStateOf(false) }
-    )
+    ) {}
 }
