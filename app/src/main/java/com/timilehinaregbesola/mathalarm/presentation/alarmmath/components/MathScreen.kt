@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -95,7 +96,7 @@ fun MathScreen(
 //            Toast.makeText(
 //                activity, getString(R.string.tone_not_available),
 //                Toast.LENGTH_SHORT
-//            ).show()
+//            ).show
         }
 
         // Vibrate phone
@@ -142,11 +143,11 @@ fun MathScreen(
             ) {
                 Column {
                     val toneState = viewModel.state.observeAsState()
-                    val answerText = remember { mutableStateOf("") }
+                    val answerText = rememberSaveable { mutableStateOf("") }
                     val keyboardController = LocalSoftwareKeyboardController.current
                     val maxChar = 8
 
-                    val progress = remember { mutableStateOf(0.1f) }
+                    val progress = rememberSaveable { mutableStateOf(0.1f) }
                     val animatedProgress = animateFloatAsState(
                         targetValue = progress.value,
                         animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
