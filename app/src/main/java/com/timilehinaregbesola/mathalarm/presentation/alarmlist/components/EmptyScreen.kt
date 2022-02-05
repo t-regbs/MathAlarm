@@ -7,6 +7,8 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -16,7 +18,8 @@ import com.timilehinaregbesola.mathalarm.R
 @Composable
 fun AlarmEmptyScreen(
     modifier: Modifier = Modifier,
-    onClickFab: () -> Unit
+    onClickFab: () -> Unit,
+    darkTheme: Boolean
 ) {
     Box(
         modifier = modifier
@@ -40,6 +43,7 @@ fun AlarmEmptyScreen(
                 Image(
                     painter = emptyImage,
                     contentDescription = "Empty Alarm List",
+                    colorFilter = if (darkTheme) ColorFilter.tint(color = Color.White) else null,
                     modifier = Modifier
                         .width(167.dp)
                         .height(228.dp)
@@ -47,6 +51,7 @@ fun AlarmEmptyScreen(
                 Image(
                     painter = emptyImage,
                     contentDescription = "Empty Alarm List",
+                    colorFilter = if (darkTheme) ColorFilter.tint(color = Color.White) else null,
                     modifier = Modifier
                         .padding(top = 24.dp, end = 40.dp)
                         .width(167.dp)

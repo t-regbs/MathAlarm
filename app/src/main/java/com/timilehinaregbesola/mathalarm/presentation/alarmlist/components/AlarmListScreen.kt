@@ -38,7 +38,8 @@ import java.util.*
 fun ListDisplayScreen(
     viewModel: AlarmListViewModel = hiltViewModel(),
     onNavigate: (UiEvent.Navigate) -> Unit,
-    navController: NavHostController
+    navController: NavHostController,
+    darkTheme: Boolean
 ) {
     val alarms = viewModel.alarms.collectAsState(null)
     val openDialog = remember { mutableStateOf(false) }
@@ -108,7 +109,8 @@ fun ListDisplayScreen(
                     AlarmEmptyScreen(
                         onClickFab = {
                             viewModel.onEvent(AlarmListEvent.OnAddAlarmClick)
-                        }
+                        },
+                        darkTheme = darkTheme
                     )
                 } else {
                     Box(
@@ -162,7 +164,8 @@ fun ListDisplayScreen(
                                         },
                                         onScheduleAlarm = { curAlarm: Alarm, b: Boolean ->
                                             viewModel.scheduleAlarm(curAlarm, b)
-                                        }
+                                        },
+                                        darkTheme = darkTheme
                                     )
                                 }
                             }
