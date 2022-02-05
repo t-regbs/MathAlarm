@@ -7,7 +7,6 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CornerSize
@@ -52,6 +51,7 @@ import java.time.format.DateTimeFormatter
 fun AlarmBottomSheet(
     viewModel: AlarmSettingsViewModel = hiltViewModel(),
     navController: NavHostController,
+    darkTheme: Boolean,
 ) {
     val scaffoldState = rememberBottomSheetScaffoldState()
     val activity = LocalContext.current as Activity
@@ -109,7 +109,7 @@ fun AlarmBottomSheet(
                 .fillMaxWidth()
                 .height(150.dp)
                 .padding(horizontal = 16.dp),
-            backgroundColor = if (isSystemInDarkTheme()) darkPrimaryLight else unSelectedDay,
+            backgroundColor = if (darkTheme) darkPrimaryLight else unSelectedDay,
             elevation = 0.dp,
             shape = MaterialTheme.shapes.medium.copy(CornerSize(24.dp))
         ) {

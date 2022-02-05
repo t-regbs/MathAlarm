@@ -4,7 +4,6 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material.*
@@ -39,7 +38,8 @@ fun AlarmItem(
     onUpdateAlarm: (Alarm) -> Unit,
     onDeleteAlarm: (Alarm) -> Unit,
     onScheduleAlarm: (Alarm, Boolean) -> Unit,
-    scaffoldState: ScaffoldState
+    scaffoldState: ScaffoldState,
+    darkTheme: Boolean
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -49,13 +49,12 @@ fun AlarmItem(
             .fillMaxHeight()
             .padding(top = 8.dp, bottom = 8.dp, start = 24.dp, end = 24.dp),
         elevation = 4.dp,
-//        backgroundColor = darkPrimaryLight,
         shape = MaterialTheme.shapes.medium.copy(CornerSize(8.dp))
     ) {
         val expandItem = rememberSaveable { mutableStateOf(false) }
         Column(
             Modifier
-                .background(if (isSystemInDarkTheme()) darkPrimaryLight else Color(0x99FFFFFF))
+                .background(if (darkTheme) darkPrimaryLight else Color(0x99FFFFFF))
                 .clickable(onClick = { expandItem.value = !expandItem.value })
         ) {
             Column(modifier = Modifier) {
@@ -76,7 +75,7 @@ fun AlarmItem(
                         Text(
                             text = timeOfDay,
                             fontSize = 16.sp,
-                            color = if (isSystemInDarkTheme()) Color.LightGray else Color.Gray,
+                            color = if (darkTheme) Color.LightGray else Color.Gray,
                             fontWeight = if (alarm.isOn) FontWeight.Bold else FontWeight.Normal,
                             modifier = Modifier
                                 .align(Alignment.Bottom)
@@ -248,7 +247,8 @@ fun ItemPreview() {
                 onUpdateAlarm = {},
                 onDeleteAlarm = {},
                 onScheduleAlarm = { alarm: Alarm, b: Boolean -> },
-                scaffoldState = rememberScaffoldState()
+                scaffoldState = rememberScaffoldState(),
+                darkTheme = true
             )
         }
     }

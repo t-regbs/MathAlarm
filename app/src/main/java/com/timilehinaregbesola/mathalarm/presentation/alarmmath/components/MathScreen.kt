@@ -9,7 +9,6 @@ import android.os.VibrationEffect
 import android.os.Vibrator
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.text.KeyboardActions
@@ -61,6 +60,7 @@ fun MathScreen(
     navController: NavHostController,
     alarmId: Long,
     viewModel: AlarmMathViewModel = hiltViewModel(),
+    darkTheme: Boolean,
 ) {
     BackHandler { }
     val settingsId = 1143682591
@@ -226,7 +226,7 @@ fun MathScreen(
                             textAlign = TextAlign.Center
                         ),
                         colors = TextFieldDefaults.textFieldColors(
-                            backgroundColor = if (isSystemInDarkTheme()) Color.DarkGray else unSelectedDay,
+                            backgroundColor = if (darkTheme) Color.DarkGray else unSelectedDay,
                             focusedIndicatorColor = Color.Transparent,
                             unfocusedIndicatorColor = Color.Transparent,
                             disabledIndicatorColor = Color.Transparent
@@ -446,7 +446,8 @@ fun MathPreview() {
     MathAlarmTheme(darkTheme = true) {
         MathScreen(
             navController = rememberNavController(),
-            alarmId = 1L
+            alarmId = 1L,
+            darkTheme = true
         )
     }
 }

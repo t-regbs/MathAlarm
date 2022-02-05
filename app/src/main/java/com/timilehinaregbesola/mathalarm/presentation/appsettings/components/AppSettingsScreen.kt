@@ -28,6 +28,13 @@ fun AppSettingsScreen(
     onBackPress: () -> Unit,
     pref: AlarmPreferencesImpl
 ) {
+    val isDark = when (pref.theme) {
+        Theme.DARK -> true
+        Theme.LIGHT -> false
+        else -> {
+            isSystemInDarkTheme()
+        }
+    }
     val options = listOf(
         Triple("Light", Icons.Filled.WbSunny, Theme.LIGHT),
         Triple("Dark", Icons.Filled.DarkMode, Theme.DARK),
@@ -75,7 +82,7 @@ fun AppSettingsScreen(
                     Box(
                         modifier = Modifier
                             .background(
-                                color = if (isSystemInDarkTheme()) {
+                                color = if (isDark) {
                                     MaterialTheme.colors.primaryVariant
                                 } else {
                                     Color.LightGray
@@ -101,7 +108,7 @@ fun AppSettingsScreen(
                                             if (triple.third == selectedOption) {
                                                 MaterialTheme.colors.primary
                                             } else {
-                                                if (isSystemInDarkTheme()) {
+                                                if (isDark) {
                                                     MaterialTheme.colors.primaryVariant
                                                 } else {
                                                     Color.LightGray
