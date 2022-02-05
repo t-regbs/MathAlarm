@@ -100,7 +100,7 @@ object AppModule {
             findAlarm = FindAlarm(repository),
             getAlarms = GetAlarms(repository),
             getSavedAlarms = GetSavedAlarms(repository),
-            updateAlarm = UpdateAlarm(repository),
+            updateAlarm = UpdateAlarm(repository, alarmInteractor),
             scheduleAlarm = ScheduleAlarm(repository, alarmInteractor),
             completeAlarm = CompleteAlarm(repository, alarmInteractor, notificationInteractor),
             rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor, calendarProvider, scheduleNextAlarm),
