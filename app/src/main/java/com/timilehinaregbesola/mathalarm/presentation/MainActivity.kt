@@ -11,16 +11,22 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.MaterialTheme
+import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import com.timilehinaregbesola.mathalarm.navigation.NavGraph
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.InternalCoroutinesApi
+import javax.inject.Inject
 
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
+    @Inject
+    lateinit var preferences: AlarmPreferencesImpl
 
     @ExperimentalAnimationApi
     @ExperimentalComposeUiApi
@@ -28,13 +34,16 @@ class MainActivity : AppCompatActivity() {
     @ExperimentalFoundationApi
     @ExperimentalMaterialApi
     override fun onCreate(savedInstanceState: Bundle?) {
-        val splashScreen = installSplashScreen()
+        installSplashScreen()
         super.onCreate(savedInstanceState)
+        preferences.setup()
         window.makeTransparentStatusBar()
         setContent {
-            MathAlarmTheme {
+            MathAlarmTheme(
+                darkTheme = preferences.shouldUseDarkColors()
+            ) {
                 window.statusBarColor = MaterialTheme.colors.background.toArgb()
-                NavGraph()
+                NavGraph(preferences)
             }
         }
     }
