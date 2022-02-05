@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign
@@ -78,8 +79,14 @@ fun AlarmBottomSheet(
     val dialog = remember { MaterialDialog() }
     dialog.build(
         buttons = {
-            positiveButton("Ok")
-            negativeButton("Cancel")
+            positiveButton(
+                text = "Ok",
+                textStyle = TextStyle(color = MaterialTheme.colors.onPrimary)
+            )
+            negativeButton(
+                text = "Cancel",
+                textStyle = TextStyle(color = MaterialTheme.colors.onPrimary)
+            )
         }
     ) {
         timeCal = timeCal.withHour(alarmTimeText.value.hour).withMinute(alarmTimeText.value.minute)

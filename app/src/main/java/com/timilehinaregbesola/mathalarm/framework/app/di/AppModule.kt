@@ -106,7 +106,8 @@ object AppModule {
             rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor, calendarProvider, scheduleNextAlarm),
             scheduleNextAlarm = ScheduleNextAlarm(alarmInteractor),
             showAlarm = ShowAlarm(repository, notificationInteractor, scheduleNextAlarm),
-            snoozeAlarm = SnoozeAlarm(calendarProvider, notificationInteractor, alarmInteractor, repository)
+            snoozeAlarm = SnoozeAlarm(calendarProvider, notificationInteractor, alarmInteractor, repository),
+            cancelAlarm = CancelAlarm(alarmInteractor)
         )
     }
     @Provides

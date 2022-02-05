@@ -26,6 +26,8 @@ class AlarmSettingsViewModel @Inject constructor(
 
     private var isNewAlarm: Boolean? = null
 
+    private var isRescheduled: Boolean? = null
+
     private val _alarmTime = mutableStateOf(TimeState())
     val alarmTime: State<TimeState> = _alarmTime
 
@@ -110,7 +112,9 @@ class AlarmSettingsViewModel @Inject constructor(
                     val alarm = createAlarm()
                     alarm.isSaved = true
                     usecases.addAlarm(alarm)
-                    usecases.scheduleAlarm(alarm, _repeatWeekly.value)
+                    if (isNewAlarm == true || isRescheduled == true) {
+                        usecases.scheduleAlarm(alarm, _repeatWeekly.value)
+                    }
                     _eventFlow.emit(UiEvent.SaveAlarm)
                 }
             }
@@ -120,6 +124,15 @@ class AlarmSettingsViewModel @Inject constructor(
                 }
             }
             is AddEditAlarmEvent.ChangeTime -> {
+                isNewAlarm?.let {
+                    if (!it) {
+                        isRescheduled = true
+                        val alarm = createAlarm()
+                        viewModelScope.launch {
+                            usecases.cancelAlarm(alarm)
+                        }
+                    }
+                }
                 _alarmTime.value = event.value
             }
             is AddEditAlarmEvent.EnteredTitle -> {
