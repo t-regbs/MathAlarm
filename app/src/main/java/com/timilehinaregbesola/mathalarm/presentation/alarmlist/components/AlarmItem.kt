@@ -37,6 +37,7 @@ fun AlarmItem(
     onEditAlarm: () -> Unit,
     onUpdateAlarm: (Alarm) -> Unit,
     onDeleteAlarm: (Alarm) -> Unit,
+    onCancelAlarm: (Alarm) -> Unit,
     onScheduleAlarm: (Alarm, Boolean) -> Unit,
     scaffoldState: ScaffoldState,
     darkTheme: Boolean
@@ -116,6 +117,7 @@ fun AlarmItem(
                                 onScheduleAlarm(alarm, false)
                             } else {
                                 onUpdateAlarm(alarm)
+                                onCancelAlarm(alarm)
                             }
                         }
                     )
@@ -246,6 +248,7 @@ fun ItemPreview() {
                 onEditAlarm = {},
                 onUpdateAlarm = {},
                 onDeleteAlarm = {},
+                onCancelAlarm = {},
                 onScheduleAlarm = { alarm: Alarm, b: Boolean -> },
                 scaffoldState = rememberScaffoldState(),
                 darkTheme = true

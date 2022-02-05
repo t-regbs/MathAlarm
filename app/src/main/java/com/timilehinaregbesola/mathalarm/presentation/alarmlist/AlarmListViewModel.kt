@@ -83,4 +83,10 @@ class AlarmListViewModel @Inject constructor(
             usecases.scheduleAlarm(alarm, reschedule)
         }
     }
+
+    fun cancelAlarm(alarm: Alarm) {
+        viewModelScope.launch {
+            usecases.cancelAlarm(alarm)
+        }
+    }
 }

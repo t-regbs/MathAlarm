@@ -162,6 +162,9 @@ fun ListDisplayScreen(
                                         onDeleteAlarm = {
                                             viewModel.onEvent(AlarmListEvent.OnDeleteAlarmClick(it))
                                         },
+                                        onCancelAlarm = {
+                                            viewModel.cancelAlarm(it)
+                                        },
                                         onScheduleAlarm = { curAlarm: Alarm, b: Boolean ->
                                             viewModel.scheduleAlarm(curAlarm, b)
                                         },

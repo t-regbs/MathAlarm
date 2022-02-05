@@ -20,7 +20,6 @@ class CompleteAlarm(
      *
      * @param alarmId the task id
      *
-     * @return observable to be subscribe
      */
     suspend operator fun invoke(alarmId: Long) {
         val alarm = alarmRepository.findAlarm(alarmId) ?: return
@@ -32,7 +31,6 @@ class CompleteAlarm(
      *
      * @param alarm the task to be updated
      *
-     * @return observable to be subscribe
      */
     suspend operator fun invoke(alarm: Alarm) {
         val updatedAlarm = updateAlarmAsCompleted(alarm)

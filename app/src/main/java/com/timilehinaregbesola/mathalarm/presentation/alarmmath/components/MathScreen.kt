@@ -319,6 +319,9 @@ private fun dismissAlarm(
 ) {
     if (validateAnswer(answerText, problem)) {
         stopMusicAndHideKeyboard(mp, viewModel, keyboardController)
+        if (!alarm.repeat) {
+            viewModel.completeAlarm(alarm)
+        }
         if (!alarm.isSaved) {
             navController
                 .previousBackStackEntry?.savedStateHandle?.set("testAlarmId", alarm.alarmId)

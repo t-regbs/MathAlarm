@@ -5,6 +5,7 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.ToneState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -62,6 +63,12 @@ class AlarmMathViewModel @Inject constructor(
         for (s in 0 until (seconds + 1)) {
             delay(1000L)
             emit(s)
+        }
+    }
+
+    fun completeAlarm(alarm: Alarm) {
+        viewModelScope.launch {
+            usecases.completeAlarm(alarm)
         }
     }
 }
