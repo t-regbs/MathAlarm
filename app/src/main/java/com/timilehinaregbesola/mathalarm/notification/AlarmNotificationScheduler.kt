@@ -6,7 +6,6 @@ import android.content.Intent
 import com.timilehinaregbesola.mathalarm.AlarmReceiver
 import com.timilehinaregbesola.mathalarm.AlarmReceiver.Companion.ALARM_ACTION
 import com.timilehinaregbesola.mathalarm.AlarmReceiver.Companion.EXTRA_TASK
-import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.utils.*
 import timber.log.Timber
@@ -84,7 +83,7 @@ class AlarmNotificationScheduler(private val context: Context) {
                     ) != null
                 ) {
                     if (!reschedule) {
-                        context.showToast(R.string.alarm_duplicate_toast_text)
+//                        context.showToast(R.string.alarm_duplicate_toast_text)
                     }
                     return false
                 }

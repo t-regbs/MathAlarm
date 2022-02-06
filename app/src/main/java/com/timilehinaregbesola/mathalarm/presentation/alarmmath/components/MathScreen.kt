@@ -51,7 +51,6 @@ private const val ADD = 0
 private const val SUBTRACT = 1
 private const val TIMES = 2
 private const val DIVIDE = 3
-var vibrateRunning = false
 
 @ExperimentalMaterialApi
 @InternalCoroutinesApi
@@ -64,6 +63,7 @@ fun MathScreen(
     darkTheme: Boolean,
 ) {
     BackHandler { }
+    var vibrator: Vibrator? = null
     val settingsId = 1143682591
     val alarm = viewModel.retrieveAlarm(alarmId)
     val context = LocalContext.current
@@ -101,29 +101,16 @@ fun MathScreen(
 
         // Vibrate phone
         if (alarm.vibrate) {
-            vibrateRunning = true
-            val thread = Thread(
-                Runnable {
-                    while (vibrateRunning) {
-                        val v =
-                            context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-                        if (Build.VERSION.SDK_INT >= 26) {
-                            v.vibrate(VibrationEffect.createOneShot(1000, 10))
-                        } else {
-                            @Suppress("DEPRECATION")
-                            v.vibrate(1000)
-                        }
-                        try {
-                            Thread.sleep(5000)
-                        } catch (e: InterruptedException) {
-                        }
-                    }
-                    if (!vibrateRunning) {
-                        return@Runnable
-                    }
-                }
-            )
-            thread.start()
+            vibrator =
+                context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            val pattern = longArrayOf(0, 1000, 3000)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator?.vibrate(VibrationEffect.createWaveform(pattern, 0))
+            } else {
+                // 0 = Repeat Indefinitely
+                vibrator?.vibrate(pattern, 0)
+            }
         }
 
         // Get difficulty
@@ -213,7 +200,8 @@ fun MathScreen(
                                     keyboardController,
                                     navController,
                                     alarm,
-                                    viewModel
+                                    viewModel,
+                                    { vibrator?.cancel() }
                                 ) {
                                     scope.launch {
                                         scaffoldState.snackbarHostState.showSnackbar("Incorrect!")
@@ -261,7 +249,11 @@ fun MathScreen(
                                     .width(120.dp),
                                 enabled = alarm.snooze != 0,
                                 onClick = {
-                                    stopMusicAndHideKeyboard(viewModel.audioPlayer, viewModel, keyboardController)
+                                    stopMusicAndHideKeyboard(
+                                        viewModel.audioPlayer,
+                                        viewModel,
+                                        keyboardController
+                                    ) { vibrator?.cancel() }
                                     viewModel.snoozeAlarm(alarmId)
                                     navController.popBackStack()
                                 },
@@ -285,7 +277,8 @@ fun MathScreen(
                                     keyboardController,
                                     navController,
                                     alarm,
-                                    viewModel
+                                    viewModel,
+                                    { vibrator?.cancel() }
                                 ) {
                                     scope.launch {
                                         scaffoldState.snackbarHostState.showSnackbar("Incorrect!")
@@ -315,10 +308,11 @@ private fun dismissAlarm(
     navController: NavHostController,
     alarm: Alarm,
     viewModel: AlarmMathViewModel,
+    onStopMusic: () -> Unit,
     onWrongAnswer: () -> Unit
 ) {
     if (validateAnswer(answerText, problem)) {
-        stopMusicAndHideKeyboard(mp, viewModel, keyboardController)
+        stopMusicAndHideKeyboard(mp, viewModel, keyboardController, onStopMusic)
         if (!alarm.repeat) {
             viewModel.completeAlarm(alarm)
         }
@@ -336,9 +330,10 @@ private fun dismissAlarm(
 private fun stopMusicAndHideKeyboard(
     mp: MediaPlayer,
     viewModel: AlarmMathViewModel,
-    keyboardController: SoftwareKeyboardController?
+    keyboardController: SoftwareKeyboardController?,
+    stopVibrate: () -> Unit
 ) {
-    vibrateRunning = false
+    stopVibrate.invoke()
     mp.run {
         if (isPlaying) stop()
 //        release()

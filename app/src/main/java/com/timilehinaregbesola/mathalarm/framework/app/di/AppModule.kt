@@ -103,7 +103,7 @@ object AppModule {
             updateAlarm = UpdateAlarm(repository),
             scheduleAlarm = ScheduleAlarm(repository, alarmInteractor),
             completeAlarm = CompleteAlarm(repository, alarmInteractor, notificationInteractor),
-            rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor, calendarProvider, scheduleNextAlarm),
+            rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor),
             scheduleNextAlarm = ScheduleNextAlarm(alarmInteractor),
             showAlarm = ShowAlarm(repository, notificationInteractor, scheduleNextAlarm),
             snoozeAlarm = SnoozeAlarm(calendarProvider, notificationInteractor, alarmInteractor, repository),

@@ -28,15 +28,22 @@ class AlarmReceiver : BroadcastReceiver() {
         }
     }
 
-    private suspend fun handleIntent(intent: Intent?) =
-        when (intent?.action) {
+    private suspend fun handleIntent(intent: Intent?): Unit? {
+        return when (intent?.action) {
             ALARM_ACTION -> getAlarmId(intent)?.let { usecases.showAlarm(it) }
             COMPLETE_ACTION -> getAlarmId(intent)?.let { usecases.completeAlarm(it) }
             SNOOZE_ACTION -> getAlarmId(intent)?.let { usecases.snoozeAlarm(it) }
-            Intent.ACTION_BOOT_COMPLETED -> usecases.rescheduleFutureAlarms()
-            "android.intent.action.QUICKBOOT_POWERON" -> usecases.rescheduleFutureAlarms()
+            Intent.ACTION_BOOT_COMPLETED -> {
+                Timber.d("Reboot Reboot!!")
+                usecases.rescheduleFutureAlarms()
+            }
+            "android.intent.action.QUICKBOOT_POWERON" -> {
+                Timber.d("Rebooted!!")
+                usecases.rescheduleFutureAlarms()
+            }
             else -> Timber.e("Action not supported")
         }
+    }
 
     private fun getAlarmId(intent: Intent?) = intent?.getLongExtra(EXTRA_TASK, 0)
 
