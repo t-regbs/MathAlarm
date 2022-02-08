@@ -3,7 +3,9 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
@@ -71,6 +73,7 @@ fun ListDisplayScreen(
             .currentBackStackEntry?.savedStateHandle?.remove<Long>("currentEditAlarm")
         navController
             .currentBackStackEntry?.savedStateHandle?.remove<Long>("testAlarmId")
+//        navController.currentBackStackEntry?.savedStateHandle?.set("openSheet", false)
         viewModel.onEvent(AlarmListEvent.DeleteTestAlarm(testId))
         if (previousRoute != Navigation.NAV_ALARM_LIST && shouldOpenSheet.value) {
             currEditAlarm?.value?.let {
@@ -149,7 +152,7 @@ fun ListDisplayScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 stickyHeader {
-                                    ListHeader(enabled, nearestAlarmMessage.value)
+                                    ListHeader(enabled, nearestAlarmMessage.value, darkTheme)
                                 }
                                 items(alarmList) { alarm ->
                                     AlarmItem(

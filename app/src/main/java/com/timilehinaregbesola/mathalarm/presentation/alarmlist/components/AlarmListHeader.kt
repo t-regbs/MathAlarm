@@ -1,7 +1,6 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Surface
@@ -14,12 +13,12 @@ import androidx.compose.ui.unit.sp
 import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimaryLight
 
 @Composable
-fun ListHeader(enabled: Boolean, nearestAlarmMessage: String) {
+fun ListHeader(enabled: Boolean, nearestAlarmMessage: String, isDark: Boolean) {
     Surface(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                color = if (isSystemInDarkTheme()) darkPrimaryLight else Color.LightGray.copy(alpha = 0.1f)
+                color = if (isDark) darkPrimaryLight else Color.LightGray.copy(alpha = 0.1f)
             ),
         elevation = 4.dp
     ) {

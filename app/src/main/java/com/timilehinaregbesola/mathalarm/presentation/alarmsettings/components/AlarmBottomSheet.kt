@@ -35,6 +35,7 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarm
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AlarmSettingsViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.TimeState
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
+import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimary
 import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimaryLight
 import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
 import com.timilehinaregbesola.mathalarm.utils.Navigation
@@ -87,7 +88,8 @@ fun AlarmBottomSheet(
                 text = "Cancel",
                 textStyle = TextStyle(color = MaterialTheme.colors.onPrimary)
             )
-        }
+        },
+        backgroundColor = if (darkTheme) darkPrimary else Color.LightGray.copy(alpha = 0.9f)
     ) {
         timeCal = timeCal.withHour(alarmTimeText.value.hour).withMinute(alarmTimeText.value.minute)
         timepicker(initialTime = timeCal) { time ->
@@ -245,6 +247,7 @@ fun AlarmBottomSheet(
                 }
                 navController
                     .previousBackStackEntry?.savedStateHandle?.set("currentEditAlarm", viewModel.currentAlarmId)
+//                navController.previousBackStackEntry?.savedStateHandle?.set("openSheet", true)
                 val id = viewModel.onAddTestAlarm(testAlarm)
                 navController.navigate(Navigation.buildAlarmMathPath(alarmId = id))
             },
@@ -263,6 +266,7 @@ fun AlarmBottomSheet(
                 .padding(top = 12.dp)
                 .fillMaxWidth(),
             onClick = {
+//                navController.previousBackStackEntry?.savedStateHandle?.set("openSheet", false)
                 viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
             },
             colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.secondary)
