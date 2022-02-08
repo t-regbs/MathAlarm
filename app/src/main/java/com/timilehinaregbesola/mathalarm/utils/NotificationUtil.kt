@@ -1,9 +1,6 @@
 package com.timilehinaregbesola.mathalarm.utils
 
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
-import android.app.PendingIntent
+import android.app.*
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
@@ -14,8 +11,9 @@ import android.net.Uri
 import android.os.Build
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationCompat.VISIBILITY_PUBLIC
+import androidx.core.net.toUri
 import com.timilehinaregbesola.mathalarm.R
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.AlarmMathActivity
+import com.timilehinaregbesola.mathalarm.presentation.MainActivity
 
 // Notification ID.
 const val NOTIFICATION_ID = 1000
@@ -36,15 +34,30 @@ fun setNotification(
     extras: String,
     tone: Uri
 ): Notification {
-    val notificationIntent = Intent(applicationContext, AlarmMathActivity::class.java)
+//    val notificationIntent = Intent(applicationContext, AlarmMathActivity::class.java)
+//    notificationIntent.putExtra(ALARM_EXTRA, extras)
+//    notificationIntent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+//    val notificationPendingIntent = PendingIntent.getActivity(
+//        applicationContext,
+//        NOTIFICATION_ID,
+//        notificationIntent,
+//        FLAGS
+//    )
+
+    val notificationIntent = Intent(
+        Intent.ACTION_VIEW,
+        "https://timilehinaregbesola.com/alarmId=$extras".toUri(),
+        applicationContext,
+        MainActivity::class.java
+    )
     notificationIntent.putExtra(ALARM_EXTRA, extras)
     notificationIntent.flags = Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
-    val notificationPendingIntent = PendingIntent.getActivity(
-        applicationContext,
-        extras.toInt(),
-        notificationIntent,
-        FLAGS
-    )
+
+    val notificationPendingIntent: PendingIntent = TaskStackBuilder.create(applicationContext).run {
+        addNextIntentWithParentStack(notificationIntent)
+        getPendingIntent(REQUEST_CODE, PendingIntent.FLAG_UPDATE_CURRENT)
+    }
+
     val vibratePattern = longArrayOf(0, 100, 200, 300)
     val alarmImage = BitmapFactory.decodeResource(
         applicationContext.resources,

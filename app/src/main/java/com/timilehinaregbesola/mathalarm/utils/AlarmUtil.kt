@@ -24,6 +24,9 @@ const val EASY = 0
 const val MEDIUM = 1
 const val HARD = 2
 
+val days = listOf("S", "M", "T", "W", "T", "F", "S")
+val fullDays = listOf("Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday")
+
 const val ALARM_EXTRA = "alarm_extra"
 
 // Get the formatted time (example: 12:00 AM)
@@ -151,115 +154,6 @@ fun Alarm.scheduleSnooze(context: Context) {
             Toast.LENGTH_SHORT
         ).show()
     }
-}
-
-// Cancels an alarm - Called when an alarm is turned off, deleted, and rescheduled
-fun Alarm.cancelAlarm(context: Context) {
-    val cancel = Intent(context, AlarmReceiver::class.java)
-    for (i in 0..6) { // For each day of the week
-        if (repeatDays[i] == 'T') {
-            val stringId: StringBuilder = StringBuilder().append(i)
-                .append(hour).append(minute)
-            val intentId = stringId.toString().toInt()
-            val cancelAlarmPI = PendingIntent.getBroadcast(
-                context, intentId, cancel,
-                PendingIntent.FLAG_CANCEL_CURRENT
-            )
-            val alarmManager = context
-                .getSystemService(Context.ALARM_SERVICE) as AlarmManager
-            alarmManager.cancel(cancelAlarmPI)
-            cancelAlarmPI.cancel()
-        }
-    }
-}
-
-// Used for displaying the toast for the the remaining time until the next alarm
-fun Alarm.getTimeLeftMessage(context: Context): String {
-    val message: String
-    val cal = Calendar.getInstance()
-    cal[Calendar.HOUR_OF_DAY] = hour
-    cal[Calendar.MINUTE] = minute
-    cal[Calendar.SECOND] = 0
-    val today =
-        getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
-    var i: Int
-    var lastAlarmDay: Int
-    var nextAlarmDay: Int
-    if (System.currentTimeMillis() > cal.timeInMillis) {
-        nextAlarmDay = today + 1
-        lastAlarmDay = today
-        if (nextAlarmDay == 7) {
-            nextAlarmDay = 0
-        }
-    } else {
-        nextAlarmDay = today
-        lastAlarmDay = today - 1
-        if (lastAlarmDay == -1) {
-            lastAlarmDay = 6
-        }
-    }
-    i = nextAlarmDay
-    while (i != lastAlarmDay) {
-        if (i == 7) {
-            i = 0
-        }
-        if (repeatDays.get(i) == 'T') {
-            break
-        }
-        i++
-    }
-    if (i < today || i == today && cal.timeInMillis < System.currentTimeMillis()) {
-        val daysUntilAlarm: Int = SAT - today + 1 + i
-        cal.add(Calendar.DAY_OF_YEAR, daysUntilAlarm)
-    } else {
-        val daysUntilAlarm = i - today
-        cal.add(Calendar.DAY_OF_YEAR, daysUntilAlarm)
-    }
-    val alarmTime = cal.timeInMillis
-    val remainderTime = alarmTime - System.currentTimeMillis()
-    val minutes = (remainderTime / (1000 * 60) % 60).toInt()
-    val hours = (remainderTime / (1000 * 60 * 60) % 24).toInt()
-    val days = (remainderTime / (1000 * 60 * 60 * 24)).toInt()
-    val mString: String
-    val hString: String
-    val dString: String
-    mString = if (minutes == 1) {
-        context.getString(R.string.alarm_minute)
-    } else {
-        context.getString(R.string.alarm_minutes)
-    }
-    hString = if (hours == 1) {
-        context.getString(R.string.alarm_hour)
-    } else {
-        context.getString(R.string.alarm_hours)
-    }
-    dString = if (days == 1) {
-        context.getString(R.string.alarm_day)
-    } else {
-        context.getString(R.string.alarm_days)
-    }
-    message = if (days == 0) {
-        if (hours == 0) {
-            (
-                "${context.getString(R.string.alarm_set_begin_msg)} $minutes $mString ${context.getString(
-                    R.string.alarm_set_end_msg
-                )}"
-                )
-        } else {
-            (
-                "${context.getString(R.string.alarm_set_begin_msg)} $hours $hString $minutes $mString ${context.getString(
-                    R.string.alarm_set_end_msg
-                )}"
-                )
-        }
-    } else {
-        (
-            context.getString(R.string.alarm_set_begin_msg) + " " +
-                days + " " + dString + " " + hours + " " + hString + " " + minutes + " " +
-                mString + " " + context.getString(R.string.alarm_set_end_msg)
-            )
-    }
-    return message
 }
 
 fun Alarm.initCalendar(): Calendar {

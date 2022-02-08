@@ -19,7 +19,7 @@ fun checkPermissions(activity: Activity, tones: List<String>) {
         val unplayable = tones
             .filter { alarmtone ->
                 runCatching {
-                    val player: MediaPlayer = MediaPlayer()
+                    val player = MediaPlayer()
                     player.setDataSource(activity, alarmtone.toUri())
                     player.apply {
                         setOnErrorListener { mp, _, _ ->

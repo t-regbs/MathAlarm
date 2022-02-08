@@ -27,5 +27,9 @@ data class Alarm(
 
     var vibrate: Boolean = false,
 
-    var snooze: Int = 5
+    var snooze: Int = 5,
+
+    var title: String = "",
+
+    var isSaved: Boolean = false
 )

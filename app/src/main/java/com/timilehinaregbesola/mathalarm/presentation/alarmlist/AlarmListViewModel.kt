@@ -1,80 +1,92 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist
 
-import androidx.lifecycle.MutableLiveData
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
+import androidx.lifecycle.*
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
-import com.timilehinaregbesola.mathalarm.framework.Interactors
-import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
+import com.timilehinaregbesola.mathalarm.framework.Usecases
+import com.timilehinaregbesola.mathalarm.utils.Navigation
+import com.timilehinaregbesola.mathalarm.utils.UiEvent
+import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.* // ktlint-disable no-wildcard-imports
-import java.util.* // ktlint-disable no-wildcard-imports
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.*
+import javax.inject.Inject
 
-class AlarmListViewModel(private val interactors: Interactors) : ViewModel() {
-    var addClicked = MutableLiveData<Boolean?>()
-    val alarms = MutableLiveData<List<Alarm>>()
+@HiltViewModel
+class AlarmListViewModel @Inject constructor(
+    private val usecases: Usecases,
+    val savedStateHandle: SavedStateHandle
+) : ViewModel() {
+    var alarms = usecases.getSavedAlarms()
 
-    private val _navigateToAlarmSettings = MutableLiveData<Long?>()
-    val navigateToAlarmSettings
-        get() = _navigateToAlarmSettings
+    private val _uiEvent = Channel<UiEvent>()
+    val uiEvent = _uiEvent.receiveAsFlow()
+
+    fun onEvent(event: AlarmListEvent) {
+        when (event) {
+            is AlarmListEvent.OnEditAlarmClick -> {
+                // Navigate to bottom sheet
+                sendUiEvent(UiEvent.Navigate(Navigation.buildSettingsPath(event.alarmId)))
+            }
+            is AlarmListEvent.OnAlarmOnChange -> {
+                viewModelScope.launch {
+                    usecases.addAlarm(event.alarm.copy(isOn = event.isOn))
+                    if (event.isOn) {
+                        usecases.scheduleAlarm(event.alarm, false)
+                    } else {
+                        // Cancel
+                    }
+                }
+            }
+            is AlarmListEvent.OnAddAlarmClick -> {
+                // Navigate to bottom sheet
+                viewModelScope.launch {
+                    val id = usecases.addAlarm(Alarm())
+                    sendUiEvent(UiEvent.Navigate(Navigation.buildSettingsPath(id)))
+                }
+            }
+            is AlarmListEvent.OnUndoDeleteClick -> {
+            }
+            is AlarmListEvent.OnDeleteAlarmClick -> {
+                viewModelScope.launch {
+                    usecases.deleteAlarm(event.alarm)
+                }
+            }
+            is AlarmListEvent.DeleteTestAlarm -> {
+                viewModelScope.launch {
+                    usecases.deleteAlarmWithId(event.alarmId)
+                }
+            }
+            is AlarmListEvent.OnClearAlarmsClick -> {
+                viewModelScope.launch {
+                    alarms.collect { list ->
+                        usecases.clearAlarms(list)
+                    }
+                }
+            }
+        }
+    }
+
+    private fun sendUiEvent(event: UiEvent) {
+        viewModelScope.launch {
+            _uiEvent.send(event)
+        }
+    }
 
     fun onUpdate(alarm: Alarm) {
         viewModelScope.launch {
-            interactors.updateAlarm(alarm)
-            getAlarms()
+            usecases.updateAlarm(alarm)
         }
     }
 
-    fun getAlarms() {
+    fun scheduleAlarm(alarm: Alarm, reschedule: Boolean) {
         viewModelScope.launch {
-            val alarmList = interactors.getAlarms()
-            alarms.postValue(alarmList)
+            usecases.scheduleAlarm(alarm, reschedule)
         }
     }
 
-    // Called when add menu is pressed
-    fun onAdd() {
-        val new = Alarm()
-        val sb = StringBuilder("FFFFFFF")
-        val cal = initCalendar(new)
-        val dayOfTheWeek =
-            getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
-        sb.setCharAt(dayOfTheWeek, 'T')
-        new.repeatDays = sb.toString()
+    fun cancelAlarm(alarm: Alarm) {
         viewModelScope.launch {
-            val id = interactors.addAlarm(new)
-            addClicked.value = true
-            _navigateToAlarmSettings.value = id
+            usecases.cancelAlarm(alarm)
         }
-    }
-
-    private fun initCalendar(alarm: Alarm): Calendar {
-        val cal = Calendar.getInstance()
-        cal[Calendar.HOUR_OF_DAY] = alarm.hour
-        cal[Calendar.MINUTE] = alarm.minute
-        cal[Calendar.SECOND] = 0
-        return cal
-    }
-
-    fun onDelete(alarm: Alarm) {
-        viewModelScope.launch {
-            interactors.deleteAlarm(alarm)
-            getAlarms()
-        }
-    }
-
-    fun onClear() {
-        viewModelScope.launch {
-            interactors.clearAlarms()
-            getAlarms()
-        }
-    }
-
-    fun onAlarmClicked(id: Long) {
-        addClicked.value = false
-        _navigateToAlarmSettings.value = id
-    }
-
-    fun onAlarmSettingsNavigated() {
-        _navigateToAlarmSettings.value = null
     }
 }

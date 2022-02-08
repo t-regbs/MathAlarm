@@ -34,5 +34,11 @@ data class AlarmEntity(
     val vibrate: Boolean,
 
     @ColumnInfo(name = "snooze")
-    val snooze: Int
+    val snooze: Int,
+
+    @ColumnInfo(name = "title", defaultValue = "")
+    val title: String,
+
+    @ColumnInfo(name = "isSaved")
+    val isSaved: Boolean,
 )

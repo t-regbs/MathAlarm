@@ -1,10 +1,11 @@
 package com.timilehinaregbesola.mathalarm.framework.database
 
 import androidx.room.* // ktlint-disable no-wildcard-imports
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface AlarmDao {
-    @Insert(onConflict = OnConflictStrategy.IGNORE)
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun addAlarm(alarm: AlarmEntity?): Long
 
     @Update
@@ -12,6 +13,9 @@ interface AlarmDao {
 
     @Delete
     suspend fun deleteAlarm(alarm: AlarmEntity?)
+
+    @Query("DELETE FROM alarms WHERE alarmid = :id")
+    suspend fun deleteAlarmWithId(id: Long?)
 
     @Query("DELETE FROM alarms")
     suspend fun clear()
@@ -26,10 +30,13 @@ interface AlarmDao {
     suspend fun getLastAlarm(): AlarmEntity?
 
     @Query("SELECT * FROM alarms ORDER BY alarmid DESC")
-    suspend fun getAlarms(): List<AlarmEntity>
+    fun getAlarms(): Flow<List<AlarmEntity>>
 
     @Query("SELECT * FROM alarms WHERE ison = :state")
     fun getActiveAlarms(state: Boolean = true): List<AlarmEntity>
+
+    @Query("SELECT * FROM alarms WHERE isSaved = :state")
+    fun getSavedAlarms(state: Boolean = true): Flow<List<AlarmEntity>>
 
     @Query("SELECT COUNT(*) FROM alarms")
     suspend fun getSize(): Int
