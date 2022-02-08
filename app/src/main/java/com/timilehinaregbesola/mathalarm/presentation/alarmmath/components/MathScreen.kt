@@ -1,11 +1,8 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmmath.components
 
-import android.content.Context
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.net.Uri
-import android.os.Build
-import android.os.VibrationEffect
 import android.os.Vibrator
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
@@ -101,16 +98,16 @@ fun MathScreen(
 
         // Vibrate phone
         if (alarm.vibrate) {
-            vibrator =
-                context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-            val pattern = longArrayOf(0, 1000, 3000)
-
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator?.vibrate(VibrationEffect.createWaveform(pattern, 0))
-            } else {
-                // 0 = Repeat Indefinitely
-                vibrator?.vibrate(pattern, 0)
-            }
+//            vibrator =
+//                context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+//            val pattern = longArrayOf(0, 1000, 3000)
+//
+//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+//                vibrator?.vibrate(VibrationEffect.createWaveform(pattern, 0))
+//            } else {
+//                // 0 = Repeat Indefinitely
+//                vibrator?.vibrate(pattern, 0)
+//            }
         }
 
         // Get difficulty
@@ -201,7 +198,10 @@ fun MathScreen(
                                     navController,
                                     alarm,
                                     viewModel,
-                                    { vibrator?.cancel() }
+                                    {
+                                        vibrator?.cancel()
+                                        vibrator = null
+                                    }
                                 ) {
                                     scope.launch {
                                         scaffoldState.snackbarHostState.showSnackbar("Incorrect!")
@@ -253,7 +253,10 @@ fun MathScreen(
                                         viewModel.audioPlayer,
                                         viewModel,
                                         keyboardController
-                                    ) { vibrator?.cancel() }
+                                    ) {
+                                        vibrator?.cancel()
+                                        vibrator = null
+                                    }
                                     viewModel.snoozeAlarm(alarmId)
                                     navController.popBackStack()
                                 },
@@ -278,7 +281,10 @@ fun MathScreen(
                                     navController,
                                     alarm,
                                     viewModel,
-                                    { vibrator?.cancel() }
+                                    {
+                                        vibrator?.cancel()
+                                        vibrator = null
+                                    }
                                 ) {
                                     scope.launch {
                                         scaffoldState.snackbarHostState.showSnackbar("Incorrect!")
