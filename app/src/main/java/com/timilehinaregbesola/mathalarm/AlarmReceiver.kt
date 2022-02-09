@@ -41,6 +41,7 @@ class AlarmReceiver : BroadcastReceiver() {
                 Timber.d("Rebooted!!")
                 usecases.rescheduleFutureAlarms()
             }
+            "android.intent.action.MY_PACKAGE_REPLACED" -> usecases.rescheduleFutureAlarms()
             else -> Timber.e("Action not supported")
         }
     }
