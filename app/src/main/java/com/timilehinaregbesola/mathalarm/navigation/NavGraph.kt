@@ -2,7 +2,6 @@ package com.timilehinaregbesola.mathalarm.navigation
 
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.MaterialTheme
@@ -23,9 +22,9 @@ import com.google.accompanist.navigation.material.rememberBottomSheetNavigator
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.ListDisplayScreen
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet
-import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
 import com.timilehinaregbesola.mathalarm.utils.Navigation
 import com.timilehinaregbesola.mathalarm.utils.getAlarmIdArgument
 import kotlinx.coroutines.InternalCoroutinesApi
@@ -40,13 +39,6 @@ import kotlinx.coroutines.InternalCoroutinesApi
 fun NavGraph(preferences: AlarmPreferencesImpl) {
     val bottomSheetNavigator = rememberBottomSheetNavigator()
     val navController = rememberNavController(bottomSheetNavigator)
-    val isDarkTheme = when (preferences.theme) {
-        AlarmPreferences.Theme.DARK -> true
-        AlarmPreferences.Theme.LIGHT -> false
-        else -> {
-            isSystemInDarkTheme()
-        }
-    }
     Surface(color = MaterialTheme.colors.background) {
         ModalBottomSheetLayout(
             bottomSheetNavigator = bottomSheetNavigator,
@@ -57,7 +49,7 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
                     ListDisplayScreen(
                         onNavigate = { navController.navigate(it.route) },
                         navController = navController,
-                        darkTheme = isDarkTheme
+                        darkTheme = preferences.shouldUseDarkColors()
                     )
                 }
                 composable(
@@ -72,7 +64,7 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
                     MathScreen(
                         navController = navController,
                         alarmId = it.getAlarmIdArgument(Navigation.NAV_ALARM_MATH_ARGUMENT),
-                        darkTheme = isDarkTheme
+                        darkTheme = preferences.shouldUseDarkColors()
                     )
                 }
                 composable(Navigation.NAV_APP_SETTINGS) {
@@ -92,7 +84,7 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
                 ) {
                     AlarmBottomSheet(
                         navController = navController,
-                        darkTheme = isDarkTheme
+                        darkTheme = preferences.shouldUseDarkColors()
                     )
                 }
             }
