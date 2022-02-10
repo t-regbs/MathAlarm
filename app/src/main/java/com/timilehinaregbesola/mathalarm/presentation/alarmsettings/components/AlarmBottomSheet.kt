@@ -42,6 +42,7 @@ import com.timilehinaregbesola.mathalarm.utils.Navigation
 import com.timilehinaregbesola.mathalarm.utils.PickRingtone
 import com.timilehinaregbesola.mathalarm.utils.checkPermissions
 import com.vanpra.composematerialdialogs.MaterialDialog
+import com.vanpra.composematerialdialogs.datetime.time.TimePickerDefaults
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
 import kotlinx.coroutines.flow.collectLatest
 import timber.log.Timber
@@ -89,10 +90,15 @@ fun AlarmBottomSheet(
                 textStyle = TextStyle(color = MaterialTheme.colors.onPrimary)
             )
         },
-        backgroundColor = if (darkTheme) darkPrimary else Color.LightGray.copy(alpha = 0.9f)
+        backgroundColor = if (darkTheme) darkPrimary else Color.LightGray
     ) {
         timeCal = timeCal.withHour(alarmTimeText.value.hour).withMinute(alarmTimeText.value.minute)
-        timepicker(initialTime = timeCal) { time ->
+        timepicker(
+            initialTime = timeCal,
+            colors = TimePickerDefaults.colors(
+                activeBackgroundColor = if (darkTheme) darkPrimaryLight else Color.White
+            )
+        ) { time ->
             val dtf = DateTimeFormatter.ofPattern("hh:mm a")
             viewModel.onEvent(
                 AddEditAlarmEvent.ChangeTime(
