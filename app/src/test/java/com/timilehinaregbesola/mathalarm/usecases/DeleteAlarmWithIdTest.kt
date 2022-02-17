@@ -15,8 +15,6 @@ class DeleteAlarmWithIdTest {
 
     private val alarmRepository = AlarmRepository(dataSource)
 
-//    private val interactor = Interac
-
     private val deleteAlarmUseCase = DeleteAlarmWithId(alarmRepository)
 
     private val addAlarmUseCase = AddAlarm(alarmRepository)

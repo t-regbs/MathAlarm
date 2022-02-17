@@ -20,9 +20,11 @@ class ShowAlarm(
     suspend operator fun invoke(alarmId: Long) {
         val alarm = alarmRepository.findAlarm(alarmId) ?: return
 
-        if (alarm.repeat) {
+        if (alarm.repeat && alarm.isOn) {
             scheduleNextAlarm(alarm)
+        } else {
         }
+
         if (alarm.isOn.not()) {
 //            Timber.d("Task '${alarm.title}' is already completed. Will not notify")
             return

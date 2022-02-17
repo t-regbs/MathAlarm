@@ -37,6 +37,13 @@ fun Alarm.getFormatTime(): CharSequence? {
     return DateFormat.format("hh:mm a", cal)
 }
 
+fun Alarm.getTime(): Calendar {
+    val cal = Calendar.getInstance()
+    cal[Calendar.HOUR_OF_DAY] = hour
+    cal[Calendar.MINUTE] = minute
+    return cal
+}
+
 // Schedules all the alarm of the object at once including repeating ones
 fun Alarm.scheduleAlarm(context: Context, reschedule: Boolean): Boolean {
     Timber.d("Schedule alarm..")
@@ -122,38 +129,6 @@ fun Alarm.scheduleAlarm(context: Context, reschedule: Boolean): Boolean {
         Timber.d("scheduled new alarm")
     }
     return true
-}
-
-// This gets called if snooze get pressed
-fun Alarm.scheduleSnooze(context: Context) {
-    val alarm = Intent(context, AlarmReceiver::class.java)
-    alarm.putExtra(ALARM_EXTRA, alarmId)
-    val cal = Calendar.getInstance()
-    cal.add(Calendar.MINUTE, snooze)
-    val alarmIntent = PendingIntent.getBroadcast(
-        context, 0, alarm,
-        PendingIntent.FLAG_CANCEL_CURRENT
-    )
-    val alarmManager = context
-        .getSystemService(Context.ALARM_SERVICE) as AlarmManager
-    alarmManager.set(AlarmManager.RTC_WAKEUP, cal.timeInMillis, alarmIntent)
-    if (snooze == 1) {
-        Toast.makeText(
-            context,
-            "${context.getString(R.string.alarm_set_begin_msg)} ${snooze}${context.getString(
-                R.string.alarm_minute
-            )} ${context.getString(R.string.alarm_set_end_msg)}",
-            Toast.LENGTH_SHORT
-        ).show()
-    } else {
-        Toast.makeText(
-            context,
-            "${context.getString(R.string.alarm_set_begin_msg)} ${snooze}${context.getString(
-                R.string.alarm_minutes
-            )} ${context.getString(R.string.alarm_set_end_msg)}",
-            Toast.LENGTH_SHORT
-        ).show()
-    }
 }
 
 fun Alarm.initCalendar(): Calendar {
