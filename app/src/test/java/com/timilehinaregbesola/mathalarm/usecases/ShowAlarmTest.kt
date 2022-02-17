@@ -23,8 +23,6 @@ class ShowAlarmTest {
 
     private val addAlarmUseCase = AddAlarm(alarmRepository)
 
-    private val findAlarmUseCase = FindAlarm(alarmRepository)
-
     private val scheduleNextAlarmUseCase = ScheduleNextAlarm(alarmInteractor)
 
     private val showAlarmUseCase = ShowAlarm(alarmRepository, notificationInteractor, scheduleNextAlarmUseCase)
