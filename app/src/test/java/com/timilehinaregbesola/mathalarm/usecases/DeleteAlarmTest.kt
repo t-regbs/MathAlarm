@@ -24,20 +24,45 @@ class DeleteAlarmTest {
 
     private val findAlarmUseCase = FindAlarm(alarmRepository)
 
+    private val baseAlarm = Alarm(alarmId = 11, isOn = true, title = "Delete me!!")
+
     @Before
     fun setup() = runBlockingTest {
         alarmRepository.clear()
         alarmInteractor.clear()
+        addAlarmUseCase(baseAlarm)
     }
 
     @Test
     fun `test if alarm is deleted`() = runBlockingTest {
-        val alarm = Alarm(alarmId = 11, isOn = true, vibrate = true)
-        addAlarmUseCase(alarm)
-        deleteAlarmUseCase(alarm)
+        deleteAlarmUseCase(baseAlarm)
 
-        val foundAlarm = findAlarmUseCase(alarm.alarmId)
+        val assertAlarm = findAlarmUseCase(baseAlarm.alarmId)
 
-        assertNull(foundAlarm)
+        assertNull(assertAlarm)
+    }
+
+    @Test
+    fun `test if deleted alarm is cancelled`() = runBlockingTest {
+        deleteAlarmUseCase(baseAlarm)
+
+        assertFalse(alarmInteractor.isAlarmScheduled(baseAlarm))
+    }
+
+    @Test
+    fun `test if alarm is deleted with id`() = runBlockingTest {
+        addAlarmUseCase(baseAlarm)
+        deleteAlarmUseCase(baseAlarm.alarmId)
+
+        val assertAlarm = findAlarmUseCase(baseAlarm.alarmId)
+
+        assertNull(assertAlarm)
+    }
+
+    @Test
+    fun `test if deleted alarm by id is cancelled`() = runBlockingTest {
+        deleteAlarmUseCase(baseAlarm.alarmId)
+
+        assertFalse(alarmInteractor.isAlarmScheduled(baseAlarm))
     }
 }
