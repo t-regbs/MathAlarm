@@ -15,7 +15,7 @@ import org.junit.Assert
 import org.junit.Test
 
 @ExperimentalCoroutinesApi
-class GetSavedAlarmsTest {
+class ClearAlarmsTest {
     private val dataSource = AlarmRepositoryFake()
 
     private val alarmRepository = AlarmRepository(dataSource)
@@ -24,7 +24,7 @@ class GetSavedAlarmsTest {
 
     private val addAlarmUseCase = AddAlarm(alarmRepository)
 
-    private val getSavedAlarmsUseCase = GetSavedAlarms(alarmRepository)
+    private val clearAlarmsUseCase = ClearAlarms(alarmRepository, alarmInteractor)
 
     @After
     fun tearDown() = runBlockingTest {
@@ -34,7 +34,7 @@ class GetSavedAlarmsTest {
 
     @FlowPreview
     @Test
-    fun `test if saved alarms are retrieved`() = runBlockingTest {
+    fun `test if alarms are deleted`() = runBlockingTest {
         val alarm1 = Alarm(alarmId = 1, title = "alarm 1", isSaved = false, isOn = true)
         val alarm2 = Alarm(alarmId = 2, title = "alarm 2", isSaved = true, isOn = false)
         val alarm3 = Alarm(alarmId = 3, title = "alarm 3", isSaved = false, isOn = true)
@@ -43,8 +43,25 @@ class GetSavedAlarmsTest {
         val repoList = listOf(alarm1, alarm2, alarm3, alarm4, alarm5)
         repoList.forEach { alarm -> addAlarmUseCase(alarm) }
 
-        val alarms = getSavedAlarmsUseCase().flatMapConcat { it.asFlow() }.toList()
+        clearAlarmsUseCase(repoList)
+        val alarms = alarmRepository.getAlarms().flatMapConcat { it.asFlow() }.toList()
 
-        Assert.assertEquals(listOf(alarm2, alarm4), alarms)
+        Assert.assertEquals(emptyList<Alarm>(), alarms)
+    }
+
+    @Test
+    fun `test if cleared alarms are not scheduled`() = runBlockingTest {
+        val alarm1 = Alarm(alarmId = 1, title = "alarm 1", isSaved = false, isOn = true)
+        val alarm2 = Alarm(alarmId = 2, title = "alarm 2", isSaved = true, isOn = false)
+        val alarm3 = Alarm(alarmId = 3, title = "alarm 3", isSaved = false, isOn = true)
+        val alarm4 = Alarm(alarmId = 4, title = "alarm 4", isSaved = true, isOn = false)
+        val alarm5 = Alarm(alarmId = 5, title = "alarm 5", isSaved = false, isOn = true)
+        val repoList = listOf(alarm1, alarm2, alarm3, alarm4, alarm5)
+        repoList.forEach { alarm -> addAlarmUseCase(alarm) }
+
+        clearAlarmsUseCase(repoList)
+        repoList.forEach {
+            Assert.assertFalse(alarmInteractor.isAlarmScheduled(it))
+        }
     }
 }
