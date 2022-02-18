@@ -25,8 +25,8 @@ class AlarmNotificationScheduler(private val context: Context) {
     fun scheduleAlarm(passedAlarm: Alarm, reschedule: Boolean): Boolean {
         Timber.d("Schedule alarm..")
         val alarmIntent = Intent(context, AlarmReceiver::class.java).apply {
-            action = ALARM_ACTION
-            putExtra(EXTRA_TASK, passedAlarm.alarmId)
+//            action = ALARM_ACTION
+//            putExtra(EXTRA_TASK, passedAlarm.alarmId)
         }
         val alarmIntentList: MutableList<PendingIntent> = ArrayList()
         val time: MutableList<Calendar> = ArrayList()
