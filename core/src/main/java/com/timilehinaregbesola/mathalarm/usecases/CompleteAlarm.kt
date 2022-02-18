@@ -12,13 +12,12 @@ class CompleteAlarm(
     private val alarmRepository: AlarmRepository,
     private val alarmInteractor: AlarmInteractor,
     private val notificationInteractor: NotificationInteractor,
-//    private val calendarProvider: CalendarProvider
 ) {
 
     /**
      * Completes the given alarm.
      *
-     * @param alarmId the task id
+     * @param alarmId the alarm id
      *
      */
     suspend operator fun invoke(alarmId: Long) {
@@ -29,7 +28,7 @@ class CompleteAlarm(
     /**
      * Completes the given alarm.
      *
-     * @param alarm the task to be updated
+     * @param alarm the alarm to be updated
      *
      */
     suspend operator fun invoke(alarm: Alarm) {

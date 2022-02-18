@@ -1,3 +1,4 @@
+@file:JvmName("extension-context")
 package com.timilehinaregbesola.mathalarm.utils
 
 import android.app.AlarmManager

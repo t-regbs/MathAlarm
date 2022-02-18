@@ -85,7 +85,7 @@ class AlarmSettingsViewModel @Inject constructor(
                         }
                         isNewAlarm?.let {
                             if (it) {
-                                usecases.deleteAlarmWithId(currentAlarmId!!)
+                                usecases.deleteAlarm(currentAlarmId!!)
                             }
                         }
                         _repeatWeekly.value = alarm.repeat
