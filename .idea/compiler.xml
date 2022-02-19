@@ -3,6 +3,7 @@
   <component name="CompilerConfiguration">
     <bytecodeTargetLevel target="11">
       <module name="MathAlarm.app" target="14" />
+      <module name="MathAlarm.buildSrc" target="14" />
     </bytecodeTargetLevel>
   </component>
 </project>
