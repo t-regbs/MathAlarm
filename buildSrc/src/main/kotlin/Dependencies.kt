@@ -42,7 +42,7 @@ object Versions {
 }
 
 object Deps {
-    const val timber = "com.jakewharton.timber:timber:4.7.1${Versions.timber}"
+    const val timber = "com.jakewharton.timber:timber:${Versions.timber}"
     val android = AndroidDeps
     val coroutines = CoroutinesDeps
     val hilt = HiltDeps
@@ -50,6 +50,7 @@ object Deps {
     val accompanist = AccompanistDeps
     val test = TestDeps
     val firebase = FirebaseDeps
+    val room = RoomDeps
     val dialog = DialogDeps
     val splash = SplashScreenDeps
 }
@@ -101,6 +102,8 @@ object TestDeps {
     const val coreKtx = "androidx.test:core-ktx:${Versions.testCore}"
     const val junitExt = "androidx.test.ext:junit:${Versions.testJunitExt}"
     const val mockk = "io.mockk:mockk:${Versions.testMockk}"
+    const val coroutinesTest = "org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.testCoroutines}"
+    const val espressoCore = "androidx.test.espresso:espresso-core:${Versions.testEspressoCore}"
 }
 
 object FirebaseDeps {

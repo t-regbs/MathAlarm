@@ -332,7 +332,7 @@ private fun dismissAlarm(
     }
 }
 
-@OptIn(ExperimentalComposeUiApi::class)
+@ExperimentalComposeUiApi
 private fun stopMusicAndHideKeyboard(
     mp: MediaPlayer,
     viewModel: AlarmMathViewModel,
@@ -444,7 +444,9 @@ sealed class ToneState(val total: Int) {
     class Countdown(total: Int, val seconds: Int) : ToneState(total)
 }
 
-@OptIn(ExperimentalMaterialApi::class, InternalCoroutinesApi::class, ExperimentalComposeUiApi::class)
+@ExperimentalComposeUiApi
+@InternalCoroutinesApi
+@ExperimentalMaterialApi
 @Preview
 @Composable
 fun MathPreview() {

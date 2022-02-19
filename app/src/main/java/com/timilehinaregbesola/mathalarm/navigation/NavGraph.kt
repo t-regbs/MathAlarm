@@ -29,7 +29,7 @@ import com.timilehinaregbesola.mathalarm.utils.Navigation
 import com.timilehinaregbesola.mathalarm.utils.getAlarmIdArgument
 import kotlinx.coroutines.InternalCoroutinesApi
 
-@OptIn(ExperimentalMaterialNavigationApi::class)
+@ExperimentalMaterialNavigationApi
 @ExperimentalAnimationApi
 @InternalCoroutinesApi
 @ExperimentalComposeUiApi
