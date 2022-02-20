@@ -10,6 +10,7 @@ import android.graphics.BitmapFactory
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.google.firebase.messaging.FirebaseMessagingService
@@ -40,6 +41,16 @@ class FirebaseMessagingService : FirebaseMessagingService() {
         }
     }
 
+    @OptIn(
+        ExperimentalFoundationApi::class,
+        androidx.compose.material.ExperimentalMaterialApi::class,
+        androidx.compose.material.ExperimentalMaterialApi::class,
+        androidx.compose.ui.ExperimentalComposeUiApi::class,
+        androidx.compose.ui.ExperimentalComposeUiApi::class,
+        kotlinx.coroutines.InternalCoroutinesApi::class,
+        androidx.compose.animation.ExperimentalAnimationApi::class,
+        com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi::class
+    )
     private fun sendUpdateApp(title: String, body: String) {
         val sharingIntent = Intent()
         sharingIntent.action = Intent.ACTION_VIEW

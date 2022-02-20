@@ -39,6 +39,8 @@ android {
     }
 
     kotlinOptions {
+        allWarningsAsErrors = false
+        freeCompilerArgs = listOf("-Xopt-in=kotlin.RequiresOptIn", "-Xopt-in=kotlin.Experimental")
         jvmTarget = "11"
         useIR = true
     }
