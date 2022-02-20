@@ -1,4 +1,5 @@
 import extensions.addComposeConfig
+import extensions.addComposeDependencies
 
 plugins {
     id(GradlePlugin.ANDROID_APPLICATION)
@@ -42,7 +43,6 @@ android {
         allWarningsAsErrors = false
         freeCompilerArgs = listOf("-Xopt-in=kotlin.RequiresOptIn", "-Xopt-in=kotlin.Experimental")
         jvmTarget = "11"
-        useIR = true
     }
     lint {
         disable += setOf("LogNotTimber", "StringFormatInTimber", "ThrowableNotAtBeginning", "BinaryOperationInTimber", "TimberArgCount", "TimberArgTypes", "TimberTagLength", "TimberExceptionLogging")
@@ -62,14 +62,6 @@ dependencies {
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:1.1.5")
 
     implementation(Deps.android.material)
-    implementation(Deps.compose.ui)
-    implementation(Deps.compose.material)
-    implementation(Deps.compose.icons)
-    implementation(Deps.compose.tooling)
-    implementation(Deps.compose.runtime)
-    implementation(Deps.compose.runtimeSaveable)
-    implementation(Deps.compose.runtimeLivedata)
-
     implementation(Deps.android.ktx)
 
     implementation(Deps.test.coreKtx)
@@ -105,4 +97,6 @@ dependencies {
     implementation(Deps.firebase.firebaseMessaging)
 
     implementation(Deps.splash.core)
+
+    addComposeDependencies()
 }
