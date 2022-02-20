@@ -15,6 +15,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.graphics.toArgb
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.timilehinaregbesola.mathalarm.navigation.NavGraph
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
@@ -23,16 +24,17 @@ import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.InternalCoroutinesApi
 import javax.inject.Inject
 
+@ExperimentalFoundationApi
+@ExperimentalMaterialApi
+@ExperimentalComposeUiApi
+@InternalCoroutinesApi
+@ExperimentalAnimationApi
+@ExperimentalMaterialNavigationApi
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
     @Inject
     lateinit var preferences: AlarmPreferencesImpl
 
-    @ExperimentalAnimationApi
-    @ExperimentalComposeUiApi
-    @InternalCoroutinesApi
-    @ExperimentalFoundationApi
-    @ExperimentalMaterialApi
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)

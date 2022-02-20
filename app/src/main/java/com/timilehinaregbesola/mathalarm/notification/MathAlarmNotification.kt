@@ -7,18 +7,30 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.media.AudioAttributes
 import android.media.MediaPlayer
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.core.app.NotificationCompat
 import androidx.core.net.toUri
+import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.timilehinaregbesola.mathalarm.AlarmReceiver
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.MainActivity
 import com.timilehinaregbesola.mathalarm.utils.getNotificationManager
+import kotlinx.coroutines.InternalCoroutinesApi
 import timber.log.Timber
 
 /**
  * Handles the notification related to the Task reminders.
  */
+@ExperimentalMaterialNavigationApi
+@ExperimentalAnimationApi
+@InternalCoroutinesApi
+@ExperimentalComposeUiApi
+@ExperimentalMaterialApi
+@ExperimentalFoundationApi
 class MathAlarmNotification(
     private val context: Context,
     private val channel: MathAlarmNotificationChannel,

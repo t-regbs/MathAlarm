@@ -237,7 +237,8 @@ fun AlarmItem(
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class, ExperimentalAnimationApi::class)
+@ExperimentalMaterialApi
+@ExperimentalAnimationApi
 @Preview
 @Composable
 fun ItemPreview() {

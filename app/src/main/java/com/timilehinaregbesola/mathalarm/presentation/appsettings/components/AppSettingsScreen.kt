@@ -22,7 +22,6 @@ import androidx.compose.ui.unit.sp
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.Theme
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
 
-@OptIn(ExperimentalMaterialApi::class)
 @Composable
 fun AppSettingsScreen(
     onBackPress: () -> Unit,

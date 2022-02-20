@@ -5,7 +5,12 @@ import android.content.Context
 import android.content.SharedPreferences
 import android.media.MediaPlayer
 import android.preference.PreferenceManager
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.room.Room
+import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.framework.RoomAlarmDataSource
 import com.timilehinaregbesola.mathalarm.framework.Usecases
@@ -25,9 +30,16 @@ import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
+import kotlinx.coroutines.InternalCoroutinesApi
 import javax.inject.Named
 import javax.inject.Singleton
 
+@ExperimentalFoundationApi
+@ExperimentalMaterialApi
+@ExperimentalComposeUiApi
+@InternalCoroutinesApi
+@ExperimentalAnimationApi
+@ExperimentalMaterialNavigationApi
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
@@ -108,6 +120,7 @@ object AppModule {
             cancelAlarm = CancelAlarm(alarmInteractor)
         )
     }
+
     @Provides
     @Singleton
     fun provideAlarmNotification(
@@ -130,6 +143,14 @@ object AppModule {
         return MathAlarmNotificationChannel(context)
     }
 
+    @OptIn(
+        ExperimentalMaterialNavigationApi::class,
+        androidx.compose.animation.ExperimentalAnimationApi::class,
+        kotlinx.coroutines.InternalCoroutinesApi::class,
+        androidx.compose.ui.ExperimentalComposeUiApi::class,
+        androidx.compose.material.ExperimentalMaterialApi::class,
+        androidx.compose.foundation.ExperimentalFoundationApi::class
+    )
     @Provides
     @Singleton
     fun provideNotificationInteractor(alarmNotification: MathAlarmNotification): NotificationInteractor {
