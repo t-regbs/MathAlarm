@@ -54,7 +54,7 @@ fun ListDisplayScreen(
                         actionLabel = event.action
                     )
                     if (result == SnackbarResult.ActionPerformed) {
-//                        viewModel.onEvent(AlarmListEvent.OnUndoDeleteClick)
+                        viewModel.onEvent(AlarmListEvent.OnUndoDeleteClick)
                     }
                 }
                 is UiEvent.Navigate -> onNavigate(event)
