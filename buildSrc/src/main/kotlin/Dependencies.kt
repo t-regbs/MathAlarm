@@ -104,6 +104,9 @@ object TestDeps {
     const val mockk = "io.mockk:mockk:${Versions.testMockk}"
     const val coroutinesTest = "org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.testCoroutines}"
     const val espressoCore = "androidx.test.espresso:espresso-core:${Versions.testEspressoCore}"
+    const val hiltAndroidTesting = "com.google.dagger:hilt-android-testing:${Versions.hiltAndroidCompiler}"
+    const val hiltAndroidCompiler = "com.google.dagger:hilt-android-compiler:${Versions.hiltAndroidCompiler}"
+    const val composeUiTest = "androidx.compose.ui:ui-test-junit4:${Versions.compose}"
 }
 
 object FirebaseDeps {
