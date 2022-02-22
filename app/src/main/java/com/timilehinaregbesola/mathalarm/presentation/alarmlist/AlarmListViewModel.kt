@@ -21,6 +21,8 @@ class AlarmListViewModel @Inject constructor(
     private val _uiEvent = Channel<UiEvent>()
     val uiEvent = _uiEvent.receiveAsFlow()
 
+    private var recentlyDeletedAlarm: Alarm? = null
+
     fun onEvent(event: AlarmListEvent) {
         when (event) {
             is AlarmListEvent.OnEditAlarmClick -> {
@@ -45,10 +47,16 @@ class AlarmListViewModel @Inject constructor(
                 }
             }
             is AlarmListEvent.OnUndoDeleteClick -> {
+                viewModelScope.launch {
+                    usecases.addAlarm(recentlyDeletedAlarm ?: return@launch)
+                    recentlyDeletedAlarm = null
+                }
             }
             is AlarmListEvent.OnDeleteAlarmClick -> {
                 viewModelScope.launch {
                     usecases.deleteAlarm(event.alarm)
+                    recentlyDeletedAlarm = event.alarm
+                    sendUiEvent(UiEvent.ShowSnackbar(message = "Alarm Deleted", action = "Undo"))
                 }
             }
             is AlarmListEvent.DeleteTestAlarm -> {

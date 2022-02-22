@@ -14,7 +14,11 @@ fun DependencyHandler.addComposeDependencies() {
     implementation(Deps.compose.runtime)
     implementation(Deps.compose.runtimeSaveable)
     implementation(Deps.compose.runtimeLivedata)
+    androidTestImplementation(Deps.test.composeUiTest)
 }
 
 private fun DependencyHandler.implementation(dependencyNotation: String): Dependency? =
     add("implementation", dependencyNotation)
+
+private fun DependencyHandler.androidTestImplementation(dependencyNotation: Any): Dependency? =
+    add("androidTestImplementation", dependencyNotation)
