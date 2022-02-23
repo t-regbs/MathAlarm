@@ -14,12 +14,10 @@ import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -39,11 +37,8 @@ fun AlarmItem(
     onDeleteAlarm: (Alarm) -> Unit,
     onCancelAlarm: (Alarm) -> Unit,
     onScheduleAlarm: (Alarm, Boolean) -> Unit,
-    scaffoldState: ScaffoldState,
     darkTheme: Boolean
 ) {
-    val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -89,30 +84,9 @@ fun AlarmItem(
                             .padding(4.dp)
                             .align(Alignment.CenterVertically),
                         checked = alarm.isOn,
-//                        colors = SwitchDefaults.colors(
-//                            checkedThumbColor = enterButtonColor
-//                        ),
                         onCheckedChange = {
                             alarm.isOn = it
                             if (alarm.isOn) {
-//                                if (alarm.scheduleAlarm(context, false)) {
-//                                    scope.launch {
-//                                        when (
-//                                            scaffoldState.snackbarHostState.showSnackbar(
-//                                                message = alarm.getTimeLeftMessage(context)!!,
-//                                                duration = SnackbarDuration.Short
-//                                            )
-//                                        ) {
-//                                            SnackbarResult.Dismissed ->
-//                                                Timber.d("Track: Dismissed")
-//                                            SnackbarResult.ActionPerformed ->
-//                                                Timber.d("Track: Action!")
-//                                        }
-//                                    }
-//                                } else {
-//                                    alarm.isOn = false
-//                                    checkedState.value = false
-//                                }
                                 onUpdateAlarm(alarm)
                                 onScheduleAlarm(alarm, false)
                             } else {
@@ -250,8 +224,7 @@ fun ItemPreview() {
                 onUpdateAlarm = {},
                 onDeleteAlarm = {},
                 onCancelAlarm = {},
-                onScheduleAlarm = { alarm: Alarm, b: Boolean -> },
-                scaffoldState = rememberScaffoldState(),
+                onScheduleAlarm = { _: Alarm, _: Boolean -> },
                 darkTheme = true
             )
         }

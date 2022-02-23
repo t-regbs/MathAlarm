@@ -132,9 +132,7 @@ fun AlarmBottomSheet(
                 modifier = Modifier
                     .fillMaxSize()
                     .clickable(
-                        onClick = {
-                            dialog.show()
-                        },
+                        onClick = { dialog.show() },
                     ),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.Center
@@ -157,8 +155,7 @@ fun AlarmBottomSheet(
             )
         }
         Divider(
-            modifier = Modifier
-                .padding(top = 17.dp, start = 16.dp, end = 16.dp),
+            modifier = Modifier.padding(top = 17.dp, start = 16.dp, end = 16.dp),
             thickness = 10.dp,
             color = unSelectedDay
         )
