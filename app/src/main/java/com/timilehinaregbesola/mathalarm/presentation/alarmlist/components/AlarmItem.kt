@@ -89,9 +89,6 @@ fun AlarmItem(
                             .padding(4.dp)
                             .align(Alignment.CenterVertically),
                         checked = alarm.isOn,
-//                        colors = SwitchDefaults.colors(
-//                            checkedThumbColor = enterButtonColor
-//                        ),
                         onCheckedChange = {
                             alarm.isOn = it
                             if (alarm.isOn) {

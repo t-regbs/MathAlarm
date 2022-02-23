@@ -89,9 +89,10 @@ class AlarmListViewModel @Inject constructor(
         }
     }
 
-    fun scheduleAlarm(alarm: Alarm, reschedule: Boolean) {
+    fun scheduleAlarm(alarm: Alarm, reschedule: Boolean, message: String) {
         viewModelScope.launch {
             usecases.scheduleAlarm(alarm, reschedule)
+            sendUiEvent(UiEvent.ShowSnackbar(message = message))
         }
     }
 

@@ -178,7 +178,14 @@ fun ListDisplayScreen(
                                             viewModel.cancelAlarm(it)
                                         },
                                         onScheduleAlarm = { curAlarm: Alarm, b: Boolean ->
-                                            viewModel.scheduleAlarm(curAlarm, b)
+                                            val calender = viewModel.calender.getCurrentCalendar()
+                                            viewModel.scheduleAlarm(
+                                                alarm = curAlarm,
+                                                reschedule = b,
+                                                message = "Alarm set for ${curAlarm.getTimeLeft(
+                                                    getCal(curAlarm, calender).timeInMillis, calender
+                                                )}"
+                                            )
                                         },
                                         darkTheme = darkTheme
                                     )
