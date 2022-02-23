@@ -27,10 +27,7 @@ fun ListTopAppBar(
     TopAppBar(
         title = {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                Text(
-                    text = "Alarms",
-                    fontSize = 16.sp
-                )
+                Text(text = "Alarms", fontSize = 16.sp)
             }
         },
         actions = {

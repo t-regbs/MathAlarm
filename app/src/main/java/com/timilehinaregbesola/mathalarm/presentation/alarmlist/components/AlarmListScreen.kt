@@ -170,7 +170,6 @@ fun ListDisplayScreen(
                                             viewModel.onEvent(AlarmListEvent.OnEditAlarmClick(alarm.alarmId))
                                         },
                                         onUpdateAlarm = viewModel::onUpdate,
-                                        scaffoldState = scaffoldState,
                                         onDeleteAlarm = {
                                             viewModel.onEvent(AlarmListEvent.OnDeleteAlarmClick(it))
                                         },

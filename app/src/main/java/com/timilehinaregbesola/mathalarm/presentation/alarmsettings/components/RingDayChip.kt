@@ -65,11 +65,7 @@ fun RingDayChip(
             ),
         elevation = 0.dp,
         shape = CircleShape,
-        color = if (selected) {
-            teall
-        } else {
-            unSelectedDay
-        }
+        color = if (selected) teall else unSelectedDay
     ) {
         Box(
             contentAlignment = Alignment.Center
@@ -79,7 +75,6 @@ fun RingDayChip(
                 fontWeight = FontWeight.Bold,
                 fontSize = 15.sp,
                 color = if (selected) Color.White else Color.Black,
-//                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp)
             )
         }
     }

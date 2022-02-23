@@ -10,6 +10,7 @@ import android.net.Uri
 import android.os.Build
 import androidx.core.net.toUri
 import com.timilehinaregbesola.mathalarm.R
+import timber.log.Timber
 
 /**
  * Checks if all ringtones can be played, and requests permissions if it is not the case
@@ -23,10 +24,9 @@ fun checkPermissions(activity: Activity, tones: List<String>) {
                     player.setDataSource(activity, alarmtone.toUri())
                     player.apply {
                         setOnErrorListener { mp, _, _ ->
-//                            log.e("Error occurred while playing audio.")
+                            Timber.e("Error occured while playing audio.")
                             mp.stop()
                             mp.release()
-//                            player = null
                             true
                         }
                     }
@@ -49,7 +49,7 @@ fun checkPermissions(activity: Activity, tones: List<String>) {
                     .setNegativeButton(android.R.string.cancel, null)
                     .show()
             } catch (e: Exception) {
-//                logger.e("Was not able to show dialog to request permission, continue without the dialog")
+                Timber.e("Was not able to show dialog to request permission, continue without the dialog")
                 activity.requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), 3)
             }
         }

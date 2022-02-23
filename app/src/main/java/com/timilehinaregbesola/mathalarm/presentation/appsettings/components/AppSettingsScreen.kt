@@ -30,9 +30,7 @@ fun AppSettingsScreen(
     val isDark = when (pref.theme) {
         Theme.DARK -> true
         Theme.LIGHT -> false
-        else -> {
-            isSystemInDarkTheme()
-        }
+        else -> isSystemInDarkTheme()
     }
     val options = listOf(
         Triple("Light", Icons.Filled.WbSunny, Theme.LIGHT),

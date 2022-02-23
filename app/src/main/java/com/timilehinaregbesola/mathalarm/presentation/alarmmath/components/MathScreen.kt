@@ -35,6 +35,7 @@ import androidx.navigation.compose.rememberNavController
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmSnack
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.AlarmMathViewModel
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.ToneState
 import com.timilehinaregbesola.mathalarm.presentation.ui.*
 import com.timilehinaregbesola.mathalarm.utils.EASY
 import com.timilehinaregbesola.mathalarm.utils.HARD
@@ -90,10 +91,7 @@ fun MathScreen(
             }
         } else {
             Timber.d("Tone not available")
-//            Toast.makeText(
-//                activity, getString(R.string.tone_not_available),
-//                Toast.LENGTH_SHORT
-//            ).show
+            // Should show tone not available snackbar
         }
 
         // Vibrate phone
@@ -136,7 +134,6 @@ fun MathScreen(
                         targetValue = progress.value,
                         animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
                     ).value
-                    val showSnack = remember { mutableStateOf(false) }
 
                     Spacer(modifier = Modifier.height(24.dp))
                     if (toneState.value is ToneState.Countdown) {
@@ -162,7 +159,6 @@ fun MathScreen(
                         Text(
                             text = question.value ?: "",
                             fontSize = 70.sp,
-//                            color = Color(0xFF272727),
                             fontWeight = FontWeight.Bold
                         )
                     }
@@ -345,7 +341,6 @@ private fun stopMusicAndHideKeyboard(
 //        release()
     }
     viewModel.stopTimer()
-//                        TODO: cancel notification
     keyboardController?.hide()
 }
 
@@ -438,11 +433,6 @@ data class MathProblem(
     var numTwo: Int = 0,
     var answer: Int = 0
 )
-
-sealed class ToneState(val total: Int) {
-    class Stopped(seconds: Int = 0) : ToneState(seconds)
-    class Countdown(total: Int, val seconds: Int) : ToneState(total)
-}
 
 @ExperimentalComposeUiApi
 @InternalCoroutinesApi
