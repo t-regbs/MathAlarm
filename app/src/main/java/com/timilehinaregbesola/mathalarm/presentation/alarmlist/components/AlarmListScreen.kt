@@ -15,7 +15,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -127,7 +126,9 @@ fun ListDisplayScreen(
                         var nearestIndex = 0
                         var nearest: Long?
                         val nearestTime = if (alarmList.isNotEmpty()) {
-                            nearest = alarmList.first { it.isOn }.let { it1 -> getCal(it1, viewModel.calender.getCurrentCalendar()).timeInMillis }
+                            nearest = alarmList.first { it.isOn }.let { it1 ->
+                                getCal(it1, viewModel.calender.getCurrentCalendar()).timeInMillis
+                            }
                             nearestIndex = alarmList.indexOfFirst { it.isOn }
                             enabled = alarmList.any { it.isOn }
                             val now = System.currentTimeMillis()
@@ -160,7 +161,7 @@ fun ListDisplayScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 stickyHeader {
-                                    ListHeader(enabled, nearestAlarmMessage?.value ?: "", darkTheme)
+                                    ListHeader(enabled, nearestAlarmMessage.value ?: "", darkTheme)
                                 }
                                 items(alarmList) { alarm ->
                                     AlarmItem(
@@ -209,19 +210,13 @@ private fun getCal(alarm: Alarm, cal: Calendar): Calendar {
     return cal
 }
 
-@Preview(showBackground = true)
-@Composable
-fun EmptyPreview() {
-//    EmptyScreen()
-}
-
 fun Alarm.getTimeLeft(time: Long, cal: Calendar): String {
     val message: String
-    val cal = getCal(alarm = this, cal = cal)
-    val today = getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
+    val calender = getCal(alarm = this, cal = cal)
+    val today = getDayOfWeek(calender[Calendar.DAY_OF_WEEK])
     var i: Int
-    var lastAlarmDay: Int
-    var nextAlarmDay: Int
+    val lastAlarmDay: Int
+    val nextAlarmDay: Int
     if (System.currentTimeMillis() > time) {
         nextAlarmDay = if (today + 1 == 7) 0 else today + 1
         lastAlarmDay = today
@@ -239,14 +234,14 @@ fun Alarm.getTimeLeft(time: Long, cal: Calendar): String {
         }
         i++
     }
-    if (i < today || i == today && cal.timeInMillis < System.currentTimeMillis()) {
+    if (i < today || i == today && calender.timeInMillis < System.currentTimeMillis()) {
         val daysUntilAlarm: Int = SAT - today + 1 + i
-        cal.add(Calendar.DAY_OF_YEAR, daysUntilAlarm)
+        calender.add(Calendar.DAY_OF_YEAR, daysUntilAlarm)
     } else {
         val daysUntilAlarm = i - today
-        cal.add(Calendar.DAY_OF_YEAR, daysUntilAlarm)
+        calender.add(Calendar.DAY_OF_YEAR, daysUntilAlarm)
     }
-    val alarmTime = cal.timeInMillis
+    val alarmTime = calender.timeInMillis
     val remainderTime = alarmTime - System.currentTimeMillis()
     val minutes = (remainderTime / (1000 * 60) % 60).toInt()
     val hours = (remainderTime / (1000 * 60 * 60) % 24).toInt()
