@@ -11,7 +11,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.livedata.observeAsState
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -29,6 +28,7 @@ import com.timilehinaregbesola.mathalarm.utils.SAT
 import com.timilehinaregbesola.mathalarm.utils.UiEvent
 import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
 import kotlinx.coroutines.flow.collect
+import timber.log.Timber
 import java.util.*
 
 @ExperimentalAnimationApi
@@ -39,7 +39,7 @@ fun ListDisplayScreen(
     viewModel: AlarmListViewModel = hiltViewModel(),
     onNavigate: (UiEvent.Navigate) -> Unit,
     navController: NavHostController,
-    darkTheme: Boolean
+    darkTheme: Boolean,
 ) {
     val alarms = viewModel.alarms.collectAsState(null)
     val openDialog = remember { mutableStateOf(false) }
@@ -124,22 +124,32 @@ fun ListDisplayScreen(
                         contentAlignment = Alignment.TopStart
                     ) {
                         var enabled = false
-                        val nearestAlarmMessage = rememberSaveable { mutableStateOf("") }
-                        if (alarmList.isNotEmpty()) {
+                        var nearestIndex = 0
+                        var nearest: Long?
+                        val nearestTime = if (alarmList.isNotEmpty()) {
+                            nearest = alarmList.first { it.isOn }.let { it1 -> getCal(it1, viewModel.calender.getCurrentCalendar()).timeInMillis }
+                            nearestIndex = alarmList.indexOfFirst { it.isOn }
                             enabled = alarmList.any { it.isOn }
                             val now = System.currentTimeMillis()
-                            var nearestTime = alarmList[0].let { it1 -> getCal(it1).timeInMillis }
-                            var nearestIndex = 0
-                            alarmList.forEachIndexed { index, alarm ->
-                                val cal = getCal(alarm)
+                            val onAlarms = alarmList.filter { it.isOn }
+                            onAlarms.forEachIndexed { index, alarm ->
+                                val cal = getCal(alarm, viewModel.calender.getCurrentCalendar())
                                 val time = cal.timeInMillis
-                                if ((time - now) < nearestTime.minus(now)) {
-                                    nearestTime = time
+                                Timber.d("time = $time")
+                                val currentEval = time - now
+                                val nearestEval = nearest!! - now
+                                Timber.d("index = $index, currentEval = $currentEval, nearestEval = $nearestEval")
+                                if (currentEval < nearestEval) {
+                                    nearest = time
                                     nearestIndex = index
                                 }
                             }
-                            nearestAlarmMessage.value = nearestTime.let { it1 ->
-                                alarmList[nearestIndex].getTimeLeft(it1)
+                            nearest
+                        } else 0
+
+                        val nearestAlarmMessage = derivedStateOf {
+                            nearestTime?.let { it1 ->
+                                alarmList[nearestIndex].getTimeLeft(it1, viewModel.calender.getCurrentCalendar())
                             }
                         }
                         Surface(
@@ -150,7 +160,7 @@ fun ListDisplayScreen(
                                 horizontalAlignment = Alignment.CenterHorizontally,
                             ) {
                                 stickyHeader {
-                                    ListHeader(enabled, nearestAlarmMessage.value, darkTheme)
+                                    ListHeader(enabled, nearestAlarmMessage?.value ?: "", darkTheme)
                                 }
                                 items(alarmList) { alarm ->
                                     AlarmItem(
@@ -191,8 +201,8 @@ fun ListDisplayScreen(
     }
 }
 
-private fun getCal(alarm: Alarm): Calendar {
-    val cal = Calendar.getInstance()
+private fun getCal(alarm: Alarm, cal: Calendar): Calendar {
+    cal[Calendar.DAY_OF_WEEK] = alarm.repeatDays.toList().indexOfFirst { it == 'T' } + 1
     cal[Calendar.HOUR_OF_DAY] = alarm.hour
     cal[Calendar.MINUTE] = alarm.minute
     cal[Calendar.SECOND] = 0
@@ -205,25 +215,19 @@ fun EmptyPreview() {
 //    EmptyScreen()
 }
 
-fun Alarm.getTimeLeft(time: Long): String {
+fun Alarm.getTimeLeft(time: Long, cal: Calendar): String {
     val message: String
-    val cal = getCal(alarm = this)
+    val cal = getCal(alarm = this, cal = cal)
     val today = getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
     var i: Int
     var lastAlarmDay: Int
     var nextAlarmDay: Int
     if (System.currentTimeMillis() > time) {
-        nextAlarmDay = today + 1
+        nextAlarmDay = if (today + 1 == 7) 0 else today + 1
         lastAlarmDay = today
-        if (nextAlarmDay == 7) {
-            nextAlarmDay = 0
-        }
     } else {
         nextAlarmDay = today
-        lastAlarmDay = today - 1
-        if (lastAlarmDay == -1) {
-            lastAlarmDay = 6
-        }
+        lastAlarmDay = if (today - 1 == -1) 6 else today - 1
     }
     i = nextAlarmDay
     while (i != lastAlarmDay) {
@@ -247,21 +251,9 @@ fun Alarm.getTimeLeft(time: Long): String {
     val minutes = (remainderTime / (1000 * 60) % 60).toInt()
     val hours = (remainderTime / (1000 * 60 * 60) % 24).toInt()
     val days = (remainderTime / (1000 * 60 * 60 * 24)).toInt()
-    val mString = if (minutes == 1) {
-        "minute"
-    } else {
-        "minutes"
-    }
-    val hString = if (hours == 1) {
-        "hour"
-    } else {
-        "hours"
-    }
-    val dString = if (days == 1) {
-        "day"
-    } else {
-        "days"
-    }
+    val mString = if (minutes == 1) "minute" else "minutes"
+    val hString = if (hours == 1) "hour" else "hours"
+    val dString = if (days == 1) "day" else "days"
     message = if (days == 0) {
         if (hours == 0) {
             ("$minutes $mString")
