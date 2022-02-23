@@ -224,7 +224,7 @@ fun ItemPreview() {
                 onUpdateAlarm = {},
                 onDeleteAlarm = {},
                 onCancelAlarm = {},
-                onScheduleAlarm = { alarm: Alarm, b: Boolean -> },
+                onScheduleAlarm = { _: Alarm, _: Boolean -> },
                 darkTheme = true
             )
         }
