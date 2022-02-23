@@ -3,17 +3,20 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmlist
 import androidx.lifecycle.*
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.Usecases
+import com.timilehinaregbesola.mathalarm.provider.CalendarProvider
 import com.timilehinaregbesola.mathalarm.utils.Navigation
 import com.timilehinaregbesola.mathalarm.utils.UiEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.* // ktlint-disable no-wildcard-imports
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
+import java.util.*
 import javax.inject.Inject
 
 @HiltViewModel
 class AlarmListViewModel @Inject constructor(
     private val usecases: Usecases,
+    val calender: CalendarProvider,
     val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     var alarms = usecases.getSavedAlarms()
