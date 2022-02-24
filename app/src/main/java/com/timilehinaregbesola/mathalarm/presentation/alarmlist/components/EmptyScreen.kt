@@ -3,6 +3,7 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -13,6 +14,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.timilehinaregbesola.mathalarm.R
+import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 
 @ExperimentalMaterialApi
 @Composable
@@ -24,7 +26,7 @@ fun AlarmEmptyScreen(
     Box(
         modifier = modifier
             .fillMaxSize()
-            .padding(top = 16.dp),
+            .padding(top = MaterialTheme.spacing.medium),
         contentAlignment = Alignment.Center
     ) {
         val emptyImage = painterResource(id = R.drawable.search_icon)
@@ -53,7 +55,7 @@ fun AlarmEmptyScreen(
                     contentDescription = "Empty Alarm List",
                     colorFilter = if (darkTheme) ColorFilter.tint(color = Color.White) else null,
                     modifier = Modifier
-                        .padding(top = 24.dp, end = 40.dp)
+                        .padding(top = MaterialTheme.spacing.medium, end = 40.dp)
                         .width(167.dp)
                         .height(228.dp)
                 )
@@ -70,7 +72,7 @@ fun AlarmEmptyScreen(
         val fabImage = painterResource(id = R.drawable.fabb)
         AddAlarmFab(
             modifier = Modifier
-                .padding(bottom = 16.dp, end = 16.dp)
+                .padding(bottom = MaterialTheme.spacing.medium, end = MaterialTheme.spacing.medium)
                 .align(Alignment.BottomEnd),
             fabImage = fabImage,
             onClick = onClickFab

@@ -5,17 +5,18 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
+import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 
 @Composable
 fun ListLoadingShimmer(
     imageHeight: Dp,
-    padding: Dp = 16.dp
+    padding: Dp = MaterialTheme.spacing.medium
 ) {
     BoxWithConstraints(
         modifier = Modifier.fillMaxSize()

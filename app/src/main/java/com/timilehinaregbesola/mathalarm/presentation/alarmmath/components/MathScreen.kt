@@ -121,7 +121,7 @@ fun MathScreen(
             Surface(
                 Modifier
                     .fillMaxSize()
-                    .padding(vertical = 24.dp)
+                    .padding(vertical = MaterialTheme.spacing.extraMedium)
             ) {
                 Column {
                     val toneState = viewModel.state.observeAsState()
@@ -135,7 +135,7 @@ fun MathScreen(
                         animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
                     ).value
 
-                    Spacer(modifier = Modifier.height(24.dp))
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraMedium))
                     if (toneState.value is ToneState.Countdown) {
                         val ts = toneState.value as ToneState.Countdown
                         Timber.d("seconds: ${ts.seconds}")
@@ -146,12 +146,12 @@ fun MathScreen(
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(10.dp)
-                                .padding(horizontal = 24.dp),
+                                .padding(horizontal = MaterialTheme.spacing.extraMedium),
                             color = indicatorColor,
                             progress = animatedProgress
                         )
                     }
-                    Spacer(modifier = Modifier.height(32.dp))
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.Center
@@ -162,7 +162,7 @@ fun MathScreen(
                             fontWeight = FontWeight.Bold
                         )
                     }
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
                     TextField(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -218,7 +218,7 @@ fun MathScreen(
                         ),
                         shape = MaterialTheme.shapes.medium.copy(CornerSize(24.dp))
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()

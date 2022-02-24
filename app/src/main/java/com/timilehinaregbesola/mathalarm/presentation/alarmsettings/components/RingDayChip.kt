@@ -3,6 +3,7 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Surface
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
@@ -13,6 +14,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.presentation.ui.teall
 import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
 import com.timilehinaregbesola.mathalarm.utils.days
@@ -25,7 +27,7 @@ fun AlarmDays(
     Row(
         modifier = Modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp),
+            .padding(horizontal = MaterialTheme.spacing.medium),
         horizontalArrangement = Arrangement.SpaceBetween
     ) {
         days.forEachIndexed { index, day ->

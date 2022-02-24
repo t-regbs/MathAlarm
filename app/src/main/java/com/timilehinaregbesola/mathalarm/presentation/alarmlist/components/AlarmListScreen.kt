@@ -22,6 +22,7 @@ import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewModel
+import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.utils.Navigation
 import com.timilehinaregbesola.mathalarm.utils.SAT
 import com.timilehinaregbesola.mathalarm.utils.UiEvent
@@ -116,7 +117,7 @@ fun ListDisplayScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(top = 16.dp)
+                            .padding(top = MaterialTheme.spacing.medium)
                             .background(
                                 color = Color.LightGray.copy(alpha = 0.1f)
                             ),
@@ -194,7 +195,10 @@ fun ListDisplayScreen(
                         val fabImage = painterResource(id = R.drawable.fabb)
                         AddAlarmFab(
                             modifier = Modifier
-                                .padding(bottom = 16.dp, end = 16.dp)
+                                .padding(
+                                    bottom = MaterialTheme.spacing.medium,
+                                    end = MaterialTheme.spacing.medium
+                                )
                                 .align(Alignment.BottomEnd),
                             fabImage = fabImage,
                             onClick = {
