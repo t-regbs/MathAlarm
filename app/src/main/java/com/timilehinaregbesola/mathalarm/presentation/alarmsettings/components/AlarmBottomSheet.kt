@@ -34,10 +34,7 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarmEvent
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AlarmSettingsViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.TimeState
-import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
-import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimary
-import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimaryLight
-import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
+import com.timilehinaregbesola.mathalarm.presentation.ui.*
 import com.timilehinaregbesola.mathalarm.utils.Navigation
 import com.timilehinaregbesola.mathalarm.utils.PickRingtone
 import com.timilehinaregbesola.mathalarm.utils.checkPermissions
@@ -116,14 +113,14 @@ fun AlarmBottomSheet(
     Column(
         Modifier
             .fillMaxWidth()
-            .padding(24.dp)
+            .padding(MaterialTheme.spacing.extraMedium)
             .scrollable(rememberScrollState(), Orientation.Vertical)
     ) {
         Card(
             modifier = Modifier
                 .fillMaxWidth()
                 .height(150.dp)
-                .padding(horizontal = 16.dp),
+                .padding(horizontal = MaterialTheme.spacing.medium),
             backgroundColor = if (darkTheme) darkPrimaryLight else unSelectedDay,
             elevation = 0.dp,
             shape = MaterialTheme.shapes.medium.copy(CornerSize(24.dp))
@@ -155,13 +152,21 @@ fun AlarmBottomSheet(
             )
         }
         Divider(
-            modifier = Modifier.padding(top = 17.dp, start = 16.dp, end = 16.dp),
+            modifier = Modifier.padding(
+                top = MaterialTheme.spacing.medium,
+                start = MaterialTheme.spacing.medium,
+                end = MaterialTheme.spacing.medium
+            ),
             thickness = 10.dp,
             color = unSelectedDay
         )
         Row(
             modifier = Modifier
-                .padding(top = 28.dp, start = 16.dp, end = 16.dp)
+                .padding(
+                    top = 28.dp,
+                    start = MaterialTheme.spacing.medium,
+                    end = MaterialTheme.spacing.medium
+                )
                 .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween
         ) {
@@ -193,7 +198,7 @@ fun AlarmBottomSheet(
             toneText.value = RingtoneManager.getRingtone(activity, alert.toUri()).getTitle(activity)
         }
         TextWithIcon(
-            modifier = Modifier.padding(horizontal = 16.dp),
+            modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium),
             text = when {
                 toneText.value != null -> {
                     toneText.value!!
@@ -235,7 +240,7 @@ fun AlarmBottomSheet(
         }
         Button(
             modifier = Modifier
-                .padding(top = 32.dp)
+                .padding(top = MaterialTheme.spacing.large)
                 .fillMaxWidth(),
             onClick = {
                 viewModel.onEvent(AddEditAlarmEvent.OnTestClick)

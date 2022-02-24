@@ -25,6 +25,7 @@ import androidx.compose.ui.unit.sp
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimaryLight
+import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.utils.*
 
 @ExperimentalAnimationApi
@@ -43,7 +44,12 @@ fun AlarmItem(
         modifier = Modifier
             .fillMaxWidth()
             .fillMaxHeight()
-            .padding(top = 8.dp, bottom = 8.dp, start = 24.dp, end = 24.dp),
+            .padding(
+                top = MaterialTheme.spacing.small,
+                bottom = MaterialTheme.spacing.small,
+                start = MaterialTheme.spacing.extraMedium,
+                end = MaterialTheme.spacing.extraMedium
+            ),
         elevation = 4.dp,
         shape = MaterialTheme.shapes.medium.copy(CornerSize(8.dp))
     ) {
@@ -60,7 +66,11 @@ fun AlarmItem(
                     val timeOfDay = time.substring(time.length - 2)
                     Row(
                         modifier = Modifier
-                            .padding(start = 24.dp, top = 8.dp, bottom = 8.dp)
+                            .padding(
+                                start = MaterialTheme.spacing.extraMedium,
+                                top = MaterialTheme.spacing.small,
+                                bottom = MaterialTheme.spacing.small
+                            )
                             .weight(3f),
                     ) {
                         Text(
@@ -75,13 +85,13 @@ fun AlarmItem(
                             fontWeight = if (alarm.isOn) FontWeight.Bold else FontWeight.Normal,
                             modifier = Modifier
                                 .align(Alignment.Bottom)
-                                .padding(bottom = 8.dp)
+                                .padding(bottom = MaterialTheme.spacing.small)
                         )
                     }
                     Switch(
                         modifier = Modifier
                             .weight(1f)
-                            .padding(4.dp)
+                            .padding(MaterialTheme.spacing.extraSmall)
                             .align(Alignment.CenterVertically),
                         checked = alarm.isOn,
                         onCheckedChange = {
@@ -97,13 +107,17 @@ fun AlarmItem(
                     )
                 }
                 Text(
-                    modifier = Modifier.padding(start = 24.dp),
+                    modifier = Modifier.padding(start = MaterialTheme.spacing.extraMedium),
                     text = alarm.title,
                     fontSize = 15.sp,
                 )
                 Row(
                     modifier = Modifier
-                        .padding(bottom = 16.dp, top = 16.dp, start = 24.dp)
+                        .padding(
+                            bottom = MaterialTheme.spacing.medium,
+                            top = MaterialTheme.spacing.medium,
+                            start = MaterialTheme.spacing.extraMedium
+                        )
                         .fillMaxWidth()
                 ) {
                     val sb = StringBuilder()
@@ -153,25 +167,34 @@ fun AlarmItem(
             }
             AnimatedVisibility(expandItem.value) {
                 Column {
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
                     Divider(
                         thickness = 3.dp,
                         modifier = Modifier
-                            .padding(start = 8.dp, end = 8.dp)
+                            .padding(
+                                start = MaterialTheme.spacing.small,
+                                end = MaterialTheme.spacing.small
+                            )
                     )
                     Spacer(modifier = Modifier.height(20.dp))
-                    Row(modifier = Modifier.padding(start = 24.dp, bottom = 16.dp)) {
+                    Row(
+                        modifier = Modifier
+                            .padding(
+                                start = MaterialTheme.spacing.extraMedium,
+                                bottom = MaterialTheme.spacing.medium
+                            )
+                    ) {
                         Row(modifier = Modifier.weight(3f)) {
                             Row(
                                 Modifier
-                                    .padding(end = 24.dp)
+                                    .padding(end = MaterialTheme.spacing.extraMedium)
                                     .clickable(onClick = { onDeleteAlarm(alarm) })
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.Delete,
                                     contentDescription = "Delete",
                                     modifier = Modifier
-                                        .padding(end = 4.dp)
+                                        .padding(end = MaterialTheme.spacing.extraSmall)
                                         .clickable(onClick = { onDeleteAlarm(alarm) })
                                 )
                                 Text(
@@ -187,7 +210,7 @@ fun AlarmItem(
                                     imageVector = Icons.Default.Edit,
                                     contentDescription = "Edit",
                                     modifier = Modifier
-                                        .padding(end = 4.dp)
+                                        .padding(end = MaterialTheme.spacing.extraSmall)
                                 )
                                 Text(
                                     text = "Edit",

@@ -21,6 +21,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.Theme
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
+import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 
 @Composable
 fun AppSettingsScreen(
@@ -54,7 +55,7 @@ fun AppSettingsScreen(
                     },
                     navigationIcon = {
                         IconButton(
-                            modifier = Modifier.padding(start = 16.dp),
+                            modifier = Modifier.padding(start = MaterialTheme.spacing.medium),
                             onClick = onBackPress
                         ) {
                             Icon(
@@ -66,12 +67,12 @@ fun AppSettingsScreen(
                 )
             },
         ) {
-            Column(modifier = Modifier.padding(horizontal = 32.dp)) {
+            Column(modifier = Modifier.padding(horizontal = MaterialTheme.spacing.large)) {
                 Text(
-                    modifier = Modifier.padding(top = 16.dp),
+                    modifier = Modifier.padding(top = MaterialTheme.spacing.medium),
                     text = "Color Theme"
                 )
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
                 Row(
                     horizontalArrangement = Arrangement.Center,
                     modifier = Modifier.fillMaxSize(),
@@ -86,18 +87,14 @@ fun AppSettingsScreen(
                                 },
                                 shape = RoundedCornerShape(16.dp)
                             )
-                            .padding(4.dp)
+                            .padding(MaterialTheme.spacing.extraSmall)
                     ) {
                         Row {
                             options.forEach { triple ->
                                 Row(
                                     modifier = Modifier
                                         .width(100.dp)
-                                        .clip(
-                                            shape = RoundedCornerShape(
-                                                size = 16.dp,
-                                            )
-                                        )
+                                        .clip(shape = RoundedCornerShape(size = 16.dp))
                                         .clickable {
                                             onSelectionChange(triple.third)
                                         }
@@ -113,7 +110,7 @@ fun AppSettingsScreen(
                                             }
                                         )
                                         .padding(
-                                            vertical = 4.dp,
+                                            vertical = MaterialTheme.spacing.extraSmall,
                                         ),
                                     horizontalArrangement = Arrangement.Center
                                 ) {

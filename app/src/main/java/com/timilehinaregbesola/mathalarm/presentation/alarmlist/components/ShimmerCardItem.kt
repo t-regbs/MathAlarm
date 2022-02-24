@@ -10,7 +10,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush.Companion.linearGradient
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
-import androidx.compose.ui.unit.dp
+import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 
 @Composable
 fun ShimmerCardItem(
@@ -37,11 +37,11 @@ fun ShimmerCardItem(
                     .background(brush = brush)
             )
         }
-        Spacer(modifier = Modifier.height(8.dp))
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
         Surface(
             shape = MaterialTheme.shapes.small,
             modifier = Modifier
-                .padding(vertical = 8.dp)
+                .padding(vertical = MaterialTheme.spacing.small)
         ) {
             Spacer(
                 modifier = Modifier
