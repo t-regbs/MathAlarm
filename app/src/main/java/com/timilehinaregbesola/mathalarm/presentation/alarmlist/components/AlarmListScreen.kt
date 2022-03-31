@@ -124,13 +124,15 @@ fun ListDisplayScreen(
                         contentAlignment = Alignment.TopStart
                     ) {
                         var enabled = false
-                        var nearestIndex = 0
-                        var nearest: Long?
+                        var nearestIndex = -1
+                        var nearest: Long? = -1L
                         val nearestTime = if (alarmList.isNotEmpty()) {
-                            nearest = alarmList.first { it.isOn }.let { it1 ->
-                                getCal(it1, viewModel.calender.getCurrentCalendar()).timeInMillis
+                            if (nearest == -1L) {
+                                nearest = alarmList.firstOrNull { it.isOn }?.let { it1 ->
+                                    getCal(it1, viewModel.calender.getCurrentCalendar()).timeInMillis
+                                }
+                                nearestIndex = alarmList.indexOfFirst { it.isOn }
                             }
-                            nearestIndex = alarmList.indexOfFirst { it.isOn }
                             enabled = alarmList.any { it.isOn }
                             val now = System.currentTimeMillis()
                             val onAlarms = alarmList.filter { it.isOn }
