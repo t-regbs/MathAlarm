@@ -8,6 +8,19 @@ plugins {
     id(GradlePlugin.DAGGER_HILT)
     id(GradlePlugin.GOOGLE_SERVICES)
     id(GradlePlugin.FIREBASE_CRASHLYTICS)
+    id(GradlePlugin.KOTLIN_PARCELIZE)
+    id(GradlePlugin.KSP) version GradlePlugin.KSP_VERSION
+}
+
+kotlin {
+    sourceSets {
+        debug {
+            kotlin.srcDir("build/generated/ksp/debug/kotlin")
+        }
+        release {
+            kotlin.srcDir("build/generated/ksp/release/kotlin")
+        }
+    }
 }
 
 android {
@@ -99,6 +112,9 @@ dependencies {
     implementation(Deps.firebase.firebaseMessaging)
 
     implementation(Deps.splash.core)
+
+    implementation(Deps.destinations.destinationsCore)
+    ksp(Deps.destinations.ksp)
 
     addComposeDependencies()
 }

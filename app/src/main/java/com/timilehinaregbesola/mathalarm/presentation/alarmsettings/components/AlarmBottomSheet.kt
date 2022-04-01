@@ -28,14 +28,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavHostController
+import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.ramcosta.composedestinations.spec.DestinationStyle
 import com.timilehinaregbesola.mathalarm.R
-import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarmEvent
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AlarmSettingsViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.TimeState
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
 import com.timilehinaregbesola.mathalarm.presentation.ui.*
-import com.timilehinaregbesola.mathalarm.utils.Navigation
 import com.timilehinaregbesola.mathalarm.utils.PickRingtone
 import com.timilehinaregbesola.mathalarm.utils.checkPermissions
 import com.vanpra.composematerialdialogs.MaterialDialog
@@ -47,12 +51,17 @@ import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
 @ExperimentalMaterialApi
+@Destination(style = DestinationStyle.BottomSheet::class)
 @Composable
 fun AlarmBottomSheet(
     viewModel: AlarmSettingsViewModel = hiltViewModel(),
-    navController: NavHostController,
-    darkTheme: Boolean,
+    navigator: DestinationsNavigator,
+    pref: AlarmPreferencesImpl,
+    alarm: AlarmEntity
 ) {
+
+    viewModel.setAlarm(AlarmMapper().mapToDomainModel(alarm))
+    val darkTheme = pref.shouldUseDarkColors()
     val scaffoldState = rememberBottomSheetScaffoldState()
     val activity = LocalContext.current as Activity
     var timeCal = LocalTime.now()
@@ -66,15 +75,16 @@ fun AlarmBottomSheet(
                     )
                 }
                 is AlarmSettingsViewModel.UiEvent.SaveAlarm -> {
-                    navController.navigateUp()
+                    navigator.navigateUp()
+                }
+                is AlarmSettingsViewModel.UiEvent.TestAlarm -> {
+                    // Nav to Math Screen
                 }
             }
         }
     }
 
     val alarmTimeText: State<TimeState> = viewModel.alarmTime
-    navController
-        .currentBackStackEntry?.savedStateHandle?.set("current", viewModel.currentAlarmId)
     val dialog = remember { MaterialDialog() }
     dialog.build(
         buttons = {
@@ -244,20 +254,7 @@ fun AlarmBottomSheet(
                 .fillMaxWidth(),
             onClick = {
                 viewModel.onEvent(AddEditAlarmEvent.OnTestClick)
-                val testAlarm = Alarm()
-                testAlarm.apply {
-                    difficulty = viewModel.difficulty.value
-                    alarmTone = viewModel.tone.value.ifBlank {
-                        RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString()
-                    }
-                    snooze = 0
-                    vibrate = viewModel.vibrate.value
-                }
-                navController
-                    .previousBackStackEntry?.savedStateHandle?.set("currentEditAlarm", viewModel.currentAlarmId)
-//                navController.previousBackStackEntry?.savedStateHandle?.set("openSheet", true)
-                val id = viewModel.onAddTestAlarm(testAlarm)
-                navController.navigate(Navigation.buildAlarmMathPath(alarmId = id))
+//                navController.navigate(Navigation.buildAlarmMathPath(alarmId = id))
             },
             colors = ButtonDefaults.buttonColors(
                 backgroundColor = unSelectedDay,
@@ -274,7 +271,6 @@ fun AlarmBottomSheet(
                 .padding(top = 12.dp)
                 .fillMaxWidth(),
             onClick = {
-//                navController.previousBackStackEntry?.savedStateHandle?.set("openSheet", false)
                 viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
             },
             colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.secondary)

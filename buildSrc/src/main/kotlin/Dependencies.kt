@@ -34,6 +34,8 @@ object Versions {
 
     const val accompanist = "0.22.0-rc"
 
+    const val destinations = "1.4.0-beta"
+
     const val materialDialogs = "0.5.1"
 
     const val firebase = "27.1.0"
@@ -53,6 +55,7 @@ object Deps {
     val room = RoomDeps
     val dialog = DialogDeps
     val splash = SplashScreenDeps
+    val destinations = DestinationsDeps
 }
 
 object AndroidDeps {
@@ -94,6 +97,12 @@ object ComposeDeps {
 object AccompanistDeps {
     const val navigationMaterial =
         "com.google.accompanist:accompanist-navigation-material:${Versions.accompanist}"
+}
+
+object DestinationsDeps {
+    const val destinationsCore =
+        "io.github.raamcosta.compose-destinations:animations-core:${Versions.destinations}"
+    const val ksp = "io.github.raamcosta.compose-destinations:ksp:${Versions.destinations}"
 }
 
 object TestDeps {

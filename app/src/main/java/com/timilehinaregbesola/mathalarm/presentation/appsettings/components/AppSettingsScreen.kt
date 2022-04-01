@@ -19,14 +19,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.Theme
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 
+@Destination
 @Composable
 fun AppSettingsScreen(
-    onBackPress: () -> Unit,
-    pref: AlarmPreferencesImpl
+    navigator: DestinationsNavigator,
+    pref: AlarmPreferencesImpl,
 ) {
     val isDark = when (pref.theme) {
         Theme.DARK -> true
@@ -56,7 +59,7 @@ fun AppSettingsScreen(
                     navigationIcon = {
                         IconButton(
                             modifier = Modifier.padding(start = MaterialTheme.spacing.medium),
-                            onClick = onBackPress
+                            onClick = { navigator.navigateUp() }
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.ArrowBack,

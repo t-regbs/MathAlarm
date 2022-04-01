@@ -10,20 +10,24 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavHostController
+import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.navigation.DestinationsNavigator
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewModel
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
+import com.timilehinaregbesola.mathalarm.presentation.destinations.AlarmBottomSheetDestination
+import com.timilehinaregbesola.mathalarm.presentation.destinations.AppSettingsScreenDestination
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
-import com.timilehinaregbesola.mathalarm.utils.Navigation
 import com.timilehinaregbesola.mathalarm.utils.SAT
 import com.timilehinaregbesola.mathalarm.utils.UiEvent
 import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
@@ -34,13 +38,14 @@ import java.util.*
 @ExperimentalAnimationApi
 @ExperimentalFoundationApi
 @ExperimentalMaterialApi
+@Destination(start = true)
 @Composable
 fun ListDisplayScreen(
     viewModel: AlarmListViewModel = hiltViewModel(),
-    onNavigate: (UiEvent.Navigate) -> Unit,
-    navController: NavHostController,
-    darkTheme: Boolean,
+    navigator: DestinationsNavigator,
+    pref: AlarmPreferencesImpl,
 ) {
+    val darkTheme = pref.shouldUseDarkColors()
     val alarms = viewModel.alarms.collectAsState(null)
     val openDialog = remember { mutableStateOf(false) }
     val shouldOpenSheet = remember { mutableStateOf(true) }
@@ -57,30 +62,30 @@ fun ListDisplayScreen(
                         viewModel.onEvent(AlarmListEvent.OnUndoDeleteClick)
                     }
                 }
-                is UiEvent.Navigate -> onNavigate(event)
+                is UiEvent.Navigate -> navigator.navigate(AlarmBottomSheetDestination(alarm = AlarmMapper().mapFromDomainModel(event.alarm)))
                 else -> Unit
             }
         }
     }
 
-    val testScreenResult = navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Long>("testAlarmId")?.observeAsState()
-    val currEditAlarm = navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Long>("currentEditAlarm")?.observeAsState()
-    val previousRoute = navController.previousBackStackEntry?.destination?.route
-    testScreenResult?.value?.let { testId ->
-        navController
-            .currentBackStackEntry?.savedStateHandle?.remove<Long>("currentEditAlarm")
-        navController
-            .currentBackStackEntry?.savedStateHandle?.remove<Long>("testAlarmId")
-//        navController.currentBackStackEntry?.savedStateHandle?.set("openSheet", false)
-        viewModel.onEvent(AlarmListEvent.DeleteTestAlarm(testId))
-        if (previousRoute != Navigation.NAV_ALARM_LIST && shouldOpenSheet.value) {
-            currEditAlarm?.value?.let {
-                println("Prev: $previousRoute")
-                shouldOpenSheet.value = false
-                viewModel.onEvent(AlarmListEvent.OnEditAlarmClick(it))
-            }
-        }
-    }
+//    val testScreenResult = navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Long>("testAlarmId")?.observeAsState()
+//    val currEditAlarm = navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Long>("currentEditAlarm")?.observeAsState()
+//    val previousRoute = navController.previousBackStackEntry?.destination?.route
+//    testScreenResult?.value?.let { testId ->
+//        navController
+//            .currentBackStackEntry?.savedStateHandle?.remove<Long>("currentEditAlarm")
+//        navController
+//            .currentBackStackEntry?.savedStateHandle?.remove<Long>("testAlarmId")
+// //        navController.currentBackStackEntry?.savedStateHandle?.set("openSheet", false)
+//        viewModel.onEvent(AlarmListEvent.DeleteTestAlarm(testId))
+//        if (previousRoute != Navigation.NAV_ALARM_LIST && shouldOpenSheet.value) {
+//            currEditAlarm?.value?.let {
+//                println("Prev: $previousRoute")
+//                shouldOpenSheet.value = false
+//                viewModel.onEvent(AlarmListEvent.OnEditAlarmClick(it))
+//            }
+//        }
+//    }
     if (alarms.value == null) {
         ListLoadingShimmer(imageHeight = 180.dp)
     }
@@ -95,7 +100,7 @@ fun ListDisplayScreen(
                     ListTopAppBar(
                         openDialog = openDialog,
                         onSettingsClick = {
-                            navController.navigate(Navigation.NAV_APP_SETTINGS)
+                            navigator.navigate(AppSettingsScreenDestination)
                         }
                     )
                 },
@@ -170,7 +175,7 @@ fun ListDisplayScreen(
                                     AlarmItem(
                                         alarm = alarm,
                                         onEditAlarm = {
-                                            viewModel.onEvent(AlarmListEvent.OnEditAlarmClick(alarm.alarmId))
+                                            viewModel.onEvent(AlarmListEvent.OnEditAlarmClick(alarm))
                                         },
                                         onUpdateAlarm = viewModel::onUpdate,
                                         onDeleteAlarm = {
