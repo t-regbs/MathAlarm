@@ -30,12 +30,16 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
+import com.ramcosta.composedestinations.annotation.Destination
+import com.ramcosta.composedestinations.result.ResultBackNavigator
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmSnack
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.AlarmMathViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.ToneState
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
 import com.timilehinaregbesola.mathalarm.presentation.ui.*
 import com.timilehinaregbesola.mathalarm.utils.EASY
 import com.timilehinaregbesola.mathalarm.utils.HARD
@@ -53,41 +57,41 @@ private const val DIVIDE = 3
 @ExperimentalMaterialApi
 @InternalCoroutinesApi
 @ExperimentalComposeUiApi
+@Destination
 @Composable
 fun MathScreen(
-    navController: NavHostController,
-    alarmId: Long,
+    resultNavigator: ResultBackNavigator<AlarmEntity>,
+    curAlarm: AlarmEntity,
     viewModel: AlarmMathViewModel = hiltViewModel(),
-    darkTheme: Boolean,
+    pref: AlarmPreferencesImpl,
 ) {
+    val darkTheme = pref.shouldUseDarkColors()
     BackHandler { }
     var vibrator: Vibrator? = null
     val settingsId = 1143682591
-    val alarm = viewModel.retrieveAlarm(alarmId)
+//    val alarm = viewModel.retrieveAlarm(alarmId)
+    val alarm = AlarmMapper().mapToDomainModel(curAlarm)
     val context = LocalContext.current
-    alarm?.let {
+    alarm.let {
         if (alarm.alarmTone.isNotEmpty()) {
             val alarmUri = Uri.parse(alarm.alarmTone)
-            println(navController.previousBackStackEntry?.destination?.id)
-            if (navController.previousBackStackEntry?.destination?.id == settingsId) {
-                try {
-                    viewModel.audioPlayer.apply {
-                        reset()
-                        setDataSource(context, alarmUri)
-                        setAudioAttributes(
-                            AudioAttributes.Builder()
-                                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                                .setUsage(AudioAttributes.USAGE_ALARM)
-                                .build()
-                        )
-                        prepare()
-                        isLooping = true
-                        start()
-                        viewModel.startTimer()
-                    }
-                } catch (e: IOException) {
-                    e.printStackTrace()
+            try {
+                viewModel.audioPlayer.apply {
+                    reset()
+                    setDataSource(context, alarmUri)
+                    setAudioAttributes(
+                        AudioAttributes.Builder()
+                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                            .setUsage(AudioAttributes.USAGE_ALARM)
+                            .build()
+                    )
+                    prepare()
+                    isLooping = true
+                    start()
+                    viewModel.startTimer()
                 }
+            } catch (e: IOException) {
+                e.printStackTrace()
             }
         } else {
             Timber.d("Tone not available")
@@ -191,7 +195,7 @@ fun MathScreen(
                                     problem,
                                     viewModel.audioPlayer,
                                     keyboardController,
-                                    navController,
+                                    resultNavigator,
                                     alarm,
                                     viewModel,
                                     {
@@ -253,8 +257,8 @@ fun MathScreen(
                                         vibrator?.cancel()
                                         vibrator = null
                                     }
-                                    viewModel.snoozeAlarm(alarmId)
-                                    navController.popBackStack()
+                                    viewModel.snoozeAlarm(alarm.alarmId)
+                                    resultNavigator.navigateBack(curAlarm)
                                 },
                                 colors = ButtonDefaults.buttonColors(
                                     backgroundColor = snoozeButtonColor,
@@ -274,7 +278,7 @@ fun MathScreen(
                                     problem,
                                     viewModel.audioPlayer,
                                     keyboardController,
-                                    navController,
+                                    resultNavigator,
                                     alarm,
                                     viewModel,
                                     {
@@ -307,7 +311,7 @@ private fun dismissAlarm(
     problem: MathProblem,
     mp: MediaPlayer,
     keyboardController: SoftwareKeyboardController?,
-    navController: NavHostController,
+    resultNavigator: ResultBackNavigator<AlarmEntity>,
     alarm: Alarm,
     viewModel: AlarmMathViewModel,
     onStopMusic: () -> Unit,
@@ -319,10 +323,10 @@ private fun dismissAlarm(
             viewModel.completeAlarm(alarm)
         }
         if (!alarm.isSaved) {
-            navController
-                .previousBackStackEntry?.savedStateHandle?.set("testAlarmId", alarm.alarmId)
+//            navController
+//                .previousBackStackEntry?.savedStateHandle?.set("testAlarmId", alarm.alarmId)
         }
-        navController.popBackStack()
+        resultNavigator.navigateBack(AlarmMapper().mapFromDomainModel(alarm))
     } else {
         onWrongAnswer.invoke()
     }
@@ -441,10 +445,10 @@ data class MathProblem(
 @Composable
 fun MathPreview() {
     MathAlarmTheme(darkTheme = true) {
-        MathScreen(
-            navController = rememberNavController(),
-            alarmId = 1L,
-            darkTheme = true
-        )
+//        MathScreen(
+//            navController = rememberNavController(),
+//            alarmId = 1L,
+//            darkTheme = true
+//        )
     }
 }

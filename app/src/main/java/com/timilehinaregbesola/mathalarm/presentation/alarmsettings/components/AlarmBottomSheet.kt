@@ -39,17 +39,20 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AlarmSetting
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.TimeState
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
+import com.timilehinaregbesola.mathalarm.presentation.destinations.MathScreenDestination
 import com.timilehinaregbesola.mathalarm.presentation.ui.*
 import com.timilehinaregbesola.mathalarm.utils.PickRingtone
 import com.timilehinaregbesola.mathalarm.utils.checkPermissions
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.time.TimePickerDefaults
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
+import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
 import timber.log.Timber
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
+@OptIn(InternalCoroutinesApi::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
 @ExperimentalMaterialApi
 @Destination(style = DestinationStyle.BottomSheet::class)
 @Composable
@@ -79,6 +82,7 @@ fun AlarmBottomSheet(
                 }
                 is AlarmSettingsViewModel.UiEvent.TestAlarm -> {
                     // Nav to Math Screen
+                    navigator.navigate(MathScreenDestination(AlarmMapper().mapFromDomainModel(event.alarm)))
                 }
             }
         }

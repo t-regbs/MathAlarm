@@ -18,8 +18,11 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.navigation.DestinationsNavigator
+import com.ramcosta.composedestinations.result.NavResult
+import com.ramcosta.composedestinations.result.ResultRecipient
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewModel
@@ -27,14 +30,17 @@ import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferenc
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
 import com.timilehinaregbesola.mathalarm.presentation.destinations.AlarmBottomSheetDestination
 import com.timilehinaregbesola.mathalarm.presentation.destinations.AppSettingsScreenDestination
+import com.timilehinaregbesola.mathalarm.presentation.destinations.MathScreenDestination
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.utils.SAT
 import com.timilehinaregbesola.mathalarm.utils.UiEvent
 import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
+import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.flow.collect
 import timber.log.Timber
 import java.util.*
 
+@OptIn(InternalCoroutinesApi::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
 @ExperimentalAnimationApi
 @ExperimentalFoundationApi
 @ExperimentalMaterialApi
@@ -43,13 +49,26 @@ import java.util.*
 fun ListDisplayScreen(
     viewModel: AlarmListViewModel = hiltViewModel(),
     navigator: DestinationsNavigator,
+    resultRecipient: ResultRecipient<MathScreenDestination, AlarmEntity>,
     pref: AlarmPreferencesImpl,
 ) {
     val darkTheme = pref.shouldUseDarkColors()
     val alarms = viewModel.alarms.collectAsState(null)
     val openDialog = remember { mutableStateOf(false) }
-    val shouldOpenSheet = remember { mutableStateOf(true) }
     val scaffoldState = rememberScaffoldState()
+
+    resultRecipient.onNavResult { result ->
+        when (result) {
+            is NavResult.Canceled -> {
+                //
+            }
+            is NavResult.Value -> {
+                println("result reseived from GoToProfileConfirmationDestination = ${result.value}")
+                navigator.navigate(AlarmBottomSheetDestination(alarm = result.value))
+            }
+        }
+    }
+
     LaunchedEffect(key1 = true) {
         viewModel.uiEvent.collect { event ->
             when (event) {
@@ -68,24 +87,6 @@ fun ListDisplayScreen(
         }
     }
 
-//    val testScreenResult = navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Long>("testAlarmId")?.observeAsState()
-//    val currEditAlarm = navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Long>("currentEditAlarm")?.observeAsState()
-//    val previousRoute = navController.previousBackStackEntry?.destination?.route
-//    testScreenResult?.value?.let { testId ->
-//        navController
-//            .currentBackStackEntry?.savedStateHandle?.remove<Long>("currentEditAlarm")
-//        navController
-//            .currentBackStackEntry?.savedStateHandle?.remove<Long>("testAlarmId")
-// //        navController.currentBackStackEntry?.savedStateHandle?.set("openSheet", false)
-//        viewModel.onEvent(AlarmListEvent.DeleteTestAlarm(testId))
-//        if (previousRoute != Navigation.NAV_ALARM_LIST && shouldOpenSheet.value) {
-//            currEditAlarm?.value?.let {
-//                println("Prev: $previousRoute")
-//                shouldOpenSheet.value = false
-//                viewModel.onEvent(AlarmListEvent.OnEditAlarmClick(it))
-//            }
-//        }
-//    }
     if (alarms.value == null) {
         ListLoadingShimmer(imageHeight = 180.dp)
     }
