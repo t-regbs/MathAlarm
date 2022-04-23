@@ -61,6 +61,7 @@ fun ListDisplayScreen(
         when (result) {
             is NavResult.Canceled -> {
                 //
+                Timber.d("Nav was cancelled")
             }
             is NavResult.Value -> {
                 println("result reseived from GoToProfileConfirmationDestination = ${result.value}")

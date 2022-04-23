@@ -30,6 +30,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
+import com.ramcosta.composedestinations.annotation.DeepLink
 import com.ramcosta.composedestinations.annotation.Destination
 import com.ramcosta.composedestinations.result.ResultBackNavigator
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
@@ -57,7 +58,10 @@ private const val DIVIDE = 3
 @ExperimentalMaterialApi
 @InternalCoroutinesApi
 @ExperimentalComposeUiApi
-@Destination
+@Destination(
+    route = "math",
+    deepLinks = [DeepLink(uriPattern = "https://timilehinaregbesola.com/math/{curAlarm}")]
+)
 @Composable
 fun MathScreen(
     resultNavigator: ResultBackNavigator<AlarmEntity>,

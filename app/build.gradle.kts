@@ -61,6 +61,14 @@ android {
         disable += setOf("LogNotTimber", "StringFormatInTimber", "ThrowableNotAtBeginning", "BinaryOperationInTimber", "TimberArgCount", "TimberArgTypes", "TimberTagLength", "TimberExceptionLogging")
     }
 
+    applicationVariants.all {
+        kotlin.sourceSets {
+            getByName(name) {
+                kotlin.srcDir("build/generated/ksp/$name/kotlin")
+            }
+        }
+    }
+
     addComposeConfig()
 
     testOptions {
@@ -94,7 +102,7 @@ dependencies {
     implementation(Deps.coroutines.android)
 
     implementation(Deps.compose.activity)
-    implementation(Deps.accompanist.navigationMaterial)
+//    implementation(Deps.accompanist.navigationMaterial)
     implementation(Deps.compose.navigation)
 
     implementation(Deps.timber)

@@ -17,7 +17,9 @@ import com.google.accompanist.navigation.material.ExperimentalMaterialNavigation
 import com.timilehinaregbesola.mathalarm.AlarmReceiver
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.presentation.MainActivity
+import com.timilehinaregbesola.mathalarm.utils.AlarmEntityNavTypeSerializer
 import com.timilehinaregbesola.mathalarm.utils.getNotificationManager
 import kotlinx.coroutines.InternalCoroutinesApi
 import timber.log.Timber
@@ -91,7 +93,7 @@ class MathAlarmNotification(
             val bigPicStyle = NotificationCompat.BigPictureStyle()
                 .bigPicture(alarmImage)
                 .bigLargeIcon(null)
-//            setContentIntent(buildPendingIntent(task))
+//            setContentIntent(buildPendingIntent(alarm))
             setSmallIcon(R.drawable.icon)
             setContentTitle(context.getString(R.string.notification_title))
             setContentText(alarm.title)
@@ -102,15 +104,18 @@ class MathAlarmNotification(
             setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
             setCategory(NotificationCompat.CATEGORY_ALARM)
             setVibrate(vibratePattern)
-            setPriority(NotificationCompat.PRIORITY_HIGH)
+            priority = NotificationCompat.PRIORITY_HIGH
             setAutoCancel(true)
             addAction(getSnoozeAction(alarm))
         }
 
     private fun buildPendingIntent(alarm: Alarm): PendingIntent {
+        val curAlarm = AlarmMapper().mapFromDomainModel(alarm)
+        val uri = "https://timilehinaregbesola.com/math/${AlarmEntityNavTypeSerializer().toRouteString(curAlarm)}"
+        Timber.d("uri is $uri")
         val notificationIntent = Intent(
             Intent.ACTION_VIEW,
-            "https://timilehinaregbesola.com/alarmId=${alarm.alarmId}".toUri(),
+            uri.toUri(),
             context,
             MainActivity::class.java
         )

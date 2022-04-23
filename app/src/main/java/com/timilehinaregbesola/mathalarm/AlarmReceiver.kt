@@ -30,7 +30,10 @@ class AlarmReceiver : BroadcastReceiver() {
 
     private suspend fun handleIntent(intent: Intent?): Unit? {
         return when (intent?.action) {
-            ALARM_ACTION -> getAlarmId(intent)?.let { usecases.showAlarm(it) }
+            ALARM_ACTION -> getAlarmId(intent)?.let {
+                Timber.d("showAlarm")
+                usecases.showAlarm(it)
+            }
             COMPLETE_ACTION -> getAlarmId(intent)?.let { usecases.completeAlarm(it) }
             SNOOZE_ACTION -> getAlarmId(intent)?.let { usecases.snoozeAlarm(it) }
             Intent.ACTION_BOOT_COMPLETED -> {

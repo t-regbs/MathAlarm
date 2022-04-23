@@ -49,13 +49,6 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
                 navGraph = NavGraphs.root
             )
 //            NavHost(navController = navController, startDestination = Navigation.NAV_ALARM_LIST) {
-//                composable(Navigation.NAV_ALARM_LIST) {
-//                    ListDisplayScreen(
-//                        onNavigate = { navController.navigate(it.route) },
-//                        navController = navController,
-//                        darkTheme = preferences.shouldUseDarkColors()
-//                    )
-//                }
 //                composable(
 //                    route = Navigation.NAV_ALARM_MATH,
 //                    arguments = listOf(
@@ -68,26 +61,6 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
 //                    MathScreen(
 //                        navController = navController,
 //                        alarmId = it.getAlarmIdArgument(Navigation.NAV_ALARM_MATH_ARGUMENT),
-//                        darkTheme = preferences.shouldUseDarkColors()
-//                    )
-//                }
-//                composable(Navigation.NAV_APP_SETTINGS) {
-//                    AppSettingsScreen(
-//                        onBackPress = { navController.popBackStack() },
-//                        pref = preferences
-//                    )
-//                }
-//                bottomSheet(
-//                    route = Navigation.NAV_SETTINGS_SHEET,
-//                    arguments = listOf(
-//                        navArgument(Navigation.NAV_SETTINGS_SHEET_ARGUMENT) {
-//                            type = NavType.LongType
-//                            defaultValue = -1L
-//                        }
-//                    )
-//                ) {
-//                    AlarmBottomSheet(
-//                        navController = navController,
 //                        darkTheme = preferences.shouldUseDarkColors()
 //                    )
 //                }

@@ -63,10 +63,10 @@ class AlarmSettingsViewModel @Inject constructor(
     fun onEvent(event: AddEditAlarmEvent) {
         when (event) {
             is AddEditAlarmEvent.OnSaveTodoClick -> {
+                val alarm = createAlarm()
+                alarm.isSaved = true
+                runBlocking { usecases.addAlarm(alarm) }
                 viewModelScope.launch {
-                    val alarm = createAlarm()
-                    alarm.isSaved = true
-                    usecases.addAlarm(alarm)
                     if (isNewAlarm == true || isRescheduled == true) {
                         usecases.scheduleAlarm(alarm, _repeatWeekly.value)
                     }
