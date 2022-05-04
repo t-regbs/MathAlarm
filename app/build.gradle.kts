@@ -109,7 +109,7 @@ dependencies {
 
     implementation(Deps.hilt.android)
     kapt(Deps.hilt.androidCompiler)
-    implementation(Deps.hilt.lifecycleVm)
+//    implementation(Deps.hilt.lifecycleVm)
     kapt(Deps.hilt.compiler)
 
     implementation(Deps.dialog.datetime)

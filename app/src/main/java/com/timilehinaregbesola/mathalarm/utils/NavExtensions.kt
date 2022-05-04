@@ -26,7 +26,9 @@ object Navigation {
 class AlarmEntityNavTypeSerializer : DestinationsNavTypeSerializer<AlarmEntity> {
 
     override fun toRouteString(value: AlarmEntity): String {
-        return "${value.alarmId};${value.hour};${value.minute};${value.repeat};${value.repeatDays};${value.isOn};${value.difficulty};${value.alarmTone};${value.vibrate};${value.snooze};${value.title};${value.isSaved}"
+        return "${value.alarmId};${value.hour};${value.minute};${value.repeat};${value.repeatDays};" +
+            "${value.isOn};${value.difficulty};${value.alarmTone};${value.vibrate};" +
+            "${value.snooze};${value.title};${value.isSaved}"
     }
 
     override fun fromRouteString(routeStr: String): AlarmEntity {

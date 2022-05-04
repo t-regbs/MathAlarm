@@ -11,6 +11,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
@@ -36,11 +37,11 @@ import com.timilehinaregbesola.mathalarm.utils.SAT
 import com.timilehinaregbesola.mathalarm.utils.UiEvent
 import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
 import kotlinx.coroutines.InternalCoroutinesApi
-import kotlinx.coroutines.flow.collect
 import timber.log.Timber
 import java.util.*
 
-@OptIn(InternalCoroutinesApi::class, androidx.compose.ui.ExperimentalComposeUiApi::class)
+@InternalCoroutinesApi
+@ExperimentalComposeUiApi
 @ExperimentalAnimationApi
 @ExperimentalFoundationApi
 @ExperimentalMaterialApi

@@ -9,6 +9,6 @@ object GradlePlugin {
     const val GOOGLE_SERVICES = "com.google.gms.google-services"
     const val FIREBASE_CRASHLYTICS = "com.google.firebase.crashlytics"
     const val KSP = "com.google.devtools.ksp"
-    const val KSP_VERSION = "1.5.31-1.0.1"
+    const val KSP_VERSION = "1.6.10-1.0.4"
     const val PARCELIZE_VERSION = "1.5.31"
 }

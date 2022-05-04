@@ -13,7 +13,7 @@ fun DependencyHandler.addComposeDependencies() {
     implementation(Deps.compose.tooling)
     implementation(Deps.compose.runtime)
     implementation(Deps.compose.runtimeSaveable)
-    implementation(Deps.compose.runtimeLivedata)
+//    implementation(Deps.compose.runtimeLivedata)
     androidTestImplementation(Deps.test.composeUiTest)
 }
 

@@ -8,16 +8,16 @@ object Versions {
     const val targetSdk = 31
     const val minSdk = 21
 
-    const val material = "1.4.0"
+    const val material = "1.5.0"
     const val ktx = "1.7.0"
     const val room = "2.4.0-alpha01"
 
-    const val coroutines = "1.3.7"
+    const val coroutines = "1.6.1"
 
     const val timber = "4.7.1"
 
-    const val hiltAndroid = "2.38.1"
-    const val hiltAndroidCompiler = "2.37"
+    const val hiltAndroid = "2.41"
+    const val hiltAndroidCompiler = "2.41"
     const val hiltLifecycleViewmodel = "1.0.0-alpha03"
     const val hiltCompiler = "1.0.0"
 
@@ -28,11 +28,11 @@ object Versions {
     const val testJunitExt = "1.1.3"
     const val testCoroutines = "1.5.0"
 
-    const val compose = "1.0.4"
+    const val compose = "1.1.1"
     const val composeNav = "1.0.0-alpha03"
     const val composeActivity = "1.4.0"
 
-    const val accompanist = "0.22.0-rc"
+    const val accompanist = "0.23.1"
 
     const val destinations = "1.4.0-beta"
 
