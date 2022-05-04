@@ -19,6 +19,9 @@ import com.google.accompanist.navigation.material.ExperimentalMaterialNavigation
 import com.google.accompanist.navigation.material.ModalBottomSheetLayout
 import com.google.accompanist.navigation.material.bottomSheet
 import com.google.accompanist.navigation.material.rememberBottomSheetNavigator
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.ListDisplayScreen
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet
@@ -47,7 +50,6 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
             NavHost(navController = navController, startDestination = Navigation.NAV_ALARM_LIST) {
                 composable(Navigation.NAV_ALARM_LIST) {
                     ListDisplayScreen(
-                        onNavigate = { navController.navigate(it.route) },
                         navController = navController,
                         darkTheme = preferences.shouldUseDarkColors()
                     )
@@ -74,17 +76,16 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
                     )
                 }
                 bottomSheet(
-                    route = Navigation.NAV_SETTINGS_SHEET,
-                    arguments = listOf(
-                        navArgument(Navigation.NAV_SETTINGS_SHEET_ARGUMENT) {
-                            type = NavType.LongType
-                            defaultValue = -1L
-                        }
-                    )
-                ) {
+                    route = Navigation.NAV_SETTINGS_SHEET
+                ) { backStackEntry ->
+                    val alarmJson = backStackEntry.arguments?.getString(Navigation.NAV_SETTINGS_SHEET_ARGUMENT)
+                    val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+                    val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
+                    val alarmObject = jsonAdapter.fromJson(alarmJson)
                     AlarmBottomSheet(
                         navController = navController,
-                        darkTheme = preferences.shouldUseDarkColors()
+                        darkTheme = preferences.shouldUseDarkColors(),
+                        alarm = alarmObject!!
                     )
                 }
             }

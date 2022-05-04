@@ -7,6 +7,7 @@ plugins {
     id(GradlePlugin.KAPT)
     id(GradlePlugin.DAGGER_HILT)
     id(GradlePlugin.GOOGLE_SERVICES)
+    id(GradlePlugin.KOTLIN_PARCELIZE)
     id(GradlePlugin.FIREBASE_CRASHLYTICS)
 }
 
@@ -99,6 +100,7 @@ dependencies {
     implementation(Deps.firebase.firebaseMessaging)
 
     implementation(Deps.splash.core)
+    implementation(Deps.moshi)
 
     addComposeDependencies()
 }

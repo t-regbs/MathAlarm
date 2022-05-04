@@ -1,9 +1,12 @@
 package com.timilehinaregbesola.mathalarm.framework.database
 
+import android.os.Parcelable
 import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.parcelize.Parcelize
 
+@Parcelize
 @Entity(tableName = "alarms")
 data class AlarmEntity(
     @PrimaryKey(autoGenerate = true)
@@ -41,4 +44,4 @@ data class AlarmEntity(
 
     @ColumnInfo(name = "isSaved")
     val isSaved: Boolean,
-)
+) : Parcelable
