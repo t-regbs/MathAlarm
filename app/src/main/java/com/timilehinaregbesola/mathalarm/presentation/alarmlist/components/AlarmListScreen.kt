@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.runtime.*
+import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -49,19 +50,6 @@ fun ListDisplayScreen(
     val openDialog = remember { mutableStateOf(false) }
     val scaffoldState = rememberScaffoldState()
 
-//    resultRecipient.onNavResult { result ->
-//        when (result) {
-//            is NavResult.Canceled -> {
-//                //
-//                Timber.d("Nav was cancelled")
-//            }
-//            is NavResult.Value -> {
-//                println("result reseived from GoToProfileConfirmationDestination = ${result.value}")
-//                navigator.navigate(AlarmBottomSheetDestination(alarm = result.value))
-//            }
-//        }
-//    }
-
     LaunchedEffect(key1 = true) {
         viewModel.uiEvent.collect { event ->
             when (event) {
@@ -79,11 +67,25 @@ fun ListDisplayScreen(
                     val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
                     val json = jsonAdapter.toJson(AlarmMapper().mapFromDomainModel(event.alarm))
                     val alarmJson = URLEncoder.encode(json, "utf-8")
-//                    navigator.navigate(AlarmBottomSheetDestination(alarm = AlarmMapper().mapFromDomainModel(event.alarm)))
                     navController.navigate(Navigation.NAV_SETTINGS_SHEET.replace("{$NAV_SETTINGS_SHEET_ARGUMENT}", alarmJson))
                 }
                 else -> Unit
             }
+        }
+    }
+
+    val mathScreenResult = navController.currentBackStackEntry
+        ?.savedStateHandle
+        ?.getLiveData<AlarmEntity>("testAlarm")?.observeAsState()
+
+    LaunchedEffect(key1 = mathScreenResult) {
+        navController.currentBackStackEntry?.savedStateHandle?.remove<AlarmEntity>("testAlarm")
+        mathScreenResult?.value?.let {
+            val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+            val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
+            val json = jsonAdapter.toJson(it)
+            val alarmJson = URLEncoder.encode(json, "utf-8")
+            navController.navigate(Navigation.NAV_SETTINGS_SHEET.replace("{$NAV_SETTINGS_SHEET_ARGUMENT}", alarmJson))
         }
     }
 

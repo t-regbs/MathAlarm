@@ -29,6 +29,8 @@ import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
@@ -36,6 +38,7 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarm
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AlarmSettingsViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.TimeState
 import com.timilehinaregbesola.mathalarm.presentation.ui.*
+import com.timilehinaregbesola.mathalarm.utils.Navigation
 import com.timilehinaregbesola.mathalarm.utils.PickRingtone
 import com.timilehinaregbesola.mathalarm.utils.checkPermissions
 import com.vanpra.composematerialdialogs.MaterialDialog
@@ -43,6 +46,7 @@ import com.vanpra.composematerialdialogs.datetime.time.TimePickerDefaults
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
 import kotlinx.coroutines.flow.collectLatest
 import timber.log.Timber
+import java.net.URLEncoder
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
@@ -72,7 +76,12 @@ fun AlarmBottomSheet(
                 }
                 is AlarmSettingsViewModel.UiEvent.TestAlarm -> {
                     // Nav to Math Screen
-//                    navController.navigate(MathScreenDestination(AlarmMapper().mapFromDomainModel(event.alarm)))
+                    val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+                    val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
+                    val json = jsonAdapter.toJson(AlarmMapper().mapFromDomainModel(event.alarm))
+                    val alarmJson = URLEncoder.encode(json, "utf-8")
+//                    navigator.navigate(AlarmBottomSheetDestination(alarm = AlarmMapper().mapFromDomainModel(event.alarm)))
+                    navController.navigate(Navigation.NAV_ALARM_MATH.replace("{${Navigation.NAV_ALARM_MATH_ARGUMENT}}", alarmJson))
                 }
             }
         }

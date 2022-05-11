@@ -9,11 +9,9 @@ import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navArgument
 import androidx.navigation.navDeepLink
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.navigation.material.ModalBottomSheetLayout
@@ -29,7 +27,6 @@ import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferenc
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
 import com.timilehinaregbesola.mathalarm.utils.Navigation
-import com.timilehinaregbesola.mathalarm.utils.getAlarmIdArgument
 import kotlinx.coroutines.InternalCoroutinesApi
 
 @ExperimentalMaterialNavigationApi
@@ -51,21 +48,20 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
                 composable(Navigation.NAV_ALARM_LIST) {
                     ListDisplayScreen(
                         navController = navController,
-                        darkTheme = preferences.shouldUseDarkColors()
+                        darkTheme = preferences.shouldUseDarkColors(),
                     )
                 }
                 composable(
                     route = Navigation.NAV_ALARM_MATH,
-                    arguments = listOf(
-                        navArgument(Navigation.NAV_ALARM_MATH_ARGUMENT) {
-                            type = NavType.LongType
-                        }
-                    ),
                     deepLinks = listOf(navDeepLink { uriPattern = Navigation.NAV_ALARM_MATH_URI })
                 ) {
+                    val alarmJson = it.arguments?.getString(Navigation.NAV_ALARM_MATH_ARGUMENT)
+                    val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+                    val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
+                    val alarmObject = alarmJson?.let { it1 -> jsonAdapter.fromJson(it1) }
                     MathScreen(
                         navController = navController,
-                        alarmId = it.getAlarmIdArgument(Navigation.NAV_ALARM_MATH_ARGUMENT),
+                        alarm = alarmObject!!,
                         darkTheme = preferences.shouldUseDarkColors()
                     )
                 }
@@ -81,7 +77,7 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
                     val alarmJson = backStackEntry.arguments?.getString(Navigation.NAV_SETTINGS_SHEET_ARGUMENT)
                     val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
                     val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
-                    val alarmObject = jsonAdapter.fromJson(alarmJson)
+                    val alarmObject = alarmJson?.let { jsonAdapter.fromJson(it) }
                     AlarmBottomSheet(
                         navController = navController,
                         darkTheme = preferences.shouldUseDarkColors(),
