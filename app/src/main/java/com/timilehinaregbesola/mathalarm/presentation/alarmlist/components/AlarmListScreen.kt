@@ -65,11 +65,9 @@ fun ListDisplayScreen(
                     }
                 }
                 is UiEvent.Navigate -> {
-                    val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
-                    val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
-                    val json = jsonAdapter.toJson(AlarmMapper().mapFromDomainModel(event.alarm))
-                    val alarmJson = URLEncoder.encode(json, "utf-8")
-                    navController.navigate(Navigation.NAV_SETTINGS_SHEET.replace("{$NAV_SETTINGS_SHEET_ARGUMENT}", alarmJson))
+                    buildArgAndNavigate(AlarmMapper().mapFromDomainModel(event.alarm)) { alarmJson ->
+                        navController.navigate(Navigation.NAV_SETTINGS_SHEET.replace("{$NAV_SETTINGS_SHEET_ARGUMENT}", alarmJson))
+                    }
                 }
                 else -> Unit
             }
@@ -84,11 +82,9 @@ fun ListDisplayScreen(
                         val cancelled = navController.currentBackStackEntry?.savedStateHandle?.remove<AlarmEntity>("testAlarm")
 
                         cancelled?.let {
-                            val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
-                            val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
-                            val json = jsonAdapter.toJson(it)
-                            val alarmJson = URLEncoder.encode(json, "utf-8")
-                            navController.navigate(Navigation.NAV_SETTINGS_SHEET.replace("{$NAV_SETTINGS_SHEET_ARGUMENT}", alarmJson))
+                            buildArgAndNavigate(it) { alarmJson ->
+                                navController.navigate(Navigation.NAV_SETTINGS_SHEET.replace("{$NAV_SETTINGS_SHEET_ARGUMENT}", alarmJson))
+                            }
                         }
                     }
 
@@ -239,6 +235,14 @@ fun ListDisplayScreen(
             }
         }
     }
+}
+
+private fun buildArgAndNavigate(alarm: AlarmEntity, onNavigate: (String) -> Unit) {
+    val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+    val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
+    val json = jsonAdapter.toJson(alarm)
+    val alarmJson = URLEncoder.encode(json, "utf-8")
+    onNavigate(alarmJson)
 }
 
 private fun getCal(alarm: Alarm, cal: Calendar): Calendar {
