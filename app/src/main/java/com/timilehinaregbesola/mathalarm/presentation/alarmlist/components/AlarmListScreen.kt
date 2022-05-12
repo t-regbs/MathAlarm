@@ -10,13 +10,15 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavHostController
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -74,18 +76,35 @@ fun ListDisplayScreen(
         }
     }
 
-    val mathScreenResult = navController.currentBackStackEntry
-        ?.savedStateHandle
-        ?.getLiveData<AlarmEntity>("testAlarm")?.observeAsState()
+    DisposableEffect(key1 = Unit) {
+        val observer = object : LifecycleEventObserver {
+            override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+                when (event) {
+                    Lifecycle.Event.ON_RESUME -> {
+                        val cancelled = navController.currentBackStackEntry?.savedStateHandle?.remove<AlarmEntity>("testAlarm")
 
-    LaunchedEffect(key1 = mathScreenResult) {
-        navController.currentBackStackEntry?.savedStateHandle?.remove<AlarmEntity>("testAlarm")
-        mathScreenResult?.value?.let {
-            val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
-            val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
-            val json = jsonAdapter.toJson(it)
-            val alarmJson = URLEncoder.encode(json, "utf-8")
-            navController.navigate(Navigation.NAV_SETTINGS_SHEET.replace("{$NAV_SETTINGS_SHEET_ARGUMENT}", alarmJson))
+                        cancelled?.let {
+                            val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+                            val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
+                            val json = jsonAdapter.toJson(it)
+                            val alarmJson = URLEncoder.encode(json, "utf-8")
+                            navController.navigate(Navigation.NAV_SETTINGS_SHEET.replace("{$NAV_SETTINGS_SHEET_ARGUMENT}", alarmJson))
+                        }
+                    }
+
+                    Lifecycle.Event.ON_DESTROY -> {
+                        navController.currentBackStackEntry?.lifecycle?.removeObserver(this)
+                    }
+
+                    else -> Unit
+                }
+            }
+        }
+
+        navController.currentBackStackEntry?.lifecycle?.addObserver(observer)
+
+        onDispose {
+            navController.currentBackStackEntry?.lifecycle?.removeObserver(observer)
         }
     }
 
