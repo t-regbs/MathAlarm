@@ -35,7 +35,7 @@ interface AlarmDao {
     @Query("SELECT * FROM alarms WHERE ison = :state")
     fun getActiveAlarms(state: Boolean = true): List<AlarmEntity>
 
-    @Query("SELECT * FROM alarms WHERE isSaved = :state")
+    @Query("SELECT * FROM alarms WHERE isSaved = :state ORDER BY alarmid DESC")
     fun getSavedAlarms(state: Boolean = true): Flow<List<AlarmEntity>>
 
     @Query("SELECT COUNT(*) FROM alarms")
