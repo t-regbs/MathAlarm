@@ -14,13 +14,18 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.core.app.NotificationCompat
 import androidx.core.net.toUri
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.timilehinaregbesola.mathalarm.AlarmReceiver
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.presentation.MainActivity
 import com.timilehinaregbesola.mathalarm.utils.getNotificationManager
 import kotlinx.coroutines.InternalCoroutinesApi
 import timber.log.Timber
+import java.net.URLEncoder
 
 /**
  * Handles the notification related to the Task reminders.
@@ -108,9 +113,13 @@ class MathAlarmNotification(
         }
 
     private fun buildPendingIntent(alarm: Alarm): PendingIntent {
+        val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+        val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
+        val json = jsonAdapter.toJson(AlarmMapper().mapFromDomainModel(alarm))
+        val alarmJson = URLEncoder.encode(json, "utf-8")
         val notificationIntent = Intent(
             Intent.ACTION_VIEW,
-            "https://timilehinaregbesola.com/alarmId=${alarm.alarmId}".toUri(),
+            "https://timilehinaregbesola.com/alarmId=$alarmJson".toUri(),
             context,
             MainActivity::class.java
         )

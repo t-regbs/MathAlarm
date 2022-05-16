@@ -42,7 +42,10 @@ class AlarmReceiver : BroadcastReceiver() {
                 usecases.rescheduleFutureAlarms()
             }
             "android.intent.action.MY_PACKAGE_REPLACED" -> usecases.rescheduleFutureAlarms()
-            else -> Timber.e("Action not supported")
+            else -> {
+                Timber.e("action: ${intent?.action}")
+                Timber.e("Action not supported")
+            }
         }
     }
 
