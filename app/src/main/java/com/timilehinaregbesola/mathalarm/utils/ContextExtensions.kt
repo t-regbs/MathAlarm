@@ -4,6 +4,8 @@ package com.timilehinaregbesola.mathalarm.utils
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
+import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.core.app.AlarmManagerCompat
@@ -63,4 +65,25 @@ fun Context.cancelAlarm(operation: PendingIntent?) {
  */
 fun Context.showToast(@StringRes messageId: Int, duration: Int = Toast.LENGTH_SHORT) {
     Toast.makeText(this, messageId, duration).show()
+}
+
+fun Context.email(
+    chooserTitle: String,
+    email: String = "",
+    subject: String = "",
+    text: String = ""
+) {
+    val intent = Intent(Intent.ACTION_SENDTO)
+    intent.data = Uri.parse("mailto:")
+
+    if (email.isNotEmpty())
+        intent.putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
+
+    if (subject.isNotEmpty())
+        intent.putExtra(Intent.EXTRA_SUBJECT, subject)
+
+    if (text.isNotEmpty())
+        intent.putExtra(Intent.EXTRA_TEXT, text)
+
+    startActivity(Intent.createChooser(intent, chooserTitle))
 }
