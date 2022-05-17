@@ -10,25 +10,33 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
 import androidx.compose.runtime.*
-import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavHostController
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewModel
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.utils.Navigation
+import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_SETTINGS_SHEET_ARGUMENT
 import com.timilehinaregbesola.mathalarm.utils.SAT
 import com.timilehinaregbesola.mathalarm.utils.UiEvent
 import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
 import kotlinx.coroutines.flow.collect
 import timber.log.Timber
+import java.net.URLEncoder
 import java.util.*
 
 @ExperimentalAnimationApi
@@ -37,14 +45,13 @@ import java.util.*
 @Composable
 fun ListDisplayScreen(
     viewModel: AlarmListViewModel = hiltViewModel(),
-    onNavigate: (UiEvent.Navigate) -> Unit,
     navController: NavHostController,
     darkTheme: Boolean,
 ) {
     val alarms = viewModel.alarms.collectAsState(null)
     val openDialog = remember { mutableStateOf(false) }
-    val shouldOpenSheet = remember { mutableStateOf(true) }
     val scaffoldState = rememberScaffoldState()
+
     LaunchedEffect(key1 = true) {
         viewModel.uiEvent.collect { event ->
             when (event) {
@@ -57,30 +64,46 @@ fun ListDisplayScreen(
                         viewModel.onEvent(AlarmListEvent.OnUndoDeleteClick)
                     }
                 }
-                is UiEvent.Navigate -> onNavigate(event)
+                is UiEvent.Navigate -> {
+                    buildArgAndNavigate(AlarmMapper().mapFromDomainModel(event.alarm)) { alarmJson ->
+                        navController.navigate(Navigation.NAV_SETTINGS_SHEET.replace("{$NAV_SETTINGS_SHEET_ARGUMENT}", alarmJson))
+                    }
+                }
                 else -> Unit
             }
         }
     }
 
-    val testScreenResult = navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Long>("testAlarmId")?.observeAsState()
-    val currEditAlarm = navController.currentBackStackEntry?.savedStateHandle?.getLiveData<Long>("currentEditAlarm")?.observeAsState()
-    val previousRoute = navController.previousBackStackEntry?.destination?.route
-    testScreenResult?.value?.let { testId ->
-        navController
-            .currentBackStackEntry?.savedStateHandle?.remove<Long>("currentEditAlarm")
-        navController
-            .currentBackStackEntry?.savedStateHandle?.remove<Long>("testAlarmId")
-//        navController.currentBackStackEntry?.savedStateHandle?.set("openSheet", false)
-        viewModel.onEvent(AlarmListEvent.DeleteTestAlarm(testId))
-        if (previousRoute != Navigation.NAV_ALARM_LIST && shouldOpenSheet.value) {
-            currEditAlarm?.value?.let {
-                println("Prev: $previousRoute")
-                shouldOpenSheet.value = false
-                viewModel.onEvent(AlarmListEvent.OnEditAlarmClick(it))
+    DisposableEffect(key1 = Unit) {
+        val observer = object : LifecycleEventObserver {
+            override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
+                when (event) {
+                    Lifecycle.Event.ON_RESUME -> {
+                        val cancelled = navController.currentBackStackEntry?.savedStateHandle?.remove<AlarmEntity>("testAlarm")
+
+                        cancelled?.let {
+                            buildArgAndNavigate(it) { alarmJson ->
+                                navController.navigate(Navigation.NAV_SETTINGS_SHEET.replace("{$NAV_SETTINGS_SHEET_ARGUMENT}", alarmJson))
+                            }
+                        }
+                    }
+
+                    Lifecycle.Event.ON_DESTROY -> {
+                        navController.currentBackStackEntry?.lifecycle?.removeObserver(this)
+                    }
+
+                    else -> Unit
+                }
             }
         }
+
+        navController.currentBackStackEntry?.lifecycle?.addObserver(observer)
+
+        onDispose {
+            navController.currentBackStackEntry?.lifecycle?.removeObserver(observer)
+        }
     }
+
     if (alarms.value == null) {
         ListLoadingShimmer(imageHeight = 180.dp)
     }
@@ -124,13 +147,15 @@ fun ListDisplayScreen(
                         contentAlignment = Alignment.TopStart
                     ) {
                         var enabled = false
-                        var nearestIndex = 0
-                        var nearest: Long?
+                        var nearestIndex = -1
+                        var nearest: Long? = -1L
                         val nearestTime = if (alarmList.isNotEmpty()) {
-                            nearest = alarmList.first { it.isOn }.let { it1 ->
-                                getCal(it1, viewModel.calender.getCurrentCalendar()).timeInMillis
+                            if (nearest == -1L) {
+                                nearest = alarmList.firstOrNull { it.isOn }?.let { it1 ->
+                                    getCal(it1, viewModel.calender.getCurrentCalendar()).timeInMillis
+                                }
+                                nearestIndex = alarmList.indexOfFirst { it.isOn }
                             }
-                            nearestIndex = alarmList.indexOfFirst { it.isOn }
                             enabled = alarmList.any { it.isOn }
                             val now = System.currentTimeMillis()
                             val onAlarms = alarmList.filter { it.isOn }
@@ -168,7 +193,7 @@ fun ListDisplayScreen(
                                     AlarmItem(
                                         alarm = alarm,
                                         onEditAlarm = {
-                                            viewModel.onEvent(AlarmListEvent.OnEditAlarmClick(alarm.alarmId))
+                                            viewModel.onEvent(AlarmListEvent.OnEditAlarmClick(alarm))
                                         },
                                         onUpdateAlarm = viewModel::onUpdate,
                                         onDeleteAlarm = {
@@ -210,6 +235,14 @@ fun ListDisplayScreen(
             }
         }
     }
+}
+
+private fun buildArgAndNavigate(alarm: AlarmEntity, onNavigate: (String) -> Unit) {
+    val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+    val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
+    val json = jsonAdapter.toJson(alarm)
+    val alarmJson = URLEncoder.encode(json, "utf-8")
+    onNavigate(alarmJson)
 }
 
 private fun getCal(alarm: Alarm, cal: Calendar): Calendar {

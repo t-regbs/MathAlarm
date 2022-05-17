@@ -29,8 +29,11 @@ import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import com.squareup.moshi.Moshi
+import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.timilehinaregbesola.mathalarm.R
-import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarmEvent
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AlarmSettingsViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.TimeState
@@ -43,6 +46,7 @@ import com.vanpra.composematerialdialogs.datetime.time.TimePickerDefaults
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
 import kotlinx.coroutines.flow.collectLatest
 import timber.log.Timber
+import java.net.URLEncoder
 import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
@@ -52,7 +56,9 @@ fun AlarmBottomSheet(
     viewModel: AlarmSettingsViewModel = hiltViewModel(),
     navController: NavHostController,
     darkTheme: Boolean,
+    alarm: AlarmEntity
 ) {
+    viewModel.setAlarm(AlarmMapper().mapToDomainModel(alarm))
     val scaffoldState = rememberBottomSheetScaffoldState()
     val activity = LocalContext.current as Activity
     var timeCal = LocalTime.now()
@@ -68,13 +74,21 @@ fun AlarmBottomSheet(
                 is AlarmSettingsViewModel.UiEvent.SaveAlarm -> {
                     navController.navigateUp()
                 }
+                is AlarmSettingsViewModel.UiEvent.TestAlarm -> {
+                    navController
+                        .previousBackStackEntry?.savedStateHandle?.set("fromSheet", true)
+                    // Nav to Math Screen
+                    val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+                    val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
+                    val json = jsonAdapter.toJson(AlarmMapper().mapFromDomainModel(event.alarm))
+                    val alarmJson = URLEncoder.encode(json, "utf-8")
+                    navController.navigate(Navigation.NAV_ALARM_MATH.replace("{${Navigation.NAV_ALARM_MATH_ARGUMENT}}", alarmJson))
+                }
             }
         }
     }
 
     val alarmTimeText: State<TimeState> = viewModel.alarmTime
-    navController
-        .currentBackStackEntry?.savedStateHandle?.set("current", viewModel.currentAlarmId)
     val dialog = remember { MaterialDialog() }
     dialog.build(
         buttons = {
@@ -244,20 +258,7 @@ fun AlarmBottomSheet(
                 .fillMaxWidth(),
             onClick = {
                 viewModel.onEvent(AddEditAlarmEvent.OnTestClick)
-                val testAlarm = Alarm()
-                testAlarm.apply {
-                    difficulty = viewModel.difficulty.value
-                    alarmTone = viewModel.tone.value.ifBlank {
-                        RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString()
-                    }
-                    snooze = 0
-                    vibrate = viewModel.vibrate.value
-                }
-                navController
-                    .previousBackStackEntry?.savedStateHandle?.set("currentEditAlarm", viewModel.currentAlarmId)
-//                navController.previousBackStackEntry?.savedStateHandle?.set("openSheet", true)
-                val id = viewModel.onAddTestAlarm(testAlarm)
-                navController.navigate(Navigation.buildAlarmMathPath(alarmId = id))
+//                navController.navigate(Navigation.buildAlarmMathPath(alarmId = id))
             },
             colors = ButtonDefaults.buttonColors(
                 backgroundColor = unSelectedDay,
@@ -274,7 +275,6 @@ fun AlarmBottomSheet(
                 .padding(top = 12.dp)
                 .fillMaxWidth(),
             onClick = {
-//                navController.previousBackStackEntry?.savedStateHandle?.set("openSheet", false)
                 viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
             },
             colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.secondary)

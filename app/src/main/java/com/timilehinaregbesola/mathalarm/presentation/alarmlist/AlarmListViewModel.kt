@@ -4,7 +4,6 @@ import androidx.lifecycle.*
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.provider.CalendarProvider
-import com.timilehinaregbesola.mathalarm.utils.Navigation
 import com.timilehinaregbesola.mathalarm.utils.UiEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.* // ktlint-disable no-wildcard-imports
@@ -30,7 +29,7 @@ class AlarmListViewModel @Inject constructor(
         when (event) {
             is AlarmListEvent.OnEditAlarmClick -> {
                 // Navigate to bottom sheet
-                sendUiEvent(UiEvent.Navigate(Navigation.buildSettingsPath(event.alarmId)))
+                sendUiEvent(UiEvent.Navigate(event.alarm))
             }
             is AlarmListEvent.OnAlarmOnChange -> {
                 viewModelScope.launch {
@@ -45,8 +44,8 @@ class AlarmListViewModel @Inject constructor(
             is AlarmListEvent.OnAddAlarmClick -> {
                 // Navigate to bottom sheet
                 viewModelScope.launch {
-                    val id = usecases.addAlarm(Alarm())
-                    sendUiEvent(UiEvent.Navigate(Navigation.buildSettingsPath(id)))
+//                    val id = usecases.addAlarm(Alarm())
+                    sendUiEvent(UiEvent.Navigate(Alarm()))
                 }
             }
             is AlarmListEvent.OnUndoDeleteClick -> {

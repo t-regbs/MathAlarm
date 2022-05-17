@@ -39,6 +39,7 @@ object Versions {
     const val firebase = "27.1.0"
 
     const val splashScreen = "1.0.0-beta01"
+    const val moshi = "1.13.0"
 }
 
 object Deps {
@@ -53,6 +54,7 @@ object Deps {
     val room = RoomDeps
     val dialog = DialogDeps
     val splash = SplashScreenDeps
+    val moshi = "com.squareup.moshi:moshi-kotlin:${Versions.moshi}"
 }
 
 object AndroidDeps {
