@@ -75,12 +75,13 @@ fun AlarmBottomSheet(
                     navController.navigateUp()
                 }
                 is AlarmSettingsViewModel.UiEvent.TestAlarm -> {
+                    navController
+                        .previousBackStackEntry?.savedStateHandle?.set("fromSheet", true)
                     // Nav to Math Screen
                     val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
                     val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
                     val json = jsonAdapter.toJson(AlarmMapper().mapFromDomainModel(event.alarm))
                     val alarmJson = URLEncoder.encode(json, "utf-8")
-//                    navigator.navigate(AlarmBottomSheetDestination(alarm = AlarmMapper().mapFromDomainModel(event.alarm)))
                     navController.navigate(Navigation.NAV_ALARM_MATH.replace("{${Navigation.NAV_ALARM_MATH_ARGUMENT}}", alarmJson))
                 }
             }

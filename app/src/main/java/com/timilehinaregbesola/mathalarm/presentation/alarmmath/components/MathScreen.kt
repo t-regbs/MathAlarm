@@ -317,11 +317,10 @@ private fun dismissAlarm(
         if (!alarm.repeat) {
             viewModel.completeAlarm(AlarmMapper().mapToDomainModel(alarm))
         }
-//        if (!alarm.isSaved) {
-//
-//        }
-        navController
-            .previousBackStackEntry?.savedStateHandle?.set("testAlarm", alarm)
+        val fromSheet = navController.previousBackStackEntry?.savedStateHandle?.remove<Boolean>("fromSheet")
+        fromSheet?.let {
+            navController.previousBackStackEntry?.savedStateHandle?.set("testAlarm", alarm)
+        }
         navController.popBackStack()
     } else {
         onWrongAnswer.invoke()
