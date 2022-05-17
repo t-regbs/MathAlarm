@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.MutableState
@@ -34,23 +35,8 @@ fun ListTopAppBar(
             IconButton(onClick = { openDialog.value = true }) {
                 Icon(imageVector = Icons.Outlined.DeleteSweep, contentDescription = null)
             }
-            IconButton(onClick = { showSettings.value = !showSettings.value }) {
-                Icon(imageVector = Icons.Filled.MoreVert, contentDescription = "More")
-            }
-            DropdownMenu(
-                expanded = showSettings.value,
-                onDismissRequest = { showSettings.value = false }
-            ) {
-                DropdownMenuItem(
-                    modifier = Modifier.testTag(TestTags.SETTINGS_DROPDOWN),
-                    onClick = {
-                        // Navigate to settings
-                        showSettings.value = false
-                        onSettingsClick.invoke()
-                    }
-                ) {
-                    Text(text = "Settings")
-                }
+            IconButton(onClick = { onSettingsClick.invoke() }) {
+                Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings")
             }
         }
     )
