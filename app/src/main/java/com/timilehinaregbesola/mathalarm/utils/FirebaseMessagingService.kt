@@ -64,12 +64,12 @@ class FirebaseMessagingService : FirebaseMessagingService() {
         val soundUri: Uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             @SuppressLint("WrongConstant") val notificationChannel = NotificationChannel(
-                "channel_id",
-                "channel_name",
+                channel.getChannelId(),
+                getString(R.string.channel_alarm_name),
                 NotificationManager.IMPORTANCE_MAX
             )
-            notificationChannel.description = "channel_name"
-            notificationChannel.name = "channel_name"
+            notificationChannel.description = getString(R.string.channel_alarm_name)
+            notificationChannel.name = getString(R.string.channel_alarm_name)
             notificationManager!!
                 .createNotificationChannel(notificationChannel)
         }
@@ -91,10 +91,10 @@ class FirebaseMessagingService : FirebaseMessagingService() {
                     .setDefaults(Notification.DEFAULT_ALL)
                     .setPriority(NotificationManager.IMPORTANCE_MAX)
                     .setOnlyAlertOnce(true)
-                    .setChannelId("channel_id")
+                    .setChannelId(channel.getChannelId())
                     .setColor(ContextCompat.getColor(applicationContext, R.color.white))
             } else {
-                NotificationCompat.Builder(this, "channel_id")
+                NotificationCompat.Builder(this, channel.getChannelId())
                     .setSmallIcon(R.drawable.icon)
                     .setLargeIcon(BitmapFactory.decodeResource(resources, R.drawable.icon))
                     .setStyle(
@@ -109,7 +109,7 @@ class FirebaseMessagingService : FirebaseMessagingService() {
                     .setContentIntent(pendingIntent)
                     .setDefaults(Notification.DEFAULT_ALL)
                     .setOnlyAlertOnce(true)
-                    .setChannelId("channel_id")
+                    .setChannelId(channel.getChannelId())
                     .setColor(ContextCompat.getColor(applicationContext, R.color.white))
             }
         if (notificationManager != null) {
