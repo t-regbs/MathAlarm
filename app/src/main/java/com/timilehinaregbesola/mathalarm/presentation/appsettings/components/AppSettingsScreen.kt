@@ -164,7 +164,7 @@ fun AppSettingsScreen(
                         sendIntent.action = Intent.ACTION_SEND
                         sendIntent.putExtra(
                             Intent.EXTRA_TEXT,
-                            "MathAlarm Clock\n Solve math problems to wake up! https://play.google.com/store/apps/details?id=" + BuildConfig.APPLICATION_ID
+                            "MathAlarm Clock\nSolve math problems to wake up! https://play.google.com/store/apps/details?id=" + BuildConfig.APPLICATION_ID
                         )
                         sendIntent.type = "text/plain"
                         context.startActivity(Intent.createChooser(sendIntent, "Share Mathalarm"))
