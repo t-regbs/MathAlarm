@@ -3,6 +3,7 @@ package com.timilehinaregbesola.mathalarm.notification
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.os.Build
 import com.timilehinaregbesola.mathalarm.AlarmReceiver
 import com.timilehinaregbesola.mathalarm.AlarmReceiver.Companion.ALARM_ACTION
 import com.timilehinaregbesola.mathalarm.AlarmReceiver.Companion.EXTRA_TASK
@@ -78,18 +79,28 @@ class AlarmNotificationScheduler(private val context: Context) {
                 val intentId = id.toInt()
                 Timber.d("intent id: $intentId")
                 // check if a previous alarm has been set
-                if (PendingIntent.getBroadcast(
-                        context, intentId, alarmIntent, PendingIntent.FLAG_NO_CREATE
-                    ) != null
-                ) {
+                val isSet = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    PendingIntent.getBroadcast(
+                        context, intentId, alarmIntent, PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_MUTABLE
+                    )
+                } else {
+                    PendingIntent.getBroadcast(context, intentId, alarmIntent, PendingIntent.FLAG_NO_CREATE)
+                }
+                if ( isSet != null) {
                     if (!reschedule) {
 //                        context.showToast(R.string.alarm_duplicate_toast_text)
                     }
                     return false
                 }
-                val pendingIntent = PendingIntent.getBroadcast(
-                    context, intentId, alarmIntent, PendingIntent.FLAG_CANCEL_CURRENT
-                )
+                val pendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    PendingIntent.getBroadcast(
+                        context, intentId, alarmIntent, PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE
+                    )
+                } else {
+                    PendingIntent.getBroadcast(
+                        context, intentId, alarmIntent, PendingIntent.FLAG_CANCEL_CURRENT
+                    )
+                }
                 alarmIntentList.add(pendingIntent)
                 time.add(cal)
             }
@@ -118,10 +129,17 @@ class AlarmNotificationScheduler(private val context: Context) {
                     .append(alarm.hour).append(alarm.minute)
                 val id = stringId.toString().split("-").joinToString("")
                 val intentId = id.toInt()
-                val cancelPendingIntent = PendingIntent.getBroadcast(
-                    context, intentId, receiverIntent,
-                    PendingIntent.FLAG_UPDATE_CURRENT
-                )
+                val cancelPendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    PendingIntent.getBroadcast(
+                        context, intentId, receiverIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+                    )
+                } else {
+                    PendingIntent.getBroadcast(
+                        context, intentId, receiverIntent,
+                        PendingIntent.FLAG_UPDATE_CURRENT
+                    )
+                }
                 context.cancelAlarm(cancelPendingIntent)
                 cancelPendingIntent.cancel()
             }

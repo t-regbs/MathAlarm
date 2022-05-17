@@ -74,7 +74,8 @@ fun AppSettingsScreen(
                 Column(modifier = Modifier.padding(horizontal = MaterialTheme.spacing.large)) {
                     Text(
                         modifier = Modifier.padding(top = MaterialTheme.spacing.medium),
-                        text = "Color Theme"
+                        text = "Color Theme",
+                        color = MaterialTheme.colors.secondary
                     )
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
                     Row(
@@ -141,7 +142,8 @@ fun AppSettingsScreen(
                     val context = LocalContext.current
                     Text(
                         modifier = Modifier.padding(top = MaterialTheme.spacing.medium),
-                        text = "Help"
+                        text = "Help",
+                        color = MaterialTheme.colors.secondary
                     )
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
                     HelpItem(
