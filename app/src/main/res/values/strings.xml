@@ -87,4 +87,8 @@
 
     <!-- We default using the system default -->
     <string name="pref_theme_default_value" translatable="false">@string/pref_theme_system_value</string>
+    <string name="task_alarm_permission_dialog_title">Alarms</string>
+    <string name="task_alarm_permission_dialog_text">" In order for alarms to work, Math alarm needs the permission to set alarms. If this permission is not granted, the existing alarms will not work as well."</string>
+    <string name="task_alarm_permission_dialog_confirm">Grant</string>
+    <string name="task_alarm_permission_dialog_cancel">Not now</string>
 </resources>

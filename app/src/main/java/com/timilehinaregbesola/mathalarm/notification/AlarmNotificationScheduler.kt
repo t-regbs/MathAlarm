@@ -86,7 +86,7 @@ class AlarmNotificationScheduler(private val context: Context) {
                 } else {
                     PendingIntent.getBroadcast(context, intentId, alarmIntent, PendingIntent.FLAG_NO_CREATE)
                 }
-                if ( isSet != null) {
+                if (isSet != null) {
                     if (!reschedule) {
 //                        context.showToast(R.string.alarm_duplicate_toast_text)
                     }
@@ -108,7 +108,7 @@ class AlarmNotificationScheduler(private val context: Context) {
         for (i in alarmIntentList.indices) {
             val pendingIntent = alarmIntentList[i]
             val cal = time[i]
-            context.setAlarm(cal.timeInMillis, pendingIntent)
+            context.setExactAlarm(cal.timeInMillis, pendingIntent)
             Timber.d("scheduled new alarm")
         }
         return true

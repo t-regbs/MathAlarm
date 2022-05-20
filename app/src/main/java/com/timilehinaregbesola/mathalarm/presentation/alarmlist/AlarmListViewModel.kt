@@ -3,6 +3,7 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmlist
 import androidx.lifecycle.*
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.Usecases
+import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermission
 import com.timilehinaregbesola.mathalarm.provider.CalendarProvider
 import com.timilehinaregbesola.mathalarm.utils.UiEvent
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,6 +17,7 @@ import javax.inject.Inject
 class AlarmListViewModel @Inject constructor(
     private val usecases: Usecases,
     val calender: CalendarProvider,
+    val permission: AlarmPermission,
     val savedStateHandle: SavedStateHandle
 ) : ViewModel() {
     var alarms = usecases.getSavedAlarms()

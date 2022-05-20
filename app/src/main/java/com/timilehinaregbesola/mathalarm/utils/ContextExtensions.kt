@@ -20,7 +20,7 @@ import java.util.*
  * @param operation action to perform when the alarm goes off
  * @param type type to define how the alarm will behave
  */
-fun Context.setAlarm(
+fun Context.setExactAlarm(
     triggerAtMillis: Long,
     operation: PendingIntent?,
     type: Int = AlarmManager.RTC_WAKEUP
