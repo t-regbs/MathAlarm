@@ -55,12 +55,19 @@ class FirebaseMessagingService : FirebaseMessagingService() {
         val sharingIntent = Intent()
         sharingIntent.action = Intent.ACTION_VIEW
         sharingIntent.data = Uri.parse("https://play.google.com/store/apps/details?id=$packageName")
-        val sendIntent =
+        val sendIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PendingIntent.getActivity(this, 0, sharingIntent, PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_MUTABLE)
+        } else {
             PendingIntent.getActivity(this, 0, sharingIntent, PendingIntent.FLAG_ONE_SHOT)
+        }
         val notificationManager = getNotificationManager()
         val intent = Intent(this, MainActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
-        val pendingIntent = PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_ONE_SHOT)
+        val pendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_MUTABLE)
+        } else {
+            PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_ONE_SHOT)
+        }
         val soundUri: Uri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             @SuppressLint("WrongConstant") val notificationChannel = NotificationChannel(
