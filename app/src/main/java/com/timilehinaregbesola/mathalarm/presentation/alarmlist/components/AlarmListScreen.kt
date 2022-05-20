@@ -213,7 +213,13 @@ fun ListDisplayScreen(
                                                 onPermissionAbsent = { showPermissionDialog = true }
                                             )
                                         },
-                                        onUpdateAlarm = viewModel::onUpdate,
+                                        onUpdateAlarm = {
+                                            checkPermissionAndPerformAction(
+                                                value = alarmPermission.hasExactAlarmPermission(),
+                                                action = { viewModel.onUpdate(it) },
+                                                onPermissionAbsent = { showPermissionDialog = true }
+                                            )
+                                        },
                                         onDeleteAlarm = {
                                             viewModel.onEvent(AlarmListEvent.OnDeleteAlarmClick(it))
                                         },
@@ -221,13 +227,19 @@ fun ListDisplayScreen(
                                             viewModel.cancelAlarm(it)
                                         },
                                         onScheduleAlarm = { curAlarm: Alarm, b: Boolean ->
-                                            val calender = viewModel.calender.getCurrentCalendar()
-                                            viewModel.scheduleAlarm(
-                                                alarm = curAlarm,
-                                                reschedule = b,
-                                                message = "Alarm set for ${curAlarm.getTimeLeft(
-                                                    getCal(curAlarm, calender).timeInMillis, calender
-                                                )}"
+                                            checkPermissionAndPerformAction(
+                                                value = alarmPermission.hasExactAlarmPermission(),
+                                                action = {
+                                                    val calender = viewModel.calender.getCurrentCalendar()
+                                                    viewModel.scheduleAlarm(
+                                                        alarm = curAlarm,
+                                                        reschedule = b,
+                                                        message = "Alarm set for ${curAlarm.getTimeLeft(
+                                                            getCal(curAlarm, calender).timeInMillis, calender
+                                                        )}"
+                                                    )
+                                                },
+                                                onPermissionAbsent = { showPermissionDialog = true }
                                             )
                                         },
                                         darkTheme = darkTheme
