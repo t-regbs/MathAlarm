@@ -14,6 +14,9 @@ import com.google.accompanist.navigation.material.ExperimentalMaterialNavigation
 import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.framework.RoomAlarmDataSource
 import com.timilehinaregbesola.mathalarm.framework.Usecases
+import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermission
+import com.timilehinaregbesola.mathalarm.framework.app.permission.AndroidVersion
+import com.timilehinaregbesola.mathalarm.framework.app.permission.AndroidVersionImpl
 import com.timilehinaregbesola.mathalarm.framework.database.*
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractorImpl
@@ -25,6 +28,7 @@ import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotificationChann
 import com.timilehinaregbesola.mathalarm.provider.CalendarProvider
 import com.timilehinaregbesola.mathalarm.provider.CalendarProviderImpl
 import com.timilehinaregbesola.mathalarm.usecases.*
+import com.timilehinaregbesola.mathalarm.utils.getAlarmManager
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -170,5 +174,17 @@ object AppModule {
         @ApplicationContext context: Context
     ): SharedPreferences {
         return PreferenceManager.getDefaultSharedPreferences(context)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAndroidVersion(): AndroidVersion {
+        return AndroidVersionImpl()
+    }
+
+    @Provides
+    @Singleton
+    fun provideAlarmPermission(@ApplicationContext context: Context, version: AndroidVersion): AlarmPermission {
+        return AlarmPermission(context.getAlarmManager(), version)
     }
 }
