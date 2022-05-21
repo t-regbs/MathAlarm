@@ -7,6 +7,8 @@ import android.content.Intent
 import android.graphics.BitmapFactory
 import android.media.AudioAttributes
 import android.media.MediaPlayer
+import android.media.RingtoneManager
+import android.os.Build
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material.ExperimentalMaterialApi
@@ -25,6 +27,7 @@ import com.timilehinaregbesola.mathalarm.presentation.MainActivity
 import com.timilehinaregbesola.mathalarm.utils.getNotificationManager
 import kotlinx.coroutines.InternalCoroutinesApi
 import timber.log.Timber
+import java.io.InputStream
 import java.net.URLEncoder
 
 /**
@@ -50,9 +53,21 @@ class MathAlarmNotification(
         Timber.d("Showing notification for '${alarm.title}'")
         val builder = buildNotification(alarm)
 //        builder.addAction(getCompleteAction(alarm))
+        var uriExists = false
+        var toneUri = alarm.alarmTone.toUri()
         player.apply {
             reset()
-            setDataSource(context, alarm.alarmTone.toUri())
+            if (null != toneUri) {
+                try {
+                    val inputStream: InputStream? = context.contentResolver.openInputStream(toneUri)
+                    inputStream?.close()
+                    uriExists = true
+                } catch (e: Exception) {
+                    Timber.w("File corresponding to the uri does not exist $toneUri")
+                }
+            }
+            toneUri = if (uriExists) toneUri else RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
+            setDataSource(context, toneUri)
             setAudioAttributes(
                 AudioAttributes.Builder()
                     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
@@ -125,7 +140,11 @@ class MathAlarmNotification(
         )
         return TaskStackBuilder.create(context).run {
             addNextIntentWithParentStack(notificationIntent)
-            getPendingIntent(REQUEST_CODE_OPEN_TASK, PendingIntent.FLAG_UPDATE_CURRENT)
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                getPendingIntent(REQUEST_CODE_OPEN_TASK, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE)
+            } else {
+                getPendingIntent(REQUEST_CODE_OPEN_TASK, PendingIntent.FLAG_UPDATE_CURRENT)
+            }
         }
     }
 

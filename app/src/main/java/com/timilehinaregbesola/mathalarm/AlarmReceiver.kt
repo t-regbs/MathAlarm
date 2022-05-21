@@ -2,6 +2,7 @@ package com.timilehinaregbesola.mathalarm
 /*
 * This receives the intent from AlarmManager to start the math fragment
  */
+import android.app.AlarmManager
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -33,15 +34,13 @@ class AlarmReceiver : BroadcastReceiver() {
             ALARM_ACTION -> getAlarmId(intent)?.let { usecases.showAlarm(it) }
             COMPLETE_ACTION -> getAlarmId(intent)?.let { usecases.completeAlarm(it) }
             SNOOZE_ACTION -> getAlarmId(intent)?.let { usecases.snoozeAlarm(it) }
-            Intent.ACTION_BOOT_COMPLETED -> {
+            Intent.ACTION_BOOT_COMPLETED,
+            "android.intent.action.QUICKBOOT_POWERON",
+            "android.intent.action.MY_PACKAGE_REPLACED",
+            AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED -> {
                 Timber.d("Reboot Reboot!!")
                 usecases.rescheduleFutureAlarms()
             }
-            "android.intent.action.QUICKBOOT_POWERON" -> {
-                Timber.d("Rebooted!!")
-                usecases.rescheduleFutureAlarms()
-            }
-            "android.intent.action.MY_PACKAGE_REPLACED" -> usecases.rescheduleFutureAlarms()
             else -> {
                 Timber.e("action: ${intent?.action}")
                 Timber.e("Action not supported")
