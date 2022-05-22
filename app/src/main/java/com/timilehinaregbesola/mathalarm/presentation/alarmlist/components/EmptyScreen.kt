@@ -1,6 +1,7 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.ExperimentalMaterialApi
 import androidx.compose.material.MaterialTheme
@@ -14,6 +15,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.timilehinaregbesola.mathalarm.R
+import com.timilehinaregbesola.mathalarm.domain.model.AppThemeOptions
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 
 @ExperimentalMaterialApi
@@ -21,8 +23,13 @@ import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 fun AlarmEmptyScreen(
     modifier: Modifier = Modifier,
     onClickFab: () -> Unit,
-    darkTheme: Boolean
+    darkTheme: AppThemeOptions
 ) {
+    val isDarkTheme = when (darkTheme) {
+        AppThemeOptions.DARK -> true
+        AppThemeOptions.LIGHT -> false
+        else -> isSystemInDarkTheme()
+    }
     Box(
         modifier = modifier
             .fillMaxSize()
@@ -45,7 +52,7 @@ fun AlarmEmptyScreen(
                 Image(
                     painter = emptyImage,
                     contentDescription = "Empty Alarm List",
-                    colorFilter = if (darkTheme) ColorFilter.tint(color = Color.White) else null,
+                    colorFilter = if (isDarkTheme) ColorFilter.tint(color = Color.White) else null,
                     modifier = Modifier
                         .width(167.dp)
                         .height(228.dp)
@@ -53,7 +60,7 @@ fun AlarmEmptyScreen(
                 Image(
                     painter = emptyImage,
                     contentDescription = "Empty Alarm List",
-                    colorFilter = if (darkTheme) ColorFilter.tint(color = Color.White) else null,
+                    colorFilter = if (isDarkTheme) ColorFilter.tint(color = Color.White) else null,
                     modifier = Modifier
                         .padding(top = MaterialTheme.spacing.medium, end = 40.dp)
                         .width(167.dp)

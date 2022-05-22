@@ -20,31 +20,36 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
 import com.timilehinaregbesola.mathalarm.BuildConfig
-import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.Theme
-import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
+import com.timilehinaregbesola.mathalarm.domain.model.AppThemeOptions
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewModel
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.utils.email
 
 @Composable
 fun AppSettingsScreen(
     onBackPress: () -> Unit,
-    pref: AlarmPreferencesImpl
+//    pref: AlarmPreferencesImpl
+    viewModel: AlarmListViewModel = hiltViewModel()
 ) {
-    val isDark = when (pref.theme) {
-        Theme.DARK -> true
-        Theme.LIGHT -> false
+    val darkTheme by remember(viewModel) {
+        viewModel.loadCurrentTheme()
+    }.collectAsState(initial = AppThemeOptions.SYSTEM)
+    val isDark = when (darkTheme) {
+        AppThemeOptions.DARK -> true
+        AppThemeOptions.LIGHT -> false
         else -> isSystemInDarkTheme()
     }
     val options = listOf(
-        Triple("Light", Icons.Filled.WbSunny, Theme.LIGHT),
-        Triple("Dark", Icons.Filled.DarkMode, Theme.DARK),
-        Triple("Default", Icons.Filled.Smartphone, Theme.SYSTEM)
+        Triple("Light", Icons.Filled.WbSunny, AppThemeOptions.LIGHT),
+        Triple("Dark", Icons.Filled.DarkMode, AppThemeOptions.DARK),
+        Triple("Default", Icons.Filled.Smartphone, AppThemeOptions.SYSTEM)
     )
-    var selectedOption by remember { mutableStateOf(pref.theme) }
-    val onSelectionChange = { newTheme: Theme ->
+    var selectedOption = darkTheme
+    val onSelectionChange = { newTheme: AppThemeOptions ->
         selectedOption = newTheme
-        pref.theme = newTheme
+        viewModel.updateTheme(newTheme)
     }
     Surface(modifier = Modifier.fillMaxSize()) {
         Scaffold(

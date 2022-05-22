@@ -4,8 +4,8 @@ import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Vibrator
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.text.KeyboardActions
@@ -33,6 +33,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.domain.model.AppThemeOptions
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmSnack
@@ -60,9 +61,16 @@ fun MathScreen(
     navController: NavHostController,
     alarm: AlarmEntity,
     viewModel: AlarmMathViewModel = hiltViewModel(),
-    darkTheme: Boolean,
+//    darkTheme: Boolean,
 ) {
-    BackHandler { }
+    val darkTheme by remember(viewModel) {
+        viewModel.loadCurrentTheme()
+    }.collectAsState(initial = AppThemeOptions.SYSTEM)
+    val isDarkTheme = when (darkTheme) {
+        AppThemeOptions.DARK -> true
+        AppThemeOptions.LIGHT -> false
+        else -> isSystemInDarkTheme()
+    }
     var vibrator: Vibrator? = null
     val settingsId = 1143682591
     val context = LocalContext.current
@@ -211,7 +219,7 @@ fun MathScreen(
                         textAlign = TextAlign.Center
                     ),
                     colors = TextFieldDefaults.textFieldColors(
-                        backgroundColor = if (darkTheme) Color.DarkGray else unSelectedDay,
+                        backgroundColor = if (isDarkTheme) Color.DarkGray else unSelectedDay,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
                         disabledIndicatorColor = Color.Transparent
@@ -443,7 +451,6 @@ fun MathPreview() {
         MathScreen(
             navController = rememberNavController(),
             alarm = AlarmMapper().mapFromDomainModel(Alarm()),
-            darkTheme = true
         )
     }
 }

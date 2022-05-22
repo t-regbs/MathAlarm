@@ -7,6 +7,7 @@ import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation
 import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CornerSize
@@ -32,6 +33,7 @@ import androidx.navigation.NavHostController
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.timilehinaregbesola.mathalarm.R
+import com.timilehinaregbesola.mathalarm.domain.model.AppThemeOptions
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarmEvent
@@ -55,9 +57,17 @@ import java.time.format.DateTimeFormatter
 fun AlarmBottomSheet(
     viewModel: AlarmSettingsViewModel = hiltViewModel(),
     navController: NavHostController,
-    darkTheme: Boolean,
+//    darkTheme: Boolean,
     alarm: AlarmEntity
 ) {
+    val darkTheme by remember(viewModel) {
+        viewModel.loadCurrentTheme()
+    }.collectAsState(initial = AppThemeOptions.SYSTEM)
+    val isDarkTheme = when (darkTheme) {
+        AppThemeOptions.DARK -> true
+        AppThemeOptions.LIGHT -> false
+        else -> isSystemInDarkTheme()
+    }
     viewModel.setAlarm(AlarmMapper().mapToDomainModel(alarm))
     val scaffoldState = rememberBottomSheetScaffoldState()
     val activity = LocalContext.current as Activity
@@ -101,13 +111,13 @@ fun AlarmBottomSheet(
                 textStyle = TextStyle(color = MaterialTheme.colors.onPrimary)
             )
         },
-        backgroundColor = if (darkTheme) darkPrimary else Color.LightGray
+        backgroundColor = if (isDarkTheme) darkPrimary else Color.LightGray
     ) {
         timeCal = timeCal.withHour(alarmTimeText.value.hour).withMinute(alarmTimeText.value.minute)
         timepicker(
             initialTime = timeCal,
             colors = TimePickerDefaults.colors(
-                activeBackgroundColor = if (darkTheme) darkPrimaryLight else Color.White
+                activeBackgroundColor = if (isDarkTheme) darkPrimaryLight else Color.White
             )
         ) { time ->
             val dtf = DateTimeFormatter.ofPattern("hh:mm a")
@@ -135,7 +145,7 @@ fun AlarmBottomSheet(
                 .fillMaxWidth()
                 .height(150.dp)
                 .padding(horizontal = MaterialTheme.spacing.medium),
-            backgroundColor = if (darkTheme) darkPrimaryLight else unSelectedDay,
+            backgroundColor = if (isDarkTheme) darkPrimaryLight else unSelectedDay,
             elevation = 0.dp,
             shape = MaterialTheme.shapes.medium.copy(CornerSize(24.dp))
         ) {

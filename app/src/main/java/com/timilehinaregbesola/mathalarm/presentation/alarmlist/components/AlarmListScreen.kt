@@ -30,6 +30,7 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.domain.model.AppThemeOptions
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent
@@ -52,13 +53,16 @@ import java.util.*
 fun ListDisplayScreen(
     viewModel: AlarmListViewModel = hiltViewModel(),
     navController: NavHostController,
-    darkTheme: Boolean
+    isInitDark: Boolean
 ) {
     val alarms = viewModel.alarms.collectAsState(null)
     val alarmPermission = viewModel.permission
     var deleteAllAlarmsDialog by remember { mutableStateOf(false) }
     val scaffoldState = rememberScaffoldState()
     var showPermissionDialog by remember { mutableStateOf(false) }
+    val darkTheme by remember(viewModel) {
+        viewModel.loadCurrentTheme()
+    }.collectAsState(initial = AppThemeOptions.SYSTEM)
 
     LaunchedEffect(key1 = true) {
         viewModel.uiEvent.collect { event ->
@@ -113,7 +117,7 @@ fun ListDisplayScreen(
     }
 
     if (alarms.value == null) {
-        ListLoadingShimmer(imageHeight = 180.dp)
+        ListLoadingShimmer(imageHeight = 180.dp, theme = isInitDark)
     }
     val context = LocalContext.current
     alarms.value?.let { alarmList ->

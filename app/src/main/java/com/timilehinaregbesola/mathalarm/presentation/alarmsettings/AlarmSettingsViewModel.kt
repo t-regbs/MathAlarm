@@ -7,13 +7,16 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.domain.model.AppThemeOptions
 import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
 import com.timilehinaregbesola.mathalarm.utils.getFormatTime
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.map
 import java.util.*
 import javax.inject.Inject
 
@@ -59,6 +62,12 @@ class AlarmSettingsViewModel @Inject constructor(
     val eventFlow = _eventFlow.asSharedFlow()
 
     var currentAlarmId: Long? = null
+
+    fun loadCurrentTheme(): Flow<AppThemeOptions> = usecases.loadAppTheme().map { it }
+
+    fun updateTheme(theme: AppThemeOptions) = viewModelScope.launch {
+        usecases.updateAppTheme(theme)
+    }
 
     fun onEvent(event: AddEditAlarmEvent) {
         when (event) {

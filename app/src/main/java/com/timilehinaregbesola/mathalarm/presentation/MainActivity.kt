@@ -1,28 +1,24 @@
 package com.timilehinaregbesola.mathalarm.presentation
 
-import android.os.Build
+import android.graphics.Color
 import android.os.Bundle
-import android.view.View
-import android.view.Window
-import android.view.WindowManager
 import androidx.activity.compose.setContent
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.MaterialTheme
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.graphics.toArgb
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.view.WindowInsetsControllerCompat
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
+import com.timilehinaregbesola.mathalarm.domain.model.AppThemeOptions
 import com.timilehinaregbesola.mathalarm.navigation.NavGraph
-import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
-import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.InternalCoroutinesApi
-import javax.inject.Inject
 
 @ExperimentalFoundationApi
 @ExperimentalMaterialApi
@@ -32,32 +28,44 @@ import javax.inject.Inject
 @ExperimentalMaterialNavigationApi
 @AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
-    @Inject
-    lateinit var preferences: AlarmPreferencesImpl
+    private val viewModel: MainViewModel by viewModels()
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
-        preferences.setup()
-        window.makeTransparentStatusBar()
         setContent {
+            val isDarkTheme = rememberIsDarkTheme(viewModel)
+            updateTheme(isDarkTheme)
             MathAlarmTheme(
-                darkTheme = preferences.shouldUseDarkColors()
+                darkTheme = isDarkTheme
             ) {
-                window.statusBarColor = MaterialTheme.colors.background.toArgb()
-                NavGraph(preferences)
+                NavGraph(isDarkTheme)
             }
         }
     }
-}
 
-fun Window.makeTransparentStatusBar() {
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-        decorView.systemUiVisibility = View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-    } else {
-        setFlags(
-            WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS,
-            WindowManager.LayoutParams.FLAG_TRANSLUCENT_STATUS
-        )
+    private fun updateTheme(darkTheme: Boolean) {
+        window.apply {
+            statusBarColor = if (darkTheme) Color.BLACK else Color.WHITE
+            navigationBarColor = if (darkTheme) Color.BLACK else Color.WHITE
+            WindowInsetsControllerCompat(this, this.decorView).isAppearanceLightStatusBars =
+                !darkTheme
+        }
+    }
+
+    @Composable
+    private fun rememberIsDarkTheme(viewModel: MainViewModel): Boolean {
+        val isSystemDarkTheme = isSystemInDarkTheme()
+
+        val theme by remember(viewModel) {
+            viewModel.loadCurrentTheme()
+        }.collectAsState(initial = AppThemeOptions.SYSTEM)
+
+        val isDarkTheme = when (theme) {
+            AppThemeOptions.LIGHT -> false
+            AppThemeOptions.DARK -> true
+            AppThemeOptions.SYSTEM -> isSystemDarkTheme
+        }
+        return isDarkTheme
     }
 }

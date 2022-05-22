@@ -1,7 +1,6 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 
 import androidx.compose.animation.core.*
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.lazy.LazyColumn
@@ -16,8 +15,14 @@ import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 @Composable
 fun ListLoadingShimmer(
     imageHeight: Dp,
-    padding: Dp = MaterialTheme.spacing.medium
+    padding: Dp = MaterialTheme.spacing.medium,
+    theme: Boolean
 ) {
+//    val isDark = when (theme) {
+//        AppThemeOptions.DARK -> true
+//        AppThemeOptions.LIGHT -> false
+//        else -> isSystemInDarkTheme()
+//    }
     BoxWithConstraints(
         modifier = Modifier.fillMaxSize()
     ) {
@@ -65,7 +70,7 @@ fun ListLoadingShimmer(
         LazyColumn {
             items(5) {
                 ShimmerCardItem(
-                    colors = if (isSystemInDarkTheme()) darkColors else lightColors,
+                    colors = if (theme) darkColors else lightColors,
                     xShimmer = xCardShimmer.value,
                     yShimmer = yCardShimmer.value,
                     cardHeight = imageHeight,

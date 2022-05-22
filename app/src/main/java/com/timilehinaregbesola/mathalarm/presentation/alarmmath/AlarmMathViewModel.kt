@@ -6,12 +6,14 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.domain.model.AppThemeOptions
 import com.timilehinaregbesola.mathalarm.framework.Usecases
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 @HiltViewModel
@@ -22,6 +24,8 @@ class AlarmMathViewModel @Inject constructor(
     private val _state = MutableLiveData<ToneState>(ToneState.Stopped())
     val state: LiveData<ToneState> = _state
     private var currentTimer: Job? = null
+
+    fun loadCurrentTheme(): Flow<AppThemeOptions> = usecases.loadAppTheme().map { it }
 
     fun retrieveAlarm(key: Long) = runBlocking {
         val alarmFound = usecases.findAlarm(key)

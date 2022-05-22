@@ -23,9 +23,7 @@ import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.ListDisplayScreen
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet
-import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen
-import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
 import com.timilehinaregbesola.mathalarm.utils.Navigation
 import kotlinx.coroutines.InternalCoroutinesApi
 
@@ -36,7 +34,7 @@ import kotlinx.coroutines.InternalCoroutinesApi
 @ExperimentalMaterialApi
 @ExperimentalFoundationApi
 @Composable
-fun NavGraph(preferences: AlarmPreferencesImpl) {
+fun NavGraph(isDarkTheme: Boolean) {
     val bottomSheetNavigator = rememberBottomSheetNavigator()
     val navController = rememberNavController(bottomSheetNavigator)
     Surface(color = MaterialTheme.colors.background) {
@@ -48,7 +46,7 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
                 composable(Navigation.NAV_ALARM_LIST) {
                     ListDisplayScreen(
                         navController = navController,
-                        darkTheme = preferences.shouldUseDarkColors(),
+                        isInitDark = isDarkTheme,
                     )
                 }
                 composable(
@@ -62,13 +60,13 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
                     MathScreen(
                         navController = navController,
                         alarm = alarmObject!!,
-                        darkTheme = preferences.shouldUseDarkColors()
+//                        darkTheme = preferences.shouldUseDarkColors()
                     )
                 }
                 composable(Navigation.NAV_APP_SETTINGS) {
                     AppSettingsScreen(
                         onBackPress = { navController.popBackStack() },
-                        pref = preferences
+//                        pref = preferences
                     )
                 }
                 bottomSheet(
@@ -80,7 +78,7 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
                     val alarmObject = alarmJson?.let { jsonAdapter.fromJson(it) }
                     AlarmBottomSheet(
                         navController = navController,
-                        darkTheme = preferences.shouldUseDarkColors(),
+//                        darkTheme = preferences.shouldUseDarkColors(),
                         alarm = alarmObject!!
                     )
                 }

@@ -2,6 +2,7 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmlist
 
 import androidx.lifecycle.*
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.domain.model.AppThemeOptions
 import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermission
 import com.timilehinaregbesola.mathalarm.provider.CalendarProvider
@@ -26,6 +27,12 @@ class AlarmListViewModel @Inject constructor(
     val uiEvent = _uiEvent.receiveAsFlow()
 
     private var recentlyDeletedAlarm: Alarm? = null
+
+    fun loadCurrentTheme(): Flow<AppThemeOptions> = usecases.loadAppTheme().map { it }
+
+    fun updateTheme(theme: AppThemeOptions) = viewModelScope.launch {
+        usecases.updateAppTheme(theme)
+    }
 
     fun onEvent(event: AlarmListEvent) {
         when (event) {

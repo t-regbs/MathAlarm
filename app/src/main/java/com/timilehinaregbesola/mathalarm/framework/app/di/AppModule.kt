@@ -12,6 +12,9 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.room.Room
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.timilehinaregbesola.mathalarm.data.AlarmRepository
+import com.timilehinaregbesola.mathalarm.data.datasource.PreferencesDataSource
+import com.timilehinaregbesola.mathalarm.framework.PreferencesDataSourceImpl
+import com.timilehinaregbesola.mathalarm.framework.PreferencesRepositoryImpl
 import com.timilehinaregbesola.mathalarm.framework.RoomAlarmDataSource
 import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermission
@@ -28,6 +31,9 @@ import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotificationChann
 import com.timilehinaregbesola.mathalarm.provider.CalendarProvider
 import com.timilehinaregbesola.mathalarm.provider.CalendarProviderImpl
 import com.timilehinaregbesola.mathalarm.usecases.alarm.*
+import com.timilehinaregbesola.mathalarm.usecases.preferences.LoadAppTheme
+import com.timilehinaregbesola.mathalarm.usecases.preferences.PreferencesRepository
+import com.timilehinaregbesola.mathalarm.usecases.preferences.UpdateAppTheme
 import com.timilehinaregbesola.mathalarm.utils.getAlarmManager
 import dagger.Module
 import dagger.Provides
@@ -95,6 +101,30 @@ object AppModule {
 
     @Provides
     @Singleton
+    fun provideAppThemeOptionsMapper(): AppThemeOptionsMapper {
+        return AppThemeOptionsMapper()
+    }
+
+    @Provides
+    @Singleton
+    fun providePreferencesDataSource(
+        @ApplicationContext context: Context,
+        mapper: AppThemeOptionsMapper
+    ): PreferencesDataSource {
+        return PreferencesDataSourceImpl(context, mapper)
+    }
+
+    @Provides
+    @Singleton
+    fun providePreferencesRepository(
+        dataSource: PreferencesDataSource,
+        mapper: AppThemeOptionsMapper
+    ): PreferencesRepository {
+        return PreferencesRepositoryImpl(dataSource, mapper)
+    }
+
+    @Provides
+    @Singleton
     fun provideAlarmInteractor(alarmManager: AlarmNotificationScheduler): AlarmInteractor {
         return AlarmInteractorImpl(alarmManager)
     }
@@ -106,7 +136,8 @@ object AppModule {
         alarmInteractor: AlarmInteractor,
         notificationInteractor: NotificationInteractor,
         calendarProvider: CalendarProvider,
-        scheduleNextAlarm: ScheduleNextAlarm
+        scheduleNextAlarm: ScheduleNextAlarm,
+        preferencesRepository: PreferencesRepository
     ): Usecases {
         return Usecases(
             addAlarm = AddAlarm(repository),
@@ -121,7 +152,9 @@ object AppModule {
             scheduleNextAlarm = ScheduleNextAlarm(alarmInteractor),
             showAlarm = ShowAlarm(repository, notificationInteractor, scheduleNextAlarm),
             snoozeAlarm = SnoozeAlarm(calendarProvider, notificationInteractor, alarmInteractor, repository),
-            cancelAlarm = CancelAlarm(alarmInteractor)
+            cancelAlarm = CancelAlarm(alarmInteractor),
+            loadAppTheme = LoadAppTheme(preferencesRepository),
+            updateAppTheme = UpdateAppTheme(preferencesRepository)
         )
     }
 

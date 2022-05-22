@@ -4,6 +4,7 @@ import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material.*
@@ -23,6 +24,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.domain.model.AppThemeOptions
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimaryLight
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
@@ -38,8 +40,13 @@ fun AlarmItem(
     onDeleteAlarm: (Alarm) -> Unit,
     onCancelAlarm: (Alarm) -> Unit,
     onScheduleAlarm: (Alarm, Boolean) -> Unit,
-    darkTheme: Boolean
+    darkTheme: AppThemeOptions
 ) {
+    val isDarkTheme = when (darkTheme) {
+        AppThemeOptions.DARK -> true
+        AppThemeOptions.LIGHT -> false
+        else -> isSystemInDarkTheme()
+    }
     Card(
         modifier = Modifier
             .fillMaxWidth()
@@ -56,7 +63,7 @@ fun AlarmItem(
         val expandItem = rememberSaveable { mutableStateOf(false) }
         Column(
             Modifier
-                .background(if (darkTheme) darkPrimaryLight else Color(0x99FFFFFF))
+                .background(if (isDarkTheme) darkPrimaryLight else Color(0x99FFFFFF))
                 .clickable(onClick = { expandItem.value = !expandItem.value })
         ) {
             Column(modifier = Modifier) {
@@ -81,7 +88,7 @@ fun AlarmItem(
                         Text(
                             text = timeOfDay,
                             fontSize = 16.sp,
-                            color = if (darkTheme) Color.LightGray else Color.Gray,
+                            color = if (isDarkTheme) Color.LightGray else Color.Gray,
                             fontWeight = if (alarm.isOn) FontWeight.Bold else FontWeight.Normal,
                             modifier = Modifier
                                 .align(Alignment.Bottom)
@@ -248,7 +255,7 @@ fun ItemPreview() {
                 onDeleteAlarm = {},
                 onCancelAlarm = {},
                 onScheduleAlarm = { _: Alarm, _: Boolean -> },
-                darkTheme = true
+                darkTheme = AppThemeOptions.DARK
             )
         }
     }
