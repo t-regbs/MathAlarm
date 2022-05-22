@@ -4,6 +4,8 @@ import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.fake.AlarmInteractorFake
 import com.timilehinaregbesola.mathalarm.fake.AlarmRepositoryFake
+import com.timilehinaregbesola.mathalarm.usecases.alarm.AddAlarm
+import com.timilehinaregbesola.mathalarm.usecases.alarm.ScheduleNextAlarm
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runBlockingTest
 import org.junit.Assert

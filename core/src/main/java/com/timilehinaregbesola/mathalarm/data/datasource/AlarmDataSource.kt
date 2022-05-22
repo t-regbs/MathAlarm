@@ -1,4 +1,4 @@
-package com.timilehinaregbesola.mathalarm.data
+package com.timilehinaregbesola.mathalarm.data.datasource
 
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import kotlinx.coroutines.flow.Flow

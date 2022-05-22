@@ -1,6 +1,6 @@
 package com.timilehinaregbesola.mathalarm.fake
 
-import com.timilehinaregbesola.mathalarm.data.AlarmDataSource
+import com.timilehinaregbesola.mathalarm.data.datasource.AlarmDataSource
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf

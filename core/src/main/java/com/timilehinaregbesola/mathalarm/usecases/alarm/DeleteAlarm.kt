@@ -1,4 +1,4 @@
-package com.timilehinaregbesola.mathalarm.usecases
+package com.timilehinaregbesola.mathalarm.usecases.alarm
 
 import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm

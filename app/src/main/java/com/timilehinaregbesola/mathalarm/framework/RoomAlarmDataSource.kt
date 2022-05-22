@@ -1,6 +1,6 @@
 package com.timilehinaregbesola.mathalarm.framework
 
-import com.timilehinaregbesola.mathalarm.data.AlarmDataSource
+import com.timilehinaregbesola.mathalarm.data.datasource.AlarmDataSource
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmDao
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper

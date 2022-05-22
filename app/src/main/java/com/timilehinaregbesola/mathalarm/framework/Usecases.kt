@@ -1,6 +1,6 @@
 package com.timilehinaregbesola.mathalarm.framework
 
-import com.timilehinaregbesola.mathalarm.usecases.*
+import com.timilehinaregbesola.mathalarm.usecases.alarm.*
 
 data class Usecases(
     val addAlarm: AddAlarm,

@@ -27,7 +27,7 @@ import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotification
 import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotificationChannel
 import com.timilehinaregbesola.mathalarm.provider.CalendarProvider
 import com.timilehinaregbesola.mathalarm.provider.CalendarProviderImpl
-import com.timilehinaregbesola.mathalarm.usecases.*
+import com.timilehinaregbesola.mathalarm.usecases.alarm.*
 import com.timilehinaregbesola.mathalarm.utils.getAlarmManager
 import dagger.Module
 import dagger.Provides

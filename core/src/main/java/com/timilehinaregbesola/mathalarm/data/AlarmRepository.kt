@@ -1,5 +1,6 @@
 package com.timilehinaregbesola.mathalarm.data
 
+import com.timilehinaregbesola.mathalarm.data.datasource.AlarmDataSource
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 
 class AlarmRepository(private val dataSource: AlarmDataSource) {
