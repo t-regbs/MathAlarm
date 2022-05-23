@@ -113,7 +113,7 @@ fun ListDisplayScreen(
     }
 
     if (alarms.value == null) {
-        ListLoadingShimmer(imageHeight = 180.dp)
+        ListLoadingShimmer(imageHeight = 180.dp, isDark = darkTheme)
     }
     val context = LocalContext.current
     alarms.value?.let { alarmList ->

@@ -83,6 +83,7 @@ dependencies {
 
     implementation(Deps.compose.activity)
     implementation(Deps.accompanist.navigationMaterial)
+    implementation(Deps.accompanist.navigationAnimation)
     implementation(Deps.compose.navigation)
 
     implementation(Deps.timber)

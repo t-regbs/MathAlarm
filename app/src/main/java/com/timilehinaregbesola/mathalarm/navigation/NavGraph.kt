@@ -1,6 +1,8 @@
 package com.timilehinaregbesola.mathalarm.navigation
 
+import androidx.compose.animation.AnimatedContentScope
 import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.ExperimentalMaterialApi
@@ -9,10 +11,10 @@ import androidx.compose.material.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.unit.dp
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navDeepLink
+import com.google.accompanist.navigation.animation.AnimatedNavHost
+import com.google.accompanist.navigation.animation.composable
+import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.navigation.material.ModalBottomSheetLayout
 import com.google.accompanist.navigation.material.bottomSheet
@@ -38,14 +40,28 @@ import kotlinx.coroutines.InternalCoroutinesApi
 @Composable
 fun NavGraph(preferences: AlarmPreferencesImpl) {
     val bottomSheetNavigator = rememberBottomSheetNavigator()
-    val navController = rememberNavController(bottomSheetNavigator)
+    val navController = rememberAnimatedNavController(bottomSheetNavigator)
     Surface(color = MaterialTheme.colors.background) {
         ModalBottomSheetLayout(
             bottomSheetNavigator = bottomSheetNavigator,
             sheetShape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp),
         ) {
-            NavHost(navController = navController, startDestination = Navigation.NAV_ALARM_LIST) {
-                composable(Navigation.NAV_ALARM_LIST) {
+            AnimatedNavHost(navController = navController, startDestination = Navigation.NAV_ALARM_LIST) {
+                composable(
+                    route = Navigation.NAV_ALARM_LIST,
+                    enterTransition = {
+                        slideIntoContainer(
+                            AnimatedContentScope.SlideDirection.Right,
+                            animationSpec = tween(700)
+                        )
+                    },
+                    exitTransition = {
+                        slideOutOfContainer(
+                            AnimatedContentScope.SlideDirection.Left,
+                            animationSpec = tween(700)
+                        )
+                    }
+                ) {
                     ListDisplayScreen(
                         navController = navController,
                         darkTheme = preferences.shouldUseDarkColors(),
@@ -53,7 +69,19 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
                 }
                 composable(
                     route = Navigation.NAV_ALARM_MATH,
-                    deepLinks = listOf(navDeepLink { uriPattern = Navigation.NAV_ALARM_MATH_URI })
+                    deepLinks = listOf(navDeepLink { uriPattern = Navigation.NAV_ALARM_MATH_URI }),
+                    enterTransition = {
+                        slideIntoContainer(
+                            AnimatedContentScope.SlideDirection.Right,
+                            animationSpec = tween(700)
+                        )
+                    },
+                    exitTransition = {
+                        slideOutOfContainer(
+                            AnimatedContentScope.SlideDirection.Left,
+                            animationSpec = tween(700)
+                        )
+                    }
                 ) {
                     val alarmJson = it.arguments?.getString(Navigation.NAV_ALARM_MATH_ARGUMENT)
                     val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
@@ -65,7 +93,21 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
                         darkTheme = preferences.shouldUseDarkColors()
                     )
                 }
-                composable(Navigation.NAV_APP_SETTINGS) {
+                composable(
+                    route = Navigation.NAV_APP_SETTINGS,
+                    enterTransition = {
+                        slideIntoContainer(
+                            AnimatedContentScope.SlideDirection.Right,
+                            animationSpec = tween(700)
+                        )
+                    },
+                    exitTransition = {
+                        slideOutOfContainer(
+                            AnimatedContentScope.SlideDirection.Left,
+                            animationSpec = tween(700)
+                        )
+                    }
+                ) {
                     AppSettingsScreen(
                         onBackPress = { navController.popBackStack() },
                         pref = preferences
