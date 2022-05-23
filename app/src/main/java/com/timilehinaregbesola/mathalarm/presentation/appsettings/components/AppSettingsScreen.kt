@@ -113,9 +113,7 @@ fun AppSettingsScreen(
                                                     }
                                                 }
                                             )
-                                            .padding(
-                                                vertical = MaterialTheme.spacing.extraSmall,
-                                            ),
+                                            .padding(vertical = MaterialTheme.spacing.extraSmall),
                                         horizontalArrangement = Arrangement.Center
                                     ) {
                                         Icon(
