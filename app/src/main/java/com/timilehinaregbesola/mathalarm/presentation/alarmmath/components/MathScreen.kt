@@ -5,6 +5,7 @@ import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Vibrator
 import androidx.activity.compose.BackHandler
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CornerSize
@@ -31,7 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
+import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
@@ -433,6 +434,7 @@ data class MathProblem(
     var answer: Int = 0
 )
 
+@OptIn(ExperimentalAnimationApi::class)
 @ExperimentalComposeUiApi
 @InternalCoroutinesApi
 @ExperimentalMaterialApi
@@ -441,7 +443,7 @@ data class MathProblem(
 fun MathPreview() {
     MathAlarmTheme(darkTheme = true) {
         MathScreen(
-            navController = rememberNavController(),
+            navController = rememberAnimatedNavController(),
             alarm = AlarmMapper().mapFromDomainModel(Alarm()),
             darkTheme = true
         )
