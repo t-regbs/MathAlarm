@@ -170,7 +170,11 @@ fun MathScreen(
                         .height(90.dp)
                         .padding(horizontal = 56.dp),
                     value = answerText.value,
-                    onValueChange = { if (it.length <= maxChar) answerText.value = it },
+                    onValueChange = { newVal ->
+                        if (newVal.length <= maxChar) {
+                            answerText.value = newVal.filter { it.isDigit() }
+                        }
+                    },
                     singleLine = true,
                     placeholder = {
                         Row(
