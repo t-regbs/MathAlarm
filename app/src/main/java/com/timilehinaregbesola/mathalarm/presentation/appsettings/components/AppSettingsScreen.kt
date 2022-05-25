@@ -3,7 +3,6 @@ package com.timilehinaregbesola.mathalarm.presentation.appsettings.components
 import android.content.Intent
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.*
@@ -23,28 +22,29 @@ import androidx.compose.ui.unit.sp
 import com.timilehinaregbesola.mathalarm.BuildConfig
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.Theme
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.utils.email
+import kotlinx.coroutines.launch
 
 @Composable
 fun AppSettingsScreen(
     onBackPress: () -> Unit,
     pref: AlarmPreferencesImpl
 ) {
-    val isDark = when (pref.theme) {
-        Theme.DARK -> true
-        Theme.LIGHT -> false
-        else -> isSystemInDarkTheme()
-    }
+    val scope = rememberCoroutineScope()
+    val isDark = pref.shouldUseDarkColors()
     val options = listOf(
         Triple("Light", Icons.Filled.WbSunny, Theme.LIGHT),
         Triple("Dark", Icons.Filled.DarkMode, Theme.DARK),
         Triple("Default", Icons.Filled.Smartphone, Theme.SYSTEM)
     )
-    var selectedOption by remember { mutableStateOf(pref.theme) }
+    var selectedOption = pref.loadAppTheme().collectAsState(initial = Theme.SYSTEM).value
     val onSelectionChange = { newTheme: Theme ->
         selectedOption = newTheme
-        pref.theme = newTheme
+        scope.launch {
+            pref.updateAppTheme(newTheme)
+        }
     }
     Surface(modifier = Modifier.fillMaxSize()) {
         Scaffold(

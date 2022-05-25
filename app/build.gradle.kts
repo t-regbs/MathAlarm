@@ -102,6 +102,7 @@ dependencies {
 
     implementation(Deps.splash.core)
     implementation(Deps.moshi)
+    implementation(Deps.android.dataStore)
 
     addComposeDependencies()
 }

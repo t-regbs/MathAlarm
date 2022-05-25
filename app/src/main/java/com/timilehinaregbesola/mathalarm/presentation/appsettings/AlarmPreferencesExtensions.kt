@@ -6,7 +6,7 @@ import androidx.compose.runtime.collectAsState
 
 @Composable
 fun AlarmPreferences.shouldUseDarkColors(): Boolean {
-    val themePreference = observeTheme().collectAsState(initial = AlarmPreferences.Theme.SYSTEM)
+    val themePreference = loadAppTheme().collectAsState(initial = getInitial())
     return when (themePreference.value) {
         AlarmPreferences.Theme.LIGHT -> false
         AlarmPreferences.Theme.DARK -> true

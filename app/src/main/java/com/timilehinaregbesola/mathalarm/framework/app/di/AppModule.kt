@@ -25,6 +25,7 @@ import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractorImpl
 import com.timilehinaregbesola.mathalarm.notification.AlarmNotificationScheduler
 import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotification
 import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotificationChannel
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AppThemeOptionsMapper
 import com.timilehinaregbesola.mathalarm.provider.CalendarProvider
 import com.timilehinaregbesola.mathalarm.provider.CalendarProviderImpl
 import com.timilehinaregbesola.mathalarm.usecases.*
@@ -67,6 +68,12 @@ object AppModule {
     @Singleton
     fun provideAlarmMapper(): AlarmMapper {
         return AlarmMapper()
+    }
+
+    @Provides
+    @Singleton
+    fun provideThemeMapper(): AppThemeOptionsMapper {
+        return AppThemeOptionsMapper()
     }
 
     @Provides
