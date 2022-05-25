@@ -13,6 +13,7 @@ object Versions {
     const val room = "2.4.0-alpha01"
 
     const val coroutines = "1.3.7"
+    const val dataStore = "1.0.0"
 
     const val timber = "4.7.1"
 
@@ -60,6 +61,7 @@ object Deps {
 object AndroidDeps {
     const val material = "com.google.android.material:material:${Versions.material}"
     const val ktx = "androidx.core:core-ktx:${Versions.ktx}"
+    const val dataStore = "androidx.datastore:datastore-preferences:${Versions.dataStore}"
     val room = RoomDeps
 }
 

@@ -35,7 +35,6 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
-        preferences.setup()
         setContent {
             val isDarkTheme = preferences.shouldUseDarkColors()
             updateTheme(isDarkTheme)

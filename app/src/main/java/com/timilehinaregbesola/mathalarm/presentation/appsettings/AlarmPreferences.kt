@@ -4,14 +4,25 @@ import kotlinx.coroutines.flow.Flow
 
 interface AlarmPreferences {
 
-    fun setup()
+    /**
+     * Updates the current app theme.
+     *
+     * @param theme the theme to be updated
+     */
+    suspend fun updateAppTheme(theme: Theme)
 
-    var theme: Theme
-    fun observeTheme(): Flow<Theme>
+    /**
+     * Loads the current app theme.
+     *
+     * @return flow of [Theme]
+     */
+    fun loadAppTheme(): Flow<Theme>
 
     enum class Theme {
         LIGHT,
         DARK,
         SYSTEM
     }
+
+    fun getInitialTheme(): Int
 }

@@ -2,9 +2,7 @@ package com.timilehinaregbesola.mathalarm.framework.app.di
 
 import android.app.Application
 import android.content.Context
-import android.content.SharedPreferences
 import android.media.MediaPlayer
-import android.preference.PreferenceManager
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material.ExperimentalMaterialApi
@@ -25,6 +23,7 @@ import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractorImpl
 import com.timilehinaregbesola.mathalarm.notification.AlarmNotificationScheduler
 import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotification
 import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotificationChannel
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AppThemeOptionsMapper
 import com.timilehinaregbesola.mathalarm.provider.CalendarProvider
 import com.timilehinaregbesola.mathalarm.provider.CalendarProviderImpl
 import com.timilehinaregbesola.mathalarm.usecases.*
@@ -35,7 +34,6 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.InternalCoroutinesApi
-import javax.inject.Named
 import javax.inject.Singleton
 
 @ExperimentalFoundationApi
@@ -67,6 +65,12 @@ object AppModule {
     @Singleton
     fun provideAlarmMapper(): AlarmMapper {
         return AlarmMapper()
+    }
+
+    @Provides
+    @Singleton
+    fun provideThemeMapper(): AppThemeOptionsMapper {
+        return AppThemeOptionsMapper()
     }
 
     @Provides
@@ -165,15 +169,6 @@ object AppModule {
     @Singleton
     fun provideNotificationScheduler(@ApplicationContext context: Context): AlarmNotificationScheduler {
         return AlarmNotificationScheduler(context)
-    }
-
-    @Named("app")
-    @Provides
-    @Singleton
-    fun provideAppPreferences(
-        @ApplicationContext context: Context
-    ): SharedPreferences {
-        return PreferenceManager.getDefaultSharedPreferences(context)
     }
 
     @Provides
