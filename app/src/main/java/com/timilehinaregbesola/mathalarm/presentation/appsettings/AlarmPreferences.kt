@@ -24,5 +24,5 @@ interface AlarmPreferences {
         SYSTEM
     }
 
-    fun getInitial(): Int
+    fun getInitialTheme(): Int
 }

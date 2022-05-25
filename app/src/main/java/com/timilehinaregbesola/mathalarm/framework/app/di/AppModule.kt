@@ -2,9 +2,7 @@ package com.timilehinaregbesola.mathalarm.framework.app.di
 
 import android.app.Application
 import android.content.Context
-import android.content.SharedPreferences
 import android.media.MediaPlayer
-import android.preference.PreferenceManager
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material.ExperimentalMaterialApi
@@ -36,7 +34,6 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.InternalCoroutinesApi
-import javax.inject.Named
 import javax.inject.Singleton
 
 @ExperimentalFoundationApi
@@ -172,15 +169,6 @@ object AppModule {
     @Singleton
     fun provideNotificationScheduler(@ApplicationContext context: Context): AlarmNotificationScheduler {
         return AlarmNotificationScheduler(context)
-    }
-
-    @Named("app")
-    @Provides
-    @Singleton
-    fun provideAppPreferences(
-        @ApplicationContext context: Context
-    ): SharedPreferences {
-        return PreferenceManager.getDefaultSharedPreferences(context)
     }
 
     @Provides
