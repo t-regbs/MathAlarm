@@ -10,6 +10,6 @@ java {
 
 dependencies {
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.5.31")
-    implementation(Deps.coroutines.android)
-    implementation(Deps.timber)
+    implementation(libs.coroutines.android)
+    implementation(libs.timber)
 }

@@ -1,24 +1,21 @@
-import extensions.addComposeConfig
-import extensions.addComposeDependencies
-
 plugins {
-    id(GradlePlugin.ANDROID_APPLICATION)
-    id(GradlePlugin.KOTLIN_ANDROID)
-    id(GradlePlugin.KAPT)
-    id(GradlePlugin.DAGGER_HILT)
-    id(GradlePlugin.GOOGLE_SERVICES)
-    id(GradlePlugin.KOTLIN_PARCELIZE)
-    id(GradlePlugin.FIREBASE_CRASHLYTICS)
+    id("com.android.application")
+    id("kotlin-android")
+    id("kotlin-kapt")
+    id("dagger.hilt.android.plugin")
+    id("com.google.gms.google-services")
+    id("org.jetbrains.kotlin.plugin.parcelize")
+    id("com.google.firebase.crashlytics")
 }
 
 android {
     defaultConfig {
         applicationId = "com.timilehinaregbesola.mathalarm"
-        versionCode = Releases.versionCode
-        versionName = Releases.versionName
-        minSdk = Versions.minSdk
-        targetSdk = Versions.targetSdk
-        compileSdk = Versions.compileSdk
+        versionCode = 14
+        versionName = "2.0.4"
+        minSdk = Integer.parseInt(libs.versions.android.min.sdk.get())
+        targetSdk = Integer.parseInt(libs.versions.android.target.sdk.get())
+        compileSdk = Integer.parseInt(libs.versions.android.compile.sdk.get())
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -49,7 +46,26 @@ android {
         disable += setOf("LogNotTimber", "StringFormatInTimber", "ThrowableNotAtBeginning", "BinaryOperationInTimber", "TimberArgCount", "TimberArgTypes", "TimberTagLength", "TimberExceptionLogging")
     }
 
-    addComposeConfig()
+    buildFeatures {
+        compose = true
+    }
+
+    composeOptions {
+        kotlinCompilerExtensionVersion = libs.versions.androidx.compose.get()
+    }
+
+    packagingOptions {
+        resources.excludes.apply {
+            add("META-INF/DEPENDENCIES")
+            add("META-INF/LICENSE")
+            add("META-INF/LICENSE.txt")
+            add("META-INF/license.txt")
+            add("META-INF/NOTICE")
+            add("META-INF/NOTICE.txt")
+            add("META-INF/notice.txt")
+            add("META-INF/AL2.0")
+        }
+    }
 
     testOptions {
         unitTests.isReturnDefaultValues = true
@@ -62,47 +78,54 @@ dependencies {
 
     coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:1.1.5")
 
-    implementation(Deps.android.material)
-    implementation(Deps.android.ktx)
+    implementation(libs.android.material)
+    implementation(libs.androidx.ktx)
 
-    implementation(Deps.test.coreKtx)
-    testImplementation(Deps.test.junit)
-    testImplementation(Deps.test.coroutinesTest)
-    androidTestImplementation(Deps.test.junitExt)
-    androidTestImplementation(Deps.test.espressoCore)
-    androidTestImplementation(Deps.test.hiltAndroidTesting)
-    kaptAndroidTest(Deps.test.hiltAndroidCompiler)
-    testImplementation(Deps.test.mockk)
+    implementation(libs.androidx.test.core.ktx)
+    testImplementation(libs.junit)
+    testImplementation(libs.coroutines.test)
+    androidTestImplementation(libs.androidx.test.ext.junit)
+    androidTestImplementation(libs.androidx.test.espresso.core)
+    androidTestImplementation(libs.hilt.android.testing)
+    kaptAndroidTest(libs.hilt.android.compiler)
+    testImplementation(libs.mockk)
 
-    implementation(Deps.room.runtime)
-    implementation(Deps.room.ktx)
-    kapt(Deps.room.compiler)
+    implementation(libs.androidx.room.runtime)
+    implementation(libs.androidx.room.ktx)
+    kapt(libs.androidx.room.compiler)
 
-    implementation(Deps.coroutines.core)
-    implementation(Deps.coroutines.android)
+    implementation(libs.coroutines.core)
+    implementation(libs.coroutines.android)
 
-    implementation(Deps.compose.activity)
-    implementation(Deps.accompanist.navigationMaterial)
-    implementation(Deps.accompanist.navigationAnimation)
-    implementation(Deps.compose.navigation)
+    implementation(libs.androidx.activity.compose)
+    implementation(libs.accompanist.navigation.material)
+    implementation(libs.accompanist.navigation.animation)
+    implementation(libs.androidx.hilt.navigation.compose)
 
-    implementation(Deps.timber)
+    implementation(libs.timber)
 
-    implementation(Deps.hilt.android)
-    kapt(Deps.hilt.androidCompiler)
-    implementation(Deps.hilt.lifecycleVm)
-    kapt(Deps.hilt.compiler)
+    implementation(libs.hilt.android)
+    kapt(libs.hilt.android.compiler)
+    implementation(libs.hilt.lifecycle.viewmodel)
+//    kapt(Deps.hilt.compiler)
 
-    implementation(Deps.dialog.datetime)
+    implementation(libs.vanpra.material.datetime)
 
-    implementation(platform(Deps.firebase.bom))
-    implementation(Deps.firebase.analytics)
-    implementation(Deps.firebase.crashlytics)
-    implementation(Deps.firebase.firebaseMessaging)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.analytics)
+    implementation(libs.firebase.crashlytics)
+    implementation(libs.firebase.messaging)
 
-    implementation(Deps.splash.core)
-    implementation(Deps.moshi)
-    implementation(Deps.android.dataStore)
+    implementation(libs.androidx.core.splashscreen)
+    implementation(libs.moshi)
+    implementation(libs.androidx.datastore)
 
-    addComposeDependencies()
+    implementation(libs.androidx.compose.ui)
+    implementation(libs.androidx.compose.material)
+    implementation(libs.androidx.compose.material.icons)
+    implementation(libs.androidx.compose.ui.tooling)
+    implementation(libs.androidx.compose.runtime)
+    implementation(libs.androidx.compose.runtime.saveable)
+    implementation(libs.androidx.compose.runtime.livedata)
+    androidTestImplementation(libs.androidx.compose.ui.test)
 }
