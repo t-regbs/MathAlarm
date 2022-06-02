@@ -42,19 +42,4 @@ class ScheduleAlarmTest {
 
         Assert.assertEquals(assertAlarm, result)
     }
-
-    @Test
-    fun `test if new alarm is scheduled`() = runBlockingTest {
-        val firstAlarm = Alarm(alarmId = 2, vibrate = true)
-        val newAlarm = Alarm()
-        val reschedule = false
-        addAlarmUseCase(firstAlarm)
-        addAlarmUseCase(newAlarm)
-
-        scheduleAlarmUseCase(newAlarm, reschedule)
-        val result = findAlarmUseCase(newAlarm.alarmId)
-        val assertAlarm = newAlarm.copy(isOn = true)
-
-        Assert.assertEquals(assertAlarm, result)
-    }
 }
