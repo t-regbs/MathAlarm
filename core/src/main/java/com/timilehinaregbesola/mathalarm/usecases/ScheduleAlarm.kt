@@ -16,8 +16,14 @@ class ScheduleAlarm(
      * @param reschedule whether alarm should reschedule
      */
     suspend operator fun invoke(alarm: Alarm, reschedule: Boolean) {
-        val foundAlarm = alarmRepository.findAlarm(alarm.alarmId) ?: return
-        val isOn = alarmInteractor.schedule(alarm, reschedule)
+        val foundAlarm = if (alarm.alarmId == 0L) {
+            alarmRepository.getLatestAlarm()
+        } else {
+            val found = alarmRepository.findAlarm(alarm.alarmId) ?: return
+            found
+        }
+//        val foundAlarm = alarmRepository.findAlarm(alarm.alarmId) ?: return
+        val isOn = alarmInteractor.schedule(foundAlarm!!, reschedule)
         val updatedAlarm = foundAlarm.copy(isOn = isOn)
         alarmRepository.updateAlarm(updatedAlarm)
         alarmRepository.getAlarms()

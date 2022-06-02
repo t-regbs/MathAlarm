@@ -37,7 +37,7 @@ class AlarmRepositoryFake : AlarmDataSource {
 
     override fun getSavedAlarms(): Flow<List<Alarm>> = flowOf(alarmMap.values.toList().filter { it.isSaved })
 
-//    override suspend fun getLatestAlarmFromDatabase(): Alarm? = alarmMap[alarmMap.lastKey()]
+    override suspend fun getLatestAlarmFromDatabase(): Alarm? = alarmMap[alarmMap.lastKey()]
 
     override suspend fun findAlarm(id: Long): Alarm? = alarmMap[id]
 
