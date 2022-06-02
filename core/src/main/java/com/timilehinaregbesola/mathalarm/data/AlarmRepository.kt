@@ -17,5 +17,7 @@ class AlarmRepository(private val dataSource: AlarmDataSource) {
 
     suspend fun findAlarm(id: Long) = dataSource.findAlarm(id)
 
+    suspend fun getLatestAlarm() = dataSource.getLatestAlarmFromDatabase()
+
     suspend fun clear() = dataSource.clear()
 }

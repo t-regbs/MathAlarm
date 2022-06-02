@@ -10,6 +10,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.* // ktlint-disable no-wildcard-imports
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.*
+import timber.log.Timber
 import java.util.*
 import javax.inject.Inject
 
@@ -26,6 +27,7 @@ class AlarmListViewModel @Inject constructor(
     val uiEvent = _uiEvent.receiveAsFlow()
 
     private var recentlyDeletedAlarm: Alarm? = null
+    private var clearAlarmsSelected = false
 
     fun onEvent(event: AlarmListEvent) {
         when (event) {
@@ -69,9 +71,12 @@ class AlarmListViewModel @Inject constructor(
                 }
             }
             is AlarmListEvent.OnClearAlarmsClick -> {
+                clearAlarmsSelected = true
                 viewModelScope.launch {
-                    alarms.collect { list ->
+                    alarms.takeWhile { clearAlarmsSelected }.collect { list ->
+                        Timber.d("öooo")
                         usecases.clearAlarms(list)
+                        clearAlarmsSelected = false
                     }
                 }
             }

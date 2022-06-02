@@ -16,7 +16,7 @@ interface AlarmDataSource {
 
     fun getSavedAlarms(): Flow<List<Alarm>>
 
-//    suspend fun getLatestAlarmFromDatabase(): Alarm?
+    suspend fun getLatestAlarmFromDatabase(): Alarm?
 
     suspend fun findAlarm(id: Long): Alarm?
 

@@ -34,9 +34,9 @@ class RoomAlarmDataSource(
         mapper.toDomainList(entityList)
     }
 
-//    override suspend fun getLatestAlarmFromDatabase(): Alarm? = alarmDao.getLastAlarm()?.let {
-//        mapper.mapToDomainModel(it)
-//    }
+    override suspend fun getLatestAlarmFromDatabase(): Alarm? = alarmDao.getLastAlarm()?.let {
+        mapper.mapToDomainModel(it)
+    }
 
     override suspend fun findAlarm(id: Long): Alarm? = alarmDao.getAlarm(id)?.let { mapper.mapToDomainModel(it) }
 
