@@ -1,7 +1,7 @@
 ![](media/math_alarm_github.png)
 # Math Alarm :alarm_clock:
 
-![Android Build](https://github.com/t-regbs/MathAlarm/workflows/Android%20Build/badge.svg) ![My twitter](https://img.shields.io/twitter/url?style=social&url=https%3A%2F%2Ftwitter.com%2Ftimiaregbs) ![Shield](https://img.shields.io/badge/contributions-welcome-brightgreen)
+![Android Build](https://github.com/t-regbs/MathAlarm/workflows/Android%20Build/badge.svg) ![My twitter](https://img.shields.io/twitter/url?style=social&url=https%3A%2F%2Ftwitter.com%2Ftimiaregbs) ![Shield](https://img.shields.io/badge/contributions-welcome-brightgreen) [![Made in Nigeria](https://img.shields.io/badge/made%20in-nigeria-008751.svg?style=flat-square)](https://github.com/acekyd/made-in-nigeria)
 
 An Android alarm app in which you solve math problems of varying difficulty to dismiss alarm. Built with Kotlin, Room, Coroutines, the MVVM pattern with Clean architecture, ViewModel, Jetpack compose and some other libraries from the [Android Jetpack](https://developer.android.com/jetpack) .
 
