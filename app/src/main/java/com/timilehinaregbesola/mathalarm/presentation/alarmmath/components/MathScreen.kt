@@ -1,5 +1,6 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmmath.components
 
+import android.annotation.SuppressLint
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.net.Uri
@@ -53,6 +54,7 @@ private const val SUBTRACT = 1
 private const val TIMES = 2
 private const val DIVIDE = 3
 
+@SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @ExperimentalMaterialApi
 @InternalCoroutinesApi
 @ExperimentalComposeUiApi

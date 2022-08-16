@@ -69,8 +69,8 @@ fun AppSettingsScreen(
                     }
                 )
             },
-        ) {
-            Column {
+        ) { paddingVals ->
+            Column(Modifier.padding(paddingVals)) {
                 Column(modifier = Modifier.padding(horizontal = MaterialTheme.spacing.large)) {
                     Text(
                         modifier = Modifier.padding(top = MaterialTheme.spacing.medium),
