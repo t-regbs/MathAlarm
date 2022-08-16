@@ -1,5 +1,6 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -44,6 +45,7 @@ import timber.log.Timber
 import java.net.URLEncoder
 import java.util.*
 
+@SuppressLint("UnrememberedMutableState")
 @ExperimentalAnimationApi
 @ExperimentalFoundationApi
 @ExperimentalMaterialApi
