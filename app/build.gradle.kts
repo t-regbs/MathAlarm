@@ -51,7 +51,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.androidx.compose.get()
+        kotlinCompilerExtensionVersion = libs.versions.androidx.compose.compiler.get()
     }
 
     packagingOptions {
@@ -106,8 +106,6 @@ dependencies {
 
     implementation(libs.hilt.android)
     kapt(libs.hilt.android.compiler)
-    implementation(libs.hilt.lifecycle.viewmodel)
-//    kapt(Deps.hilt.compiler)
 
     implementation(libs.vanpra.material.datetime)
 

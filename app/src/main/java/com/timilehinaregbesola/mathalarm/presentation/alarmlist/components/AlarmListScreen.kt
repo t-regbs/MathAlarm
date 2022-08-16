@@ -40,7 +40,6 @@ import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_SETTINGS_SHEET_ARG
 import com.timilehinaregbesola.mathalarm.utils.SAT
 import com.timilehinaregbesola.mathalarm.utils.UiEvent
 import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
-import kotlinx.coroutines.flow.collect
 import timber.log.Timber
 import java.net.URLEncoder
 import java.util.*
@@ -132,7 +131,7 @@ fun ListDisplayScreen(
                     )
                 },
                 snackbarHost = { state -> AlarmSnack(state) }
-            ) {
+            ) { padding ->
                 AlarmPermissionDialog(
                     context = context,
                     isDialogOpen = showPermissionDialog,
@@ -145,6 +144,7 @@ fun ListDisplayScreen(
                 )
                 if (alarmList.isEmpty()) {
                     AlarmEmptyScreen(
+                        modifier = Modifier.padding(padding),
                         onClickFab = {
                             viewModel.onEvent(AlarmListEvent.OnAddAlarmClick)
                         },
