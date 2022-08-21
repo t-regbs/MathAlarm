@@ -67,7 +67,7 @@ class MathAlarmNotification(
                 }
             }
             toneUri = if (uriExists) toneUri else RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-            setDataSource(context, toneUri)
+            setDataSource(context, toneUri) // Something is happening here
             setAudioAttributes(
                 AudioAttributes.Builder()
                     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
