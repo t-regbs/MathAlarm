@@ -1,12 +1,12 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmmath
 
-import android.media.MediaPlayer
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.Usecases
+import com.timilehinaregbesola.mathalarm.interactors.AudioPlayer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
@@ -17,7 +17,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AlarmMathViewModel @Inject constructor(
     private val usecases: Usecases,
-    val audioPlayer: MediaPlayer
+    val audioPlayer: AudioPlayer
 ) : ViewModel() {
     private val _state = MutableLiveData<ToneState>(ToneState.Stopped())
     val state: LiveData<ToneState> = _state

@@ -1,8 +1,6 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmmath.components
 
 import android.annotation.SuppressLint
-import android.media.AudioAttributes
-import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Vibrator
 import androidx.activity.compose.BackHandler
@@ -37,6 +35,7 @@ import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
+import com.timilehinaregbesola.mathalarm.interactors.AudioPlayer
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmSnack
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.AlarmMathViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.ToneState
@@ -75,19 +74,13 @@ fun MathScreen(
         if (navController.previousBackStackEntry?.destination?.id == settingsId) {
             try {
                 viewModel.audioPlayer.apply {
+                    stop()
+                    init()
                     reset()
-                    setDataSource(context, alarmUri)
-                    setAudioAttributes(
-                        AudioAttributes.Builder()
-                            .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                            .setUsage(AudioAttributes.USAGE_ALARM)
-                            .build()
-                    )
-                    prepare()
-                    isLooping = true
-                    start()
-                    viewModel.startTimer()
+                    setDataSource(alarmUri)
+                    startAlarmAudio()
                 }
+                viewModel.startTimer()
             } catch (e: IOException) {
                 e.printStackTrace()
             }
@@ -143,8 +136,8 @@ fun MathScreen(
                     val ts = toneState.value as ToneState.Countdown
                     Timber.d("seconds: ${ts.seconds}")
                     Timber.d("total: ${ts.total}")
-                    progress.value = ((viewModel.audioPlayer.currentPosition / 1000).toFloat() / (viewModel.audioPlayer.duration / 1000).toFloat())
-                    Timber.d("progrss: ${progress.value}")
+//                    progress.value = ((viewModel.audioPlayer.currentPosition / 1000).toFloat() / (viewModel.audioPlayer.duration / 1000).toFloat())
+//                    Timber.d("progrss: ${progress.value}")
                     LinearProgressIndicator(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -311,7 +304,7 @@ fun MathScreen(
 private fun dismissAlarm(
     answerText: MutableState<String>,
     problem: MathProblem,
-    mp: MediaPlayer,
+    player: AudioPlayer,
     keyboardController: SoftwareKeyboardController?,
     navController: NavHostController,
     alarm: AlarmEntity,
@@ -320,7 +313,7 @@ private fun dismissAlarm(
     onWrongAnswer: () -> Unit
 ) {
     if (validateAnswer(answerText, problem)) {
-        stopMusicAndHideKeyboard(mp, viewModel, keyboardController, onStopMusic)
+        stopMusicAndHideKeyboard(player, viewModel, keyboardController, onStopMusic)
         if (!alarm.repeat) {
             viewModel.completeAlarm(AlarmMapper().mapToDomainModel(alarm))
         }
@@ -336,16 +329,13 @@ private fun dismissAlarm(
 
 @ExperimentalComposeUiApi
 private fun stopMusicAndHideKeyboard(
-    mp: MediaPlayer,
+    player: AudioPlayer,
     viewModel: AlarmMathViewModel,
     keyboardController: SoftwareKeyboardController?,
     stopVibrate: () -> Unit
 ) {
     stopVibrate.invoke()
-    mp.run {
-        if (isPlaying) stop()
-//        release()
-    }
+    player.stop()
     viewModel.stopTimer()
     keyboardController?.hide()
 }
