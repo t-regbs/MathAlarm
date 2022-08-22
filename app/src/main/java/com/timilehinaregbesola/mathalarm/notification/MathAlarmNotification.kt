@@ -5,8 +5,6 @@ import android.app.TaskStackBuilder
 import android.content.Context
 import android.content.Intent
 import android.graphics.BitmapFactory
-import android.media.AudioAttributes
-import android.media.MediaPlayer
 import android.media.RingtoneManager
 import android.os.Build
 import androidx.compose.animation.ExperimentalAnimationApi
@@ -23,6 +21,7 @@ import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
+import com.timilehinaregbesola.mathalarm.interactors.AudioPlayer
 import com.timilehinaregbesola.mathalarm.presentation.MainActivity
 import com.timilehinaregbesola.mathalarm.utils.getNotificationManager
 import kotlinx.coroutines.InternalCoroutinesApi
@@ -42,7 +41,7 @@ import java.net.URLEncoder
 class MathAlarmNotification(
     private val context: Context,
     private val channel: MathAlarmNotificationChannel,
-    private val player: MediaPlayer
+    private val player: AudioPlayer
 ) {
     /**
      * Shows the [MathAlarmNotification] based on the given Alarm.
@@ -56,6 +55,7 @@ class MathAlarmNotification(
         var uriExists = false
         var toneUri = alarm.alarmTone.toUri()
         player.apply {
+            init()
             reset()
             if (null != toneUri) {
                 try {
@@ -67,16 +67,8 @@ class MathAlarmNotification(
                 }
             }
             toneUri = if (uriExists) toneUri else RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
-            setDataSource(context, toneUri) // Something is happening here
-            setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .build()
-            )
-            prepare()
-            isLooping = true
-            start()
+            setDataSource(toneUri)
+            startAlarmAudio()
         }
         context.getNotificationManager()?.notify(alarm.alarmId.toInt(), builder.build())
     }
@@ -99,8 +91,7 @@ class MathAlarmNotification(
      */
     fun dismiss(notificationId: Long) {
         Timber.d("Dismissing notification id '$notificationId'")
-        if (player.isPlaying)
-            player.stop()
+        player.stop()
         context.getNotificationManager()?.cancel(notificationId.toInt())
     }
 

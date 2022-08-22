@@ -2,7 +2,6 @@ package com.timilehinaregbesola.mathalarm.framework.app.di
 
 import android.app.Application
 import android.content.Context
-import android.media.MediaPlayer
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material.ExperimentalMaterialApi
@@ -16,9 +15,7 @@ import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermissio
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AndroidVersion
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AndroidVersionImpl
 import com.timilehinaregbesola.mathalarm.framework.database.*
-import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
-import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractorImpl
-import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractor
+import com.timilehinaregbesola.mathalarm.interactors.*
 import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractorImpl
 import com.timilehinaregbesola.mathalarm.notification.AlarmNotificationScheduler
 import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotification
@@ -134,15 +131,15 @@ object AppModule {
     fun provideAlarmNotification(
         @ApplicationContext context: Context,
         channel: MathAlarmNotificationChannel,
-        player: MediaPlayer
+        player: AudioPlayer
     ): MathAlarmNotification {
         return MathAlarmNotification(context, channel, player)
     }
 
     @Provides
     @Singleton
-    fun provideAudioPlayer(): MediaPlayer {
-        return MediaPlayer()
+    fun provideAudioPlayer(@ApplicationContext context: Context): AudioPlayer {
+        return PlayerWrapper(context)
     }
 
     @Provides
