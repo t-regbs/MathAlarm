@@ -11,8 +11,8 @@ plugins {
 android {
     defaultConfig {
         applicationId = "com.timilehinaregbesola.mathalarm"
-        versionCode = 15
-        versionName = "2.0.5"
+        versionCode = 16
+        versionName = "2.0.6"
         minSdk = Integer.parseInt(libs.versions.android.min.sdk.get())
         targetSdk = Integer.parseInt(libs.versions.android.target.sdk.get())
         compileSdk = Integer.parseInt(libs.versions.android.compile.sdk.get())
