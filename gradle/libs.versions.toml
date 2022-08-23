@@ -33,6 +33,7 @@ test_junit = "4.13.2"
 test_junit_ext = "1.1.4-alpha07"
 test_mockk = "1.12.5"
 timber = "4.7.1"
+lottie = "5.2.0"
 
 [libraries]
 accompanist_navigation_animation = { module = "com.google.accompanist:accompanist-navigation-animation", version.ref = "accompanist" }
@@ -78,3 +79,4 @@ plugin_hilt_gradle = { module = "com.google.dagger:hilt-android-gradle-plugin", 
 plugin_kotlin_gradle = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin_gradle_plugin" }
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 vanpra_material_datetime = { module = "io.github.vanpra.compose-material-dialogs:datetime", version.ref = "material_dialogs" }
+lottie_compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottie" }

@@ -8,9 +8,7 @@ import android.provider.Settings
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
@@ -60,6 +58,7 @@ fun ListDisplayScreen(
     var deleteAllAlarmsDialog by remember { mutableStateOf(false) }
     val scaffoldState = rememberScaffoldState()
     var showPermissionDialog by remember { mutableStateOf(false) }
+    var isLoading by remember { mutableStateOf(false) }
 
     LaunchedEffect(key1 = true) {
         viewModel.uiEvent.collect { event ->
@@ -77,6 +76,7 @@ fun ListDisplayScreen(
                     buildArgAndNavigate(AlarmMapper().mapFromDomainModel(event.alarm)) { alarmJson ->
                         navController.navigate(Navigation.NAV_SETTINGS_SHEET.replace("{$NAV_SETTINGS_SHEET_ARGUMENT}", alarmJson))
                     }
+                    isLoading = false
                 }
                 else -> Unit
             }
@@ -209,6 +209,7 @@ fun ListDisplayScreen(
                                     AlarmItem(
                                         alarm = alarm,
                                         onEditAlarm = {
+                                            isLoading = true
                                             checkPermissionAndPerformAction(
                                                 value = alarmPermission.hasExactAlarmPermission(),
                                                 action = { viewModel.onEvent(AlarmListEvent.OnEditAlarmClick(alarm)) },
@@ -259,6 +260,7 @@ fun ListDisplayScreen(
                                 .align(Alignment.BottomEnd),
                             fabImage = fabImage,
                             onClick = {
+                                isLoading = true
                                 checkPermissionAndPerformAction(
                                     value = alarmPermission.hasExactAlarmPermission(),
                                     action = { viewModel.onEvent(AlarmListEvent.OnAddAlarmClick) },
@@ -266,6 +268,14 @@ fun ListDisplayScreen(
                                 )
                             }
                         )
+                        if (isLoading) {
+                            Loader(
+                                modifier = Modifier
+                                    .width(50.dp)
+                                    .height(50.dp)
+                                    .align(Alignment.Center)
+                            )
+                        }
                     }
                 }
             }
