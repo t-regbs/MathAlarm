@@ -180,7 +180,8 @@ class AlarmSettingsViewModel @Inject constructor(
                 } else {
                     _tone.value = alarm.alarmTone
                 }
-                _alarmTitle.value = TextFieldValue(alarm.title)
+                val formattedTitle = alarm.title.replace('+', ' ')
+                _alarmTitle.value = TextFieldValue(formattedTitle)
                 _isOn.value = alarm.isOn
                 _isSaved.value = alarm.isSaved
             }
