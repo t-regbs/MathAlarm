@@ -94,6 +94,8 @@ dependencies {
     implementation(libs.androidx.room.ktx)
     kapt(libs.androidx.room.compiler)
 
+    implementation(libs.lottie.compose)
+
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
 

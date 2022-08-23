@@ -47,10 +47,7 @@ class AlarmListViewModel @Inject constructor(
             }
             is AlarmListEvent.OnAddAlarmClick -> {
                 // Navigate to bottom sheet
-                viewModelScope.launch {
-//                    val id = usecases.addAlarm(Alarm())
-                    sendUiEvent(UiEvent.Navigate(Alarm()))
-                }
+                sendUiEvent(UiEvent.Navigate(Alarm()))
             }
             is AlarmListEvent.OnUndoDeleteClick -> {
                 viewModelScope.launch {
