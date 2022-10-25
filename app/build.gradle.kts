@@ -120,6 +120,9 @@ dependencies {
     implementation(libs.moshi)
     implementation(libs.androidx.datastore)
 
+    val composeBom = platform(libs.compose.bom)
+    implementation(composeBom)
+    androidTestImplementation(composeBom)
     implementation(libs.androidx.compose.ui)
     implementation(libs.androidx.compose.material)
     implementation(libs.androidx.compose.material.icons)
