@@ -14,6 +14,7 @@ androidx_datastore = "1.0.0"
 androidx_ktx = "1.9.0-beta01"
 androidx_room = "2.5.0-alpha02"
 androidx_test_core = "1.4.0"
+compose = "2022.10.00"
 coroutines = "1.6.4"
 crashlytics_plugin = "2.9.1"
 firebase = "30.3.2"
@@ -39,15 +40,16 @@ lottie = "5.2.0"
 accompanist_navigation_animation = { module = "com.google.accompanist:accompanist-navigation-animation", version.ref = "accompanist" }
 accompanist_navigation_material = { module = "com.google.accompanist:accompanist-navigation-material", version.ref = "accompanist" }
 android_material = { module = "com.google.android.material:material", version.ref = "material" }
+compose_bom = { module = "androidx.compose:compose-bom", version.ref = "compose" }
 androidx_activity_compose = { module = "androidx.activity:activity-compose", version.ref = "androidx_activity_compose" }
-androidx_compose_material = { module = "androidx.compose.material:material", version.ref = "androidx_compose" }
-androidx_compose_material_icons = { module = "androidx.compose.material:material-icons-extended", version.ref = "androidx_compose" }
-androidx_compose_runtime = { module = "androidx.compose.runtime:runtime", version.ref = "androidx_compose" }
-androidx_compose_runtime_livedata = { module = "androidx.compose.runtime:runtime-livedata", version.ref = "androidx_compose" }
-androidx_compose_runtime_saveable = { module = "androidx.compose.runtime:runtime-saveable", version.ref = "androidx_compose" }
-androidx_compose_ui = { module = "androidx.compose.ui:ui", version.ref = "androidx_compose" }
-androidx_compose_ui_test = { module = "androidx.compose.ui:ui-test-junit4", version.ref = "androidx_compose" }
-androidx_compose_ui_tooling = { module = "androidx.compose.ui:ui-tooling", version.ref = "androidx_compose" }
+androidx_compose_material = { module = "androidx.compose.material:material" }
+androidx_compose_material_icons = { module = "androidx.compose.material:material-icons-extended" }
+androidx_compose_runtime = { module = "androidx.compose.runtime:runtime" }
+androidx_compose_runtime_livedata = { module = "androidx.compose.runtime:runtime-livedata" }
+androidx_compose_runtime_saveable = { module = "androidx.compose.runtime:runtime-saveable" }
+androidx_compose_ui = { module = "androidx.compose.ui:ui" }
+androidx_compose_ui_test = { module = "androidx.compose.ui:ui-test-junit4" }
+androidx_compose_ui_tooling = { module = "androidx.compose.ui:ui-tooling" }
 androidx_core_splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "splashscreen" }
 androidx_datastore = { module = "androidx.datastore:datastore-preferences", version.ref = "androidx_datastore" }
 androidx_hilt_navigation_compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hilt_nav_compose" }
