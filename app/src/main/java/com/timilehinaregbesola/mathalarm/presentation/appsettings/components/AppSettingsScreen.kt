@@ -37,7 +37,7 @@ fun AppSettingsScreen(
     val options = listOf(
         Triple("Light", Icons.Filled.WbSunny, Theme.LIGHT),
         Triple("Dark", Icons.Filled.DarkMode, Theme.DARK),
-        Triple("Default", Icons.Filled.Smartphone, Theme.SYSTEM)
+        Triple("System", Icons.Filled.Smartphone, Theme.SYSTEM)
     )
     var selectedOption = pref.loadAppTheme().collectAsState(initial = Theme.SYSTEM).value
     val onSelectionChange = { newTheme: Theme ->
@@ -63,12 +63,12 @@ fun AppSettingsScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.ArrowBack,
-                                contentDescription = "Back",
+                                contentDescription = "Back"
                             )
                         }
                     }
                 )
-            },
+            }
         ) { paddingVals ->
             Column(Modifier.padding(paddingVals)) {
                 Column(modifier = Modifier.padding(horizontal = MaterialTheme.spacing.large)) {
@@ -79,7 +79,7 @@ fun AppSettingsScreen(
                     )
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
                     Row(
-                        horizontalArrangement = Arrangement.Center,
+                        horizontalArrangement = Arrangement.Center
                     ) {
                         Box(
                             modifier = Modifier
