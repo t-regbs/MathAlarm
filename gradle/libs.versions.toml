@@ -50,6 +50,7 @@ androidx_compose_runtime_saveable = { module = "androidx.compose.runtime:runtime
 androidx_compose_ui = { module = "androidx.compose.ui:ui" }
 androidx_compose_ui_test = { module = "androidx.compose.ui:ui-test-junit4" }
 androidx_compose_ui_tooling = { module = "androidx.compose.ui:ui-tooling" }
+androidx_compose_ui_tooling_preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 androidx_core_splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "splashscreen" }
 androidx_datastore = { module = "androidx.datastore:datastore-preferences", version.ref = "androidx_datastore" }
 androidx_hilt_navigation_compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hilt_nav_compose" }

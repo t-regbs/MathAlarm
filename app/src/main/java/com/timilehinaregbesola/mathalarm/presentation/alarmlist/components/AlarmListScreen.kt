@@ -200,7 +200,7 @@ fun ListDisplayScreen(
                                 .fillMaxSize()
                         ) {
                             LazyColumn(
-                                horizontalAlignment = Alignment.CenterHorizontally,
+                                horizontalAlignment = Alignment.CenterHorizontally
                             ) {
                                 stickyHeader {
                                     ListHeader(enabled, nearestAlarmMessage.value ?: "", darkTheme)
@@ -226,9 +226,7 @@ fun ListDisplayScreen(
                                         onDeleteAlarm = {
                                             viewModel.onEvent(AlarmListEvent.OnDeleteAlarmClick(it))
                                         },
-                                        onCancelAlarm = {
-                                            viewModel.cancelAlarm(it)
-                                        },
+                                        onCancelAlarm = viewModel::cancelAlarm,
                                         onScheduleAlarm = { curAlarm: Alarm, b: Boolean ->
                                             checkPermissionAndPerformAction(
                                                 value = alarmPermission.hasExactAlarmPermission(),
@@ -238,7 +236,8 @@ fun ListDisplayScreen(
                                                         alarm = curAlarm,
                                                         reschedule = b,
                                                         message = "Alarm set for ${curAlarm.getTimeLeft(
-                                                            getCal(curAlarm, calender).timeInMillis, calender
+                                                            getCal(curAlarm, calender).timeInMillis,
+                                                            calender
                                                         )}"
                                                     )
                                                 },
@@ -303,7 +302,7 @@ private fun buildArgAndNavigate(alarm: AlarmEntity, onNavigate: (String) -> Unit
 private fun AlarmPermissionDialog(
     context: Context,
     isDialogOpen: Boolean,
-    onCloseDialog: () -> Unit,
+    onCloseDialog: () -> Unit
 ) {
     val arguments = DialogArguments(
         title = stringResource(id = R.string.task_alarm_permission_dialog_title),

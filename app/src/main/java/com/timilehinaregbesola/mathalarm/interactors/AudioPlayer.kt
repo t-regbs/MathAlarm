@@ -9,6 +9,7 @@ import timber.log.Timber
 interface AudioPlayer {
     fun init()
     fun startAlarmAudio()
+
 //    fun setDataSourceFromResource(res: Int)
     fun setPerceivedVolume(perceived: Float)
 
@@ -23,7 +24,7 @@ interface AudioPlayer {
 
 class PlayerWrapper(
 //    val resources: Resources,
-    val context: Context,
+    val context: Context
 ) : AudioPlayer {
     override fun setDataSource(alarmtone: Uri) {
         // Fall back on the default alarm if the database does not have an

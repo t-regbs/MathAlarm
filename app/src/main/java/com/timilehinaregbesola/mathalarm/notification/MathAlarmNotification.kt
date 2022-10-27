@@ -57,14 +57,12 @@ class MathAlarmNotification(
         player.apply {
             init()
             reset()
-            if (null != toneUri) {
-                try {
-                    val inputStream: InputStream? = context.contentResolver.openInputStream(toneUri)
-                    inputStream?.close()
-                    uriExists = true
-                } catch (e: Exception) {
-                    Timber.w("File corresponding to the uri does not exist $toneUri")
-                }
+            try {
+                val inputStream: InputStream? = context.contentResolver.openInputStream(toneUri)
+                inputStream?.close()
+                uriExists = true
+            } catch (e: Exception) {
+                Timber.w("File corresponding to the uri does not exist $toneUri")
             }
             toneUri = if (uriExists) toneUri else RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
             setDataSource(toneUri)
