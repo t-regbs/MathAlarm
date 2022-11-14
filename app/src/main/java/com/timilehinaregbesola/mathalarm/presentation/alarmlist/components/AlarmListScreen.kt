@@ -205,7 +205,10 @@ fun ListDisplayScreen(
                                 stickyHeader {
                                     ListHeader(enabled, nearestAlarmMessage.value ?: "", darkTheme)
                                 }
-                                items(alarmList) { alarm ->
+                                items(
+                                    items = alarmList,
+                                    key = { alarm -> alarm.alarmId }
+                                ) { alarm ->
                                     AlarmItem(
                                         alarm = alarm,
                                         onEditAlarm = {
