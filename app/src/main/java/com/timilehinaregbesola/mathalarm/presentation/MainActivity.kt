@@ -33,8 +33,18 @@ class MainActivity : AppCompatActivity() {
     lateinit var preferences: AlarmPreferencesImpl
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        val splashscreen = installSplashScreen()
         super.onCreate(savedInstanceState)
+
+        // Keep the splash screen on-screen until the UI state is loaded. This condition is
+        // evaluated each time the app needs to be redrawn so it should be fast to avoid blocking
+        // the UI.
+//        splashScreen.setKeepOnScreenCondition {
+//            when (uiState) {
+//                Loading -> true
+//                is Success -> false
+//            }
+//        }
         setContent {
             val isDarkTheme = preferences.shouldUseDarkColors()
             updateTheme(isDarkTheme)

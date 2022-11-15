@@ -52,7 +52,7 @@ class MathAlarmNotification(
         Timber.d("Showing notification for '${alarm.title}'")
         val builder = buildNotification(alarm)
 //        builder.addAction(getCompleteAction(alarm))
-        var uriExists = false
+        var uriExists: Boolean
         var toneUri = alarm.alarmTone.toUri()
         player.apply {
             init()
@@ -62,6 +62,7 @@ class MathAlarmNotification(
                 inputStream?.close()
                 uriExists = true
             } catch (e: Exception) {
+                uriExists = false
                 Timber.w("File corresponding to the uri does not exist $toneUri")
             }
             toneUri = if (uriExists) toneUri else RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)

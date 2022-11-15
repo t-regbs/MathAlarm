@@ -22,7 +22,6 @@ class ShowAlarm(
 
         if (alarm.repeat && alarm.isOn) {
             scheduleNextAlarm(alarm)
-        } else {
         }
 
         if (alarm.isOn.not()) {
