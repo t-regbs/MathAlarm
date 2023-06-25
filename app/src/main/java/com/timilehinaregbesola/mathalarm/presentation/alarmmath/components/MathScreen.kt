@@ -1,9 +1,11 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmmath.components
 
 import android.annotation.SuppressLint
+import android.content.Context
 import android.net.Uri
+import android.os.Build
+import android.os.VibrationEffect
 import android.os.Vibrator
-import androidx.activity.compose.BackHandler
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.*
@@ -20,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
-import androidx.compose.ui.platform.SoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
@@ -35,23 +36,17 @@ import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
-import com.timilehinaregbesola.mathalarm.interactors.AudioPlayer
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmSnack
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.AlarmMathViewModel
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathScreenEvent
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.ToneState
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.buildQuestionString
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.generateMathProblem
 import com.timilehinaregbesola.mathalarm.presentation.ui.*
-import com.timilehinaregbesola.mathalarm.utils.EASY
-import com.timilehinaregbesola.mathalarm.utils.HARD
 import kotlinx.coroutines.InternalCoroutinesApi
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collectLatest
 import timber.log.Timber
 import java.io.IOException
-import kotlin.random.Random
-
-private const val ADD = 0
-private const val SUBTRACT = 1
-private const val TIMES = 2
-private const val DIVIDE = 3
 
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @ExperimentalMaterialApi
@@ -64,10 +59,60 @@ fun MathScreen(
     viewModel: AlarmMathViewModel = hiltViewModel(),
     darkTheme: Boolean,
 ) {
-    BackHandler { }
     var vibrator: Vibrator? = null
     val settingsId = 1143682591
     val context = LocalContext.current
+    val problem = remember { generateMathProblem(alarm.difficulty) }
+    val question = remember { mutableStateOf(buildQuestionString(problem)) }
+    val scaffoldState = rememberScaffoldState()
+    val keyboardController = LocalSoftwareKeyboardController.current
+
+    LaunchedEffect(key1 = true) {
+        viewModel.eventFlow.collectLatest { event ->
+            when (event) {
+                is AlarmMathViewModel.UiEvent.ShowSnackbar -> {
+                    scaffoldState.snackbarHostState.showSnackbar(
+                        message = event.message,
+                    )
+                }
+                is AlarmMathViewModel.UiEvent.CompleteAndClose -> {
+                    if (!alarm.repeat) {
+                        viewModel.completeAlarm(AlarmMapper().mapToDomainModel(alarm))
+                    }
+                    val fromSheet = navController.previousBackStackEntry?.savedStateHandle?.remove<Boolean>("fromSheet")
+                    fromSheet?.let {
+                        navController.previousBackStackEntry?.savedStateHandle?.set("testAlarm", alarm)
+                    }
+                    navController.popBackStack()
+                }
+                is AlarmMathViewModel.UiEvent.StopVibrateAndHideKeyboard -> {
+                    vibrator?.cancel()
+                    vibrator = null
+                    keyboardController?.hide()
+                }
+            }
+        }
+    }
+
+    DisposableEffect(true) {
+        // Vibrate phone
+        if (alarm.vibrate) {
+            vibrator =
+                context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
+            val pattern = longArrayOf(0, 1000, 3000)
+
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                vibrator?.vibrate(VibrationEffect.createWaveform(pattern, 0))
+            } else {
+                // 0 = Repeat Indefinitely
+                vibrator?.vibrate(pattern, 0)
+            }
+        }
+        onDispose {
+            vibrator?.cancel()
+            vibrator = null
+        }
+    }
     if (alarm.alarmTone.isNotEmpty()) {
         val alarmUri = Uri.parse(alarm.alarmTone)
         println(navController.previousBackStackEntry?.destination?.id)
@@ -87,75 +132,49 @@ fun MathScreen(
         }
     } else {
         Timber.d("Tone not available")
-        // Should show tone not available snackbar
+        viewModel.onEvent(MathScreenEvent.OnToneError("Tone not available"))
     }
-
-    // Vibrate phone
-    if (alarm.vibrate) {
-//            vibrator =
-//                context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
-//            val pattern = longArrayOf(0, 1000, 3000)
-//
-//            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-//                vibrator?.vibrate(VibrationEffect.createWaveform(pattern, 0))
-//            } else {
-//                // 0 = Repeat Indefinitely
-//                vibrator?.vibrate(pattern, 0)
-//            }
-    }
-
-    // Get difficulty
-    val problem = remember { getMathProblem(alarm.difficulty) }
-    val question = remember { mutableStateOf(getMathString(problem)) }
-    val scaffoldState = rememberScaffoldState()
-    val scope = rememberCoroutineScope()
 
     Scaffold(
         scaffoldState = scaffoldState,
-        snackbarHost = { state -> AlarmSnack(state) }
+        snackbarHost = { state -> AlarmSnack(state) },
     ) {
         Surface(
             Modifier
                 .fillMaxSize()
-                .padding(vertical = MaterialTheme.spacing.extraMedium)
+                .padding(vertical = MaterialTheme.spacing.extraMedium),
         ) {
             Column {
                 val toneState = viewModel.state.observeAsState()
-                val answerText = rememberSaveable { mutableStateOf("") }
-                val keyboardController = LocalSoftwareKeyboardController.current
                 val maxChar = 8
 
                 val progress = rememberSaveable { mutableStateOf(0.1f) }
                 val animatedProgress = animateFloatAsState(
                     targetValue = progress.value,
-                    animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec
+                    animationSpec = ProgressIndicatorDefaults.ProgressAnimationSpec,
+                    label = "ProgressBar",
                 ).value
 
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraMedium))
                 if (toneState.value is ToneState.Countdown) {
-                    val ts = toneState.value as ToneState.Countdown
-                    Timber.d("seconds: ${ts.seconds}")
-                    Timber.d("total: ${ts.total}")
-//                    progress.value = ((viewModel.audioPlayer.currentPosition / 1000).toFloat() / (viewModel.audioPlayer.duration / 1000).toFloat())
-//                    Timber.d("progrss: ${progress.value}")
                     LinearProgressIndicator(
                         modifier = Modifier
                             .fillMaxWidth()
                             .height(10.dp)
                             .padding(horizontal = MaterialTheme.spacing.extraMedium),
                         color = indicatorColor,
-                        progress = animatedProgress
+                        progress = animatedProgress,
                     )
                 }
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
                 Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.Center
+                    horizontalArrangement = Arrangement.Center,
                 ) {
                     Text(
                         text = question.value ?: "",
                         fontSize = 70.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Bold,
                     )
                 }
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
@@ -164,10 +183,12 @@ fun MathScreen(
                         .fillMaxWidth()
                         .height(90.dp)
                         .padding(horizontal = 56.dp),
-                    value = answerText.value,
+                    value = viewModel.answerText.value,
                     onValueChange = { newVal ->
                         if (newVal.length <= maxChar) {
-                            answerText.value = newVal.filter { it.isDigit() }
+                            viewModel.onEvent(
+                                MathScreenEvent.EnteredAnswer(newVal.filter { it.isDigit() }),
+                            )
                         }
                     },
                     singleLine = true,
@@ -175,66 +196,52 @@ fun MathScreen(
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.Center,
-                            verticalAlignment = Alignment.CenterVertically
+                            verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Text(text = "=", fontSize = 30.sp)
                         }
                     },
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number,
-                        imeAction = ImeAction.Done
+                        imeAction = ImeAction.Done,
                     ),
                     keyboardActions = KeyboardActions(
                         onDone = {
-                            dismissAlarm(
-                                answerText,
-                                problem,
-                                viewModel.audioPlayer,
-                                keyboardController,
-                                navController,
-                                alarm,
-                                viewModel,
-                                {
-                                    vibrator?.cancel()
-                                    vibrator = null
-                                }
-                            ) {
-                                scope.launch {
-                                    scaffoldState.snackbarHostState.showSnackbar("Incorrect!")
-                                }
-                            }
-                        }
+                            viewModel.onEvent(MathScreenEvent.OnEnterClick(problem))
+                        },
                     ),
                     textStyle = TextStyle(
                         color = MaterialTheme.colors.onSurface,
                         fontSize = 30.sp,
-                        textAlign = TextAlign.Center
+                        textAlign = TextAlign.Center,
                     ),
                     colors = TextFieldDefaults.textFieldColors(
                         backgroundColor = if (darkTheme) Color.DarkGray else unSelectedDay,
                         focusedIndicatorColor = Color.Transparent,
                         unfocusedIndicatorColor = Color.Transparent,
-                        disabledIndicatorColor = Color.Transparent
+                        disabledIndicatorColor = Color.Transparent,
                     ),
-                    shape = MaterialTheme.shapes.medium.copy(CornerSize(24.dp))
+                    shape = MaterialTheme.shapes.medium.copy(CornerSize(24.dp)),
                 )
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
                         .padding(horizontal = 56.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Column(modifier = Modifier.height(120.dp)) {
                         Button(
                             modifier = Modifier
                                 .height(55.dp)
                                 .width(120.dp),
-                            onClick = { answerText.value = "" },
+                            onClick = {
+                                viewModel.onEvent(MathScreenEvent.OnClearClick)
+                            },
                             colors = ButtonDefaults.buttonColors(
                                 backgroundColor = clearButtonColor,
-                                contentColor = Color.White
-                            )
+                                contentColor = Color.White,
+                            ),
                         ) {
                             Text(text = "CLEAR", fontSize = 19.sp)
                         }
@@ -245,21 +252,13 @@ fun MathScreen(
                                 .width(120.dp),
                             enabled = alarm.snooze != 0,
                             onClick = {
-                                stopMusicAndHideKeyboard(
-                                    viewModel.audioPlayer,
-                                    viewModel,
-                                    keyboardController
-                                ) {
-                                    vibrator?.cancel()
-                                    vibrator = null
-                                }
-                                viewModel.snoozeAlarm(alarm.alarmId)
+                                viewModel.onEvent(MathScreenEvent.OnSnoozeClick(alarm.alarmId))
                                 navController.popBackStack()
                             },
                             colors = ButtonDefaults.buttonColors(
                                 backgroundColor = snoozeButtonColor,
-                                contentColor = Color.White
-                            )
+                                contentColor = Color.White,
+                            ),
                         ) {
                             Text(text = "SNOOZE", fontSize = 19.sp)
                         }
@@ -269,28 +268,12 @@ fun MathScreen(
                             .height(120.dp)
                             .width(120.dp),
                         onClick = {
-                            dismissAlarm(
-                                answerText,
-                                problem,
-                                viewModel.audioPlayer,
-                                keyboardController,
-                                navController,
-                                alarm,
-                                viewModel,
-                                {
-                                    vibrator?.cancel()
-                                    vibrator = null
-                                }
-                            ) {
-                                scope.launch {
-                                    scaffoldState.snackbarHostState.showSnackbar("Incorrect!")
-                                }
-                            }
+                            viewModel.onEvent(MathScreenEvent.OnEnterClick(problem))
                         },
                         colors = ButtonDefaults.buttonColors(
                             backgroundColor = enterButtonColor,
-                            contentColor = Color.White
-                        )
+                            contentColor = Color.White,
+                        ),
                     ) {
                         Text(text = "ENTER", fontSize = 19.sp)
                     }
@@ -299,136 +282,6 @@ fun MathScreen(
         }
     }
 }
-
-@ExperimentalComposeUiApi
-private fun dismissAlarm(
-    answerText: MutableState<String>,
-    problem: MathProblem,
-    player: AudioPlayer,
-    keyboardController: SoftwareKeyboardController?,
-    navController: NavHostController,
-    alarm: AlarmEntity,
-    viewModel: AlarmMathViewModel,
-    onStopMusic: () -> Unit,
-    onWrongAnswer: () -> Unit
-) {
-    if (validateAnswer(answerText, problem)) {
-        stopMusicAndHideKeyboard(player, viewModel, keyboardController, onStopMusic)
-        if (!alarm.repeat) {
-            viewModel.completeAlarm(AlarmMapper().mapToDomainModel(alarm))
-        }
-        val fromSheet = navController.previousBackStackEntry?.savedStateHandle?.remove<Boolean>("fromSheet")
-        fromSheet?.let {
-            navController.previousBackStackEntry?.savedStateHandle?.set("testAlarm", alarm)
-        }
-        navController.popBackStack()
-    } else {
-        onWrongAnswer.invoke()
-    }
-}
-
-@ExperimentalComposeUiApi
-private fun stopMusicAndHideKeyboard(
-    player: AudioPlayer,
-    viewModel: AlarmMathViewModel,
-    keyboardController: SoftwareKeyboardController?,
-    stopVibrate: () -> Unit
-) {
-    stopVibrate.invoke()
-    player.stop()
-    viewModel.stopTimer()
-    keyboardController?.hide()
-}
-
-private fun validateAnswer(
-    answerText: MutableState<String>,
-    problem: MathProblem
-): Boolean {
-    if (answerText.value.isNotBlank() && problem.answer == answerText.value.trim().toInt()) {
-        answerText.value = ""
-        return true
-    }
-    return false
-}
-
-// Creates the math problem based on the user-set difficulty
-private fun getMathProblem(difficulty: Int): MathProblem {
-    val problem = MathProblem()
-    val random = Random
-    problem.operator = random.nextInt(4)
-    val add1: Int
-    val add2: Int
-    val mult1: Int
-    val mult2: Int
-    when (difficulty) {
-        EASY -> {
-            add1 = 90
-            add2 = 10
-            mult1 = 10
-            mult2 = 3
-        }
-        HARD -> {
-            add1 = 9000
-            add2 = 1000
-            mult1 = 14
-            mult2 = 12
-        }
-        else -> {
-            add1 = 900
-            add2 = 100
-            mult1 = 13
-            mult2 = 3
-        }
-    }
-    when (problem.operator) {
-        ADD -> {
-            problem.numOne = random.nextInt(add1) + add2
-            problem.numTwo = random.nextInt(add1) + add2
-            problem.answer = problem.numOne + problem.numTwo
-        }
-        SUBTRACT -> {
-            problem.numOne = random.nextInt(add1) + add2
-            problem.numTwo = random.nextInt(add1) + add2
-            if (problem.numOne < problem.numTwo) {
-                val temp: Int = problem.numOne
-                problem.numOne = problem.numTwo
-                problem.numTwo = temp
-            }
-            problem.answer = problem.numOne - problem.numTwo
-        }
-        TIMES -> {
-            problem.numOne = random.nextInt(mult1) + mult2
-            problem.numTwo = random.nextInt(mult1) + mult2
-            problem.answer = problem.numOne * problem.numTwo
-        }
-        DIVIDE -> {
-            problem.numOne = random.nextInt(mult1) + mult2
-            problem.numTwo = random.nextInt(mult1) + mult2
-            problem.answer = problem.numOne * problem.numTwo
-            val tmp: Int = problem.answer
-            problem.answer = problem.numOne
-            problem.numOne = tmp
-        }
-    }
-    return problem
-}
-
-private fun getMathString(problem: MathProblem): String? {
-    return when (problem.operator) {
-        ADD -> "${problem.numOne} + ${problem.numTwo}"
-        SUBTRACT -> "${problem.numOne} - ${problem.numTwo}"
-        TIMES -> "${problem.numOne} x ${problem.numTwo}"
-        DIVIDE -> "${problem.numOne} / ${problem.numTwo}"
-        else -> null
-    }
-}
-
-data class MathProblem(
-    var operator: Int = 0,
-    var numOne: Int = 0,
-    var numTwo: Int = 0,
-    var answer: Int = 0
-)
 
 @OptIn(ExperimentalAnimationApi::class)
 @ExperimentalComposeUiApi
@@ -441,7 +294,7 @@ fun MathPreview() {
         MathScreen(
             navController = rememberAnimatedNavController(),
             alarm = AlarmMapper().mapFromDomainModel(Alarm()),
-            darkTheme = true
+            darkTheme = true,
         )
     }
 }

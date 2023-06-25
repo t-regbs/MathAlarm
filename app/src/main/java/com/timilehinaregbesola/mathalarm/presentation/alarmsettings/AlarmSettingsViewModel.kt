@@ -20,7 +20,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AlarmSettingsViewModel @Inject constructor(
     private val usecases: Usecases,
-    savedStateHandle: SavedStateHandle
+    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
     private var isNewAlarm: Boolean? = null
@@ -119,14 +119,6 @@ class AlarmSettingsViewModel @Inject constructor(
         }
     }
 
-    fun onAddTestAlarm(new: Alarm): Long {
-        var id: Long
-        runBlocking {
-            id = usecases.addAlarm(new)
-        }
-        return id
-    }
-
     private fun createAlarm() = Alarm(
         alarmId = currentAlarmId!!,
         hour = _alarmTime.value.hour,
@@ -140,7 +132,7 @@ class AlarmSettingsViewModel @Inject constructor(
         title = _alarmTitle.value.text,
         difficulty = _difficulty.value,
         alarmTone = _tone.value,
-        isSaved = _isSaved.value
+        isSaved = _isSaved.value,
     )
 
     private fun initCalendar(alarm: Alarm): Calendar {
@@ -158,7 +150,7 @@ class AlarmSettingsViewModel @Inject constructor(
                 _alarmTime.value = TimeState(
                     hour = alarm.hour,
                     minute = alarm.minute,
-                    formattedTime = alarm.getFormatTime().toString()
+                    formattedTime = alarm.getFormatTime().toString(),
                 )
                 if (alarm.repeatDays == "FFFFFFF") {
                     isNewAlarm = true

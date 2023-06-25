@@ -44,7 +44,10 @@ import com.timilehinaregbesola.mathalarm.utils.checkPermissions
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.time.TimePickerDefaults
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.net.URLEncoder
 import java.time.LocalTime
@@ -56,19 +59,19 @@ fun AlarmBottomSheet(
     viewModel: AlarmSettingsViewModel = hiltViewModel(),
     navController: NavHostController,
     darkTheme: Boolean,
-    alarm: AlarmEntity
+    alarm: AlarmEntity,
 ) {
     viewModel.setAlarm(AlarmMapper().mapToDomainModel(alarm))
     val scaffoldState = rememberBottomSheetScaffoldState()
     val activity = LocalContext.current as Activity
     var timeCal = LocalTime.now()
 
-    LaunchedEffect(key1 = true) {
+    LaunchedEffect(true) {
         viewModel.eventFlow.collectLatest { event ->
             when (event) {
                 is AlarmSettingsViewModel.UiEvent.ShowSnackbar -> {
                     scaffoldState.snackbarHostState.showSnackbar(
-                        message = event.message
+                        message = event.message,
                     )
                 }
                 is AlarmSettingsViewModel.UiEvent.SaveAlarm -> {
@@ -78,11 +81,20 @@ fun AlarmBottomSheet(
                     navController
                         .previousBackStackEntry?.savedStateHandle?.set("fromSheet", true)
                     // Nav to Math Screen
-                    val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
-                    val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
-                    val json = jsonAdapter.toJson(AlarmMapper().mapFromDomainModel(event.alarm))
-                    val alarmJson = URLEncoder.encode(json, "utf-8")
-                    navController.navigate(Navigation.NAV_ALARM_MATH.replace("{${Navigation.NAV_ALARM_MATH_ARGUMENT}}", alarmJson))
+                    launch(Dispatchers.IO) {
+                        val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
+                        val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
+                        val json = jsonAdapter.toJson(AlarmMapper().mapFromDomainModel(event.alarm))
+                        val alarmJson = URLEncoder.encode(json, "utf-8")
+                        withContext(Dispatchers.Main) {
+                            navController.navigate(
+                                Navigation.NAV_ALARM_MATH.replace(
+                                    "{${Navigation.NAV_ALARM_MATH_ARGUMENT}}",
+                                    alarmJson,
+                                ),
+                            )
+                        }
+                    }
                 }
             }
         }
@@ -94,21 +106,21 @@ fun AlarmBottomSheet(
         buttons = {
             positiveButton(
                 text = "Ok",
-                textStyle = TextStyle(color = MaterialTheme.colors.onPrimary)
+                textStyle = TextStyle(color = MaterialTheme.colors.onPrimary),
             )
             negativeButton(
                 text = "Cancel",
-                textStyle = TextStyle(color = MaterialTheme.colors.onPrimary)
+                textStyle = TextStyle(color = MaterialTheme.colors.onPrimary),
             )
         },
-        backgroundColor = if (darkTheme) darkPrimary else Color.LightGray
+        backgroundColor = if (darkTheme) darkPrimary else Color.LightGray,
     ) {
         timeCal = timeCal.withHour(alarmTimeText.value.hour).withMinute(alarmTimeText.value.minute)
         timepicker(
             initialTime = timeCal,
             colors = TimePickerDefaults.colors(
-                activeBackgroundColor = if (darkTheme) darkPrimaryLight else Color.White
-            )
+                activeBackgroundColor = if (darkTheme) darkPrimaryLight else Color.White,
+            ),
         ) { time ->
             val dtf = DateTimeFormatter.ofPattern("hh:mm a")
             viewModel.onEvent(
@@ -116,9 +128,9 @@ fun AlarmBottomSheet(
                     TimeState(
                         hour = time.hour,
                         minute = time.minute,
-                        formattedTime = time.format(dtf).toString()
-                    )
-                )
+                        formattedTime = time.format(dtf).toString(),
+                    ),
+                ),
             )
             timeCal = timeCal.withHour(alarmTimeText.value.hour).withMinute(alarmTimeText.value.minute)
         }
@@ -128,7 +140,7 @@ fun AlarmBottomSheet(
         Modifier
             .fillMaxWidth()
             .padding(MaterialTheme.spacing.extraMedium)
-            .scrollable(rememberScrollState(), Orientation.Vertical)
+            .scrollable(rememberScrollState(), Orientation.Vertical),
     ) {
         Card(
             modifier = Modifier
@@ -137,7 +149,7 @@ fun AlarmBottomSheet(
                 .padding(horizontal = MaterialTheme.spacing.medium),
             backgroundColor = if (darkTheme) darkPrimaryLight else unSelectedDay,
             elevation = 0.dp,
-            shape = MaterialTheme.shapes.medium.copy(CornerSize(24.dp))
+            shape = MaterialTheme.shapes.medium.copy(CornerSize(24.dp)),
         ) {
             Row(
                 modifier = Modifier
@@ -146,7 +158,7 @@ fun AlarmBottomSheet(
                         onClick = { dialog.show() },
                     ),
                 verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.Center
+                horizontalArrangement = Arrangement.Center,
             ) {
                 Text(
                     modifier = Modifier
@@ -155,38 +167,38 @@ fun AlarmBottomSheet(
                     text = alarmTimeText.value.formattedTime,
                     fontSize = 50.sp,
                     fontWeight = FontWeight.Bold,
-                    textAlign = TextAlign.Center
+                    textAlign = TextAlign.Center,
                 )
             }
         }
         Spacer(modifier = Modifier.height(12.dp))
         AlarmDays(currentDays = viewModel.dayChooser.value) {
             viewModel.onEvent(
-                AddEditAlarmEvent.ToggleDayChooser(it)
+                AddEditAlarmEvent.ToggleDayChooser(it),
             )
         }
         Divider(
             modifier = Modifier.padding(
                 top = MaterialTheme.spacing.medium,
                 start = MaterialTheme.spacing.medium,
-                end = MaterialTheme.spacing.medium
+                end = MaterialTheme.spacing.medium,
             ),
             thickness = 10.dp,
-            color = unSelectedDay
+            color = unSelectedDay,
         )
         Row(
             modifier = Modifier
                 .padding(
                     top = 28.dp,
                     start = MaterialTheme.spacing.medium,
-                    end = MaterialTheme.spacing.medium
+                    end = MaterialTheme.spacing.medium,
                 )
                 .fillMaxWidth(),
-            horizontalArrangement = Arrangement.SpaceBetween
+            horizontalArrangement = Arrangement.SpaceBetween,
         ) {
             TextWithCheckbox(
                 text = "Repeat Weekly",
-                initialState = viewModel.repeatWeekly.value
+                initialState = viewModel.repeatWeekly.value,
             ) { viewModel.onEvent(AddEditAlarmEvent.ToggleRepeat(it)) }
             TextWithCheckbox(text = "Vibrate", initialState = viewModel.vibrate.value) {
                 viewModel.onEvent(AddEditAlarmEvent.ToggleVibrate(it))
@@ -232,21 +244,21 @@ fun AlarmBottomSheet(
                     Timber.e(e)
                     viewModel.onEvent(
                         AddEditAlarmEvent.OnToneError(
-                            activity.getString(R.string.details_no_ringtone_picker)
-                        )
+                            activity.getString(R.string.details_no_ringtone_picker),
+                        ),
                     )
                 }
-            }
+            },
         )
         Row(
             modifier = Modifier
                 .padding(top = 30.dp, start = 26.dp, end = 26.dp)
-                .fillMaxWidth()
+                .fillMaxWidth(),
         ) {
             Icon(
                 modifier = Modifier.padding(end = 14.dp),
                 imageVector = Icons.Outlined.EmojiSymbols,
-                contentDescription = null
+                contentDescription = null,
             )
             DifficultyChooser(viewModel.difficulty.value) {
                 viewModel.onEvent(AddEditAlarmEvent.OnDifficultyChange(it))
@@ -262,12 +274,12 @@ fun AlarmBottomSheet(
             },
             colors = ButtonDefaults.buttonColors(
                 backgroundColor = unSelectedDay,
-                contentColor = Color.Black
-            )
+                contentColor = Color.Black,
+            ),
         ) {
             Text(
                 fontSize = 14.sp,
-                text = "TEST ALARM"
+                text = "TEST ALARM",
             )
         }
         Button(
@@ -277,11 +289,11 @@ fun AlarmBottomSheet(
             onClick = {
                 viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
             },
-            colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.secondary)
+            colors = ButtonDefaults.buttonColors(backgroundColor = MaterialTheme.colors.secondary),
         ) {
             Text(
                 fontSize = 14.sp,
-                text = "SAVE"
+                text = "SAVE",
             )
         }
     }
@@ -293,7 +305,7 @@ fun TextCheckboxPreview() {
     MathAlarmTheme {
         TextWithCheckbox(
             text = "Repeat Weekly",
-            initialState = false
+            initialState = false,
         ) { }
     }
 }

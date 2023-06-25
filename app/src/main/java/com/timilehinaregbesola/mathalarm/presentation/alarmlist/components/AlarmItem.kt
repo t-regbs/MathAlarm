@@ -38,7 +38,7 @@ fun AlarmItem(
     onDeleteAlarm: (Alarm) -> Unit,
     onCancelAlarm: (Alarm) -> Unit,
     onScheduleAlarm: (Alarm, Boolean) -> Unit,
-    darkTheme: Boolean
+    darkTheme: Boolean,
 ) {
     Card(
         modifier = Modifier
@@ -48,35 +48,35 @@ fun AlarmItem(
                 top = MaterialTheme.spacing.small,
                 bottom = MaterialTheme.spacing.small,
                 start = MaterialTheme.spacing.extraMedium,
-                end = MaterialTheme.spacing.extraMedium
+                end = MaterialTheme.spacing.extraMedium,
             ),
         elevation = 4.dp,
-        shape = MaterialTheme.shapes.medium.copy(CornerSize(8.dp))
+        shape = MaterialTheme.shapes.medium.copy(CornerSize(8.dp)),
     ) {
         val expandItem = rememberSaveable { mutableStateOf(false) }
         Column(
             Modifier
                 .background(if (darkTheme) darkPrimaryLight else Color(0x99FFFFFF))
-                .clickable(onClick = { expandItem.value = !expandItem.value })
+                .clickable(onClick = { expandItem.value = !expandItem.value }),
         ) {
             Column(modifier = Modifier) {
                 Row {
                     val time = alarm.getFormatTime().toString()
-                    val actualTime = time.substring(0, time.length - 3)
-                    val timeOfDay = time.substring(time.length - 2)
+                    val actualTime = time.substring(0, 5)
+                    val timeOfDay = time.substring(actualTime.length)
                     Row(
                         modifier = Modifier
                             .padding(
                                 start = MaterialTheme.spacing.extraMedium,
                                 top = MaterialTheme.spacing.small,
-                                bottom = MaterialTheme.spacing.small
+                                bottom = MaterialTheme.spacing.small,
                             )
                             .weight(3f),
                     ) {
                         Text(
                             text = actualTime,
                             fontSize = 40.sp,
-                            fontWeight = if (alarm.isOn) FontWeight.Bold else FontWeight.Normal
+                            fontWeight = if (alarm.isOn) FontWeight.Bold else FontWeight.Normal,
                         )
                         Text(
                             text = timeOfDay,
@@ -85,7 +85,7 @@ fun AlarmItem(
                             fontWeight = if (alarm.isOn) FontWeight.Bold else FontWeight.Normal,
                             modifier = Modifier
                                 .align(Alignment.Bottom)
-                                .padding(bottom = MaterialTheme.spacing.small)
+                                .padding(bottom = MaterialTheme.spacing.small),
                         )
                     }
                     Switch(
@@ -103,7 +103,7 @@ fun AlarmItem(
                                 onUpdateAlarm(alarm)
                                 onCancelAlarm(alarm)
                             }
-                        }
+                        },
                     )
                 }
                 Text(
@@ -116,9 +116,9 @@ fun AlarmItem(
                         .padding(
                             bottom = MaterialTheme.spacing.medium,
                             top = MaterialTheme.spacing.medium,
-                            start = MaterialTheme.spacing.extraMedium
+                            start = MaterialTheme.spacing.extraMedium,
                         )
-                        .fillMaxWidth()
+                        .fillMaxWidth(),
                 ) {
                     val sb = StringBuilder()
                     var daysSet = 0
@@ -151,7 +151,7 @@ fun AlarmItem(
                     Text(
                         text = "$alarmInfoText | $moreInfo",
                         fontSize = 14.sp,
-                        modifier = Modifier.weight(3f)
+                        modifier = Modifier.weight(3f),
                     )
                     if (!expandItem.value) {
                         Icon(
@@ -160,7 +160,7 @@ fun AlarmItem(
                             modifier = Modifier
                                 .weight(1f)
                                 .align(Alignment.CenterVertically)
-                                .clickable(onClick = { expandItem.value = true })
+                                .clickable(onClick = { expandItem.value = true }),
                         )
                     }
                 }
@@ -173,49 +173,49 @@ fun AlarmItem(
                         modifier = Modifier
                             .padding(
                                 start = MaterialTheme.spacing.small,
-                                end = MaterialTheme.spacing.small
-                            )
+                                end = MaterialTheme.spacing.small,
+                            ),
                     )
                     Spacer(modifier = Modifier.height(20.dp))
                     Row(
                         modifier = Modifier
                             .padding(
                                 start = MaterialTheme.spacing.extraMedium,
-                                bottom = MaterialTheme.spacing.medium
-                            )
+                                bottom = MaterialTheme.spacing.medium,
+                            ),
                     ) {
                         Row(modifier = Modifier.weight(3f)) {
                             Row(
                                 Modifier
                                     .padding(end = MaterialTheme.spacing.extraMedium)
-                                    .clickable(onClick = { onDeleteAlarm(alarm) })
+                                    .clickable(onClick = { onDeleteAlarm(alarm) }),
                             ) {
                                 Icon(
                                     imageVector = Icons.Outlined.Delete,
                                     contentDescription = "Delete",
                                     modifier = Modifier
                                         .padding(end = MaterialTheme.spacing.extraSmall)
-                                        .clickable(onClick = { onDeleteAlarm(alarm) })
+                                        .clickable(onClick = { onDeleteAlarm(alarm) }),
                                 )
                                 Text(
                                     text = "Delete",
                                     modifier = Modifier
-                                        .align(Alignment.CenterVertically)
+                                        .align(Alignment.CenterVertically),
                                 )
                             }
                             Row(
-                                Modifier.clickable(onClick = onEditAlarm)
+                                Modifier.clickable(onClick = onEditAlarm),
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.Edit,
                                     contentDescription = "Edit",
                                     modifier = Modifier
-                                        .padding(end = MaterialTheme.spacing.extraSmall)
+                                        .padding(end = MaterialTheme.spacing.extraSmall),
                                 )
                                 Text(
                                     text = "Edit",
                                     modifier = Modifier
-                                        .align(Alignment.CenterVertically)
+                                        .align(Alignment.CenterVertically),
                                 )
                             }
                         }
@@ -225,7 +225,7 @@ fun AlarmItem(
                             modifier = Modifier
                                 .weight(1f)
                                 .align(Alignment.CenterVertically)
-                                .clickable(onClick = { expandItem.value = false })
+                                .clickable(onClick = { expandItem.value = false }),
                         )
                     }
                 }
@@ -248,7 +248,7 @@ fun ItemPreview() {
                 onDeleteAlarm = {},
                 onCancelAlarm = {},
                 onScheduleAlarm = { _: Alarm, _: Boolean -> },
-                darkTheme = true
+                darkTheme = true,
             )
         }
     }
