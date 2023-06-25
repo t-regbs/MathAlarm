@@ -18,18 +18,18 @@ fun DifficultyChooser(initialDiff: Int, onValueChange: (Int) -> Unit) {
         Text(
             items[initialDiff],
             modifier = Modifier
-                .clickable(onClick = { expanded.value = true })
+                .clickable(onClick = { expanded.value = true }),
         )
         DropdownMenu(
             expanded = expanded.value,
-            onDismissRequest = { expanded.value = false }
+            onDismissRequest = { expanded.value = false },
         ) {
             items.forEachIndexed { index, s ->
                 DropdownMenuItem(
                     onClick = {
                         expanded.value = false
                         onValueChange(index)
-                    }
+                    },
                 ) {
                     Text(text = s)
                 }

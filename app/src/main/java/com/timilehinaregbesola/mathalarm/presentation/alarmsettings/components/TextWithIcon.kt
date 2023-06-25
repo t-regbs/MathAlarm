@@ -9,32 +9,47 @@ import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.font.FontWeight.Companion.Normal
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.TextWithIcon.IconEndPadding
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.TextWithIcon.TextFontSize
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.TextWithIcon.TextWithIconHorizontalPadding
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.TextWithIcon.TextWithIconTopPadding
 
 @Composable
 fun TextWithIcon(
     image: ImageVector,
     text: String,
     modifier: Modifier = Modifier,
-    onClick: (() -> Unit)? = null
+    onClick: (() -> Unit)? = null,
 ) {
     Row(
         modifier = modifier
-            .padding(top = 30.dp, start = 10.dp, end = 10.dp)
-            .fillMaxWidth()
+            .padding(
+                top = TextWithIconTopPadding,
+                start = TextWithIconHorizontalPadding,
+                end = TextWithIconHorizontalPadding,
+            )
+            .fillMaxWidth(),
     ) {
         Icon(
-            modifier = Modifier.padding(end = 14.dp),
+            modifier = Modifier.padding(end = IconEndPadding),
             imageVector = image,
-            contentDescription = null
+            contentDescription = null,
         )
         Text(
             modifier = Modifier.clickable { onClick?.invoke() },
             text = text,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.Normal
+            fontSize = TextFontSize,
+            fontWeight = Normal,
         )
     }
+}
+
+private object TextWithIcon {
+    val TextFontSize = 16.sp
+    val IconEndPadding = 14.dp
+    val TextWithIconTopPadding = 30.dp
+    val TextWithIconHorizontalPadding = 10.dp
 }

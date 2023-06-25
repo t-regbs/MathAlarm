@@ -1,27 +1,42 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmmath
 
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.ADD
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.DIVIDE
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.SUBTRACT
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.TIMES
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.EasyAddSubLimitOne
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.EasyAddSubLimitTwo
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.EasyMultiDivLimitOne
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.EasyMultiDivLimitTwo
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.HardAddSubLimitOne
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.HardAddSubLimitTwo
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.HardMultiDivLimitOne
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.HardMultiDivLimitTwo
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.NormalAddSubLimitOne
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.NormalAddSubLimitTwo
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.NormalMultiDivLimitOne
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.NormalMultiDivLimitTwo
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemOperator.Add
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemOperator.Divide
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemOperator.Subtract
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemOperator.Times
 import com.timilehinaregbesola.mathalarm.utils.EASY
 import com.timilehinaregbesola.mathalarm.utils.HARD
 import kotlin.random.Random
 
 data class MathProblem(
-    var operator: Int = 0,
+    var operator: MathProblemOperator = Add,
     var numOne: Int = 0,
     var numTwo: Int = 0,
     var answer: Int = 0,
 )
 
-fun buildQuestionString(problem: MathProblem): String? {
+enum class MathProblemOperator {
+    Add, Subtract, Times, Divide
+}
+
+fun buildQuestionString(problem: MathProblem): String {
     return when (problem.operator) {
-        ADD -> "${problem.numOne} + ${problem.numTwo}"
-        SUBTRACT -> "${problem.numOne} - ${problem.numTwo}"
-        TIMES -> "${problem.numOne} x ${problem.numTwo}"
-        DIVIDE -> "${problem.numOne} / ${problem.numTwo}"
-        else -> null
+        Add -> "${problem.numOne} + ${problem.numTwo}"
+        Subtract -> "${problem.numOne} - ${problem.numTwo}"
+        Times -> "${problem.numOne} x ${problem.numTwo}"
+        Divide -> "${problem.numOne} / ${problem.numTwo}"
     }
 }
 
@@ -29,38 +44,38 @@ fun buildQuestionString(problem: MathProblem): String? {
 fun generateMathProblem(difficulty: Int): MathProblem {
     val problem = MathProblem()
     val random = Random
-    problem.operator = random.nextInt(4)
+    problem.operator = MathProblemOperator.values().random()
     val add1: Int
     val add2: Int
     val mult1: Int
     val mult2: Int
     when (difficulty) {
         EASY -> {
-            add1 = 90
-            add2 = 10
-            mult1 = 10
-            mult2 = 3
+            add1 = EasyAddSubLimitOne
+            add2 = EasyAddSubLimitTwo
+            mult1 = EasyMultiDivLimitOne
+            mult2 = EasyMultiDivLimitTwo
         }
         HARD -> {
-            add1 = 9000
-            add2 = 1000
-            mult1 = 14
-            mult2 = 12
+            add1 = HardAddSubLimitOne
+            add2 = HardAddSubLimitTwo
+            mult1 = HardMultiDivLimitOne
+            mult2 = HardMultiDivLimitTwo
         }
         else -> {
-            add1 = 900
-            add2 = 100
-            mult1 = 13
-            mult2 = 3
+            add1 = NormalAddSubLimitOne
+            add2 = NormalAddSubLimitTwo
+            mult1 = NormalMultiDivLimitOne
+            mult2 = NormalMultiDivLimitTwo
         }
     }
     when (problem.operator) {
-        ADD -> {
+        Add -> {
             problem.numOne = random.nextInt(add1) + add2
             problem.numTwo = random.nextInt(add1) + add2
             problem.answer = problem.numOne + problem.numTwo
         }
-        SUBTRACT -> {
+        Subtract -> {
             problem.numOne = random.nextInt(add1) + add2
             problem.numTwo = random.nextInt(add1) + add2
             if (problem.numOne < problem.numTwo) {
@@ -70,12 +85,12 @@ fun generateMathProblem(difficulty: Int): MathProblem {
             }
             problem.answer = problem.numOne - problem.numTwo
         }
-        TIMES -> {
+        Times -> {
             problem.numOne = random.nextInt(mult1) + mult2
             problem.numTwo = random.nextInt(mult1) + mult2
             problem.answer = problem.numOne * problem.numTwo
         }
-        DIVIDE -> {
+        Divide -> {
             problem.numOne = random.nextInt(mult1) + mult2
             problem.numTwo = random.nextInt(mult1) + mult2
             problem.answer = problem.numOne * problem.numTwo
@@ -88,8 +103,16 @@ fun generateMathProblem(difficulty: Int): MathProblem {
 }
 
 private object MathProblemGenerator {
-    const val ADD = 0
-    const val SUBTRACT = 1
-    const val TIMES = 2
-    const val DIVIDE = 3
+    const val EasyAddSubLimitOne = 90
+    const val EasyAddSubLimitTwo = 10
+    const val EasyMultiDivLimitOne = 10
+    const val EasyMultiDivLimitTwo = 3
+    const val HardAddSubLimitOne = 9000
+    const val HardAddSubLimitTwo = 1000
+    const val HardMultiDivLimitOne = 14
+    const val HardMultiDivLimitTwo = 12
+    const val NormalAddSubLimitOne = 900
+    const val NormalAddSubLimitTwo = 100
+    const val NormalMultiDivLimitOne = 13
+    const val NormalMultiDivLimitTwo = 3
 }

@@ -5,12 +5,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material.Icon
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.TextField
-import androidx.compose.material.TextFieldDefaults
+import androidx.compose.material.TextFieldDefaults.textFieldColors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Label
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.Transparent
 import androidx.compose.ui.text.input.TextFieldValue
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 
@@ -31,6 +31,6 @@ fun LabelTextField(
         label = label,
         placeholder = placeholder,
         singleLine = true,
-        colors = TextFieldDefaults.textFieldColors(backgroundColor = Color.Transparent),
+        colors = textFieldColors(backgroundColor = Transparent),
     )
 }
