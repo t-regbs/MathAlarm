@@ -41,7 +41,7 @@ import java.net.URLEncoder
 class MathAlarmNotification(
     private val context: Context,
     private val channel: MathAlarmNotificationChannel,
-    private val player: AudioPlayer
+    private val player: AudioPlayer,
 ) {
     /**
      * Shows the [MathAlarmNotification] based on the given Alarm.
@@ -99,12 +99,11 @@ class MathAlarmNotification(
             val vibratePattern = longArrayOf(0, 100, 200, 300)
             val bigPicStyle = NotificationCompat.BigPictureStyle()
                 .bigPicture(alarmImage)
-                .bigLargeIcon(null)
-//            setContentIntent(buildPendingIntent(task))
+//                .bigLargeIcon(null)
+            setContentIntent(buildPendingIntent(alarm))
             setSmallIcon(R.drawable.icon)
             setContentTitle(context.getString(R.string.notification_title))
             setContentText(alarm.title)
-            setFullScreenIntent(buildPendingIntent(alarm), true)
             setStyle(bigPicStyle)
             setSound(null)
             setLargeIcon(alarmImage)
@@ -114,6 +113,7 @@ class MathAlarmNotification(
             setPriority(NotificationCompat.PRIORITY_HIGH)
             setAutoCancel(true)
             addAction(getSnoozeAction(alarm))
+            setFullScreenIntent(buildPendingIntent(alarm), true)
         }
 
     private fun buildPendingIntent(alarm: Alarm): PendingIntent {
@@ -125,7 +125,7 @@ class MathAlarmNotification(
             Intent.ACTION_VIEW,
             "https://timilehinaregbesola.com/alarmId=$alarmJson".toUri(),
             context,
-            MainActivity::class.java
+            MainActivity::class.java,
         )
         return TaskStackBuilder.create(context).run {
             addNextIntentWithParentStack(notificationIntent)
@@ -152,7 +152,7 @@ class MathAlarmNotification(
     private fun getIntent(
         alarm: Alarm,
         intentAction: String,
-        requestCode: Int
+        requestCode: Int,
     ): PendingIntent {
         val receiverIntent = Intent(context, AlarmReceiver::class.java).apply {
             action = intentAction
@@ -164,7 +164,7 @@ class MathAlarmNotification(
                 context,
                 requestCode,
                 receiverIntent,
-                PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE,
             )
     }
 

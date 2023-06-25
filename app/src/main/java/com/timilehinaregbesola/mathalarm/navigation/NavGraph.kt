@@ -1,6 +1,6 @@
 package com.timilehinaregbesola.mathalarm.navigation
 
-import androidx.compose.animation.AnimatedContentScope
+import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -51,16 +51,16 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
                     route = Navigation.NAV_ALARM_LIST,
                     enterTransition = {
                         slideIntoContainer(
-                            AnimatedContentScope.SlideDirection.Right,
-                            animationSpec = tween(700)
+                            AnimatedContentTransitionScope.SlideDirection.Right,
+                            animationSpec = tween(700),
                         )
                     },
                     exitTransition = {
                         slideOutOfContainer(
-                            AnimatedContentScope.SlideDirection.Left,
-                            animationSpec = tween(700)
+                            AnimatedContentTransitionScope.SlideDirection.Left,
+                            animationSpec = tween(700),
                         )
-                    }
+                    },
                 ) {
                     ListDisplayScreen(
                         navController = navController,
@@ -72,16 +72,16 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
                     deepLinks = listOf(navDeepLink { uriPattern = Navigation.NAV_ALARM_MATH_URI }),
                     enterTransition = {
                         slideIntoContainer(
-                            AnimatedContentScope.SlideDirection.Right,
-                            animationSpec = tween(700)
+                            AnimatedContentTransitionScope.SlideDirection.Right,
+                            animationSpec = tween(700),
                         )
                     },
                     exitTransition = {
                         slideOutOfContainer(
-                            AnimatedContentScope.SlideDirection.Left,
-                            animationSpec = tween(700)
+                            AnimatedContentTransitionScope.SlideDirection.Left,
+                            animationSpec = tween(700),
                         )
-                    }
+                    },
                 ) {
                     val alarmJson = it.arguments?.getString(Navigation.NAV_ALARM_MATH_ARGUMENT)
                     val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
@@ -90,31 +90,31 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
                     MathScreen(
                         navController = navController,
                         alarm = alarmObject!!,
-                        darkTheme = preferences.shouldUseDarkColors()
+                        darkTheme = preferences.shouldUseDarkColors(),
                     )
                 }
                 composable(
                     route = Navigation.NAV_APP_SETTINGS,
                     enterTransition = {
                         slideIntoContainer(
-                            AnimatedContentScope.SlideDirection.Right,
-                            animationSpec = tween(700)
+                            AnimatedContentTransitionScope.SlideDirection.Right,
+                            animationSpec = tween(700),
                         )
                     },
                     exitTransition = {
                         slideOutOfContainer(
-                            AnimatedContentScope.SlideDirection.Left,
-                            animationSpec = tween(700)
+                            AnimatedContentTransitionScope.SlideDirection.Left,
+                            animationSpec = tween(700),
                         )
-                    }
+                    },
                 ) {
                     AppSettingsScreen(
                         onBackPress = { navController.popBackStack() },
-                        pref = preferences
+                        pref = preferences,
                     )
                 }
                 bottomSheet(
-                    route = Navigation.NAV_SETTINGS_SHEET
+                    route = Navigation.NAV_SETTINGS_SHEET,
                 ) { backStackEntry ->
                     val alarmJson = backStackEntry.arguments?.getString(Navigation.NAV_SETTINGS_SHEET_ARGUMENT)
                     val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
@@ -123,7 +123,7 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
                     AlarmBottomSheet(
                         navController = navController,
                         darkTheme = preferences.shouldUseDarkColors(),
-                        alarm = alarmObject!!
+                        alarm = alarmObject!!,
                     )
                 }
             }
