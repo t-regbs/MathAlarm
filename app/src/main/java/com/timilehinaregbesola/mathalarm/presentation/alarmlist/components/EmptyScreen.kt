@@ -22,17 +22,24 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.timilehinaregbesola.mathalarm.R
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.EmptyScreen.EmptyImageEndPadding
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.EmptyScreen.EmptyImageHeight
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.EmptyScreen.EmptyImageTopPadding
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.EmptyScreen.EmptyImageWidth
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.EmptyScreen.EmptyTextFontSize
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.EmptyScreen.EmptyTextTopPadding
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 
 @ExperimentalMaterialApi
 @Composable
 fun AlarmEmptyScreen(
     modifier: Modifier = Modifier,
-    onClickFab: () -> Unit,
     darkTheme: Boolean,
+    onClickFab: () -> Unit,
 ) {
     Box(
         modifier = modifier
@@ -49,7 +56,7 @@ fun AlarmEmptyScreen(
         ) {
             Box(
                 modifier = Modifier
-                    .padding(top = 143.dp)
+                    .padding(top = EmptyImageTopPadding)
                     .align(CenterHorizontally),
                 contentAlignment = TopEnd,
             ) {
@@ -58,35 +65,61 @@ fun AlarmEmptyScreen(
                     contentDescription = "Empty Alarm List",
                     colorFilter = if (darkTheme) ColorFilter.tint(color = White) else null,
                     modifier = Modifier
-                        .width(167.dp)
-                        .height(228.dp),
+                        .width(EmptyImageWidth)
+                        .height(EmptyImageHeight),
                 )
                 Image(
                     painter = emptyImage,
                     contentDescription = "Empty Alarm List",
                     colorFilter = if (darkTheme) ColorFilter.tint(color = White) else null,
                     modifier = Modifier
-                        .padding(top = MaterialTheme.spacing.medium, end = 40.dp)
-                        .width(167.dp)
-                        .height(228.dp),
+                        .padding(
+                            top = MaterialTheme.spacing.medium,
+                            end = EmptyImageEndPadding,
+                        )
+                        .width(EmptyImageWidth)
+                        .height(EmptyImageHeight),
                 )
             }
 
             Text(
                 modifier = Modifier
-                    .padding(top = 29.dp)
+                    .padding(top = EmptyTextTopPadding)
                     .align(CenterHorizontally),
                 text = "Nothing to see here",
-                fontSize = 16.sp,
+                fontSize = EmptyTextFontSize,
             )
         }
         val fabImage = painterResource(id = R.drawable.fabb)
         AddAlarmFab(
             modifier = Modifier
-                .padding(bottom = MaterialTheme.spacing.medium, end = MaterialTheme.spacing.medium)
+                .padding(
+                    bottom = MaterialTheme.spacing.medium,
+                    end = MaterialTheme.spacing.medium,
+                )
                 .align(BottomEnd),
             fabImage = fabImage,
             onClick = onClickFab,
         )
     }
+}
+
+@OptIn(ExperimentalMaterialApi::class)
+@Composable
+@Preview
+private fun EmptyScreenPreview() {
+    MaterialTheme {
+        AlarmEmptyScreen(
+            darkTheme = true,
+        ) {}
+    }
+}
+
+private object EmptyScreen {
+    val EmptyTextFontSize = 16.sp
+    val EmptyTextTopPadding = 29.dp
+    val EmptyImageHeight = 228.dp
+    val EmptyImageWidth = 167.dp
+    val EmptyImageEndPadding = 40.dp
+    val EmptyImageTopPadding = 143.dp
 }

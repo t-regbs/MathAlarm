@@ -37,7 +37,7 @@ fun ListTopAppBar(
 
 @Preview
 @Composable
-fun AppBarPreview() {
+private fun AppBarPreview() {
     ListTopAppBar(
         openDialog = {},
     ) {}

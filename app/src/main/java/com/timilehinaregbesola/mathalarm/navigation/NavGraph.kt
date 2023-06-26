@@ -28,7 +28,13 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.A
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
-import com.timilehinaregbesola.mathalarm.utils.Navigation
+import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_ALARM_LIST
+import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_ALARM_MATH
+import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_ALARM_MATH_ARGUMENT
+import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_ALARM_MATH_URI
+import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_APP_SETTINGS
+import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_SETTINGS_SHEET
+import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_SETTINGS_SHEET_ARGUMENT
 import kotlinx.coroutines.InternalCoroutinesApi
 
 @ExperimentalMaterialNavigationApi
@@ -46,9 +52,9 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
             bottomSheetNavigator = bottomSheetNavigator,
             sheetShape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp),
         ) {
-            AnimatedNavHost(navController = navController, startDestination = Navigation.NAV_ALARM_LIST) {
+            AnimatedNavHost(navController = navController, startDestination = NAV_ALARM_LIST) {
                 composable(
-                    route = Navigation.NAV_ALARM_LIST,
+                    route = NAV_ALARM_LIST,
                     enterTransition = {
                         slideIntoContainer(
                             AnimatedContentTransitionScope.SlideDirection.Right,
@@ -68,8 +74,8 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
                     )
                 }
                 composable(
-                    route = Navigation.NAV_ALARM_MATH,
-                    deepLinks = listOf(navDeepLink { uriPattern = Navigation.NAV_ALARM_MATH_URI }),
+                    route = NAV_ALARM_MATH,
+                    deepLinks = listOf(navDeepLink { uriPattern = NAV_ALARM_MATH_URI }),
                     enterTransition = {
                         slideIntoContainer(
                             AnimatedContentTransitionScope.SlideDirection.Right,
@@ -83,7 +89,7 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
                         )
                     },
                 ) {
-                    val alarmJson = it.arguments?.getString(Navigation.NAV_ALARM_MATH_ARGUMENT)
+                    val alarmJson = it.arguments?.getString(NAV_ALARM_MATH_ARGUMENT)
                     val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
                     val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
                     val alarmObject = alarmJson?.let { it1 -> jsonAdapter.fromJson(it1) }
@@ -94,7 +100,7 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
                     )
                 }
                 composable(
-                    route = Navigation.NAV_APP_SETTINGS,
+                    route = NAV_APP_SETTINGS,
                     enterTransition = {
                         slideIntoContainer(
                             AnimatedContentTransitionScope.SlideDirection.Right,
@@ -114,9 +120,9 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
                     )
                 }
                 bottomSheet(
-                    route = Navigation.NAV_SETTINGS_SHEET,
+                    route = NAV_SETTINGS_SHEET,
                 ) { backStackEntry ->
-                    val alarmJson = backStackEntry.arguments?.getString(Navigation.NAV_SETTINGS_SHEET_ARGUMENT)
+                    val alarmJson = backStackEntry.arguments?.getString(NAV_SETTINGS_SHEET_ARGUMENT)
                     val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
                     val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
                     val alarmObject = alarmJson?.let { jsonAdapter.fromJson(it) }

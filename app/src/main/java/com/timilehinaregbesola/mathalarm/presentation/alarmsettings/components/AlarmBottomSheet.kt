@@ -360,7 +360,7 @@ fun AlarmBottomSheet(
 
 @Preview
 @Composable
-fun TextCheckboxPreview() {
+private fun TextCheckboxPreview() {
     MathAlarmTheme {
         TextWithCheckbox(
             text = "Repeat Weekly",
@@ -371,9 +371,9 @@ fun TextCheckboxPreview() {
 
 @Preview
 @Composable
-fun LabelTextViewPreview() {
+private fun LabelTextViewPreview() {
     MathAlarmTheme {
-        LabelTextField(text = TextFieldValue(""), {})
+        LabelTextField(text = TextFieldValue("")) {}
     }
 }
 

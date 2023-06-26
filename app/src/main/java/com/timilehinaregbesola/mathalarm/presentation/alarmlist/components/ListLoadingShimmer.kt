@@ -70,16 +70,20 @@ fun ListLoadingShimmer(
             label = YShimmerLabel,
         )
 
-        val lightColors = listOf(
-            LightGray.copy(alpha = NinetyPercent),
-            LightGray.copy(alpha = ThirtyPercent),
-            LightGray.copy(alpha = NinetyPercent),
-        )
-        val darkColors = listOf(
-            DarkGray.copy(alpha = NinetyPercent),
-            DarkGray.copy(alpha = ThirtyPercent),
-            DarkGray.copy(alpha = NinetyPercent),
-        )
+        val lightColors = with(LightGray) {
+            listOf(
+                copy(alpha = NinetyPercent),
+                copy(alpha = ThirtyPercent),
+                copy(alpha = NinetyPercent),
+            )
+        }
+        val darkColors = with(DarkGray) {
+            listOf(
+                copy(alpha = NinetyPercent),
+                copy(alpha = ThirtyPercent),
+                copy(alpha = NinetyPercent),
+            )
+        }
 
         LazyColumn {
             items(ShimmerCardNumber) {

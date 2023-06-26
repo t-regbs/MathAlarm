@@ -12,14 +12,15 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color.Companion.Transparent
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.tooling.preview.Preview
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 
 @Composable
 fun LabelTextField(
     text: TextFieldValue,
-    onValueChange: (TextFieldValue) -> Unit,
     label: @Composable (() -> Unit)? = null,
     placeholder: @Composable (() -> Unit)? = null,
+    onValueChange: (TextFieldValue) -> Unit,
 ) {
     TextField(
         value = text,
@@ -33,4 +34,12 @@ fun LabelTextField(
         singleLine = true,
         colors = textFieldColors(backgroundColor = Transparent),
     )
+}
+
+@Preview
+@Composable
+private fun LabelTextFieldPreview() {
+    MaterialTheme {
+        LabelTextField(text = TextFieldValue("FieldPreview"), onValueChange = {})
+    }
 }

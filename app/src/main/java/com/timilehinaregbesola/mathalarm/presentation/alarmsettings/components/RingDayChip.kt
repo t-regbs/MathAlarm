@@ -14,6 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color.Companion.Black
 import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.RingDayChip.ActiveAlarmDay
@@ -86,6 +87,14 @@ fun RingDayChip(
                 color = if (selected) White else Black,
             )
         }
+    }
+}
+
+@Preview
+@Composable
+private fun AlarmDaysPreview() {
+    MaterialTheme {
+        AlarmDays(currentDays = "MTWTFSS", onValueChange = {})
     }
 }
 
