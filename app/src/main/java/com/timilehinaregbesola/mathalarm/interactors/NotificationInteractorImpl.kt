@@ -16,7 +16,7 @@ import timber.log.Timber
 @InternalCoroutinesApi
 @ExperimentalAnimationApi
 @ExperimentalMaterialNavigationApi
-internal class NotificationInteractorImpl constructor(
+internal class NotificationInteractorImpl(
     private val alarmNotification: MathAlarmNotification,
 ) : NotificationInteractor {
 

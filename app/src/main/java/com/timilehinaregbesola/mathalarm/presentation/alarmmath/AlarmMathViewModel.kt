@@ -1,5 +1,7 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmmath
 
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
@@ -10,25 +12,58 @@ import com.timilehinaregbesola.mathalarm.interactors.AudioPlayer
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.collect
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
 @HiltViewModel
 class AlarmMathViewModel @Inject constructor(
     private val usecases: Usecases,
-    val audioPlayer: AudioPlayer
+    val audioPlayer: AudioPlayer,
 ) : ViewModel() {
     private val _state = MutableLiveData<ToneState>(ToneState.Stopped())
     val state: LiveData<ToneState> = _state
+    private val _answerText = mutableStateOf("")
+    val answerText: State<String> = _answerText
+    private val _eventFlow = MutableSharedFlow<UiEvent>()
+    val eventFlow = _eventFlow.asSharedFlow()
     private var currentTimer: Job? = null
 
-    fun retrieveAlarm(key: Long) = runBlocking {
-        val alarmFound = usecases.findAlarm(key)
-        alarmFound
+    fun onEvent(event: MathScreenEvent) {
+        when (event) {
+            is MathScreenEvent.OnClearClick -> {
+                _answerText.value = ""
+            }
+            is MathScreenEvent.OnSnoozeClick -> {
+                snoozeAlarm(event.alarm)
+                stopAudioAndHideKeyboard()
+            }
+            is MathScreenEvent.OnEnterClick -> {
+                if (_answerText.value.isNotBlank() && event.problem.answer == _answerText.value.trim().toInt()) {
+                    _answerText.value = ""
+                    stopAudioAndHideKeyboard()
+                    viewModelScope.launch {
+                        _eventFlow.emit(UiEvent.CompleteAndClose)
+                    }
+                } else {
+                    viewModelScope.launch {
+                        _eventFlow.emit(UiEvent.ShowSnackbar("Incorrect"))
+                    }
+                }
+            }
+            is MathScreenEvent.EnteredAnswer -> {
+                _answerText.value = event.value
+            }
+            is MathScreenEvent.OnToneError -> {
+                viewModelScope.launch {
+                    _eventFlow.emit(UiEvent.ShowSnackbar(event.message))
+                }
+            }
+        }
     }
 
-    fun snoozeAlarm(alarmId: Long) {
+    private fun snoozeAlarm(alarmId: Long) {
         viewModelScope.launch {
             usecases.snoozeAlarm(alarmId)
         }
@@ -53,9 +88,17 @@ class AlarmMathViewModel @Inject constructor(
         }
     }
 
-    fun stopTimer() {
+    private fun stopTimer() {
         currentTimer?.cancel()
         _state.value = ToneState.Stopped(0)
+    }
+
+    private fun stopAudioAndHideKeyboard() {
+        audioPlayer.stop()
+        stopTimer()
+        viewModelScope.launch {
+            _eventFlow.emit(UiEvent.StopVibrateAndHideKeyboard)
+        }
     }
 
     private fun timer(seconds: Int): Flow<Int> = flow {
@@ -69,5 +112,13 @@ class AlarmMathViewModel @Inject constructor(
         viewModelScope.launch {
             usecases.completeAlarm(alarm)
         }
+    }
+
+    sealed class UiEvent {
+        data class ShowSnackbar(val message: String) : UiEvent()
+
+        object StopVibrateAndHideKeyboard : UiEvent()
+
+        object CompleteAndClose : UiEvent()
     }
 }

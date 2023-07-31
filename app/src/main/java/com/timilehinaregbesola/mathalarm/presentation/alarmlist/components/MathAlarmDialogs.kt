@@ -18,7 +18,7 @@ import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 fun MathAlarmDialog(
     arguments: DialogArguments,
     isDialogOpen: Boolean,
-    onDismissRequest: () -> Unit
+    onDismissRequest: () -> Unit,
 ) {
     if (isDialogOpen) {
         AlertDialog(
@@ -34,7 +34,7 @@ fun MathAlarmDialog(
                 Button(onClick = onDismissRequest) {
                     Text(text = arguments.dismissText)
                 }
-            }
+            },
         )
     }
 }
@@ -53,7 +53,7 @@ data class DialogArguments(
     val text: String,
     val confirmText: String,
     val dismissText: String,
-    val onConfirmAction: () -> Unit
+    val onConfirmAction: () -> Unit,
 )
 
 @Suppress("UndocumentedPublicFunction")
@@ -66,7 +66,7 @@ fun DialogPreview() {
             text = "Are you sure that you want to let something happen?",
             confirmText = "Alright",
             dismissText = "Cancel",
-            onConfirmAction = {}
+            onConfirmAction = {},
         )
 
         MathAlarmDialog(arguments = arguments, isDialogOpen = true, onDismissRequest = {})

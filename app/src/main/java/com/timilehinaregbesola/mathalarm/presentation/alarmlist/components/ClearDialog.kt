@@ -7,7 +7,7 @@ import androidx.compose.runtime.Composable
 fun ClearDialog(
     openDialog: Boolean,
     onClear: () -> Unit,
-    onCloseDialog: () -> Unit
+    onCloseDialog: () -> Unit,
 ) {
     val arguments = DialogArguments(
         title = "Clear Alarms",
@@ -17,12 +17,12 @@ fun ClearDialog(
         onConfirmAction = {
             onClear()
             onCloseDialog()
-        }
+        },
     )
     MathAlarmDialog(
         arguments = arguments,
         isDialogOpen = openDialog,
-        onDismissRequest = onCloseDialog
+        onDismissRequest = onCloseDialog,
     )
 }
 
@@ -31,6 +31,6 @@ fun ClearDialog(
 fun AlarmSnack(state: SnackbarHostState) {
     SnackbarHost(
         hostState = state,
-        snackbar = { data -> Snackbar(snackbarData = data) }
+        snackbar = { data -> Snackbar(snackbarData = data) },
     )
 }

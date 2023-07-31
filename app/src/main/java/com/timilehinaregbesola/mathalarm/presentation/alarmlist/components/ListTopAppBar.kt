@@ -1,6 +1,6 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 
-import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Arrangement.Center
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material.*
@@ -11,33 +11,38 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.ListTopAppBar.ListTitleFontSize
 
 @Composable
 fun ListTopAppBar(
     openDialog: (Boolean) -> Unit,
-    onSettingsClick: () -> Unit
+    onSettingsClick: () -> Unit,
 ) {
     TopAppBar(
         title = {
-            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.Center) {
-                Text(text = "Alarms", fontSize = 16.sp)
+            Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Center) {
+                Text(text = "Alarms", fontSize = ListTitleFontSize)
             }
         },
         actions = {
             IconButton(onClick = { openDialog(true) }) {
                 Icon(imageVector = Icons.Outlined.DeleteSweep, contentDescription = null)
             }
-            IconButton(onClick = { onSettingsClick.invoke() }) {
+            IconButton(onClick = onSettingsClick) {
                 Icon(imageVector = Icons.Filled.Settings, contentDescription = "Settings")
             }
-        }
+        },
     )
 }
 
 @Preview
 @Composable
-fun AppBarPreview() {
+private fun AppBarPreview() {
     ListTopAppBar(
-        openDialog = {}
+        openDialog = {},
     ) {}
+}
+
+private object ListTopAppBar {
+    val ListTitleFontSize = 16.sp
 }

@@ -1,4 +1,5 @@
 @file:JvmName("extension-context")
+
 package com.timilehinaregbesola.mathalarm.utils
 
 import android.app.AlarmManager
@@ -23,7 +24,7 @@ import java.util.*
 fun Context.setExactAlarm(
     triggerAtMillis: Long,
     operation: PendingIntent?,
-    type: Int = AlarmManager.RTC_WAKEUP
+    type: Int = AlarmManager.RTC_WAKEUP,
 ) {
     val currentTime = Calendar.getInstance().timeInMillis
     if (triggerAtMillis <= currentTime) {
@@ -71,19 +72,22 @@ fun Context.email(
     chooserTitle: String,
     email: String = "",
     subject: String = "",
-    text: String = ""
+    text: String = "",
 ) {
     val intent = Intent(Intent.ACTION_SENDTO)
     intent.data = Uri.parse("mailto:")
 
-    if (email.isNotEmpty())
+    if (email.isNotEmpty()) {
         intent.putExtra(Intent.EXTRA_EMAIL, arrayOf(email))
+    }
 
-    if (subject.isNotEmpty())
+    if (subject.isNotEmpty()) {
         intent.putExtra(Intent.EXTRA_SUBJECT, subject)
+    }
 
-    if (text.isNotEmpty())
+    if (text.isNotEmpty()) {
         intent.putExtra(Intent.EXTRA_TEXT, text)
+    }
 
     startActivity(Intent.createChooser(intent, chooserTitle))
 }

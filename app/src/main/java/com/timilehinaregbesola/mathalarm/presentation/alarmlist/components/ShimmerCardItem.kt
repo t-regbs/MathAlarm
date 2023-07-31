@@ -19,36 +19,38 @@ fun ShimmerCardItem(
     yShimmer: Float,
     cardHeight: Dp,
     gradientWidth: Float,
-    padding: Dp
+    padding: Dp,
 ) {
     val brush = linearGradient(
         colors,
         start = Offset(xShimmer - gradientWidth, yShimmer - gradientWidth),
-        end = Offset(xShimmer, yShimmer)
+        end = Offset(xShimmer, yShimmer),
     )
-    Column(modifier = Modifier.padding(padding)) {
-        Surface(
-            shape = MaterialTheme.shapes.small,
-        ) {
-            Spacer(
+    with(MaterialTheme) {
+        Column(modifier = Modifier.padding(padding)) {
+            Surface(
+                shape = shapes.small,
+            ) {
+                Spacer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(cardHeight)
+                        .background(brush = brush),
+                )
+            }
+            Spacer(modifier = Modifier.height(spacing.small))
+            Surface(
+                shape = shapes.small,
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .height(cardHeight)
-                    .background(brush = brush)
-            )
-        }
-        Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
-        Surface(
-            shape = MaterialTheme.shapes.small,
-            modifier = Modifier
-                .padding(vertical = MaterialTheme.spacing.small)
-        ) {
-            Spacer(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(cardHeight / 10)
-                    .background(brush = brush)
-            )
+                    .padding(vertical = spacing.small),
+            ) {
+                Spacer(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(cardHeight / 10)
+                        .background(brush = brush),
+                )
+            }
         }
     }
 }

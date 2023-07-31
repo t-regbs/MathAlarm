@@ -150,11 +150,11 @@ object AppModule {
 
     @OptIn(
         ExperimentalMaterialNavigationApi::class,
-        androidx.compose.animation.ExperimentalAnimationApi::class,
-        kotlinx.coroutines.InternalCoroutinesApi::class,
-        androidx.compose.ui.ExperimentalComposeUiApi::class,
-        androidx.compose.material.ExperimentalMaterialApi::class,
-        androidx.compose.foundation.ExperimentalFoundationApi::class
+        ExperimentalAnimationApi::class,
+        InternalCoroutinesApi::class,
+        ExperimentalComposeUiApi::class,
+        ExperimentalMaterialApi::class,
+        ExperimentalFoundationApi::class
     )
     @Provides
     @Singleton

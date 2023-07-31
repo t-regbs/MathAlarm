@@ -12,10 +12,14 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.*
+import androidx.compose.material.SnackbarResult.ActionPerformed
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.ui.Alignment.Companion.BottomEnd
+import androidx.compose.ui.Alignment.Companion.Center
+import androidx.compose.ui.Alignment.Companion.CenterHorizontally
+import androidx.compose.ui.Alignment.Companion.TopStart
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
@@ -29,16 +33,27 @@ import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermission
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnAddAlarmClick
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnClearAlarmsClick
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnDeleteAlarmClick
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnEditAlarmClick
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnUndoDeleteClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewModel
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.ListAlarmBackgroundAlpha
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.LoaderSize
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.LoadingShimmerImageHeight
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.TestAlarmKey
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
-import com.timilehinaregbesola.mathalarm.utils.Navigation
+import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_APP_SETTINGS
+import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_SETTINGS_SHEET
 import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_SETTINGS_SHEET_ARGUMENT
-import com.timilehinaregbesola.mathalarm.utils.SAT
-import com.timilehinaregbesola.mathalarm.utils.UiEvent
-import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
+import com.timilehinaregbesola.mathalarm.utils.UiEvent.Navigate
+import com.timilehinaregbesola.mathalarm.utils.UiEvent.ShowSnackbar
+import com.timilehinaregbesola.mathalarm.utils.getCalendarFromAlarm
+import com.timilehinaregbesola.mathalarm.utils.getTimeLeft
 import timber.log.Timber
 import java.net.URLEncoder
 import java.util.*
@@ -51,7 +66,7 @@ import java.util.*
 fun ListDisplayScreen(
     viewModel: AlarmListViewModel = hiltViewModel(),
     navController: NavHostController,
-    darkTheme: Boolean
+    darkTheme: Boolean,
 ) {
     val alarms = viewModel.alarms.collectAsState(null)
     val alarmPermission = viewModel.permission
@@ -63,18 +78,23 @@ fun ListDisplayScreen(
     LaunchedEffect(key1 = true) {
         viewModel.uiEvent.collect { event ->
             when (event) {
-                is UiEvent.ShowSnackbar -> {
+                is ShowSnackbar -> {
                     val result = scaffoldState.snackbarHostState.showSnackbar(
                         message = event.message,
-                        actionLabel = event.action
+                        actionLabel = event.action,
                     )
-                    if (result == SnackbarResult.ActionPerformed) {
-                        viewModel.onEvent(AlarmListEvent.OnUndoDeleteClick)
+                    if (result == ActionPerformed) {
+                        viewModel.onEvent(OnUndoDeleteClick)
                     }
                 }
-                is UiEvent.Navigate -> {
+                is Navigate -> {
                     buildArgAndNavigate(AlarmMapper().mapFromDomainModel(event.alarm)) { alarmJson ->
-                        navController.navigate(Navigation.NAV_SETTINGS_SHEET.replace("{$NAV_SETTINGS_SHEET_ARGUMENT}", alarmJson))
+                        navController.navigate(
+                            NAV_SETTINGS_SHEET.replace(
+                                "{$NAV_SETTINGS_SHEET_ARGUMENT}",
+                                alarmJson,
+                            ),
+                        )
                     }
                     isLoading = false
                 }
@@ -83,16 +103,21 @@ fun ListDisplayScreen(
         }
     }
 
-    DisposableEffect(key1 = Unit) {
+    DisposableEffect(Unit) {
         val observer = object : LifecycleEventObserver {
             override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
                 when (event) {
                     Lifecycle.Event.ON_RESUME -> {
-                        val cancelled = navController.currentBackStackEntry?.savedStateHandle?.remove<AlarmEntity>("testAlarm")
+                        val cancelled = navController.currentBackStackEntry?.savedStateHandle?.remove<AlarmEntity>(TestAlarmKey)
 
                         cancelled?.let {
                             buildArgAndNavigate(it) { alarmJson ->
-                                navController.navigate(Navigation.NAV_SETTINGS_SHEET.replace("{$NAV_SETTINGS_SHEET_ARGUMENT}", alarmJson))
+                                navController.navigate(
+                                    NAV_SETTINGS_SHEET.replace(
+                                        "{$NAV_SETTINGS_SHEET_ARGUMENT}",
+                                        alarmJson,
+                                    ),
+                                )
                             }
                         }
                     }
@@ -114,13 +139,13 @@ fun ListDisplayScreen(
     }
 
     if (alarms.value == null) {
-        ListLoadingShimmer(imageHeight = 180.dp, isDark = darkTheme)
+        ListLoadingShimmer(imageHeight = LoadingShimmerImageHeight, isDark = darkTheme)
     }
     val context = LocalContext.current
     alarms.value?.let { alarmList ->
         Surface(
             modifier = Modifier
-                .fillMaxSize()
+                .fillMaxSize(),
         ) {
             Scaffold(
                 scaffoldState = scaffoldState,
@@ -128,29 +153,29 @@ fun ListDisplayScreen(
                     ListTopAppBar(
                         openDialog = { deleteAllAlarmsDialog = it },
                         onSettingsClick = {
-                            navController.navigate(Navigation.NAV_APP_SETTINGS)
-                        }
+                            navController.navigate(NAV_APP_SETTINGS)
+                        },
                     )
                 },
-                snackbarHost = { state -> AlarmSnack(state) }
+                snackbarHost = { state -> AlarmSnack(state) },
             ) { padding ->
                 AlarmPermissionDialog(
                     context = context,
                     isDialogOpen = showPermissionDialog,
-                    onCloseDialog = { showPermissionDialog = false }
+                    onCloseDialog = { showPermissionDialog = false },
                 )
                 ClearDialog(
                     openDialog = deleteAllAlarmsDialog,
-                    onClear = { viewModel.onEvent(AlarmListEvent.OnClearAlarmsClick) },
-                    onCloseDialog = { deleteAllAlarmsDialog = false }
+                    onClear = { viewModel.onEvent(OnClearAlarmsClick) },
+                    onCloseDialog = { deleteAllAlarmsDialog = false },
                 )
                 if (alarmList.isEmpty()) {
                     AlarmEmptyScreen(
                         modifier = Modifier.padding(padding),
                         onClickFab = {
-                            viewModel.onEvent(AlarmListEvent.OnAddAlarmClick)
+                            viewModel.onEvent(OnAddAlarmClick)
                         },
-                        darkTheme = darkTheme
+                        darkTheme = darkTheme,
                     )
                 } else {
                     Box(
@@ -158,124 +183,62 @@ fun ListDisplayScreen(
                             .fillMaxSize()
                             .padding(top = MaterialTheme.spacing.medium)
                             .background(
-                                color = Color.LightGray.copy(alpha = 0.1f)
+                                color = LightGray.copy(alpha = ListAlarmBackgroundAlpha),
                             ),
-                        contentAlignment = Alignment.TopStart
+                        contentAlignment = TopStart,
                     ) {
                         var enabled = false
                         var nearestIndex = -1
-                        var nearest: Long? = -1L
-                        val nearestTime = if (alarmList.isNotEmpty()) {
-                            if (nearest == -1L) {
-                                nearest = alarmList.firstOrNull { it.isOn }?.let { it1 ->
-                                    getCal(it1, viewModel.calender.getCurrentCalendar()).timeInMillis
-                                }
-                                nearestIndex = alarmList.indexOfFirst { it.isOn }
-                            }
-                            enabled = alarmList.any { it.isOn }
-                            val now = System.currentTimeMillis()
-                            val onAlarms = alarmList.filter { it.isOn }
-                            onAlarms.forEachIndexed { index, alarm ->
-                                val cal = getCal(alarm, viewModel.calender.getCurrentCalendar())
-                                val time = cal.timeInMillis
-                                Timber.d("time = $time")
-                                val currentEval = time - now
-                                val nearestEval = nearest!! - now
-                                Timber.d("index = $index, currentEval = $currentEval, nearestEval = $nearestEval")
-                                if (currentEval < nearestEval) {
-                                    nearest = time
-                                    nearestIndex = index
-                                }
-                            }
-                            nearest
-                        } else 0
+                        val nearest: Long = -1L
+                        val triple = buildNearestTimeTriple(
+                            alarmList = alarmList,
+                            nearest = nearest,
+                            viewModel = viewModel,
+                            nearestIndex = nearestIndex,
+                            enabled = enabled,
+                        )
+                        enabled = triple.second
+                        nearestIndex = triple.third
+                        val nearestTime = triple.first
 
                         val nearestAlarmMessage = derivedStateOf {
                             nearestTime?.let { it1 ->
                                 alarmList[nearestIndex].getTimeLeft(it1, viewModel.calender.getCurrentCalendar())
                             }
                         }
-                        Surface(
-                            modifier = Modifier
-                                .fillMaxSize()
-                        ) {
-                            LazyColumn(
-                                horizontalAlignment = Alignment.CenterHorizontally
-                            ) {
-                                stickyHeader {
-                                    ListHeader(enabled, nearestAlarmMessage.value ?: "", darkTheme)
-                                }
-                                items(
-                                    items = alarmList,
-                                    key = { alarm -> alarm.alarmId }
-                                ) { alarm ->
-                                    AlarmItem(
-                                        alarm = alarm,
-                                        onEditAlarm = {
-                                            isLoading = true
-                                            checkPermissionAndPerformAction(
-                                                value = alarmPermission.hasExactAlarmPermission(),
-                                                action = { viewModel.onEvent(AlarmListEvent.OnEditAlarmClick(alarm)) },
-                                                onPermissionAbsent = { showPermissionDialog = true }
-                                            )
-                                        },
-                                        onUpdateAlarm = {
-                                            checkPermissionAndPerformAction(
-                                                value = alarmPermission.hasExactAlarmPermission(),
-                                                action = { viewModel.onUpdate(it) },
-                                                onPermissionAbsent = { showPermissionDialog = true }
-                                            )
-                                        },
-                                        onDeleteAlarm = {
-                                            viewModel.onEvent(AlarmListEvent.OnDeleteAlarmClick(it))
-                                        },
-                                        onCancelAlarm = viewModel::cancelAlarm,
-                                        onScheduleAlarm = { curAlarm: Alarm, b: Boolean ->
-                                            checkPermissionAndPerformAction(
-                                                value = alarmPermission.hasExactAlarmPermission(),
-                                                action = {
-                                                    val calender = viewModel.calender.getCurrentCalendar()
-                                                    viewModel.scheduleAlarm(
-                                                        alarm = curAlarm,
-                                                        reschedule = b,
-                                                        message = "Alarm set for ${curAlarm.getTimeLeft(
-                                                            getCal(curAlarm, calender).timeInMillis,
-                                                            calender
-                                                        )}"
-                                                    )
-                                                },
-                                                onPermissionAbsent = { showPermissionDialog = true }
-                                            )
-                                        },
-                                        darkTheme = darkTheme
-                                    )
-                                }
-                            }
-                        }
+                        AlarmListContent(
+                            viewModel = viewModel,
+                            alarmPermission = alarmPermission,
+                            alarmList = alarmList,
+                            enabled = enabled,
+                            nearestAlarmMessage = nearestAlarmMessage.value,
+                            darkTheme = darkTheme,
+                            onEditAlarm = { isLoading = true },
+                            onPermissionAbsent = { showPermissionDialog = true },
+                        )
                         val fabImage = painterResource(id = R.drawable.fabb)
                         AddAlarmFab(
                             modifier = Modifier
                                 .padding(
                                     bottom = MaterialTheme.spacing.medium,
-                                    end = MaterialTheme.spacing.medium
+                                    end = MaterialTheme.spacing.medium,
                                 )
-                                .align(Alignment.BottomEnd),
+                                .align(BottomEnd),
                             fabImage = fabImage,
                             onClick = {
                                 isLoading = true
                                 checkPermissionAndPerformAction(
                                     value = alarmPermission.hasExactAlarmPermission(),
-                                    action = { viewModel.onEvent(AlarmListEvent.OnAddAlarmClick) },
-                                    onPermissionAbsent = { showPermissionDialog = true }
+                                    action = { viewModel.onEvent(OnAddAlarmClick) },
+                                    onPermissionAbsent = { showPermissionDialog = true },
                                 )
-                            }
+                            },
                         )
                         if (isLoading) {
                             Loader(
                                 modifier = Modifier
-                                    .width(50.dp)
-                                    .height(50.dp)
-                                    .align(Alignment.Center)
+                                    .size(LoaderSize)
+                                    .align(Center),
                             )
                         }
                     }
@@ -283,6 +246,125 @@ fun ListDisplayScreen(
             }
         }
     }
+}
+
+@OptIn(
+    ExperimentalFoundationApi::class,
+    ExperimentalAnimationApi::class,
+    ExperimentalMaterialApi::class,
+)
+@Composable
+private fun AlarmListContent(
+    viewModel: AlarmListViewModel,
+    alarmPermission: AlarmPermission,
+    alarmList: List<Alarm>,
+    enabled: Boolean,
+    nearestAlarmMessage: String?,
+    darkTheme: Boolean,
+    onEditAlarm: () -> Unit,
+    onPermissionAbsent: () -> Unit,
+) {
+    Surface(
+        modifier = Modifier
+            .fillMaxSize(),
+    ) {
+        LazyColumn(
+            horizontalAlignment = CenterHorizontally,
+        ) {
+            stickyHeader {
+                ListHeader(
+                    enabled = enabled,
+                    nearestAlarmMessage = nearestAlarmMessage ?: "",
+                    isDark = darkTheme,
+                )
+            }
+            items(
+                items = alarmList,
+                key = { alarm -> alarm.alarmId },
+            ) { alarm ->
+                AlarmItem(
+                    alarm = alarm,
+                    onEditAlarm = {
+                        onEditAlarm()
+                        checkPermissionAndPerformAction(
+                            value = alarmPermission.hasExactAlarmPermission(),
+                            action = { viewModel.onEvent(OnEditAlarmClick(alarm)) },
+                            onPermissionAbsent = onPermissionAbsent,
+                        )
+                    },
+                    onUpdateAlarm = {
+                        checkPermissionAndPerformAction(
+                            value = alarmPermission.hasExactAlarmPermission(),
+                            action = { viewModel.onUpdate(it) },
+                            onPermissionAbsent = onPermissionAbsent,
+                        )
+                    },
+                    onDeleteAlarm = {
+                        viewModel.onEvent(OnDeleteAlarmClick(it))
+                    },
+                    onCancelAlarm = viewModel::cancelAlarm,
+                    onScheduleAlarm = { curAlarm: Alarm, b: Boolean ->
+                        checkPermissionAndPerformAction(
+                            value = alarmPermission.hasExactAlarmPermission(),
+                            action = {
+                                val calender = viewModel.calender.getCurrentCalendar()
+                                viewModel.scheduleAlarm(
+                                    alarm = curAlarm,
+                                    reschedule = b,
+                                    message = "Alarm set for ${curAlarm.getTimeLeft(
+                                        getCalendarFromAlarm(curAlarm, calender).timeInMillis,
+                                        calender,
+                                    )}",
+                                )
+                            },
+                            onPermissionAbsent = onPermissionAbsent,
+                        )
+                    },
+                    darkTheme = darkTheme,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun buildNearestTimeTriple(
+    alarmList: List<Alarm>,
+    nearest: Long?,
+    viewModel: AlarmListViewModel,
+    nearestIndex: Int,
+    enabled: Boolean,
+): Triple<Long?, Boolean, Int> {
+    var nearest1 = nearest
+    var nearestIndex1 = nearestIndex
+    var enabled1 = enabled
+    val l = if (alarmList.isNotEmpty()) {
+        if (nearest1 == -1L) {
+            nearest1 = alarmList.firstOrNull { it.isOn }?.let { it1 ->
+                getCalendarFromAlarm(it1, viewModel.calender.getCurrentCalendar()).timeInMillis
+            }
+            nearestIndex1 = alarmList.indexOfFirst { it.isOn }
+        }
+        enabled1 = alarmList.any { it.isOn }
+        val now = System.currentTimeMillis()
+        val onAlarms = alarmList.filter { it.isOn }
+        onAlarms.forEachIndexed { index, alarm ->
+            val cal = getCalendarFromAlarm(alarm, viewModel.calender.getCurrentCalendar())
+            val time = cal.timeInMillis
+            Timber.d("time = $time")
+            val currentEval = time - now
+            val nearestEval = nearest1!! - now
+            Timber.d("index = $index, currentEval = $currentEval, nearestEval = $nearestEval")
+            if (currentEval < nearestEval) {
+                nearest1 = time
+                nearestIndex1 = index
+            }
+        }
+        nearest1
+    } else {
+        0
+    }
+    return Triple(l, enabled1, nearestIndex1)
 }
 
 fun checkPermissionAndPerformAction(value: Boolean, action: () -> Unit, onPermissionAbsent: () -> Unit) {
@@ -305,7 +387,7 @@ private fun buildArgAndNavigate(alarm: AlarmEntity, onNavigate: (String) -> Unit
 private fun AlarmPermissionDialog(
     context: Context,
     isDialogOpen: Boolean,
-    onCloseDialog: () -> Unit
+    onCloseDialog: () -> Unit,
 ) {
     val arguments = DialogArguments(
         title = stringResource(id = R.string.task_alarm_permission_dialog_title),
@@ -321,73 +403,18 @@ private fun AlarmPermissionDialog(
                 context.startActivity(intent)
                 onCloseDialog()
             }
-        }
+        },
     )
     MathAlarmDialog(
         arguments = arguments,
         isDialogOpen = isDialogOpen,
-        onDismissRequest = onCloseDialog
+        onDismissRequest = onCloseDialog,
     )
 }
 
-private fun getCal(alarm: Alarm, cal: Calendar): Calendar {
-    cal[Calendar.DAY_OF_WEEK] = alarm.repeatDays.toList().indexOfFirst { it == 'T' } + 1
-    cal[Calendar.HOUR_OF_DAY] = alarm.hour
-    cal[Calendar.MINUTE] = alarm.minute
-    cal[Calendar.SECOND] = 0
-    return cal
-}
-
-fun Alarm.getTimeLeft(time: Long, cal: Calendar): String {
-    val message: String
-    val calender = getCal(alarm = this, cal = cal)
-    val today = getDayOfWeek(calender[Calendar.DAY_OF_WEEK])
-    var i: Int
-    val lastAlarmDay: Int
-    val nextAlarmDay: Int
-    if (System.currentTimeMillis() > time) {
-        nextAlarmDay = if (today + 1 == 7) 0 else today + 1
-        lastAlarmDay = today
-    } else {
-        nextAlarmDay = today
-        lastAlarmDay = if (today - 1 == -1) 6 else today - 1
-    }
-    i = nextAlarmDay
-    while (i != lastAlarmDay) {
-        if (i == 7) {
-            i = 0
-        }
-        if (repeatDays[i] == 'T') {
-            break
-        }
-        i++
-    }
-    if (i < today || i == today && calender.timeInMillis < System.currentTimeMillis()) {
-        val daysUntilAlarm: Int = SAT - today + 1 + i
-        calender.add(Calendar.DAY_OF_YEAR, daysUntilAlarm)
-    } else {
-        val daysUntilAlarm = i - today
-        calender.add(Calendar.DAY_OF_YEAR, daysUntilAlarm)
-    }
-    val alarmTime = calender.timeInMillis
-    val remainderTime = alarmTime - System.currentTimeMillis()
-    val minutes = (remainderTime / (1000 * 60) % 60).toInt()
-    val hours = (remainderTime / (1000 * 60 * 60) % 24).toInt()
-    val days = (remainderTime / (1000 * 60 * 60 * 24)).toInt()
-    val mString = if (minutes == 1) "minute" else "minutes"
-    val hString = if (hours == 1) "hour" else "hours"
-    val dString = if (days == 1) "day" else "days"
-    message = if (days == 0) {
-        if (hours == 0) {
-            ("$minutes $mString")
-        } else {
-            ("$hours $hString $minutes $mString")
-        }
-    } else {
-        (
-            " " + days + " " + dString + " " + hours + " " + hString + " " + minutes + " " +
-                mString + " "
-            )
-    }
-    return message
+private object AlarmListScreen {
+    const val TestAlarmKey = "testAlarm"
+    const val ListAlarmBackgroundAlpha = 0.1f
+    val LoadingShimmerImageHeight = 180.dp
+    val LoaderSize = 50.dp
 }
