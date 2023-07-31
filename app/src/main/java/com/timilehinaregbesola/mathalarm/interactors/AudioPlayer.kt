@@ -24,7 +24,7 @@ interface AudioPlayer {
 
 class PlayerWrapper(
 //    val resources: Resources,
-    val context: Context
+    val context: Context,
 ) : AudioPlayer {
     override fun setDataSource(alarmtone: Uri) {
         // Fall back on the default alarm if the database does not have an
@@ -53,7 +53,7 @@ class PlayerWrapper(
                 AudioAttributes.Builder()
                     .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
                     .setUsage(AudioAttributes.USAGE_ALARM)
-                    .build()
+                    .build(),
             )
             prepare()
             isLooping = true

@@ -1,6 +1,8 @@
 package com.timilehinaregbesola.mathalarm.notification
 
 import android.app.PendingIntent
+import android.app.PendingIntent.FLAG_MUTABLE
+import android.app.PendingIntent.FLAG_UPDATE_CURRENT
 import android.content.Context
 import android.content.Intent
 import android.os.Build
@@ -50,7 +52,7 @@ class AlarmNotificationScheduler(private val context: Context) {
                 passedAlarm.repeatDays = sb.toString()
             }
         }
-        (SUN..SAT).forEach { i ->
+        for (i in SUN..SAT) {
             if (passedAlarm.repeatDays[i] == 'T') {
                 val daysUntilAlarm: Int
                 val cal = passedAlarm.initCalendar()
@@ -71,8 +73,6 @@ class AlarmNotificationScheduler(private val context: Context) {
                     cal.add(Calendar.DAY_OF_YEAR, daysUntilAlarm)
                     Timber.d("days until alarm: $daysUntilAlarm")
                 }
-//                val stringId: StringBuilder = StringBuilder().append(i)
-//                    .append(passedAlarm.hour).append(passedAlarm.minute)
                 val stringId: StringBuilder = StringBuilder().append(passedAlarm.alarmId).append(i)
                     .append(passedAlarm.hour).append(passedAlarm.minute)
                 val id = stringId.toString().split("-").joinToString("")
@@ -81,24 +81,33 @@ class AlarmNotificationScheduler(private val context: Context) {
                 // check if a previous alarm has been set
                 val isSet = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     PendingIntent.getBroadcast(
-                        context, intentId, alarmIntent, PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_MUTABLE
+                        context,
+                        intentId,
+                        alarmIntent,
+                        PendingIntent.FLAG_NO_CREATE or FLAG_MUTABLE,
                     )
                 } else {
                     PendingIntent.getBroadcast(context, intentId, alarmIntent, PendingIntent.FLAG_NO_CREATE)
                 }
                 if (isSet != null) {
                     if (!reschedule) {
-//                        context.showToast(R.string.alarm_duplicate_toast_text)
+                        // context.showToast(R.string.alarm_duplicate_toast_text)
                     }
                     return false
                 }
                 val pendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     PendingIntent.getBroadcast(
-                        context, intentId, alarmIntent, PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE
+                        context,
+                        intentId,
+                        alarmIntent,
+                        PendingIntent.FLAG_CANCEL_CURRENT or FLAG_MUTABLE,
                     )
                 } else {
                     PendingIntent.getBroadcast(
-                        context, intentId, alarmIntent, PendingIntent.FLAG_CANCEL_CURRENT
+                        context,
+                        intentId,
+                        alarmIntent,
+                        PendingIntent.FLAG_CANCEL_CURRENT,
                     )
                 }
                 alarmIntentList.add(pendingIntent)
@@ -131,13 +140,17 @@ class AlarmNotificationScheduler(private val context: Context) {
                 val intentId = id.toInt()
                 val cancelPendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     PendingIntent.getBroadcast(
-                        context, intentId, receiverIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
+                        context,
+                        intentId,
+                        receiverIntent,
+                        FLAG_UPDATE_CURRENT or FLAG_MUTABLE,
                     )
                 } else {
                     PendingIntent.getBroadcast(
-                        context, intentId, receiverIntent,
-                        PendingIntent.FLAG_UPDATE_CURRENT
+                        context,
+                        intentId,
+                        receiverIntent,
+                        FLAG_UPDATE_CURRENT,
                     )
                 }
                 context.cancelAlarm(cancelPendingIntent)
