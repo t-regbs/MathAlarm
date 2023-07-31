@@ -28,7 +28,7 @@ All contributions are welcome. Simply make a PR!
 ```
 MIT License
 
-Copyright (c) 2020 Timilehin Aregbesola
+Copyright (c) 2023 Timilehin Aregbesola
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
