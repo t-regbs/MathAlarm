@@ -1,0 +1,9 @@
+You stop the annoying alarm sounds from playing by solving different levels of math problems - perfect for people who struggle with oversleeping in the morning. The perfect way to wake up in the morning!
+
+FEATURES:
+• 100% Free and Open Source
+• Challenge yourself with Easy, Medium, and Hard math difficulty levels when you wake up
+• Set repeating alarms
+• Custom snooze intervals to allow you to snooze for any duration you want
+
+Having to perform mental tasks once you have woken up is the fastest and most reliable way to wake up. Try solving the mathematical problems to stop the sounds playing...It is not possible to snooze through otherwise.
