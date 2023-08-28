@@ -11,7 +11,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.sp
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.ListTopAppBar.ListTitleFontSize
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.ListTopAppBar.LIST_TITLE_FONT_SIZE
 
 @Composable
 fun ListTopAppBar(
@@ -21,7 +21,7 @@ fun ListTopAppBar(
     TopAppBar(
         title = {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Center) {
-                Text(text = "Alarms", fontSize = ListTitleFontSize)
+                Text(text = "Alarms", fontSize = LIST_TITLE_FONT_SIZE)
             }
         },
         actions = {
@@ -44,5 +44,5 @@ private fun AppBarPreview() {
 }
 
 private object ListTopAppBar {
-    val ListTitleFontSize = 16.sp
+    val LIST_TITLE_FONT_SIZE = 16.sp
 }

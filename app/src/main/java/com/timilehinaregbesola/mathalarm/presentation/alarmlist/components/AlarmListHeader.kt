@@ -12,9 +12,9 @@ import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.ListHeaderAlpha
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.ListHeaderElevation
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.ListHeaderFontSize
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.LIST_HEADER_ALPHA
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.LIST_HEADER_ELEVATION
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.LIST_HEADER_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimaryLight
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 
@@ -24,9 +24,9 @@ fun ListHeader(enabled: Boolean, nearestAlarmMessage: String, isDark: Boolean) {
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                color = if (isDark) darkPrimaryLight else LightGray.copy(alpha = ListHeaderAlpha),
+                color = if (isDark) darkPrimaryLight else LightGray.copy(alpha = LIST_HEADER_ALPHA),
             ),
-        elevation = ListHeaderElevation,
+        elevation = LIST_HEADER_ELEVATION,
     ) {
         with(MaterialTheme.spacing) {
             Text(
@@ -37,7 +37,7 @@ fun ListHeader(enabled: Boolean, nearestAlarmMessage: String, isDark: Boolean) {
                         top = medium,
                         bottom = small,
                     ),
-                fontSize = ListHeaderFontSize,
+                fontSize = LIST_HEADER_FONT_SIZE,
             )
         }
     }
@@ -52,7 +52,7 @@ private fun ListHeaderPreview() {
 }
 
 private object AlarmListHeader {
-    const val ListHeaderAlpha = 0.1f
-    val ListHeaderElevation = 4.dp
-    val ListHeaderFontSize = 16.sp
+    const val LIST_HEADER_ALPHA = 0.1f
+    val LIST_HEADER_ELEVATION = 4.dp
+    val LIST_HEADER_FONT_SIZE = 16.sp
 }

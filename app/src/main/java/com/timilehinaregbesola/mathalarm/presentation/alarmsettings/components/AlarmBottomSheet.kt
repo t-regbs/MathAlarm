@@ -68,23 +68,23 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarm
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarmEvent.ToggleVibrate
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AlarmSettingsViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.TimeState
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.AlarmDaysTopPadding
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.DifficultyIconEndPadding
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.DifficultySectionHorizontalPadding
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.DifficultySectionTopPadding
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.DividerThickness
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.FromSheetKey
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.MiddleControlSectionTopPadding
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.NoElevation
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.SaveButtonFontSize
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.SaveButtonTopPadding
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TestButtonFontSize
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TimeCardCornerSize
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TimeCardHeight
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TimePattern
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TimeTextFontSize
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TimeTextPadding
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.UrlEncoder
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.ALARM_DAYS_TOP_PADDING
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.DIFFICULTY_ICON_END_PADDING
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.DIFFICULTY_SECTION_HORIZONTAL_PADDING
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.DIFFICULTY_SECTION_TOP_PADDING
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.DIVIDER_THICKNESS
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.FROM_SHEET_KEY
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.MIDDLE_CONTROL_SECTION_TOP_PADDING
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.NO_ELEVATION
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.SAVE_BUTTON_FONT_SIZE
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.SAVE_BUTTON_TOP_PADDING
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TEST_BUTTON_FONT_SIZE
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_CARD_CORNER_SIZE
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_CARD_HEIGHT
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_PATTERN
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_TEXT_FONT_SIZE
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_TEXT_PADDING
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.URL_ENCODER
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimary
 import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimaryLight
@@ -133,13 +133,13 @@ fun AlarmBottomSheet(
                 }
                 is AlarmSettingsViewModel.UiEvent.TestAlarm -> {
                     navController
-                        .previousBackStackEntry?.savedStateHandle?.set(FromSheetKey, true)
+                        .previousBackStackEntry?.savedStateHandle?.set(FROM_SHEET_KEY, true)
                     // Nav to Math Screen
                     launch(IO) {
                         val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
                         val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
                         val json = jsonAdapter.toJson(AlarmMapper().mapFromDomainModel(event.alarm))
-                        val alarmJson = URLEncoder.encode(json, UrlEncoder)
+                        val alarmJson = URLEncoder.encode(json, URL_ENCODER)
                         withContext(Main) {
                             navController.navigate(
                                 NAV_ALARM_MATH.replace(
@@ -177,7 +177,7 @@ fun AlarmBottomSheet(
                         activeBackgroundColor = if (darkTheme) darkPrimaryLight else White,
                     ),
                 ) { time ->
-                    val dtf = DateTimeFormatter.ofPattern(TimePattern)
+                    val dtf = DateTimeFormatter.ofPattern(TIME_PATTERN)
                     viewModel.onEvent(
                         AddEditAlarmEvent.ChangeTime(
                             TimeState(
@@ -200,11 +200,11 @@ fun AlarmBottomSheet(
             Card(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(TimeCardHeight)
+                    .height(TIME_CARD_HEIGHT)
                     .padding(horizontal = spacing.medium),
                 backgroundColor = if (darkTheme) darkPrimaryLight else unSelectedDay,
-                elevation = NoElevation,
-                shape = shapes.medium.copy(CornerSize(TimeCardCornerSize)),
+                elevation = NO_ELEVATION,
+                shape = shapes.medium.copy(CornerSize(TIME_CARD_CORNER_SIZE)),
             ) {
                 Row(
                     modifier = Modifier
@@ -218,15 +218,15 @@ fun AlarmBottomSheet(
                     Text(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(TimeTextPadding),
+                            .padding(TIME_TEXT_PADDING),
                         text = alarmTimeText.value.formattedTime,
-                        fontSize = TimeTextFontSize,
+                        fontSize = TIME_TEXT_FONT_SIZE,
                         fontWeight = Bold,
                         textAlign = Center,
                     )
                 }
             }
-            Spacer(modifier = Modifier.height(AlarmDaysTopPadding))
+            Spacer(modifier = Modifier.height(ALARM_DAYS_TOP_PADDING))
             AlarmDays(currentDays = viewModel.dayChooser.value) {
                 viewModel.onEvent(
                     ToggleDayChooser(it),
@@ -238,13 +238,13 @@ fun AlarmBottomSheet(
                     start = spacing.medium,
                     end = spacing.medium,
                 ),
-                thickness = DividerThickness,
+                thickness = DIVIDER_THICKNESS,
                 color = unSelectedDay,
             )
             Row(
                 modifier = Modifier
                     .padding(
-                        top = MiddleControlSectionTopPadding,
+                        top = MIDDLE_CONTROL_SECTION_TOP_PADDING,
                         start = spacing.medium,
                         end = spacing.medium,
                     )
@@ -308,14 +308,14 @@ fun AlarmBottomSheet(
             Row(
                 modifier = Modifier
                     .padding(
-                        top = DifficultySectionTopPadding,
-                        start = DifficultySectionHorizontalPadding,
-                        end = DifficultySectionHorizontalPadding,
+                        top = DIFFICULTY_SECTION_TOP_PADDING,
+                        start = DIFFICULTY_SECTION_HORIZONTAL_PADDING,
+                        end = DIFFICULTY_SECTION_HORIZONTAL_PADDING,
                     )
                     .fillMaxWidth(),
             ) {
                 Icon(
-                    modifier = Modifier.padding(end = DifficultyIconEndPadding),
+                    modifier = Modifier.padding(end = DIFFICULTY_ICON_END_PADDING),
                     imageVector = Icons.Outlined.EmojiSymbols,
                     contentDescription = null,
                 )
@@ -336,13 +336,13 @@ fun AlarmBottomSheet(
                 ),
             ) {
                 Text(
-                    fontSize = TestButtonFontSize,
+                    fontSize = TEST_BUTTON_FONT_SIZE,
                     text = "TEST ALARM",
                 )
             }
             Button(
                 modifier = Modifier
-                    .padding(top = SaveButtonTopPadding)
+                    .padding(top = SAVE_BUTTON_TOP_PADDING)
                     .fillMaxWidth(),
                 onClick = {
                     viewModel.onEvent(OnSaveTodoClick)
@@ -350,7 +350,7 @@ fun AlarmBottomSheet(
                 colors = buttonColors(backgroundColor = colors.secondary),
             ) {
                 Text(
-                    fontSize = SaveButtonFontSize,
+                    fontSize = SAVE_BUTTON_FONT_SIZE,
                     text = "SAVE",
                 )
             }
@@ -378,21 +378,21 @@ private fun LabelTextViewPreview() {
 }
 
 private object AlarmBottomSheet {
-    const val FromSheetKey = "fromSheet"
-    const val UrlEncoder = "utf-8"
-    const val TimePattern = "hh:mm a"
-    val TimeCardHeight = 150.dp
-    val NoElevation = 0.dp
-    val TimeCardCornerSize = 24.dp
-    val TimeTextPadding = 30.dp
-    val TimeTextFontSize = 50.sp
-    val AlarmDaysTopPadding = 12.dp
-    val DividerThickness = 10.dp
-    val MiddleControlSectionTopPadding = 28.dp
-    val DifficultySectionTopPadding = 30.dp
-    val DifficultySectionHorizontalPadding = 26.dp
-    val DifficultyIconEndPadding = 14.dp
-    val TestButtonFontSize = 14.sp
-    val SaveButtonFontSize = 14.sp
-    val SaveButtonTopPadding = 12.dp
+    const val FROM_SHEET_KEY = "fromSheet"
+    const val URL_ENCODER = "utf-8"
+    const val TIME_PATTERN = "hh:mm a"
+    val TIME_CARD_HEIGHT = 150.dp
+    val NO_ELEVATION = 0.dp
+    val TIME_CARD_CORNER_SIZE = 24.dp
+    val TIME_TEXT_PADDING = 30.dp
+    val TIME_TEXT_FONT_SIZE = 50.sp
+    val ALARM_DAYS_TOP_PADDING = 12.dp
+    val DIVIDER_THICKNESS = 10.dp
+    val MIDDLE_CONTROL_SECTION_TOP_PADDING = 28.dp
+    val DIFFICULTY_SECTION_TOP_PADDING = 30.dp
+    val DIFFICULTY_SECTION_HORIZONTAL_PADDING = 26.dp
+    val DIFFICULTY_ICON_END_PADDING = 14.dp
+    val TEST_BUTTON_FONT_SIZE = 14.sp
+    val SAVE_BUTTON_FONT_SIZE = 14.sp
+    val SAVE_BUTTON_TOP_PADDING = 12.dp
 }

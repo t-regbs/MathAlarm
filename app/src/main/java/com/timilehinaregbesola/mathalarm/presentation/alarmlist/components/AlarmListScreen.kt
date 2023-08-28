@@ -42,10 +42,10 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.O
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnEditAlarmClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnUndoDeleteClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewModel
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.ListAlarmBackgroundAlpha
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.LoaderSize
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.LoadingShimmerImageHeight
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.TestAlarmKey
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.LIST_ALARM_BACKGROUND_ALPHA
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.LOADER_SIZE
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.LOADING_SHIMMER_IMAGE_HEIGHT
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.TEST_ALARM_KEY
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_APP_SETTINGS
 import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_SETTINGS_SHEET
@@ -108,7 +108,8 @@ fun ListDisplayScreen(
             override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
                 when (event) {
                     Lifecycle.Event.ON_RESUME -> {
-                        val cancelled = navController.currentBackStackEntry?.savedStateHandle?.remove<AlarmEntity>(TestAlarmKey)
+                        val cancelled = navController
+                            .currentBackStackEntry?.savedStateHandle?.remove<AlarmEntity>(TEST_ALARM_KEY)
 
                         cancelled?.let {
                             buildArgAndNavigate(it) { alarmJson ->
@@ -139,7 +140,7 @@ fun ListDisplayScreen(
     }
 
     if (alarms.value == null) {
-        ListLoadingShimmer(imageHeight = LoadingShimmerImageHeight, isDark = darkTheme)
+        ListLoadingShimmer(imageHeight = LOADING_SHIMMER_IMAGE_HEIGHT, isDark = darkTheme)
     }
     val context = LocalContext.current
     alarms.value?.let { alarmList ->
@@ -183,7 +184,7 @@ fun ListDisplayScreen(
                             .fillMaxSize()
                             .padding(top = MaterialTheme.spacing.medium)
                             .background(
-                                color = LightGray.copy(alpha = ListAlarmBackgroundAlpha),
+                                color = LightGray.copy(alpha = LIST_ALARM_BACKGROUND_ALPHA),
                             ),
                         contentAlignment = TopStart,
                     ) {
@@ -237,7 +238,7 @@ fun ListDisplayScreen(
                         if (isLoading) {
                             Loader(
                                 modifier = Modifier
-                                    .size(LoaderSize)
+                                    .size(LOADER_SIZE)
                                     .align(Center),
                             )
                         }
@@ -413,8 +414,8 @@ private fun AlarmPermissionDialog(
 }
 
 private object AlarmListScreen {
-    const val TestAlarmKey = "testAlarm"
-    const val ListAlarmBackgroundAlpha = 0.1f
-    val LoadingShimmerImageHeight = 180.dp
-    val LoaderSize = 50.dp
+    const val TEST_ALARM_KEY = "testAlarm"
+    const val LIST_ALARM_BACKGROUND_ALPHA = 0.1f
+    val LOADING_SHIMMER_IMAGE_HEIGHT = 180.dp
+    val LOADER_SIZE = 50.dp
 }

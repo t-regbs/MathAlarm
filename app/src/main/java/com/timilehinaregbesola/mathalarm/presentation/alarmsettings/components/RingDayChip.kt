@@ -17,11 +17,11 @@ import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.RingDayChip.ActiveAlarmDay
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.RingDayChip.InactiveAlarmDay
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.RingDayChip.NoElevation
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.RingDayChip.RingDayChipSize
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.RingDayChip.RingDayFontSize
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.RingDayChip.ACTIVE_ALARM_DAY
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.RingDayChip.INACTIVE_ALARM_DAY
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.RingDayChip.NO_ELEVATION
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.RingDayChip.RING_DAY_CHIP_SIZE
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.RingDayChip.RING_DAY_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.presentation.ui.teall
 import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
@@ -40,7 +40,7 @@ fun AlarmDays(
     ) {
         days.forEachIndexed { index, day ->
             val sb = StringBuilder(currentDays)
-            val sel = currentDays[index] == ActiveAlarmDay
+            val sel = currentDays[index] == ACTIVE_ALARM_DAY
             val checkedState = mutableStateOf(sel)
             RingDayChip(
                 day = day,
@@ -48,10 +48,10 @@ fun AlarmDays(
                 onSelectChange = {
                     checkedState.value = it
                     if (it) {
-                        sb.setCharAt(index, ActiveAlarmDay)
+                        sb.setCharAt(index, ACTIVE_ALARM_DAY)
                         onValueChange(sb.toString())
                     } else {
-                        sb.setCharAt(index, InactiveAlarmDay)
+                        sb.setCharAt(index, INACTIVE_ALARM_DAY)
                         onValueChange(sb.toString())
                     }
                 },
@@ -68,12 +68,12 @@ fun RingDayChip(
 ) {
     Surface(
         modifier = Modifier
-            .size(RingDayChipSize)
+            .size(RING_DAY_CHIP_SIZE)
             .toggleable(
                 value = selected,
                 onValueChange = onSelectChange,
             ),
-        elevation = NoElevation,
+        elevation = NO_ELEVATION,
         shape = CircleShape,
         color = if (selected) teall else unSelectedDay,
     ) {
@@ -83,7 +83,7 @@ fun RingDayChip(
             Text(
                 text = day,
                 fontWeight = Bold,
-                fontSize = RingDayFontSize,
+                fontSize = RING_DAY_FONT_SIZE,
                 color = if (selected) White else Black,
             )
         }
@@ -99,9 +99,9 @@ private fun AlarmDaysPreview() {
 }
 
 private object RingDayChip {
-    const val ActiveAlarmDay = 'T'
-    const val InactiveAlarmDay = 'F'
-    val RingDayFontSize = 15.sp
-    val RingDayChipSize = 36.dp
-    val NoElevation = 0.dp
+    const val ACTIVE_ALARM_DAY = 'T'
+    const val INACTIVE_ALARM_DAY = 'F'
+    val RING_DAY_FONT_SIZE = 15.sp
+    val RING_DAY_CHIP_SIZE = 36.dp
+    val NO_ELEVATION = 0.dp
 }

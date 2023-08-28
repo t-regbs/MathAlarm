@@ -1,17 +1,17 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmmath
 
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.EasyAddSubLimitOne
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.EasyAddSubLimitTwo
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.EasyMultiDivLimitOne
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.EasyMultiDivLimitTwo
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.HardAddSubLimitOne
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.HardAddSubLimitTwo
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.HardMultiDivLimitOne
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.HardMultiDivLimitTwo
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.NormalAddSubLimitOne
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.NormalAddSubLimitTwo
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.NormalMultiDivLimitOne
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.NormalMultiDivLimitTwo
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.EASY_ADD_SUB_LIMIT_ONE
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.EASY_ADD_SUB_LIMIT_TWO
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.EASY_MULTI_DIV_LIMIT_ONE
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.EASY_MULTI_DIV_LIMIT_TWO
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.HARD_ADD_SUB_LIMIT_ONE
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.HARD_ADD_SUB_LIMIT_TWO
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.HARD_MULTI_DIV_LIMIT_ONE
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.HARD_MULTI_DIV_LIMIT_TWO
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.NORMAL_ADD_SUB_LIMIT_ONE
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.NORMAL_ADD_SUB_LIMIT_TWO
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.NORMAL_MULTI_DIV_LIMIT_ONE
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.NORMAL_MULTI_DIV_LIMIT_TWO
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemOperator.Add
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemOperator.Divide
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemOperator.Subtract
@@ -51,22 +51,22 @@ fun generateMathProblem(difficulty: Int): MathProblem {
     val mult2: Int
     when (difficulty) {
         EASY -> {
-            add1 = EasyAddSubLimitOne
-            add2 = EasyAddSubLimitTwo
-            mult1 = EasyMultiDivLimitOne
-            mult2 = EasyMultiDivLimitTwo
+            add1 = EASY_ADD_SUB_LIMIT_ONE
+            add2 = EASY_ADD_SUB_LIMIT_TWO
+            mult1 = EASY_MULTI_DIV_LIMIT_ONE
+            mult2 = EASY_MULTI_DIV_LIMIT_TWO
         }
         HARD -> {
-            add1 = HardAddSubLimitOne
-            add2 = HardAddSubLimitTwo
-            mult1 = HardMultiDivLimitOne
-            mult2 = HardMultiDivLimitTwo
+            add1 = HARD_ADD_SUB_LIMIT_ONE
+            add2 = HARD_ADD_SUB_LIMIT_TWO
+            mult1 = HARD_MULTI_DIV_LIMIT_ONE
+            mult2 = HARD_MULTI_DIV_LIMIT_TWO
         }
         else -> {
-            add1 = NormalAddSubLimitOne
-            add2 = NormalAddSubLimitTwo
-            mult1 = NormalMultiDivLimitOne
-            mult2 = NormalMultiDivLimitTwo
+            add1 = NORMAL_ADD_SUB_LIMIT_ONE
+            add2 = NORMAL_ADD_SUB_LIMIT_TWO
+            mult1 = NORMAL_MULTI_DIV_LIMIT_ONE
+            mult2 = NORMAL_MULTI_DIV_LIMIT_TWO
         }
     }
     when (problem.operator) {
@@ -103,16 +103,16 @@ fun generateMathProblem(difficulty: Int): MathProblem {
 }
 
 private object MathProblemGenerator {
-    const val EasyAddSubLimitOne = 90
-    const val EasyAddSubLimitTwo = 10
-    const val EasyMultiDivLimitOne = 10
-    const val EasyMultiDivLimitTwo = 3
-    const val HardAddSubLimitOne = 9000
-    const val HardAddSubLimitTwo = 1000
-    const val HardMultiDivLimitOne = 14
-    const val HardMultiDivLimitTwo = 12
-    const val NormalAddSubLimitOne = 900
-    const val NormalAddSubLimitTwo = 100
-    const val NormalMultiDivLimitOne = 13
-    const val NormalMultiDivLimitTwo = 3
+    const val EASY_ADD_SUB_LIMIT_ONE = 90
+    const val EASY_ADD_SUB_LIMIT_TWO = 10
+    const val EASY_MULTI_DIV_LIMIT_ONE = 10
+    const val EASY_MULTI_DIV_LIMIT_TWO = 3
+    const val HARD_ADD_SUB_LIMIT_ONE = 9000
+    const val HARD_ADD_SUB_LIMIT_TWO = 1000
+    const val HARD_MULTI_DIV_LIMIT_ONE = 14
+    const val HARD_MULTI_DIV_LIMIT_TWO = 12
+    const val NORMAL_ADD_SUB_LIMIT_ONE = 900
+    const val NORMAL_ADD_SUB_LIMIT_TWO = 100
+    const val NORMAL_MULTI_DIV_LIMIT_ONE = 13
+    const val NORMAL_MULTI_DIV_LIMIT_TWO = 3
 }

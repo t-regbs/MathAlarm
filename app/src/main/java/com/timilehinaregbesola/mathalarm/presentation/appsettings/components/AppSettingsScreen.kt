@@ -21,7 +21,32 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.timilehinaregbesola.mathalarm.BuildConfig
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.Theme
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.Theme.DARK
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.Theme.LIGHT
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.Theme.SYSTEM
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.APP_SETTINGS
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.BACK
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.COLOR_THEME
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.DARK_TEXT
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.DEFAULT_SETTINGS_CORNER_SHAPE
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.EMAIL
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.EMAIL_CHOOSER_TITLE
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.HELP
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.HELP_ICON_SIZE
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.HELP_ITEM_FONT_SIZE
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.LIGHT_TEXT
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.SEND_FEEDBACK
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.SEND_FEEDBACK_DETAIL
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.SEND_INTENT_TYPE
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.SEND_TEXT
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.SETTINGS_ICON_END_PADDING
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.SETTINGS_WIDTH
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.SHARE
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.SHARE_MATHALARM_TITLE
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.SHARE_WITH_OTHERS
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.SYSTEM_TEXT
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.TOP_BAR_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.utils.email
@@ -35,11 +60,11 @@ fun AppSettingsScreen(
     val scope = rememberCoroutineScope()
     val isDark = pref.shouldUseDarkColors()
     val options = listOf(
-        Triple("Light", Icons.Filled.WbSunny, Theme.LIGHT),
-        Triple("Dark", Icons.Filled.DarkMode, Theme.DARK),
-        Triple("System", Icons.Filled.Smartphone, Theme.SYSTEM)
+        Triple(LIGHT_TEXT, Icons.Filled.WbSunny, LIGHT),
+        Triple(DARK_TEXT, Icons.Filled.DarkMode, DARK),
+        Triple(SYSTEM_TEXT, Icons.Filled.Smartphone, SYSTEM)
     )
-    var selectedOption = pref.loadAppTheme().collectAsState(initial = Theme.SYSTEM).value
+    var selectedOption = pref.loadAppTheme().collectAsState(initial = SYSTEM).value
     val onSelectionChange = { newTheme: Theme ->
         selectedOption = newTheme
         scope.launch {
@@ -52,8 +77,8 @@ fun AppSettingsScreen(
                 TopAppBar(
                     title = {
                         Text(
-                            text = "App Settings",
-                            fontSize = 16.sp
+                            text = APP_SETTINGS,
+                            fontSize = TOP_BAR_FONT_SIZE
                         )
                     },
                     navigationIcon = {
@@ -63,7 +88,7 @@ fun AppSettingsScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.ArrowBack,
-                                contentDescription = "Back"
+                                contentDescription = BACK
                             )
                         }
                     }
@@ -74,7 +99,7 @@ fun AppSettingsScreen(
                 Column(modifier = Modifier.padding(horizontal = MaterialTheme.spacing.large)) {
                     Text(
                         modifier = Modifier.padding(top = MaterialTheme.spacing.medium),
-                        text = "Color Theme",
+                        text = COLOR_THEME,
                         color = MaterialTheme.colors.secondary
                     )
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
@@ -89,7 +114,7 @@ fun AppSettingsScreen(
                                     } else {
                                         Color.LightGray
                                     },
-                                    shape = RoundedCornerShape(16.dp)
+                                    shape = RoundedCornerShape(DEFAULT_SETTINGS_CORNER_SHAPE)
                                 )
                                 .padding(MaterialTheme.spacing.extraSmall)
                         ) {
@@ -97,8 +122,8 @@ fun AppSettingsScreen(
                                 options.forEach { triple ->
                                     Row(
                                         modifier = Modifier
-                                            .width(100.dp)
-                                            .clip(shape = RoundedCornerShape(size = 16.dp))
+                                            .width(SETTINGS_WIDTH)
+                                            .clip(shape = RoundedCornerShape(DEFAULT_SETTINGS_CORNER_SHAPE))
                                             .clickable {
                                                 onSelectionChange(triple.third)
                                             }
@@ -117,7 +142,7 @@ fun AppSettingsScreen(
                                         horizontalArrangement = Arrangement.Center
                                     ) {
                                         Icon(
-                                            modifier = Modifier.padding(end = 2.dp),
+                                            modifier = Modifier.padding(end = SETTINGS_ICON_END_PADDING),
                                             imageVector = triple.second,
                                             contentDescription = triple.first
                                         )
@@ -140,34 +165,34 @@ fun AppSettingsScreen(
                     val context = LocalContext.current
                     Text(
                         modifier = Modifier.padding(top = MaterialTheme.spacing.medium),
-                        text = "Help",
+                        text = HELP,
                         color = MaterialTheme.colors.secondary
                     )
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
                     HelpItem(
                         image = Icons.Default.Announcement,
-                        primaryText = "Send feedback",
-                        detailText = "Report technical issues or suggest new features"
+                        primaryText = SEND_FEEDBACK,
+                        detailText = SEND_FEEDBACK_DETAIL
                     ) {
                         context.email(
-                            "Feedback to MathAlarm",
-                            "aregbestimi@gmail.com"
+                            EMAIL_CHOOSER_TITLE,
+                            EMAIL
                         )
                     }
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
                     HelpItem(
                         image = Icons.Default.Share,
-                        primaryText = "Share",
-                        detailText = "Share app with others"
+                        primaryText = SHARE,
+                        detailText = SHARE_WITH_OTHERS
                     ) {
                         val sendIntent = Intent()
                         sendIntent.action = Intent.ACTION_SEND
                         sendIntent.putExtra(
                             Intent.EXTRA_TEXT,
-                            "MathAlarm Clock\nSolve math problems to wake up! https://play.google.com/store/apps/details?id=" + BuildConfig.APPLICATION_ID
+                            SEND_TEXT + BuildConfig.APPLICATION_ID
                         )
-                        sendIntent.type = "text/plain"
-                        context.startActivity(Intent.createChooser(sendIntent, "Share Mathalarm"))
+                        sendIntent.type = SEND_INTENT_TYPE
+                        context.startActivity(Intent.createChooser(sendIntent, SHARE_MATHALARM_TITLE))
                     }
                 }
             }
@@ -192,8 +217,8 @@ fun HelpItem(
     ) {
         Icon(
             modifier = Modifier
-                .width(50.dp)
-                .height(50.dp)
+                .width(HELP_ICON_SIZE)
+                .height(HELP_ICON_SIZE)
                 .padding(end = MaterialTheme.spacing.medium),
             imageVector = image,
             contentDescription = null
@@ -201,7 +226,7 @@ fun HelpItem(
         Column {
             Text(
                 text = primaryText,
-                fontSize = 18.sp,
+                fontSize = HELP_ITEM_FONT_SIZE,
                 fontWeight = FontWeight.Bold
             )
             Text(
@@ -210,4 +235,30 @@ fun HelpItem(
             )
         }
     }
+}
+
+private object AppSettingsScreen {
+    const val SEND_TEXT = "MathAlarm Clock\nSolve math problems to wake up!" +
+            " https://play.google.com/store/apps/details?id="
+    const val SHARE = "Share"
+    const val SHARE_WITH_OTHERS = "Share app with others"
+    const val SHARE_MATHALARM_TITLE = "Share Mathalarm"
+    const val SEND_INTENT_TYPE = "text/plain"
+    const val EMAIL_CHOOSER_TITLE = "Feedback to MathAlarm"
+    const val EMAIL = "aregbestimi@gmail.com"
+    const val SEND_FEEDBACK = "Send feedback"
+    const val SEND_FEEDBACK_DETAIL = "Report technical issues or suggest new features"
+    const val HELP = "Help"
+    const val COLOR_THEME = "Color Theme"
+    const val BACK = "Back"
+    const val APP_SETTINGS = "App Settings"
+    const val LIGHT_TEXT = "Light"
+    const val DARK_TEXT = "Dark"
+    const val SYSTEM_TEXT = "System"
+    val HELP_ICON_SIZE = 50.dp
+    val SETTINGS_WIDTH = 100.dp
+    val DEFAULT_SETTINGS_CORNER_SHAPE = 16.dp
+    val SETTINGS_ICON_END_PADDING = 2.dp
+    val HELP_ITEM_FONT_SIZE = 18.sp
+    val TOP_BAR_FONT_SIZE = 16.sp
 }

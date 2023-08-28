@@ -13,8 +13,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.timilehinaregbesola.mathalarm.R
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AddAlarmFab.FabBackgroundColor
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AddAlarmFab.FabImageSize
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AddAlarmFab.FAB_BACKGROUND_COLOR
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AddAlarmFab.FAB_IMAGE_SIZE
 
 @ExperimentalMaterialApi
 @Composable
@@ -26,11 +26,11 @@ fun AddAlarmFab(
     FloatingActionButton(
         modifier = modifier,
         onClick = onClick,
-        backgroundColor = Color(FabBackgroundColor),
+        backgroundColor = Color(FAB_BACKGROUND_COLOR),
     ) {
         Image(
             modifier = Modifier
-                .size(FabImageSize),
+                .size(FAB_IMAGE_SIZE),
             painter = fabImage,
             contentDescription = null,
         )
@@ -47,6 +47,6 @@ private fun AddAlarmFabPreview() {
 }
 
 private object AddAlarmFab {
-    const val FabBackgroundColor = 0x482FF7
-    val FabImageSize = 72.dp
+    const val FAB_BACKGROUND_COLOR = 0x482FF7
+    val FAB_IMAGE_SIZE = 72.dp
 }

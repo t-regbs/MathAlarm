@@ -50,31 +50,31 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathScreenEvent.
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathScreenEvent.OnSnoozeClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.ToneState.Countdown
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.buildQuestionString
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.AnswerFieldCornerSize
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.AnswerFieldFontSize
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.AnswerFieldHeight
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.AnswerFieldHorizontalPadding
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ButtonSectionHeight
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ButtonSectionHorizontalPadding
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ClearButtonBottomPadding
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ClearButtonHeight
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ClearButtonWidth
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ClearFontSize
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.DefaultVibrationPattern
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.EnterButtonSize
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.EnterFontSize
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.FromSheetKey
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.InitialIndicatorProgress
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.MaxAnswerChars
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ProgressIndicatorHeight
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ProgressLabel
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.QuestionFontSize
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.RepeatIndefinitely
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.SettingsId
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.SnoozeButtonHeight
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.SnoozeButtonWidth
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.SnoozeFontSize
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.TestAlarmKey
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ANSWER_FIELD_CORNER_SIZE
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ANSWER_FIELD_FONT_SIZE
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ANSWER_FIELD_HEIGHT
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ANSWER_FIELD_HORIZONTAL_PADDING
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.BUTTON_SECTION_HEIGHT
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.BUTTON_SECTION_HORIZONTAL_PADDING
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.CLEAR_BUTTON_BOTTOM_PADDING
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.CLEAR_BUTTON_HEIGHT
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.CLEAR_BUTTON_WIDTH
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.CLEAR_FONT_SIZE
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.DEFAULT_VIBRATION_PATTERN
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ENTER_BUTTON_SIZE
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ENTER_FONT_SIZE
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.FROM_SHEET_KEY
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.INITIAL_INDICATOR_PROGRESS
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.MAX_ANSWER_CHARS
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.PROGRESS_INDICATOR_HEIGHT
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.PROGRESS_LABEL
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.QUESTION_FONT_SIZE
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.REPEAT_INDEFINITELY
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.SETTINGS_ID
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.SNOOZE_BUTTON_HEIGHT
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.SNOOZE_BUTTON_WIDTH
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.SNOOZE_FONT_SIZE
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.TEST_ALARM_KEY
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.generateMathProblem
 import com.timilehinaregbesola.mathalarm.presentation.ui.*
 import kotlinx.coroutines.InternalCoroutinesApi
@@ -113,9 +113,9 @@ fun MathScreen(
                         viewModel.completeAlarm(AlarmMapper().mapToDomainModel(alarm))
                     }
                     val fromSheet = navController
-                        .previousBackStackEntry?.savedStateHandle?.remove<Boolean>(FromSheetKey)
+                        .previousBackStackEntry?.savedStateHandle?.remove<Boolean>(FROM_SHEET_KEY)
                     fromSheet?.let {
-                        navController.previousBackStackEntry?.savedStateHandle?.set(TestAlarmKey, alarm)
+                        navController.previousBackStackEntry?.savedStateHandle?.set(TEST_ALARM_KEY, alarm)
                     }
                     navController.popBackStack()
                 }
@@ -132,9 +132,9 @@ fun MathScreen(
         if (alarm.vibrate) {
             vibrator = context.getSystemService(Context.VIBRATOR_SERVICE) as Vibrator
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                vibrator?.vibrate(VibrationEffect.createWaveform(DefaultVibrationPattern, RepeatIndefinitely))
+                vibrator?.vibrate(VibrationEffect.createWaveform(DEFAULT_VIBRATION_PATTERN, REPEAT_INDEFINITELY))
             } else {
-                vibrator?.vibrate(DefaultVibrationPattern, RepeatIndefinitely)
+                vibrator?.vibrate(DEFAULT_VIBRATION_PATTERN, REPEAT_INDEFINITELY)
             }
         }
         onDispose {
@@ -145,7 +145,7 @@ fun MathScreen(
     if (alarm.alarmTone.isNotEmpty()) {
         val alarmUri = Uri.parse(alarm.alarmTone)
         println(navController.previousBackStackEntry?.destination?.id)
-        if (navController.previousBackStackEntry?.destination?.id == SettingsId) {
+        if (navController.previousBackStackEntry?.destination?.id == SETTINGS_ID) {
             try {
                 viewModel.audioPlayer.apply {
                     stop()
@@ -176,11 +176,11 @@ fun MathScreen(
             ) {
                 Column {
                     val toneState = viewModel.state.observeAsState()
-                    val progress = rememberSaveable { mutableStateOf(InitialIndicatorProgress) }
+                    val progress = rememberSaveable { mutableStateOf(INITIAL_INDICATOR_PROGRESS) }
                     val animatedProgress = animateFloatAsState(
                         targetValue = progress.value,
                         animationSpec = ProgressAnimationSpec,
-                        label = ProgressLabel,
+                        label = PROGRESS_LABEL,
                     ).value
 
                     Spacer(modifier = Modifier.height(spacing.extraMedium))
@@ -188,7 +188,7 @@ fun MathScreen(
                         LinearProgressIndicator(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .height(ProgressIndicatorHeight)
+                                .height(PROGRESS_INDICATOR_HEIGHT)
                                 .padding(horizontal = spacing.extraMedium),
                             color = indicatorColor,
                             progress = animatedProgress,
@@ -201,7 +201,7 @@ fun MathScreen(
                     ) {
                         Text(
                             text = question.value,
-                            fontSize = QuestionFontSize,
+                            fontSize = QUESTION_FONT_SIZE,
                             fontWeight = Bold,
                         )
                     }
@@ -209,11 +209,11 @@ fun MathScreen(
                     TextField(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .height(AnswerFieldHeight)
-                            .padding(horizontal = AnswerFieldHorizontalPadding),
+                            .height(ANSWER_FIELD_HEIGHT)
+                            .padding(horizontal = ANSWER_FIELD_HORIZONTAL_PADDING),
                         value = viewModel.answerText.value,
                         onValueChange = { newVal ->
-                            if (newVal.length <= MaxAnswerChars) {
+                            if (newVal.length <= MAX_ANSWER_CHARS) {
                                 viewModel.onEvent(
                                     EnteredAnswer(newVal.filter { it.isDigit() }),
                                 )
@@ -226,7 +226,7 @@ fun MathScreen(
                                 horizontalArrangement = Center,
                                 verticalAlignment = CenterVertically,
                             ) {
-                                Text(text = "=", fontSize = AnswerFieldFontSize)
+                                Text(text = "=", fontSize = ANSWER_FIELD_FONT_SIZE)
                             }
                         },
                         keyboardOptions = KeyboardOptions(
@@ -240,7 +240,7 @@ fun MathScreen(
                         ),
                         textStyle = TextStyle(
                             color = colors.onSurface,
-                            fontSize = AnswerFieldFontSize,
+                            fontSize = ANSWER_FIELD_FONT_SIZE,
                             textAlign = TextAlign.Center,
                         ),
                         colors = TextFieldDefaults.textFieldColors(
@@ -249,20 +249,20 @@ fun MathScreen(
                             unfocusedIndicatorColor = Transparent,
                             disabledIndicatorColor = Transparent,
                         ),
-                        shape = shapes.medium.copy(CornerSize(AnswerFieldCornerSize)),
+                        shape = shapes.medium.copy(CornerSize(ANSWER_FIELD_CORNER_SIZE)),
                     )
                     Spacer(modifier = Modifier.height(spacing.medium))
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = ButtonSectionHorizontalPadding),
+                            .padding(horizontal = BUTTON_SECTION_HORIZONTAL_PADDING),
                         horizontalArrangement = SpaceBetween,
                     ) {
-                        Column(modifier = Modifier.height(ButtonSectionHeight)) {
+                        Column(modifier = Modifier.height(BUTTON_SECTION_HEIGHT)) {
                             Button(
                                 modifier = Modifier
-                                    .height(ClearButtonHeight)
-                                    .width(ClearButtonWidth),
+                                    .height(CLEAR_BUTTON_HEIGHT)
+                                    .width(CLEAR_BUTTON_WIDTH),
                                 onClick = {
                                     viewModel.onEvent(OnClearClick)
                                 },
@@ -271,13 +271,13 @@ fun MathScreen(
                                     contentColor = White,
                                 ),
                             ) {
-                                Text(text = "CLEAR", fontSize = ClearFontSize)
+                                Text(text = "CLEAR", fontSize = CLEAR_FONT_SIZE)
                             }
-                            Spacer(modifier = Modifier.height(ClearButtonBottomPadding))
+                            Spacer(modifier = Modifier.height(CLEAR_BUTTON_BOTTOM_PADDING))
                             Button(
                                 modifier = Modifier
-                                    .height(SnoozeButtonHeight)
-                                    .width(SnoozeButtonWidth),
+                                    .height(SNOOZE_BUTTON_HEIGHT)
+                                    .width(SNOOZE_BUTTON_WIDTH),
                                 enabled = alarm.snooze != 0,
                                 onClick = {
                                     viewModel.onEvent(OnSnoozeClick(alarm.alarmId))
@@ -288,12 +288,12 @@ fun MathScreen(
                                     contentColor = White,
                                 ),
                             ) {
-                                Text(text = "SNOOZE", fontSize = SnoozeFontSize)
+                                Text(text = "SNOOZE", fontSize = SNOOZE_FONT_SIZE)
                             }
                         }
                         Button(
                             modifier = Modifier
-                                .size(EnterButtonSize),
+                                .size(ENTER_BUTTON_SIZE),
                             onClick = {
                                 viewModel.onEvent(OnEnterClick(problem))
                             },
@@ -302,7 +302,7 @@ fun MathScreen(
                                 contentColor = White,
                             ),
                         ) {
-                            Text(text = "ENTER", fontSize = EnterFontSize)
+                            Text(text = "ENTER", fontSize = ENTER_FONT_SIZE)
                         }
                     }
                 }
@@ -328,29 +328,29 @@ fun MathPreview() {
 }
 
 private object MathScreen {
-    val DefaultVibrationPattern = longArrayOf(0, 1000, 3000)
-    const val SettingsId = 1143682591
-    const val TestAlarmKey = "testAlarm"
-    const val FromSheetKey = "fromSheet"
-    const val InitialIndicatorProgress = 0.1f
-    const val MaxAnswerChars = 8
-    const val ProgressLabel = "ProgressBar"
-    const val RepeatIndefinitely = 0
-    val ProgressIndicatorHeight = 10.dp
-    val QuestionFontSize = 70.sp
-    val AnswerFieldHorizontalPadding = 56.dp
-    val AnswerFieldHeight = 90.dp
-    val AnswerFieldCornerSize = 24.dp
-    val AnswerFieldFontSize = 30.sp
-    val ButtonSectionHorizontalPadding = 56.dp
-    val ButtonSectionHeight = 120.dp
-    val SnoozeButtonHeight = 55.dp
-    val SnoozeButtonWidth = 120.dp
-    val ClearButtonHeight = 55.dp
-    val ClearButtonWidth = 120.dp
-    val ClearButtonBottomPadding = 10.dp
-    val EnterFontSize = 19.sp
-    val SnoozeFontSize = 19.sp
-    val ClearFontSize = 19.sp
-    val EnterButtonSize = 120.dp
+    val DEFAULT_VIBRATION_PATTERN = longArrayOf(0, 1000, 3000)
+    const val SETTINGS_ID = 1143682591
+    const val TEST_ALARM_KEY = "testAlarm"
+    const val FROM_SHEET_KEY = "fromSheet"
+    const val INITIAL_INDICATOR_PROGRESS = 0.1f
+    const val MAX_ANSWER_CHARS = 8
+    const val PROGRESS_LABEL = "ProgressBar"
+    const val REPEAT_INDEFINITELY = 0
+    val PROGRESS_INDICATOR_HEIGHT = 10.dp
+    val QUESTION_FONT_SIZE = 70.sp
+    val ANSWER_FIELD_HORIZONTAL_PADDING = 56.dp
+    val ANSWER_FIELD_HEIGHT = 90.dp
+    val ANSWER_FIELD_CORNER_SIZE = 24.dp
+    val ANSWER_FIELD_FONT_SIZE = 30.sp
+    val BUTTON_SECTION_HORIZONTAL_PADDING = 56.dp
+    val BUTTON_SECTION_HEIGHT = 120.dp
+    val SNOOZE_BUTTON_HEIGHT = 55.dp
+    val SNOOZE_BUTTON_WIDTH = 120.dp
+    val CLEAR_BUTTON_HEIGHT = 55.dp
+    val CLEAR_BUTTON_WIDTH = 120.dp
+    val CLEAR_BUTTON_BOTTOM_PADDING = 10.dp
+    val ENTER_FONT_SIZE = 19.sp
+    val SNOOZE_FONT_SIZE = 19.sp
+    val CLEAR_FONT_SIZE = 19.sp
+    val ENTER_BUTTON_SIZE = 120.dp
 }

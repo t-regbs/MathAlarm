@@ -12,8 +12,8 @@ import androidx.compose.ui.text.font.FontWeight.Companion.Normal
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.TextWithCheckbox.CheckboxEndPadding
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.TextWithCheckbox.TextFontSize
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.TextWithCheckbox.CHECKBOX_END_PADDING
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.TextWithCheckbox.TEXT_FONT_SIZE
 
 @Composable
 fun TextWithCheckbox(
@@ -27,13 +27,13 @@ fun TextWithCheckbox(
         verticalAlignment = CenterVertically,
     ) {
         Checkbox(
-            modifier = Modifier.padding(end = CheckboxEndPadding),
+            modifier = Modifier.padding(end = CHECKBOX_END_PADDING),
             checked = initialState,
             onCheckedChange = { onCheckChange(it) },
         )
         Text(
             text = text,
-            fontSize = TextFontSize,
+            fontSize = TEXT_FONT_SIZE,
             fontWeight = Normal,
         )
     }
@@ -48,6 +48,6 @@ private fun TextWithCheckboxPreview() {
 }
 
 private object TextWithCheckbox {
-    val CheckboxEndPadding = 14.dp
-    val TextFontSize = 16.sp
+    val CHECKBOX_END_PADDING = 14.dp
+    val TEXT_FONT_SIZE = 16.sp
 }
