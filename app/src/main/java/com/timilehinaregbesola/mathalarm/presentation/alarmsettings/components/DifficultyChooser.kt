@@ -7,29 +7,31 @@ import androidx.compose.material.DropdownMenuItem
 import androidx.compose.material.MaterialTheme
 import androidx.compose.material.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
 fun DifficultyChooser(initialDiff: Int, onValueChange: (Int) -> Unit) {
-    val expanded = remember { mutableStateOf(false) }
+    var expanded by remember { mutableStateOf(false) }
     val items = listOf("Easy Math", "Medium Math", "Hard Math")
     Box {
         Text(
             items[initialDiff],
             modifier = Modifier
-                .clickable(onClick = { expanded.value = true }),
+                .clickable(onClick = { expanded = true }),
         )
         DropdownMenu(
-            expanded = expanded.value,
-            onDismissRequest = { expanded.value = false },
+            expanded = expanded,
+            onDismissRequest = { expanded = false },
         ) {
             items.forEachIndexed { index, s ->
                 DropdownMenuItem(
                     onClick = {
-                        expanded.value = false
+                        expanded = false
                         onValueChange(index)
                     },
                 ) {

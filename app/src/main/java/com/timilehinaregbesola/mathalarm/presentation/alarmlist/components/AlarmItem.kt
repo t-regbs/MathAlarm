@@ -25,8 +25,10 @@ import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment.Companion.Bottom
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
@@ -89,11 +91,11 @@ fun AlarmItem(
             elevation = ALARM_ITEM_ELEVATION,
             shape = MaterialTheme.shapes.medium.copy(CornerSize(ALARM_ITEM_CORNER_SIZE)),
         ) {
-            val expandItem = rememberSaveable { mutableStateOf(false) }
+            var expandItem by rememberSaveable { mutableStateOf(false) }
             Column(
                 Modifier
                     .background(if (darkTheme) darkPrimaryLight else Color(ALARM_ITEM_LIGHT_BACKGROUND_HEX))
-                    .clickable(onClick = { expandItem.value = !expandItem.value }),
+                    .clickable(onClick = { expandItem = !expandItem }),
             ) {
                 Column(modifier = Modifier) {
                     Row {
@@ -189,7 +191,7 @@ fun AlarmItem(
                             fontSize = ALARM_INFO_FONT_SIZE,
                             modifier = Modifier.weight(THREE_QUARTERS_WEIGHT),
                         )
-                        if (!expandItem.value) {
+                        if (!expandItem) {
                             Icon(
                                 imageVector = Icons.Default.KeyboardArrowDown,
                                 contentDescription = "Expand",
@@ -197,17 +199,17 @@ fun AlarmItem(
                                     .weight(EQUAL_WEIGHT)
                                     .align(CenterVertically)
                                     .clickable(
-                                        onClick = { expandItem.value = true },
+                                        onClick = { expandItem = true },
                                     ),
                             )
                         }
                     }
                 }
-                AnimatedVisibility(expandItem.value) {
+                AnimatedVisibility(expandItem) {
                     AlarmItemExpandableSection(
                         onEditAlarm = onEditAlarm,
                         onDeleteAlarm = { onDeleteAlarm(alarm) },
-                        onExpandClick = { expandItem.value = false },
+                        onExpandClick = { expandItem = false },
                     )
                 }
             }

@@ -68,7 +68,7 @@ fun ListDisplayScreen(
     navController: NavHostController,
     darkTheme: Boolean,
 ) {
-    val alarms = viewModel.alarms.collectAsState(null)
+    val alarms by viewModel.alarms.collectAsState(null)
     val alarmPermission = viewModel.permission
     var deleteAllAlarmsDialog by remember { mutableStateOf(false) }
     val scaffoldState = rememberScaffoldState()
@@ -139,11 +139,11 @@ fun ListDisplayScreen(
         }
     }
 
-    if (alarms.value == null) {
+    if (alarms == null) {
         ListLoadingShimmer(imageHeight = LOADING_SHIMMER_IMAGE_HEIGHT, isDark = darkTheme)
     }
     val context = LocalContext.current
-    alarms.value?.let { alarmList ->
+    alarms?.let { alarmList ->
         Surface(
             modifier = Modifier
                 .fillMaxSize(),
@@ -202,7 +202,7 @@ fun ListDisplayScreen(
                         nearestIndex = triple.third
                         val nearestTime = triple.first
 
-                        val nearestAlarmMessage = derivedStateOf {
+                        val nearestAlarmMessage by derivedStateOf {
                             nearestTime?.let { it1 ->
                                 alarmList[nearestIndex].getTimeLeft(it1, viewModel.calender.getCurrentCalendar())
                             }
@@ -212,7 +212,7 @@ fun ListDisplayScreen(
                             alarmPermission = alarmPermission,
                             alarmList = alarmList,
                             enabled = enabled,
-                            nearestAlarmMessage = nearestAlarmMessage.value,
+                            nearestAlarmMessage = nearestAlarmMessage,
                             darkTheme = darkTheme,
                             onEditAlarm = { isLoading = true },
                             onPermissionAbsent = { showPermissionDialog = true },

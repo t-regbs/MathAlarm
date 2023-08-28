@@ -175,16 +175,16 @@ fun MathScreen(
                     .padding(vertical = spacing.extraMedium),
             ) {
                 Column {
-                    val toneState = viewModel.state.observeAsState()
-                    val progress = rememberSaveable { mutableStateOf(INITIAL_INDICATOR_PROGRESS) }
+                    val toneState by viewModel.state.observeAsState()
+                    val progress by rememberSaveable { mutableStateOf(INITIAL_INDICATOR_PROGRESS) }
                     val animatedProgress = animateFloatAsState(
-                        targetValue = progress.value,
+                        targetValue = progress,
                         animationSpec = ProgressAnimationSpec,
                         label = PROGRESS_LABEL,
                     ).value
 
                     Spacer(modifier = Modifier.height(spacing.extraMedium))
-                    if (toneState.value is Countdown) {
+                    if (toneState is Countdown) {
                         LinearProgressIndicator(
                             modifier = Modifier
                                 .fillMaxWidth()
