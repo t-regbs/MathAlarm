@@ -1,8 +1,10 @@
 package com.timilehinaregbesola.mathalarm.utils
 
 import android.Manifest
+import android.Manifest.permission.READ_EXTERNAL_STORAGE
 import android.app.Activity
 import android.app.AlertDialog
+import android.content.Context
 import android.content.pm.PackageManager
 import android.media.MediaPlayer
 import android.media.RingtoneManager
@@ -16,7 +18,7 @@ import timber.log.Timber
  * Checks if all ringtones can be played, and requests permissions if it is not the case
  */
 fun checkPermissions(activity: Activity, tones: List<String>) {
-    if (Build.VERSION.SDK_INT >= 23 && activity.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+    if (Build.VERSION.SDK_INT >= 23 && activity.checkSelfPermission(READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
         val unplayable = tones
             .filter { alarmtone ->
                 runCatching {
@@ -44,14 +46,24 @@ fun checkPermissions(activity: Activity, tones: List<String>) {
                 AlertDialog.Builder(activity).setTitle(activity.getString(R.string.alert))
                     .setMessage(activity.getString(R.string.permissions_external_storage_text, unplayable.joinToString(", ")))
                     .setPositiveButton(android.R.string.ok) { _, _ ->
-                        activity.requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), 3)
+                        activity.requestPermissions(arrayOf(READ_EXTERNAL_STORAGE), 3)
                     }
                     .setNegativeButton(android.R.string.cancel, null)
                     .show()
             } catch (e: Exception) {
                 Timber.e("Was not able to show dialog to request permission, continue without the dialog")
-                activity.requestPermissions(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE), 3)
+                activity.requestPermissions(arrayOf(READ_EXTERNAL_STORAGE), 3)
             }
         }
+    }
+}
+
+fun handleNotificationPermission(context: Context, callback: (granted: Boolean) -> Unit) {
+    if (Build.VERSION.SDK_INT >= 33) {
+        context.handlePermission(Manifest.permission.POST_NOTIFICATIONS) { granted ->
+            callback(granted)
+        }
+    } else {
+        callback(true)
     }
 }

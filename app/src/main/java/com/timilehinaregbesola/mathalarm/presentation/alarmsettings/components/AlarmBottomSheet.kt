@@ -48,6 +48,7 @@ import androidx.compose.ui.text.style.TextAlign.Companion.Center
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
@@ -94,6 +95,10 @@ import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_ALARM_MATH
 import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_ALARM_MATH_ARGUMENT
 import com.timilehinaregbesola.mathalarm.utils.PickRingtone
 import com.timilehinaregbesola.mathalarm.utils.checkPermissions
+import com.timilehinaregbesola.mathalarm.utils.confirmationDialog
+import com.timilehinaregbesola.mathalarm.utils.handleNotificationPermission
+import com.timilehinaregbesola.mathalarm.utils.openNotificationSettings
+import com.timilehinaregbesola.mathalarm.utils.permissionRequiredDialog
 import com.vanpra.composematerialdialogs.MaterialDialog
 import com.vanpra.composematerialdialogs.datetime.time.TimePickerDefaults.colors
 import com.vanpra.composematerialdialogs.datetime.time.timepicker
@@ -117,7 +122,7 @@ fun AlarmBottomSheet(
 ) {
     viewModel.setAlarm(AlarmMapper().mapToDomainModel(alarm))
     val scaffoldState = rememberBottomSheetScaffoldState()
-    val activity = LocalContext.current as Activity
+    val context = LocalContext.current
     var timeCal = LocalTime.now()
 
     LaunchedEffect(true) {
@@ -274,9 +279,9 @@ fun AlarmBottomSheet(
             }
             result.value?.let {
                 val alert = it.toString()
-                checkPermissions(activity, listOf(alert))
+                checkPermissions(context as Activity, listOf(alert))
                 viewModel.onEvent(OnToneChange(alert))
-                toneText.value = RingtoneManager.getRingtone(activity, alert.toUri()).getTitle(activity)
+                toneText.value = RingtoneManager.getRingtone(context, alert.toUri()).getTitle(context)
             }
             TextWithIcon(
                 modifier = Modifier.padding(horizontal = spacing.medium),
@@ -285,10 +290,10 @@ fun AlarmBottomSheet(
                         toneText.value!!
                     }
                     viewModel.tone.value == "" -> {
-                        activity.getString(R.string.default_alarm_tone)
+                        context.getString(R.string.default_alarm_tone)
                     }
                     else -> {
-                        RingtoneManager.getRingtone(activity, viewModel.tone.value.toUri()).getTitle(activity)
+                        RingtoneManager.getRingtone(context, viewModel.tone.value.toUri()).getTitle(context)
                     }
                 },
                 image = Icons.Outlined.Notifications,
@@ -299,7 +304,7 @@ fun AlarmBottomSheet(
                         Timber.e(e)
                         viewModel.onEvent(
                             OnToneError(
-                                activity.getString(R.string.details_no_ringtone_picker),
+                                context.getString(R.string.details_no_ringtone_picker),
                             ),
                         )
                     }
@@ -345,7 +350,27 @@ fun AlarmBottomSheet(
                     .padding(top = SAVE_BUTTON_TOP_PADDING)
                     .fillMaxWidth(),
                 onClick = {
-                    viewModel.onEvent(OnSaveTodoClick)
+                    handleNotificationPermission(context = context) {
+                        if (it) {
+                            if (NotificationManagerCompat.from(context).areNotificationsEnabled()) {
+                                viewModel.onEvent(OnSaveTodoClick)
+                            } else {
+                                confirmationDialog(
+                                    context = context,
+                                    message = "Notifications of this application are disabled. Please go to your device settings and enable them.",
+                                    positive = "ok"
+                                ) {
+                                    viewModel.onEvent(OnSaveTodoClick)
+                                }
+                            }
+                        } else {
+                            permissionRequiredDialog(
+                                context = context,
+                                message = "You must allow the app to display notifications, else it cannot show alarms",
+                                onPositive = { context.openNotificationSettings() }
+                            )
+                        }
+                    }
                 },
                 colors = buttonColors(backgroundColor = colors.secondary),
             ) {

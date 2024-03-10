@@ -2,14 +2,20 @@
 
 package com.timilehinaregbesola.mathalarm.utils
 
+import android.app.Activity
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import android.content.pm.PackageManager
 import android.net.Uri
+import android.os.Build
+import android.provider.Settings
 import android.widget.Toast
 import androidx.annotation.StringRes
+import androidx.core.app.ActivityCompat
 import androidx.core.app.AlarmManagerCompat
+import androidx.core.content.ContextCompat
 import timber.log.Timber
 import java.util.*
 
@@ -39,7 +45,9 @@ fun Context.setExactAlarm(
 
     val manager = getAlarmManager()
     manager?.let {
-        AlarmManagerCompat.setExactAndAllowWhileIdle(it, type, triggerAtMillis, operation)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || it.canScheduleExactAlarms()) {
+            AlarmManagerCompat.setExactAndAllowWhileIdle(it, type, triggerAtMillis, operation)
+        }
     }
 }
 
@@ -90,4 +98,28 @@ fun Context.email(
     }
 
     startActivity(Intent.createChooser(intent, chooserTitle))
+}
+
+fun Context.hasPermission(permission: String) =
+    ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
+
+fun Context.handlePermission(permission: String, callback: (granted: Boolean) -> Unit) {
+    if (hasPermission(permission)) {
+        callback(true)
+    } else {
+        ActivityCompat.requestPermissions(this as Activity, arrayOf(permission), 3)
+    }
+}
+
+fun Context.openNotificationSettings() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+        intent.putExtra(Settings.EXTRA_APP_PACKAGE, packageName)
+        startActivity(intent)
+    } else {
+        // For Android versions below Oreo, you can't directly open the app's notification settings.
+        // You can open the general notification settings instead.
+        val intent = Intent(Settings.ACTION_SETTINGS)
+        startActivity(intent)
+    }
 }
