@@ -6,13 +6,13 @@ import kotlinx.coroutines.flow.Flow
 @Dao
 interface AlarmDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
-    suspend fun addAlarm(alarm: AlarmEntity?): Long
+    suspend fun addAlarm(alarm: AlarmEntity): Long
 
     @Update
-    suspend fun updateAlarm(alarm: AlarmEntity?)
+    suspend fun updateAlarm(alarm: AlarmEntity)
 
     @Delete
-    suspend fun deleteAlarm(alarm: AlarmEntity?)
+    suspend fun deleteAlarm(alarm: AlarmEntity)
 
     @Query("DELETE FROM alarms WHERE alarmid = :id")
     suspend fun deleteAlarmWithId(id: Long?)

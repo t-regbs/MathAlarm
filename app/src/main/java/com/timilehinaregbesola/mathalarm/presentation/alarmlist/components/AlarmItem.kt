@@ -12,18 +12,20 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CornerSize
-import androidx.compose.material.Card
-import androidx.compose.material.Divider
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Switch
-import androidx.compose.material.Text
+import androidx.compose.material3.Card
+import androidx.compose.material3.Divider
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CardElevation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -66,7 +68,7 @@ import com.timilehinaregbesola.mathalarm.utils.fullDays
 import com.timilehinaregbesola.mathalarm.utils.getFormatTime
 
 @ExperimentalAnimationApi
-@ExperimentalMaterialApi
+@ExperimentalMaterial3Api
 @Composable
 fun AlarmItem(
     alarm: Alarm,
@@ -88,13 +90,17 @@ fun AlarmItem(
                     start = extraMedium,
                     end = extraMedium,
                 ),
-            elevation = ALARM_ITEM_ELEVATION,
+            elevation = CardDefaults.cardElevation(defaultElevation = ALARM_ITEM_ELEVATION),
             shape = MaterialTheme.shapes.medium.copy(CornerSize(ALARM_ITEM_CORNER_SIZE)),
         ) {
             var expandItem by rememberSaveable { mutableStateOf(false) }
             Column(
                 Modifier
-                    .background(if (darkTheme) darkPrimaryLight else Color(ALARM_ITEM_LIGHT_BACKGROUND_HEX))
+                    .background(
+                        if (darkTheme) darkPrimaryLight else Color(
+                            ALARM_ITEM_LIGHT_BACKGROUND_HEX
+                        )
+                    )
                     .clickable(onClick = { expandItem = !expandItem }),
             ) {
                 Column(modifier = Modifier) {
@@ -292,7 +298,7 @@ private fun AlarmItemExpandableSection(
     }
 }
 
-@ExperimentalMaterialApi
+@ExperimentalMaterial3Api
 @ExperimentalAnimationApi
 @Preview
 @Composable

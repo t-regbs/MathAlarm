@@ -1,48 +1,43 @@
 [versions]
-accompanist = "0.31.0-alpha"
+accompanist = "0.35.0-alpha"
 # @keep
-android_compile_sdk = "33"
-android_gradle_plugin = "7.2.2"
+android_compile_sdk = "34"
+android_gradle_plugin = "8.4.0-alpha03"
 # @keep
 android_min_sdk = "21"
 # @keep
-android_target_sdk = "33"
-androidx_activity_compose = "1.7.2"
-androidx_compose = "1.2.1"
-androidx_compose_compiler = "1.4.7"
-androidx_datastore = "1.0.0"
-androidx_ktx = "1.10.1"
-androidx_room = "2.5.2"
+android_target_sdk = "34"
+androidx_activity_compose = "1.9.0-alpha03"
+androidx_datastore = "1.1.0-beta02"
+androidx_ktx = "1.13.0-alpha05"
+androidx_room = "2.6.1"
 androidx_test_core = "1.5.0"
-compose = "2023.06.01"
-coroutines = "1.6.4"
-crashlytics_plugin = "2.9.6"
-firebase = "32.1.1"
-google_services = "4.3.15"
-hilt_android = "2.43.2"
-hilt_android_compiler = "2.43.2"
-hilt_nav_compose = "1.0.0"
+compose = "2024.02.02"
+coroutines = "1.8.0"
+crashlytics_plugin = "2.9.9"
+firebase = "32.7.4"
+google_services = "4.4.1"
+hilt_android = "2.51"
+hilt_android_compiler = "2.51"
+hilt_nav_compose = "1.2.0"
 # @pin
-kotlin_gradle_plugin = "1.8.21"
-material = "1.9.0"
-material_dialogs = "0.5.1"
-moshi = "1.13.0"
-splashscreen = "1.0.1"
-test_coroutines = "1.6.4"
-test_espresso_core = "3.5.1"
+kotlin_gradle_plugin = "1.9.10"
+lottie = "6.4.0"
+material = "1.11.0"
+moshi = "1.15.1"
+splashscreen = "1.1.0-alpha02"
+test_coroutines = "1.8.0"
+test_espresso_core = "3.6.0-alpha03"
 test_junit = "4.13.2"
-test_junit_ext = "1.1.5"
-test_mockk = "1.12.5"
+test_junit_ext = "1.2.0-alpha03"
+test_mockk = "1.13.10"
 timber = "4.7.1"
-lottie = "5.2.0"
 
 [libraries]
-accompanist_navigation_animation = { module = "com.google.accompanist:accompanist-navigation-animation", version.ref = "accompanist" }
 accompanist_navigation_material = { module = "com.google.accompanist:accompanist-navigation-material", version.ref = "accompanist" }
 android_material = { module = "com.google.android.material:material", version.ref = "material" }
-compose_bom = { module = "androidx.compose:compose-bom", version.ref = "compose" }
 androidx_activity_compose = { module = "androidx.activity:activity-compose", version.ref = "androidx_activity_compose" }
-androidx_compose_material = { module = "androidx.compose.material:material" }
+androidx_compose_material3 = { module = "androidx.compose.material3:material3" }
 androidx_compose_material_icons = { module = "androidx.compose.material:material-icons-extended" }
 androidx_compose_runtime = { module = "androidx.compose.runtime:runtime" }
 androidx_compose_runtime_livedata = { module = "androidx.compose.runtime:runtime-livedata" }
@@ -59,9 +54,10 @@ androidx_room_compiler = { module = "androidx.room:room-compiler", version.ref =
 androidx_room_ktx = { module = "androidx.room:room-ktx", version.ref = "androidx_room" }
 androidx_room_runtime = { module = "androidx.room:room-runtime", version.ref = "androidx_room" }
 androidx_test_core = { module = "androidx.test:core", version.ref = "androidx_test_core" }
-androidx_test_core_ktx = "androidx.test:core-ktx:1.5.0"
+androidx_test_core_ktx = "androidx.test:core-ktx:1.6.0-alpha05"
 androidx_test_espresso_core = { module = "androidx.test.espresso:espresso-core", version.ref = "test_espresso_core" }
 androidx_test_ext_junit = { module = "androidx.test.ext:junit", version.ref = "test_junit_ext" }
+compose_bom = { module = "androidx.compose:compose-bom", version.ref = "compose" }
 coroutines_android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 coroutines_core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 coroutines_test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "test_coroutines" }
@@ -74,6 +70,7 @@ hilt_android = { module = "com.google.dagger:hilt-android", version.ref = "hilt_
 hilt_android_compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt_android_compiler" }
 hilt_android_testing = { module = "com.google.dagger:hilt-android-testing", version.ref = "hilt_android_compiler" }
 junit = { module = "junit:junit", version.ref = "test_junit" }
+lottie_compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottie" }
 mockk = { module = "io.mockk:mockk", version.ref = "test_mockk" }
 moshi = { module = "com.squareup.moshi:moshi-kotlin", version.ref = "moshi" }
 plugin_android_gradle = { module = "com.android.tools.build:gradle", version.ref = "android_gradle_plugin" }
@@ -81,5 +78,3 @@ plugin_crashlytics_gradle = { module = "com.google.firebase:firebase-crashlytics
 plugin_hilt_gradle = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "hilt_android" }
 plugin_kotlin_gradle = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin_gradle_plugin" }
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
-vanpra_material_datetime = { module = "io.github.vanpra.compose-material-dialogs:datetime", version.ref = "material_dialogs" }
-lottie_compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottie" }

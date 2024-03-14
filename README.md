@@ -13,7 +13,7 @@ An Android alarm app in which you solve math problems of varying difficulty to d
 * [ViewModel](https://developer.android.com/topic/libraries/architecture/viewmodel) to store and manage UI-related data in a lifecycle conscious way.
 * [Navigation Material](https://google.github.io/accompanist/navigation-material) - provides Compose Material support for Jetpack Navigation Compose, features composable bottom sheet destinations.
 * [Timber](https://github.com/JakeWharton/timber) - a logger with a small, extensible API which provides utility on top of Android's normal Log class.
-* [Material Design](https://material.io/develop/android/docs/getting-started/)
+* [Material Design](https://material3.io/develop/android/docs/getting-started/)
 * [Coroutines](https://kotlinlang.org/docs/reference/coroutines-overview.html) used to manage the local storage i.e. `writing to and reading from the database`. Coroutines help in managing background threads and reduces the need for callbacks.
 * [Room](https://developer.android.com/topic/libraries/architecture/room) persistence library which provides an abstraction layer over SQLite to allow for more robust database access while harnessing the full power of SQLite.
 * [Dagger Hilt](https://dagger.dev/hilt/) provides a standard way to incorporate Dagger dependency injection into an Android application.

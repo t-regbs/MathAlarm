@@ -3,9 +3,9 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color.Companion.LightGray
@@ -26,7 +26,7 @@ fun ListHeader(enabled: Boolean, nearestAlarmMessage: String, isDark: Boolean) {
             .background(
                 color = if (isDark) darkPrimaryLight else LightGray.copy(alpha = LIST_HEADER_ALPHA),
             ),
-        elevation = LIST_HEADER_ELEVATION,
+        tonalElevation = LIST_HEADER_ELEVATION,
     ) {
         with(MaterialTheme.spacing) {
             Text(

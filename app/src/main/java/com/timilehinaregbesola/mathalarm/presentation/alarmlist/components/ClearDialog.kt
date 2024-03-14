@@ -1,6 +1,6 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 
-import androidx.compose.material.*
+import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 
 @Composable
@@ -26,7 +26,7 @@ fun ClearDialog(
     )
 }
 
-@ExperimentalMaterialApi
+@ExperimentalMaterial3Api
 @Composable
 fun AlarmSnack(state: SnackbarHostState) {
     SnackbarHost(

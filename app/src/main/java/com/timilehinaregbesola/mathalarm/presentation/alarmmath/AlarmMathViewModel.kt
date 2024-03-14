@@ -75,14 +75,15 @@ class AlarmMathViewModel @Inject constructor(
         if (currentState !is ToneState.Stopped) {
             return
         }
-        val seconds = 1000
-        _state.value = ToneState.Countdown(seconds, seconds)
-        this.currentTimer = viewModelScope.launch {
-            timer(seconds).collect {
-                _state.value = if (it == 0) {
-                    ToneState.Stopped(0)
-                } else {
-                    ToneState.Countdown(seconds, it)
+        with(audioPlayer) {
+            _state.value = ToneState.Countdown(duration, currentPosition)
+            this@AlarmMathViewModel.currentTimer = viewModelScope.launch {
+                timer(duration/1000).collect {
+                    _state.value = if (it == 0) {
+                        ToneState.Stopped(0)
+                    } else {
+                        ToneState.Countdown(duration/1000, it)
+                    }
                 }
             }
         }
@@ -102,9 +103,12 @@ class AlarmMathViewModel @Inject constructor(
     }
 
     private fun timer(seconds: Int): Flow<Int> = flow {
-        for (s in 0 until (seconds + 1)) {
+        var counter = 0
+        while(true) {
             delay(1000L)
-            emit(s)
+
+            counter++
+            emit(counter % (seconds + 1))
         }
     }
 

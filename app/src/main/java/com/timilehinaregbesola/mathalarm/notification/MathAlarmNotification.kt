@@ -9,11 +9,10 @@ import android.media.RingtoneManager
 import android.os.Build
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.core.app.NotificationCompat
 import androidx.core.net.toUri
-import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.timilehinaregbesola.mathalarm.AlarmReceiver
@@ -32,11 +31,10 @@ import java.net.URLEncoder
 /**
  * Handles the notification related to the Task reminders.
  */
-@ExperimentalMaterialNavigationApi
 @ExperimentalAnimationApi
 @InternalCoroutinesApi
 @ExperimentalComposeUiApi
-@ExperimentalMaterialApi
+@ExperimentalMaterial3Api
 @ExperimentalFoundationApi
 class MathAlarmNotification(
     private val context: Context,

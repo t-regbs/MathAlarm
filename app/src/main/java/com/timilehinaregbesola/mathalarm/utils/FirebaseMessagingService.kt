@@ -10,9 +10,13 @@ import android.graphics.BitmapFactory
 import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
+import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
+import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.timilehinaregbesola.mathalarm.BuildConfig
@@ -20,6 +24,7 @@ import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotificationChannel
 import com.timilehinaregbesola.mathalarm.presentation.MainActivity
 import dagger.hilt.android.AndroidEntryPoint
+import kotlinx.coroutines.InternalCoroutinesApi
 import javax.inject.Inject
 
 @AndroidEntryPoint
@@ -43,13 +48,12 @@ class FirebaseMessagingService : FirebaseMessagingService() {
 
     @OptIn(
         ExperimentalFoundationApi::class,
-        androidx.compose.material.ExperimentalMaterialApi::class,
-        androidx.compose.material.ExperimentalMaterialApi::class,
-        androidx.compose.ui.ExperimentalComposeUiApi::class,
-        androidx.compose.ui.ExperimentalComposeUiApi::class,
-        kotlinx.coroutines.InternalCoroutinesApi::class,
-        androidx.compose.animation.ExperimentalAnimationApi::class,
-        com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi::class
+        ExperimentalMaterial3Api::class,
+        ExperimentalMaterial3Api::class,
+        ExperimentalComposeUiApi::class,
+        ExperimentalComposeUiApi::class,
+        InternalCoroutinesApi::class,
+        ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class
     )
     private fun sendUpdateApp(title: String, body: String) {
         val sharingIntent = Intent()

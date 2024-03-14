@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="CompilerConfiguration">
-    <bytecodeTargetLevel target="11">
-      <module name="MathAlarm.app" target="17" />
+    <bytecodeTargetLevel target="17">
       <module name="MathAlarm.buildSrc" target="14" />
       <module name="MathAlarm.buildSrc.main" target="14" />
       <module name="MathAlarm.buildSrc.test" target="14" />

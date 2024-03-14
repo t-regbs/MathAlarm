@@ -5,16 +5,16 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.unit.dp
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navDeepLink
-import com.google.accompanist.navigation.animation.AnimatedNavHost
-import com.google.accompanist.navigation.animation.composable
-import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.accompanist.navigation.material.ModalBottomSheetLayout
 import com.google.accompanist.navigation.material.bottomSheet
@@ -37,22 +37,23 @@ import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_SETTINGS_SHEET
 import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_SETTINGS_SHEET_ARGUMENT
 import kotlinx.coroutines.InternalCoroutinesApi
 
+@OptIn(ExperimentalMaterialNavigationApi::class)
 @ExperimentalMaterialNavigationApi
 @ExperimentalAnimationApi
 @InternalCoroutinesApi
 @ExperimentalComposeUiApi
-@ExperimentalMaterialApi
+@ExperimentalMaterial3Api
 @ExperimentalFoundationApi
 @Composable
 fun NavGraph(preferences: AlarmPreferencesImpl) {
     val bottomSheetNavigator = rememberBottomSheetNavigator()
-    val navController = rememberAnimatedNavController(bottomSheetNavigator)
-    Surface(color = MaterialTheme.colors.background) {
+    val navController = rememberNavController(bottomSheetNavigator)
+    Surface(color = MaterialTheme.colorScheme.background) {
         ModalBottomSheetLayout(
             bottomSheetNavigator = bottomSheetNavigator,
             sheetShape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp),
         ) {
-            AnimatedNavHost(navController = navController, startDestination = NAV_ALARM_LIST) {
+            NavHost(navController = navController, startDestination = NAV_ALARM_LIST) {
                 composable(
                     route = NAV_ALARM_LIST,
                     enterTransition = {

@@ -6,18 +6,43 @@ import android.net.Uri
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
-import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement.Center
 import androidx.compose.foundation.layout.Arrangement.SpaceBetween
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.IntrinsicSize
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material.*
-import androidx.compose.material.ProgressIndicatorDefaults.ProgressAnimationSpec
-import androidx.compose.runtime.*
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.LinearProgressIndicator
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ProgressIndicatorDefaults.ProgressAnimationSpec
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
+import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -37,7 +62,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
-import com.google.accompanist.navigation.animation.rememberAnimatedNavController
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
@@ -48,6 +72,7 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathScreenEvent.
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathScreenEvent.OnClearClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathScreenEvent.OnEnterClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathScreenEvent.OnSnoozeClick
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.ToneState
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.ToneState.Countdown
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.buildQuestionString
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ANSWER_FIELD_CORNER_SIZE
@@ -56,12 +81,8 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathS
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ANSWER_FIELD_HORIZONTAL_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.BUTTON_SECTION_HEIGHT
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.BUTTON_SECTION_HORIZONTAL_PADDING
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.CLEAR_BUTTON_BOTTOM_PADDING
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.CLEAR_BUTTON_HEIGHT
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.CLEAR_BUTTON_WIDTH
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.CLEAR_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.DEFAULT_VIBRATION_PATTERN
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ENTER_BUTTON_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ENTER_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.FROM_SHEET_KEY
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.INITIAL_INDICATOR_PROGRESS
@@ -71,19 +92,24 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathS
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.QUESTION_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.REPEAT_INDEFINITELY
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.SETTINGS_ID
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.SNOOZE_BUTTON_HEIGHT
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.SNOOZE_BUTTON_WIDTH
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.SNOOZE_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.TEST_ALARM_KEY
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.generateMathProblem
-import com.timilehinaregbesola.mathalarm.presentation.ui.*
+import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
+import com.timilehinaregbesola.mathalarm.presentation.ui.clearButtonColor
+import com.timilehinaregbesola.mathalarm.presentation.ui.enterButtonColor
+import com.timilehinaregbesola.mathalarm.presentation.ui.indicatorColor
+import com.timilehinaregbesola.mathalarm.presentation.ui.shapes
+import com.timilehinaregbesola.mathalarm.presentation.ui.snoozeButtonColor
+import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
+import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
 import timber.log.Timber
 import java.io.IOException
 
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
-@ExperimentalMaterialApi
+@ExperimentalMaterial3Api
 @InternalCoroutinesApi
 @ExperimentalComposeUiApi
 @Composable
@@ -97,14 +123,32 @@ fun MathScreen(
     val context = LocalContext.current
     val problem = remember { generateMathProblem(alarm.difficulty) }
     val question = remember { mutableStateOf(buildQuestionString(problem)) }
-    val scaffoldState = rememberScaffoldState()
+    val snackbarHostState = remember {
+        SnackbarHostState()
+    }
     val keyboardController = LocalSoftwareKeyboardController.current
+    val toneState by viewModel.state.observeAsState()
+    val progress by remember(viewModel.audioPlayer.currentPosition) {
+        mutableFloatStateOf(
+            if (toneState is Countdown) {
+                val state = toneState as Countdown
+                state.seconds / state.total.toFloat()
+            } else {
+                INITIAL_INDICATOR_PROGRESS
+            }
+        )
+    }
+    val animatedProgress = animateFloatAsState(
+        targetValue = progress,
+        animationSpec = ProgressAnimationSpec,
+        label = PROGRESS_LABEL
+    )
 
     LaunchedEffect(key1 = true) {
         viewModel.eventFlow.collectLatest { event ->
             when (event) {
                 is AlarmMathViewModel.UiEvent.ShowSnackbar -> {
-                    scaffoldState.snackbarHostState.showSnackbar(
+                    snackbarHostState.showSnackbar(
                         message = event.message,
                     )
                 }
@@ -137,61 +181,102 @@ fun MathScreen(
                 vibrator?.vibrate(DEFAULT_VIBRATION_PATTERN, REPEAT_INDEFINITELY)
             }
         }
+        if (alarm.alarmTone.isNotEmpty()) {
+            val alarmUri = Uri.parse(alarm.alarmTone)
+            println(navController.previousBackStackEntry?.destination?.id)
+            if (navController.previousBackStackEntry?.destination?.id == SETTINGS_ID) {
+                try {
+                    viewModel.audioPlayer.apply {
+                        stop()
+                        init()
+                        reset()
+                        setDataSource(alarmUri)
+                        startAlarmAudio()
+                    }
+                    viewModel.startTimer()
+                } catch (e: IOException) {
+                    e.printStackTrace()
+                }
+            }
+        } else {
+            Timber.d("Tone not available")
+            viewModel.onEvent(MathScreenEvent.OnToneError("Tone not available"))
+        }
         onDispose {
             vibrator?.cancel()
             vibrator = null
         }
     }
-    if (alarm.alarmTone.isNotEmpty()) {
-        val alarmUri = Uri.parse(alarm.alarmTone)
-        println(navController.previousBackStackEntry?.destination?.id)
-        if (navController.previousBackStackEntry?.destination?.id == SETTINGS_ID) {
-            try {
-                viewModel.audioPlayer.apply {
-                    stop()
-                    init()
-                    reset()
-                    setDataSource(alarmUri)
-                    startAlarmAudio()
-                }
-                viewModel.startTimer()
-            } catch (e: IOException) {
-                e.printStackTrace()
-            }
-        }
-    } else {
-        Timber.d("Tone not available")
-        viewModel.onEvent(MathScreenEvent.OnToneError("Tone not available"))
-    }
 
+    MathScreenContent(
+        snackbarHostState = snackbarHostState,
+        question = question.value,
+        toneState = toneState,
+        animatedProgress = animatedProgress.value,
+        inputField = {
+            MathInputField(
+                value = viewModel.answerText.value,
+                darkTheme = darkTheme,
+                onDonePressed = {
+                    viewModel.onEvent(OnEnterClick(problem))
+                },
+                onValueChange = { newVal ->
+                    if (newVal.length <= MAX_ANSWER_CHARS) {
+                        viewModel.onEvent(
+                            EnteredAnswer(newVal.filter { it.isDigit() }),
+                        )
+                    }
+                }
+            )
+        },
+        buttonSection = {
+            ButtonSection(
+                alarm = alarm,
+                onEnterClick = {
+                    viewModel.onEvent(OnEnterClick(problem))
+                },
+                onClearClick = {
+                    viewModel.onEvent(OnClearClick)
+                },
+                onSnoozeClick = {
+                    viewModel.onEvent(OnSnoozeClick(alarm.alarmId))
+                    navController.popBackStack()
+                }
+            )
+        }
+    )
+}
+
+@ExperimentalMaterial3Api
+@Composable
+private fun MathScreenContent(
+    snackbarHostState: SnackbarHostState,
+    question: String,
+    toneState: ToneState?,
+    animatedProgress: Float,
+    inputField: @Composable () -> Unit,
+    buttonSection: @Composable () -> Unit
+) {
     Scaffold(
-        scaffoldState = scaffoldState,
-        snackbarHost = { state -> AlarmSnack(state) },
-    ) {
+        snackbarHost = { AlarmSnack(snackbarHostState) },
+    ) { padding ->
         with(MaterialTheme) {
             Surface(
                 Modifier
                     .fillMaxSize()
+                    .padding(padding)
                     .padding(vertical = spacing.extraMedium),
             ) {
                 Column {
-                    val toneState by viewModel.state.observeAsState()
-                    val progress by rememberSaveable { mutableStateOf(INITIAL_INDICATOR_PROGRESS) }
-                    val animatedProgress = animateFloatAsState(
-                        targetValue = progress,
-                        animationSpec = ProgressAnimationSpec,
-                        label = PROGRESS_LABEL,
-                    ).value
-
                     Spacer(modifier = Modifier.height(spacing.extraMedium))
                     if (toneState is Countdown) {
                         LinearProgressIndicator(
+                            progress = { animatedProgress },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(PROGRESS_INDICATOR_HEIGHT)
                                 .padding(horizontal = spacing.extraMedium),
                             color = indicatorColor,
-                            progress = animatedProgress,
                         )
                     }
                     Spacer(modifier = Modifier.height(spacing.large))
@@ -200,129 +285,163 @@ fun MathScreen(
                         horizontalArrangement = Center,
                     ) {
                         Text(
-                            text = question.value,
+                            text = question,
                             fontSize = QUESTION_FONT_SIZE,
                             fontWeight = Bold,
                         )
                     }
                     Spacer(modifier = Modifier.height(spacing.medium))
-                    TextField(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(ANSWER_FIELD_HEIGHT)
-                            .padding(horizontal = ANSWER_FIELD_HORIZONTAL_PADDING),
-                        value = viewModel.answerText.value,
-                        onValueChange = { newVal ->
-                            if (newVal.length <= MAX_ANSWER_CHARS) {
-                                viewModel.onEvent(
-                                    EnteredAnswer(newVal.filter { it.isDigit() }),
-                                )
-                            }
-                        },
-                        singleLine = true,
-                        placeholder = {
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Center,
-                                verticalAlignment = CenterVertically,
-                            ) {
-                                Text(text = "=", fontSize = ANSWER_FIELD_FONT_SIZE)
-                            }
-                        },
-                        keyboardOptions = KeyboardOptions(
-                            keyboardType = Number,
-                            imeAction = Done,
-                        ),
-                        keyboardActions = KeyboardActions(
-                            onDone = {
-                                viewModel.onEvent(OnEnterClick(problem))
-                            },
-                        ),
-                        textStyle = TextStyle(
-                            color = colors.onSurface,
-                            fontSize = ANSWER_FIELD_FONT_SIZE,
-                            textAlign = TextAlign.Center,
-                        ),
-                        colors = TextFieldDefaults.textFieldColors(
-                            backgroundColor = if (darkTheme) DarkGray else unSelectedDay,
-                            focusedIndicatorColor = Transparent,
-                            unfocusedIndicatorColor = Transparent,
-                            disabledIndicatorColor = Transparent,
-                        ),
-                        shape = shapes.medium.copy(CornerSize(ANSWER_FIELD_CORNER_SIZE)),
-                    )
+                    inputField()
                     Spacer(modifier = Modifier.height(spacing.medium))
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = BUTTON_SECTION_HORIZONTAL_PADDING),
-                        horizontalArrangement = SpaceBetween,
-                    ) {
-                        Column(modifier = Modifier.height(BUTTON_SECTION_HEIGHT)) {
-                            Button(
-                                modifier = Modifier
-                                    .height(CLEAR_BUTTON_HEIGHT)
-                                    .width(CLEAR_BUTTON_WIDTH),
-                                onClick = {
-                                    viewModel.onEvent(OnClearClick)
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    backgroundColor = clearButtonColor,
-                                    contentColor = White,
-                                ),
-                            ) {
-                                Text(text = "CLEAR", fontSize = CLEAR_FONT_SIZE)
-                            }
-                            Spacer(modifier = Modifier.height(CLEAR_BUTTON_BOTTOM_PADDING))
-                            Button(
-                                modifier = Modifier
-                                    .height(SNOOZE_BUTTON_HEIGHT)
-                                    .width(SNOOZE_BUTTON_WIDTH),
-                                enabled = alarm.snooze != 0,
-                                onClick = {
-                                    viewModel.onEvent(OnSnoozeClick(alarm.alarmId))
-                                    navController.popBackStack()
-                                },
-                                colors = ButtonDefaults.buttonColors(
-                                    backgroundColor = snoozeButtonColor,
-                                    contentColor = White,
-                                ),
-                            ) {
-                                Text(text = "SNOOZE", fontSize = SNOOZE_FONT_SIZE)
-                            }
-                        }
-                        Button(
-                            modifier = Modifier
-                                .size(ENTER_BUTTON_SIZE),
-                            onClick = {
-                                viewModel.onEvent(OnEnterClick(problem))
-                            },
-                            colors = ButtonDefaults.buttonColors(
-                                backgroundColor = enterButtonColor,
-                                contentColor = White,
-                            ),
-                        ) {
-                            Text(text = "ENTER", fontSize = ENTER_FONT_SIZE)
-                        }
-                    }
+                    buttonSection()
                 }
             }
         }
     }
 }
 
-@OptIn(ExperimentalAnimationApi::class)
+@ExperimentalMaterial3Api
+@Composable
+private fun MathInputField(
+    value: String,
+    darkTheme: Boolean,
+    onDonePressed: () -> Unit,
+    onValueChange: (String) -> Unit,
+) {
+    TextField(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(ANSWER_FIELD_HEIGHT)
+            .padding(horizontal = ANSWER_FIELD_HORIZONTAL_PADDING),
+        value = value,
+        onValueChange = onValueChange,
+        singleLine = true,
+        placeholder = {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Center,
+                verticalAlignment = CenterVertically,
+            ) {
+                Text(text = "=", fontSize = ANSWER_FIELD_FONT_SIZE)
+            }
+        },
+        keyboardOptions = KeyboardOptions(
+            keyboardType = Number,
+            imeAction = Done,
+        ),
+        keyboardActions = KeyboardActions(
+            onDone = {
+                onDonePressed()
+            },
+        ),
+        textStyle = TextStyle(
+            color = MaterialTheme.colorScheme.onSurface,
+            fontSize = ANSWER_FIELD_FONT_SIZE,
+            textAlign = TextAlign.Center,
+        ),
+        colors = TextFieldDefaults.textFieldColors(
+            containerColor = if (darkTheme) DarkGray else unSelectedDay,
+            focusedIndicatorColor = Transparent,
+            unfocusedIndicatorColor = Transparent,
+            disabledIndicatorColor = Transparent,
+        ),
+        shape = shapes.medium.copy(CornerSize(ANSWER_FIELD_CORNER_SIZE)),
+    )
+}
+
+@Composable
+private fun ButtonSection(
+    alarm: AlarmEntity,
+    onClearClick: () -> Unit,
+    onSnoozeClick: () -> Unit,
+    onEnterClick: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(IntrinsicSize.Max)
+            .padding(horizontal = BUTTON_SECTION_HORIZONTAL_PADDING),
+        horizontalArrangement = SpaceBetween,
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(end = 8.dp)
+                .weight(1f)
+                .height(BUTTON_SECTION_HEIGHT),
+            verticalArrangement = SpaceBetween,
+        ) {
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = {
+                    onClearClick()
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = clearButtonColor,
+                    contentColor = White,
+                ),
+            ) {
+                Text(text = "CLEAR", fontSize = CLEAR_FONT_SIZE)
+            }
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                enabled = alarm.snooze != 0,
+                onClick = {
+                    onSnoozeClick()
+                },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = snoozeButtonColor,
+                    contentColor = White,
+                ),
+            ) {
+                Text(text = "SNOOZE", fontSize = SNOOZE_FONT_SIZE)
+            }
+        }
+        Button(
+            modifier = Modifier
+                .weight(1f)
+                .fillMaxHeight(),
+            onClick = {
+                onEnterClick()
+            },
+            shape = RoundedCornerShape(8.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = enterButtonColor,
+                contentColor = White,
+            ),
+        ) {
+            Text(text = "ENTER", fontSize = ENTER_FONT_SIZE)
+        }
+    }
+}
+
 @ExperimentalComposeUiApi
 @InternalCoroutinesApi
-@ExperimentalMaterialApi
+@ExperimentalMaterial3Api
 @Preview
 @Composable
 fun MathPreview() {
     MathAlarmTheme(darkTheme = true) {
-        MathScreen(
-            navController = rememberAnimatedNavController(),
-            alarm = AlarmMapper().mapFromDomainModel(Alarm()),
-            darkTheme = true,
+        MathScreenContent(
+            snackbarHostState = SnackbarHostState(),
+            question = "1 + 1",
+            toneState = Countdown(5, 2),
+            animatedProgress = INITIAL_INDICATOR_PROGRESS,
+            inputField = {
+                MathInputField(
+                    value = "",
+                    darkTheme = true,
+                    onDonePressed = { },
+                    onValueChange = { }
+                )
+            },
+            buttonSection = {
+                ButtonSection(
+                    alarm = AlarmMapper().mapFromDomainModel(Alarm()),
+                    onClearClick = { },
+                    onSnoozeClick = { },
+                    onEnterClick = { }
+                )
+            }
         )
     }
 }
@@ -344,13 +463,7 @@ private object MathScreen {
     val ANSWER_FIELD_FONT_SIZE = 30.sp
     val BUTTON_SECTION_HORIZONTAL_PADDING = 56.dp
     val BUTTON_SECTION_HEIGHT = 120.dp
-    val SNOOZE_BUTTON_HEIGHT = 55.dp
-    val SNOOZE_BUTTON_WIDTH = 120.dp
-    val CLEAR_BUTTON_HEIGHT = 55.dp
-    val CLEAR_BUTTON_WIDTH = 120.dp
-    val CLEAR_BUTTON_BOTTOM_PADDING = 10.dp
     val ENTER_FONT_SIZE = 19.sp
     val SNOOZE_FONT_SIZE = 19.sp
     val CLEAR_FONT_SIZE = 19.sp
-    val ENTER_BUTTON_SIZE = 120.dp
 }

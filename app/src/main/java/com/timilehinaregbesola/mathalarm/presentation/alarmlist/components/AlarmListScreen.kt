@@ -11,8 +11,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.*
-import androidx.compose.material.SnackbarResult.ActionPerformed
+import androidx.compose.material3.*
+import androidx.compose.material3.SnackbarResult.ActionPerformed
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment.Companion.BottomEnd
 import androidx.compose.ui.Alignment.Companion.Center
@@ -61,7 +61,7 @@ import java.util.*
 @SuppressLint("UnrememberedMutableState")
 @ExperimentalAnimationApi
 @ExperimentalFoundationApi
-@ExperimentalMaterialApi
+@ExperimentalMaterial3Api
 @Composable
 fun ListDisplayScreen(
     viewModel: AlarmListViewModel = hiltViewModel(),
@@ -71,7 +71,9 @@ fun ListDisplayScreen(
     val alarms by viewModel.alarms.collectAsState(null)
     val alarmPermission = viewModel.permission
     var deleteAllAlarmsDialog by remember { mutableStateOf(false) }
-    val scaffoldState = rememberScaffoldState()
+    val snackbarHoststate = remember {
+        SnackbarHostState()
+    }
     var showPermissionDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
 
@@ -79,7 +81,7 @@ fun ListDisplayScreen(
         viewModel.uiEvent.collect { event ->
             when (event) {
                 is ShowSnackbar -> {
-                    val result = scaffoldState.snackbarHostState.showSnackbar(
+                    val result = snackbarHoststate.showSnackbar(
                         message = event.message,
                         actionLabel = event.action,
                     )
@@ -149,7 +151,6 @@ fun ListDisplayScreen(
                 .fillMaxSize(),
         ) {
             Scaffold(
-                scaffoldState = scaffoldState,
                 topBar = {
                     ListTopAppBar(
                         openDialog = { deleteAllAlarmsDialog = it },
@@ -158,7 +159,7 @@ fun ListDisplayScreen(
                         },
                     )
                 },
-                snackbarHost = { state -> AlarmSnack(state) },
+                snackbarHost = { AlarmSnack(snackbarHoststate) },
             ) { padding ->
                 AlarmPermissionDialog(
                     context = context,
@@ -217,7 +218,7 @@ fun ListDisplayScreen(
                             onEditAlarm = { isLoading = true },
                             onPermissionAbsent = { showPermissionDialog = true },
                         )
-                        val fabImage = painterResource(id = R.drawable.fabb)
+                        val fabImage = painterResource(id = R.drawable.fab_icon)
                         AddAlarmFab(
                             modifier = Modifier
                                 .padding(
@@ -252,7 +253,7 @@ fun ListDisplayScreen(
 @OptIn(
     ExperimentalFoundationApi::class,
     ExperimentalAnimationApi::class,
-    ExperimentalMaterialApi::class,
+    ExperimentalMaterial3Api::class,
 )
 @Composable
 private fun AlarmListContent(

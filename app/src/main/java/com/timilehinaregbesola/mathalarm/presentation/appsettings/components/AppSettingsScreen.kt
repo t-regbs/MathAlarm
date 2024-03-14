@@ -5,8 +5,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.*
-import androidx.compose.material.MaterialTheme.typography
+import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
@@ -52,6 +52,7 @@ import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.utils.email
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppSettingsScreen(
     onBackPress: () -> Unit,
@@ -100,7 +101,7 @@ fun AppSettingsScreen(
                     Text(
                         modifier = Modifier.padding(top = MaterialTheme.spacing.medium),
                         text = COLOR_THEME,
-                        color = MaterialTheme.colors.secondary
+                        color = MaterialTheme.colorScheme.secondary
                     )
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
                     Row(
@@ -110,7 +111,7 @@ fun AppSettingsScreen(
                             modifier = Modifier
                                 .background(
                                     color = if (isDark) {
-                                        MaterialTheme.colors.primaryVariant
+                                        MaterialTheme.colorScheme.primaryContainer
                                     } else {
                                         Color.LightGray
                                     },
@@ -129,17 +130,18 @@ fun AppSettingsScreen(
                                             }
                                             .background(
                                                 if (triple.third == selectedOption) {
-                                                    MaterialTheme.colors.primary
+                                                    MaterialTheme.colorScheme.primary
                                                 } else {
                                                     if (isDark) {
-                                                        MaterialTheme.colors.primaryVariant
+                                                        MaterialTheme.colorScheme.primaryContainer
                                                     } else {
                                                         Color.LightGray
                                                     }
                                                 }
                                             )
                                             .padding(vertical = MaterialTheme.spacing.extraSmall),
-                                        horizontalArrangement = Arrangement.Center
+                                        horizontalArrangement = Arrangement.Center,
+                                        verticalAlignment = Alignment.CenterVertically
                                     ) {
                                         Icon(
                                             modifier = Modifier.padding(end = SETTINGS_ICON_END_PADDING),
@@ -149,7 +151,7 @@ fun AppSettingsScreen(
                                         if (triple.third == selectedOption) {
                                             Text(
                                                 text = triple.first,
-                                                style = typography.body1.merge(),
+                                                style = typography.bodyLarge.merge(),
                                                 fontWeight = FontWeight.Bold
                                             )
                                         }
@@ -160,13 +162,13 @@ fun AppSettingsScreen(
                     }
                 }
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
-                Divider(color = Color.LightGray)
+                HorizontalDivider(color = Color.LightGray)
                 Column(modifier = Modifier.padding(horizontal = MaterialTheme.spacing.large)) {
                     val context = LocalContext.current
                     Text(
                         modifier = Modifier.padding(top = MaterialTheme.spacing.medium),
                         text = HELP,
-                        color = MaterialTheme.colors.secondary
+                        color = MaterialTheme.colorScheme.secondary
                     )
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
                     HelpItem(

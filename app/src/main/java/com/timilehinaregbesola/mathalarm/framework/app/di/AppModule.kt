@@ -4,26 +4,45 @@ import android.app.Application
 import android.content.Context
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.material.ExperimentalMaterialApi
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.room.Room
-import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.framework.RoomAlarmDataSource
 import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermission
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AndroidVersion
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AndroidVersionImpl
-import com.timilehinaregbesola.mathalarm.framework.database.*
-import com.timilehinaregbesola.mathalarm.interactors.*
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmDao
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmDatabase
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
+import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_2_3
+import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_3_4
+import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
+import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractorImpl
+import com.timilehinaregbesola.mathalarm.interactors.AudioPlayer
+import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractor
 import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractorImpl
+import com.timilehinaregbesola.mathalarm.interactors.PlayerWrapper
 import com.timilehinaregbesola.mathalarm.notification.AlarmNotificationScheduler
 import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotification
 import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotificationChannel
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AppThemeOptionsMapper
 import com.timilehinaregbesola.mathalarm.provider.CalendarProvider
 import com.timilehinaregbesola.mathalarm.provider.CalendarProviderImpl
-import com.timilehinaregbesola.mathalarm.usecases.*
+import com.timilehinaregbesola.mathalarm.usecases.AddAlarm
+import com.timilehinaregbesola.mathalarm.usecases.CancelAlarm
+import com.timilehinaregbesola.mathalarm.usecases.ClearAlarms
+import com.timilehinaregbesola.mathalarm.usecases.CompleteAlarm
+import com.timilehinaregbesola.mathalarm.usecases.DeleteAlarm
+import com.timilehinaregbesola.mathalarm.usecases.FindAlarm
+import com.timilehinaregbesola.mathalarm.usecases.GetSavedAlarms
+import com.timilehinaregbesola.mathalarm.usecases.RescheduleFutureAlarms
+import com.timilehinaregbesola.mathalarm.usecases.ScheduleAlarm
+import com.timilehinaregbesola.mathalarm.usecases.ScheduleNextAlarm
+import com.timilehinaregbesola.mathalarm.usecases.ShowAlarm
+import com.timilehinaregbesola.mathalarm.usecases.SnoozeAlarm
+import com.timilehinaregbesola.mathalarm.usecases.UpdateAlarm
 import com.timilehinaregbesola.mathalarm.utils.getAlarmManager
 import dagger.Module
 import dagger.Provides
@@ -34,11 +53,9 @@ import kotlinx.coroutines.InternalCoroutinesApi
 import javax.inject.Singleton
 
 @ExperimentalFoundationApi
-@ExperimentalMaterialApi
 @ExperimentalComposeUiApi
 @InternalCoroutinesApi
 @ExperimentalAnimationApi
-@ExperimentalMaterialNavigationApi
 @Module
 @InstallIn(SingletonComponent::class)
 object AppModule {
@@ -126,6 +143,7 @@ object AppModule {
         )
     }
 
+    @OptIn(ExperimentalMaterial3Api::class)
     @Provides
     @Singleton
     fun provideAlarmNotification(
@@ -149,12 +167,10 @@ object AppModule {
     }
 
     @OptIn(
-        ExperimentalMaterialNavigationApi::class,
         ExperimentalAnimationApi::class,
         InternalCoroutinesApi::class,
         ExperimentalComposeUiApi::class,
-        ExperimentalMaterialApi::class,
-        ExperimentalFoundationApi::class
+        ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class
     )
     @Provides
     @Singleton

@@ -4,9 +4,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.Arrangement.SpaceBetween
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Surface
-import androidx.compose.material.Text
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment.Companion.Center
@@ -73,7 +73,7 @@ fun RingDayChip(
                 value = selected,
                 onValueChange = onSelectChange,
             ),
-        elevation = NO_ELEVATION,
+        shadowElevation = NO_ELEVATION,
         shape = CircleShape,
         color = if (selected) teall else unSelectedDay,
     ) {

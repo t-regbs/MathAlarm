@@ -7,6 +7,10 @@ import android.net.Uri
 import timber.log.Timber
 
 interface AudioPlayer {
+
+    val currentPosition: Int
+    val duration: Int
+
     fun init()
     fun startAlarmAudio()
 
@@ -34,6 +38,10 @@ class PlayerWrapper(
 
     private var player: MediaPlayer? = null
         private set
+    override val currentPosition: Int
+        get() = player?.currentPosition?: 0
+    override val duration: Int
+        get() = player?.duration?: 0
 
     override fun init() {
         player = MediaPlayer().apply {

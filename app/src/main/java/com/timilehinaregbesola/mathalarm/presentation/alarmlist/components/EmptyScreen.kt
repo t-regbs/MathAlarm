@@ -9,9 +9,10 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment.Companion.BottomEnd
 import androidx.compose.ui.Alignment.Companion.Center
@@ -34,7 +35,7 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.Empty
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.EmptyScreen.EMPTY_TEXT_TOP_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 
-@ExperimentalMaterialApi
+@ExperimentalMaterial3Api
 @Composable
 fun AlarmEmptyScreen(
     modifier: Modifier = Modifier,
@@ -90,7 +91,7 @@ fun AlarmEmptyScreen(
                 fontSize = EMPTY_TEXT_FONT_SIZE,
             )
         }
-        val fabImage = painterResource(id = R.drawable.fabb)
+        val fabImage = painterResource(id = R.drawable.fab_icon)
         AddAlarmFab(
             modifier = Modifier
                 .padding(
@@ -104,14 +105,16 @@ fun AlarmEmptyScreen(
     }
 }
 
-@OptIn(ExperimentalMaterialApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 @Preview
 private fun EmptyScreenPreview() {
     MaterialTheme {
-        AlarmEmptyScreen(
-            darkTheme = true,
-        ) {}
+        Surface {
+            AlarmEmptyScreen(
+                darkTheme = false,
+            ) {}
+        }
     }
 }
 

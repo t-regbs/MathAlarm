@@ -9,6 +9,7 @@ import androidx.compose.foundation.gestures.Orientation.Vertical
 import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Arrangement.SpaceBetween
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,30 +19,31 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CornerSize
-import androidx.compose.material.Button
-import androidx.compose.material.ButtonDefaults.buttonColors
-import androidx.compose.material.Card
-import androidx.compose.material.Divider
-import androidx.compose.material.ExperimentalMaterialApi
-import androidx.compose.material.Icon
-import androidx.compose.material.MaterialTheme
-import androidx.compose.material.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.EmojiSymbols
 import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.material.rememberBottomSheetScaffoldState
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults.buttonColors
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.State
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color.Companion.Black
-import androidx.compose.ui.graphics.Color.Companion.LightGray
-import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign.Companion.Center
@@ -87,7 +89,6 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.A
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_TEXT_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.URL_ENCODER
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
-import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimary
 import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimaryLight
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
@@ -99,9 +100,6 @@ import com.timilehinaregbesola.mathalarm.utils.confirmationDialog
 import com.timilehinaregbesola.mathalarm.utils.handleNotificationPermission
 import com.timilehinaregbesola.mathalarm.utils.openNotificationSettings
 import com.timilehinaregbesola.mathalarm.utils.permissionRequiredDialog
-import com.vanpra.composematerialdialogs.MaterialDialog
-import com.vanpra.composematerialdialogs.datetime.time.TimePickerDefaults.colors
-import com.vanpra.composematerialdialogs.datetime.time.timepicker
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.flow.collectLatest
@@ -109,10 +107,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import timber.log.Timber
 import java.net.URLEncoder
-import java.time.LocalTime
 import java.time.format.DateTimeFormatter
 
-@ExperimentalMaterialApi
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlarmBottomSheet(
     viewModel: AlarmSettingsViewModel = hiltViewModel(),
@@ -122,8 +119,22 @@ fun AlarmBottomSheet(
 ) {
     viewModel.setAlarm(AlarmMapper().mapToDomainModel(alarm))
     val scaffoldState = rememberBottomSheetScaffoldState()
+    var showDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    var timeCal = LocalTime.now()
+
+    val toneText = remember { mutableStateOf<String?>(null) }
+    val result = remember { mutableStateOf<Uri?>(null) }
+    val pickToneLauncher =
+        rememberLauncherForActivityResult(PickRingtone(viewModel.tone.value)) {
+            result.value = it
+        }
+    result.value?.let {
+        val alert = it.toString()
+        checkPermissions(context as Activity, listOf(alert))
+        viewModel.onEvent(OnToneChange(alert))
+        toneText.value =
+            RingtoneManager.getRingtone(context, alert.toUri()).getTitle(context)
+    }
 
     LaunchedEffect(true) {
         viewModel.eventFlow.collectLatest { event ->
@@ -158,148 +169,32 @@ fun AlarmBottomSheet(
             }
         }
     }
-    with(MaterialTheme) {
-        val alarmTimeText: State<TimeState> = viewModel.alarmTime
-        val dialog = remember { MaterialDialog() }
-        dialog.build(
-            buttons = {
-                positiveButton(
-                    text = "Ok",
-                    textStyle = TextStyle(color = colors.onPrimary),
-                )
-                negativeButton(
-                    text = "Cancel",
-                    textStyle = TextStyle(color = colors.onPrimary),
-                )
-            },
-            backgroundColor = if (darkTheme) darkPrimary else LightGray,
-        ) {
-            with(alarmTimeText.value) {
-                timeCal = timeCal.withHour(hour).withMinute(minute)
-                timepicker(
-                    initialTime = timeCal,
-                    colors = colors(
-                        activeBackgroundColor = if (darkTheme) darkPrimaryLight else White,
-                    ),
-                ) { time ->
-                    val dtf = DateTimeFormatter.ofPattern(TIME_PATTERN)
-                    viewModel.onEvent(
-                        AddEditAlarmEvent.ChangeTime(
-                            TimeState(
-                                hour = time.hour,
-                                minute = time.minute,
-                                formattedTime = time.format(dtf).toString(),
-                            ),
-                        ),
-                    )
-                    timeCal = timeCal.withHour(hour).withMinute(minute)
+    AlarmBottomSheetContent(
+        topSection = {
+            TopSection(
+                selectedDays = viewModel.dayChooser.value,
+                darkTheme = darkTheme,
+                currentTime = viewModel.alarmTime.value.formattedTime,
+                onTimeCardClick = { showDialog = true },
+                onSelectedDaysChanged = {
+                    viewModel.onEvent(ToggleDayChooser(it))
                 }
-            }
-        }
-        Column(
-            Modifier
-                .fillMaxWidth()
-                .padding(spacing.extraMedium)
-                .scrollable(rememberScrollState(), Vertical),
-        ) {
-            Card(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(TIME_CARD_HEIGHT)
-                    .padding(horizontal = spacing.medium),
-                backgroundColor = if (darkTheme) darkPrimaryLight else unSelectedDay,
-                elevation = NO_ELEVATION,
-                shape = shapes.medium.copy(CornerSize(TIME_CARD_CORNER_SIZE)),
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clickable(
-                            onClick = { dialog.show() },
-                        ),
-                    verticalAlignment = CenterVertically,
-                    horizontalArrangement = Arrangement.Center,
-                ) {
-                    Text(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(TIME_TEXT_PADDING),
-                        text = alarmTimeText.value.formattedTime,
-                        fontSize = TIME_TEXT_FONT_SIZE,
-                        fontWeight = Bold,
-                        textAlign = Center,
-                    )
-                }
-            }
-            Spacer(modifier = Modifier.height(ALARM_DAYS_TOP_PADDING))
-            AlarmDays(currentDays = viewModel.dayChooser.value) {
-                viewModel.onEvent(
-                    ToggleDayChooser(it),
-                )
-            }
-            Divider(
-                modifier = Modifier.padding(
-                    top = spacing.medium,
-                    start = spacing.medium,
-                    end = spacing.medium,
-                ),
-                thickness = DIVIDER_THICKNESS,
-                color = unSelectedDay,
             )
-            Row(
-                modifier = Modifier
-                    .padding(
-                        top = MIDDLE_CONTROL_SECTION_TOP_PADDING,
-                        start = spacing.medium,
-                        end = spacing.medium,
-                    )
-                    .fillMaxWidth(),
-                horizontalArrangement = SpaceBetween,
-            ) {
-                TextWithCheckbox(
-                    text = "Repeat Weekly",
-                    initialState = viewModel.repeatWeekly.value,
-                ) { viewModel.onEvent(ToggleRepeat(it)) }
-                TextWithCheckbox(text = "Vibrate", initialState = viewModel.vibrate.value) {
+        },
+        bottomSection = {
+            BottomSettingsSection(
+                repeatWeekly = viewModel.repeatWeekly.value,
+                vibrate = viewModel.vibrate.value,
+                difficulty = viewModel.difficulty.value,
+                onRepeatToggle = {
+                    viewModel.onEvent(ToggleRepeat(it))
+                },
+                onVibrateToggle = {
                     viewModel.onEvent(ToggleVibrate(it))
-                }
-            }
-            LabelTextField(
-                text = viewModel.alarmTitle.value,
-                onValueChange = { newValue ->
-                    viewModel.onEvent(EnteredTitle(newValue))
                 },
-                label = { Text("Alarm title") },
-                placeholder = { Text("Good day") },
-            )
-            val toneText = remember { mutableStateOf<String?>(null) }
-            val result = remember { mutableStateOf<Uri?>(null) }
-            val launcher = rememberLauncherForActivityResult(PickRingtone(viewModel.tone.value)) {
-                result.value = it
-            }
-            result.value?.let {
-                val alert = it.toString()
-                checkPermissions(context as Activity, listOf(alert))
-                viewModel.onEvent(OnToneChange(alert))
-                toneText.value = RingtoneManager.getRingtone(context, alert.toUri()).getTitle(context)
-            }
-            TextWithIcon(
-                modifier = Modifier.padding(horizontal = spacing.medium),
-                text = when {
-                    toneText.value != null -> {
-                        toneText.value!!
-                    }
-                    viewModel.tone.value == "" -> {
-                        context.getString(R.string.default_alarm_tone)
-                    }
-                    else -> {
-                        RingtoneManager.getRingtone(context, viewModel.tone.value.toUri()).getTitle(context)
-                    }
-                },
-                image = Icons.Outlined.Notifications,
-                onClick = {
+                onToneClick = {
                     try {
-                        launcher.launch(null)
+                        pickToneLauncher.launch(null)
                     } catch (e: Exception) {
                         Timber.e(e)
                         viewModel.onEvent(
@@ -309,50 +204,46 @@ fun AlarmBottomSheet(
                         )
                     }
                 },
-            )
-            Row(
-                modifier = Modifier
-                    .padding(
-                        top = DIFFICULTY_SECTION_TOP_PADDING,
-                        start = DIFFICULTY_SECTION_HORIZONTAL_PADDING,
-                        end = DIFFICULTY_SECTION_HORIZONTAL_PADDING,
-                    )
-                    .fillMaxWidth(),
-            ) {
-                Icon(
-                    modifier = Modifier.padding(end = DIFFICULTY_ICON_END_PADDING),
-                    imageVector = Icons.Outlined.EmojiSymbols,
-                    contentDescription = null,
-                )
-                DifficultyChooser(viewModel.difficulty.value) {
+                onDifficultyChange = {
                     viewModel.onEvent(OnDifficultyChange(it))
+                },
+                labelTextField = {
+                    LabelTextField(
+                        text = viewModel.alarmTitle.value,
+                        onValueChange = { newValue ->
+                            viewModel.onEvent(EnteredTitle(newValue))
+                        },
+                        label = { Text("Alarm title") },
+                        placeholder = { Text("Good day") },
+                    )
+                },
+                currentTone = when {
+                    toneText.value != null -> {
+                        toneText.value!!
+                    }
+
+                    viewModel.tone.value == "" -> {
+                        context.getString(R.string.default_alarm_tone)
+                    }
+
+                    else -> {
+                        RingtoneManager.getRingtone(context, viewModel.tone.value.toUri())
+                            .getTitle(context)
+                    }
                 }
-            }
-            Button(
-                modifier = Modifier
-                    .padding(top = spacing.large)
-                    .fillMaxWidth(),
-                onClick = {
+            )
+        },
+        buttonSection = {
+            SheetActionButtons(
+                onTestClick = {
                     viewModel.onEvent(OnTestClick)
                 },
-                colors = buttonColors(
-                    backgroundColor = unSelectedDay,
-                    contentColor = Black,
-                ),
-            ) {
-                Text(
-                    fontSize = TEST_BUTTON_FONT_SIZE,
-                    text = "TEST ALARM",
-                )
-            }
-            Button(
-                modifier = Modifier
-                    .padding(top = SAVE_BUTTON_TOP_PADDING)
-                    .fillMaxWidth(),
-                onClick = {
+                onSaveClick = {
                     handleNotificationPermission(context = context) {
                         if (it) {
-                            if (NotificationManagerCompat.from(context).areNotificationsEnabled()) {
+                            if (NotificationManagerCompat.from(context)
+                                    .areNotificationsEnabled()
+                            ) {
                                 viewModel.onEvent(OnSaveTodoClick)
                             } else {
                                 confirmationDialog(
@@ -371,34 +262,258 @@ fun AlarmBottomSheet(
                             )
                         }
                     }
-                },
-                colors = buttonColors(backgroundColor = colors.secondary),
-            ) {
-                Text(
-                    fontSize = SAVE_BUTTON_FONT_SIZE,
-                    text = "SAVE",
-                )
+                }
+            )
+        },
+        timePickerDialog = {
+            with(viewModel.alarmTime.value) {
+                if (showDialog) {
+                    TimePickerDialog(
+                        timeState = rememberTimePickerState(
+                            initialHour = hour,
+                            initialMinute = minute
+                        ),
+                        darkTheme = darkTheme,
+                        onCancel = {
+                            showDialog = false
+                        },
+                        onConfirm = { newTime ->
+                            val dtf = DateTimeFormatter.ofPattern(TIME_PATTERN)
+                            viewModel.onEvent(
+                                AddEditAlarmEvent.ChangeTime(
+                                    TimeState(
+                                        hour = newTime.hour,
+                                        minute = newTime.minute,
+                                        formattedTime = newTime.format(dtf).toString(),
+                                    ),
+                                ),
+                            )
+                            showDialog = false
+                        }
+                    )
+                }
+            }
+        }
+    )
+}
+
+@Composable
+private fun AlarmBottomSheetContent(
+    topSection: @Composable () -> Unit,
+    bottomSection: @Composable () -> Unit,
+    buttonSection: @Composable () -> Unit,
+    timePickerDialog: @Composable () -> Unit
+) {
+    with(MaterialTheme) {
+        Surface {
+            Box {
+                Column(
+                    Modifier
+                        .fillMaxWidth()
+                        .padding(spacing.extraMedium)
+                        .scrollable(rememberScrollState(), Vertical),
+                ) {
+                    topSection()
+                    HorizontalDivider(
+                        modifier = Modifier.padding(
+                            top = spacing.medium,
+                            start = spacing.medium,
+                            end = spacing.medium,
+                        ),
+                        thickness = DIVIDER_THICKNESS,
+                        color = unSelectedDay
+                    )
+                    bottomSection()
+                    buttonSection()
+                }
+                timePickerDialog()
             }
         }
     }
 }
 
-@Preview
 @Composable
-private fun TextCheckboxPreview() {
-    MathAlarmTheme {
+fun TopSection(
+    selectedDays: String,
+    currentTime: String,
+    darkTheme: Boolean,
+    onTimeCardClick: () -> Unit,
+    onSelectedDaysChanged: (String) -> Unit
+) {
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(TIME_CARD_HEIGHT)
+            .padding(horizontal = MaterialTheme.spacing.medium),
+        colors = CardDefaults.cardColors(
+            containerColor = if (darkTheme) darkPrimaryLight else unSelectedDay
+        ),
+        elevation = CardDefaults.cardElevation(defaultElevation = NO_ELEVATION),
+        shape = MaterialTheme.shapes.medium.copy(CornerSize(TIME_CARD_CORNER_SIZE)),
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxSize()
+                .clickable(
+                    onClick = { onTimeCardClick() }
+                ),
+            verticalAlignment = CenterVertically,
+            horizontalArrangement = Arrangement.Center,
+        ) {
+            Text(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(TIME_TEXT_PADDING),
+                text = currentTime,
+                fontSize = TIME_TEXT_FONT_SIZE,
+                fontWeight = Bold,
+                textAlign = Center,
+            )
+        }
+    }
+    Spacer(modifier = Modifier.height(ALARM_DAYS_TOP_PADDING))
+    AlarmDays(currentDays = selectedDays) {
+        onSelectedDaysChanged(it)
+    }
+}
+
+@Composable
+private fun BottomSettingsSection(
+    repeatWeekly: Boolean,
+    vibrate: Boolean,
+    difficulty: Int,
+    onRepeatToggle: (Boolean) -> Unit,
+    onVibrateToggle: (Boolean) -> Unit,
+    onToneClick: () -> Unit,
+    onDifficultyChange: (Int) -> Unit,
+    labelTextField: @Composable () -> Unit,
+    currentTone: String
+) {
+    Row(
+        modifier = Modifier
+            .padding(
+                top = MIDDLE_CONTROL_SECTION_TOP_PADDING,
+                start = MaterialTheme.spacing.medium,
+                end = MaterialTheme.spacing.medium,
+            )
+            .fillMaxWidth(),
+        horizontalArrangement = SpaceBetween,
+    ) {
         TextWithCheckbox(
             text = "Repeat Weekly",
-            initialState = false,
-        ) { }
+            initialState = repeatWeekly,
+        ) {
+            onRepeatToggle(it)
+        }
+        TextWithCheckbox(text = "Vibrate", initialState = vibrate) {
+            onVibrateToggle(it)
+        }
+    }
+    labelTextField()
+    TextWithIcon(
+        modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium),
+        text = currentTone,
+        image = Icons.Outlined.Notifications,
+        onClick = {
+            onToneClick()
+        },
+    )
+    Row(
+        modifier = Modifier
+            .padding(
+                top = DIFFICULTY_SECTION_TOP_PADDING,
+                start = DIFFICULTY_SECTION_HORIZONTAL_PADDING,
+                end = DIFFICULTY_SECTION_HORIZONTAL_PADDING,
+            )
+            .fillMaxWidth(),
+    ) {
+        Icon(
+            modifier = Modifier.padding(end = DIFFICULTY_ICON_END_PADDING),
+            imageVector = Icons.Outlined.EmojiSymbols,
+            contentDescription = null,
+        )
+        DifficultyChooser(difficulty) {
+            onDifficultyChange(it)
+        }
+    }
+}
+
+@Composable
+private fun SheetActionButtons(
+    onTestClick: () -> Unit,
+    onSaveClick: () -> Unit
+) {
+    Button(
+        modifier = Modifier
+            .padding(top = MaterialTheme.spacing.large)
+            .fillMaxWidth(),
+        onClick = {
+            onTestClick()
+        },
+        colors = buttonColors(
+            containerColor = unSelectedDay,
+            contentColor = Black,
+        ),
+    ) {
+        Text(
+            fontSize = TEST_BUTTON_FONT_SIZE,
+            text = "TEST ALARM",
+        )
+    }
+    Button(
+        modifier = Modifier
+            .padding(top = SAVE_BUTTON_TOP_PADDING)
+            .fillMaxWidth(),
+        onClick = {
+            onSaveClick()
+        },
+        colors = buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+    ) {
+        Text(
+            fontSize = SAVE_BUTTON_FONT_SIZE,
+            text = "SAVE",
+        )
     }
 }
 
 @Preview
 @Composable
-private fun LabelTextViewPreview() {
-    MathAlarmTheme {
-        LabelTextField(text = TextFieldValue("")) {}
+private fun BottomSheetPreview() {
+    MathAlarmTheme(darkTheme = true) {
+        Surface {
+            AlarmBottomSheetContent(
+                topSection = {
+                    TopSection(
+                        selectedDays = "TFFFFFF",
+                        currentTime = "12:00",
+                        darkTheme = true,
+                        onTimeCardClick = {}
+                    ) {}
+                },
+                bottomSection = {
+                    BottomSettingsSection(
+                        repeatWeekly = true,
+                        vibrate = true,
+                        difficulty = 1,
+                        onRepeatToggle = {},
+                        onVibrateToggle = {},
+                        onToneClick = {},
+                        onDifficultyChange = {},
+                        labelTextField = {
+                            LabelTextField(
+                                text = TextFieldValue(),
+                            ) {}
+                        },
+                        currentTone = "1000",
+                    )
+                },
+                buttonSection = {
+                    SheetActionButtons(
+                        onTestClick = {},
+                        onSaveClick = {}
+                    )
+                }) {}
+        }
     }
 }
 

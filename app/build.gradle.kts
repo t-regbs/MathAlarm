@@ -9,13 +9,14 @@ plugins {
 }
 
 android {
+    namespace = "com.timilehinaregbesola.mathalarm"
     defaultConfig {
         applicationId = "com.timilehinaregbesola.mathalarm"
-        versionCode = 17
-        versionName = "2.1.0"
-        minSdk = Integer.parseInt(libs.versions.android.min.sdk.get())
-        targetSdk = Integer.parseInt(libs.versions.android.target.sdk.get())
-        compileSdk = Integer.parseInt(libs.versions.android.compile.sdk.get())
+        versionCode = 18
+        versionName = "2.2.0"
+        minSdk = libs.versions.android.min.sdk.get().toInt()
+        targetSdk = libs.versions.android.target.sdk.get().toInt()
+        compileSdk = libs.versions.android.compile.sdk.get().toInt()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -34,14 +35,14 @@ android {
         // Flag to enable support for the new language APIs
         isCoreLibraryDesugaringEnabled = true
 
-        sourceCompatibility = JavaVersion.VERSION_11
-        targetCompatibility = JavaVersion.VERSION_11
+        sourceCompatibility = JavaVersion.VERSION_17
+        targetCompatibility = JavaVersion.VERSION_17
     }
 
     kotlinOptions {
         allWarningsAsErrors = false
         freeCompilerArgs = listOf("-Xopt-in=kotlin.RequiresOptIn", "-Xopt-in=kotlin.Experimental")
-        jvmTarget = "11"
+        jvmTarget = "17"
     }
     lint {
         disable += setOf("LogNotTimber", "StringFormatInTimber", "ThrowableNotAtBeginning", "BinaryOperationInTimber", "TimberArgCount", "TimberArgTypes", "TimberTagLength", "TimberExceptionLogging")
@@ -49,10 +50,11 @@ android {
 
     buildFeatures {
         compose = true
+        buildConfig = true
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.androidx.compose.compiler.get()
+        kotlinCompilerExtensionVersion = "1.5.3"
     }
 
     packagingOptions {
@@ -102,15 +104,12 @@ dependencies {
 
     implementation(libs.androidx.activity.compose)
     implementation(libs.accompanist.navigation.material)
-    implementation(libs.accompanist.navigation.animation)
     implementation(libs.androidx.hilt.navigation.compose)
 
     implementation(libs.timber)
 
     implementation(libs.hilt.android)
     kapt(libs.hilt.android.compiler)
-
-    implementation(libs.vanpra.material.datetime)
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
@@ -125,7 +124,7 @@ dependencies {
     implementation(composeBom)
     androidTestImplementation(composeBom)
     implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.material)
+    implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons)
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.compose.ui.tooling.preview)
