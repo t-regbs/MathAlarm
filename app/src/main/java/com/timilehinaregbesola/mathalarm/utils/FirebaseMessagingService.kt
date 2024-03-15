@@ -16,7 +16,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
-import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
 import com.google.firebase.messaging.FirebaseMessagingService
 import com.google.firebase.messaging.RemoteMessage
 import com.timilehinaregbesola.mathalarm.BuildConfig
@@ -29,7 +28,8 @@ import javax.inject.Inject
 
 @AndroidEntryPoint
 class FirebaseMessagingService : FirebaseMessagingService() {
-    @Inject lateinit var channel: MathAlarmNotificationChannel
+    @Inject
+    lateinit var channel: MathAlarmNotificationChannel
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         if (remoteMessage.data.isNotEmpty()) {
             val updateApp = remoteMessage.data["updateApp"]!!.toInt()
@@ -46,6 +46,7 @@ class FirebaseMessagingService : FirebaseMessagingService() {
         }
     }
 
+    @SuppressLint("UnspecifiedImmutableFlag", "MutableImplicitPendingIntent")
     @OptIn(
         ExperimentalFoundationApi::class,
         ExperimentalMaterial3Api::class,
@@ -53,14 +54,26 @@ class FirebaseMessagingService : FirebaseMessagingService() {
         ExperimentalComposeUiApi::class,
         ExperimentalComposeUiApi::class,
         InternalCoroutinesApi::class,
-        ExperimentalAnimationApi::class, ExperimentalMaterialNavigationApi::class
+        ExperimentalAnimationApi::class
     )
     private fun sendUpdateApp(title: String, body: String) {
         val sharingIntent = Intent()
         sharingIntent.action = Intent.ACTION_VIEW
         sharingIntent.data = Uri.parse("https://play.google.com/store/apps/details?id=$packageName")
-        val sendIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            PendingIntent.getActivity(this, 0, sharingIntent, PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_MUTABLE)
+        val sendIntent = if (Build.VERSION.SDK_INT >= 34) {
+            PendingIntent.getActivity(
+                this,
+                0,
+                sharingIntent,
+                PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_ALLOW_UNSAFE_IMPLICIT_INTENT
+            )
+        } else if (Build.VERSION.SDK_INT >= 31) {
+            PendingIntent.getActivity(
+                this,
+                0,
+                sharingIntent,
+                PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_MUTABLE
+            )
         } else {
             PendingIntent.getActivity(this, 0, sharingIntent, PendingIntent.FLAG_ONE_SHOT)
         }
@@ -68,7 +81,12 @@ class FirebaseMessagingService : FirebaseMessagingService() {
         val intent = Intent(this, MainActivity::class.java)
         intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP)
         val pendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_MUTABLE)
+            PendingIntent.getActivity(
+                this,
+                0,
+                intent,
+                PendingIntent.FLAG_ONE_SHOT or PendingIntent.FLAG_MUTABLE
+            )
         } else {
             PendingIntent.getActivity(this, 0, intent, PendingIntent.FLAG_ONE_SHOT)
         }

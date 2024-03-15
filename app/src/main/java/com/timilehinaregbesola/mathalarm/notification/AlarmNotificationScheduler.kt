@@ -1,5 +1,6 @@
 package com.timilehinaregbesola.mathalarm.notification
 
+import android.annotation.SuppressLint
 import android.app.PendingIntent
 import android.app.PendingIntent.FLAG_MUTABLE
 import android.app.PendingIntent.FLAG_UPDATE_CURRENT
@@ -25,6 +26,7 @@ class AlarmNotificationScheduler(private val context: Context) {
      * @param passedAlarm alarm to be scheduled
      * @param reschedule whether alarm is repeating
      */
+    @SuppressLint("UnspecifiedImmutableFlag")
     fun scheduleAlarm(passedAlarm: Alarm, reschedule: Boolean): Boolean {
         Timber.d("Schedule alarm..")
         val alarmIntent = Intent(context, AlarmReceiver::class.java).apply {
@@ -158,6 +160,4 @@ class AlarmNotificationScheduler(private val context: Context) {
             }
         }
     }
-
-//    companion object : KLogging()
 }
