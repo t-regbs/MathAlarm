@@ -8,15 +8,19 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.Announcement
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.timilehinaregbesola.mathalarm.BuildConfig
@@ -25,6 +29,8 @@ import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferenc
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.Theme.LIGHT
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.Theme.SYSTEM
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AppThemeOptionsMapper
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.APP_BAR_SHADOW
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.APP_SETTINGS
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.BACK
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.COLOR_THEME
@@ -48,6 +54,7 @@ import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.App
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.SYSTEM_TEXT
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.TOP_BAR_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
+import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.utils.email
 import kotlinx.coroutines.launch
@@ -55,8 +62,8 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AppSettingsScreen(
-    onBackPress: () -> Unit,
-    pref: AlarmPreferencesImpl
+    pref: AlarmPreferencesImpl,
+    onBackPress: () -> Unit
 ) {
     val scope = rememberCoroutineScope()
     val isDark = pref.shouldUseDarkColors()
@@ -76,6 +83,7 @@ fun AppSettingsScreen(
         Scaffold(
             topBar = {
                 TopAppBar(
+                    modifier = Modifier.shadow(APP_BAR_SHADOW),
                     title = {
                         Text(
                             text = APP_SETTINGS,
@@ -88,7 +96,7 @@ fun AppSettingsScreen(
                             onClick = onBackPress
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.ArrowBack,
+                                imageVector = Icons.AutoMirrored.Filled.ArrowBack,
                                 contentDescription = BACK
                             )
                         }
@@ -124,7 +132,11 @@ fun AppSettingsScreen(
                                     Row(
                                         modifier = Modifier
                                             .width(SETTINGS_WIDTH)
-                                            .clip(shape = RoundedCornerShape(DEFAULT_SETTINGS_CORNER_SHAPE))
+                                            .clip(
+                                                shape = RoundedCornerShape(
+                                                    DEFAULT_SETTINGS_CORNER_SHAPE
+                                                )
+                                            )
                                             .clickable {
                                                 onSelectionChange(triple.third)
                                             }
@@ -172,7 +184,7 @@ fun AppSettingsScreen(
                     )
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
                     HelpItem(
-                        image = Icons.Default.Announcement,
+                        image = Icons.AutoMirrored.Filled.Announcement,
                         primaryText = SEND_FEEDBACK,
                         detailText = SEND_FEEDBACK_DETAIL
                     ) {
@@ -239,6 +251,16 @@ fun HelpItem(
     }
 }
 
+@Preview
+@Composable
+private fun PreviewSettingsScreen() {
+    MathAlarmTheme {
+        AppSettingsScreen(
+            pref = AlarmPreferencesImpl(LocalContext.current, AppThemeOptionsMapper())
+        ) {}
+    }
+}
+
 private object AppSettingsScreen {
     const val SEND_TEXT = "MathAlarm Clock\nSolve math problems to wake up!" +
             " https://play.google.com/store/apps/details?id="
@@ -258,6 +280,7 @@ private object AppSettingsScreen {
     const val DARK_TEXT = "Dark"
     const val SYSTEM_TEXT = "System"
     val HELP_ICON_SIZE = 50.dp
+    val APP_BAR_SHADOW = 4.dp
     val SETTINGS_WIDTH = 100.dp
     val DEFAULT_SETTINGS_CORNER_SHAPE = 16.dp
     val SETTINGS_ICON_END_PADDING = 2.dp

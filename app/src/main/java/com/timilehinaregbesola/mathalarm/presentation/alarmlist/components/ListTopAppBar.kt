@@ -9,8 +9,11 @@ import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.DeleteSweep
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.ListTopAppBar.APP_BAR_TITLE
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.ListTopAppBar.LIST_TITLE_FONT_SIZE
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -20,6 +23,7 @@ fun ListTopAppBar(
     onSettingsClick: () -> Unit,
 ) {
     TopAppBar(
+        modifier = Modifier.shadow(elevation = APP_BAR_TITLE),
         title = {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Center) {
                 Text(text = "Alarms", fontSize = LIST_TITLE_FONT_SIZE)
@@ -46,4 +50,5 @@ private fun AppBarPreview() {
 
 private object ListTopAppBar {
     val LIST_TITLE_FONT_SIZE = 16.sp
+    val APP_BAR_TITLE = 4.dp
 }

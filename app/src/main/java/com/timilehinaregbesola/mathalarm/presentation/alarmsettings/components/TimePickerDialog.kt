@@ -30,6 +30,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TimeInput
 import androidx.compose.material3.TimePicker
 import androidx.compose.material3.TimePickerState
+import androidx.compose.material3.rememberTimePickerState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
@@ -40,8 +41,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.End
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
+import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimary
 import java.time.LocalTime
 import java.util.Calendar
@@ -116,6 +119,7 @@ private fun DisplayModeToggleButton(
             Icon(
                 imageVector = Icons.Outlined.Keyboard,
                 contentDescription = "Input",
+                tint = MaterialTheme.colorScheme.onPrimary
             )
         }
 
@@ -126,6 +130,7 @@ private fun DisplayModeToggleButton(
             Icon(
                 imageVector = Icons.Outlined.Schedule,
                 contentDescription = "Picker",
+                tint = MaterialTheme.colorScheme.onPrimary
             )
         }
     }
@@ -188,4 +193,18 @@ fun PickerDialog(
             }
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Preview
+@Composable
+private fun TimePickerDialogPreview() {
+    MathAlarmTheme(darkTheme = false) {
+        TimePickerDialog(
+            timeState = rememberTimePickerState(),
+            onCancel = {},
+            onConfirm = {}
+        )
+    }
+
 }
