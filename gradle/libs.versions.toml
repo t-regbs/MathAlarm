@@ -2,7 +2,7 @@
 accompanist = "0.35.0-alpha"
 # @keep
 android_compile_sdk = "34"
-android_gradle_plugin = "8.4.0-alpha03"
+android_gradle_plugin = "8.4.1"
 # @keep
 android_min_sdk = "21"
 # @keep
