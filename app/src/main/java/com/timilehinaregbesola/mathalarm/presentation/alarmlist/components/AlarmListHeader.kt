@@ -19,6 +19,7 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.LIST_HEADER_ALPHA
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.LIST_HEADER_ELEVATION
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.LIST_HEADER_FONT_SIZE
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.ONE_WEEK_IN_MILLISECONDS
 import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimaryLight
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.utils.getCalendarFromAlarm
@@ -57,7 +58,11 @@ fun ListHeader(
     ) {
         with(MaterialTheme.spacing) {
             Text(
-                text = if (enabled) "Next alarm in $nearestAlarmMessage" else "No upcoming alarms",
+                text = if (enabled && nearestAlarmMessage != null) {
+                    "Next alarm in $nearestAlarmMessage"
+                } else {
+                    "No upcoming alarms"
+                },
                 modifier = Modifier
                     .padding(
                         start = extraMedium,
@@ -77,24 +82,23 @@ private fun buildNearestTime(
     var nearestTime: Long? = null
     var nearestIndex = -1
     if (alarmList.isNotEmpty()) {
-        nearestTime = alarmList.firstOrNull { it.isOn }?.let { it1 ->
-            getCalendarFromAlarm(it1, calendar).timeInMillis
-        }
-        nearestIndex = alarmList.indexOfFirst { it.isOn }
-        val now = System.currentTimeMillis()
-        val onAlarms = alarmList.filter { it.isOn }
-        onAlarms.forEachIndexed { index, alarm ->
-            val cal = getCalendarFromAlarm(alarm, calendar)
-            val time = cal.timeInMillis
-            Timber.d("time = $time")
-            val currentEval = time - now
-            val nearestEval = nearestTime!! - now
-            Timber.d("index = $index, currentEval = $currentEval, nearestEval = $nearestEval")
-            if (currentEval < nearestEval) {
-                nearestTime = time
-                nearestIndex = index
+        alarmList
+            .filter { it.isOn }
+            .forEachIndexed { index, alarm ->
+                val cal = getCalendarFromAlarm(alarm, calendar)
+                var alarmTime = cal.timeInMillis
+
+                val now = System.currentTimeMillis()
+                Timber.d("time = $alarmTime")
+                if (alarmTime < now) {
+                    alarmTime += ONE_WEEK_IN_MILLISECONDS
+                }
+                val timeToAlarm = alarmTime - now
+                if (nearestTime == null || timeToAlarm < nearestTime!!) {
+                    nearestTime = timeToAlarm
+                    nearestIndex = index
+                }
             }
-        }
     }
     return Pair(nearestTime, nearestIndex)
 }
@@ -114,6 +118,7 @@ private fun ListHeaderPreview() {
 
 private object AlarmListHeader {
     const val LIST_HEADER_ALPHA = 0.1f
+    const val ONE_WEEK_IN_MILLISECONDS = 7 * 24 * 60 * 60 * 1000
     val LIST_HEADER_ELEVATION = 4.dp
     val LIST_HEADER_FONT_SIZE = 16.sp
 }

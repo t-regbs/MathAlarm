@@ -99,6 +99,7 @@ fun ListDisplayScreen(
                     val result = snackbarHoststate.showSnackbar(
                         message = event.message,
                         actionLabel = event.action,
+                        withDismissAction = true,
                         duration = SnackbarDuration.Short
                     )
                     if (result == ActionPerformed) {
