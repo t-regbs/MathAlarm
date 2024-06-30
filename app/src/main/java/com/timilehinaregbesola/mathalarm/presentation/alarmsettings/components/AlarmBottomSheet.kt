@@ -54,11 +54,13 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import cafe.adriel.lyricist.strings
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
-import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.DialogArguments
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.MathAlarmDialog
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarmEvent
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarmEvent.EnteredTitle
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarmEvent.OnDifficultyChange
@@ -96,10 +98,8 @@ import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_ALARM_MATH
 import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_ALARM_MATH_ARGUMENT
 import com.timilehinaregbesola.mathalarm.utils.PickRingtone
 import com.timilehinaregbesola.mathalarm.utils.checkPermissions
-import com.timilehinaregbesola.mathalarm.utils.confirmationDialog
 import com.timilehinaregbesola.mathalarm.utils.handleNotificationPermission
 import com.timilehinaregbesola.mathalarm.utils.openNotificationSettings
-import com.timilehinaregbesola.mathalarm.utils.permissionRequiredDialog
 import kotlinx.coroutines.Dispatchers.IO
 import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.flow.collectLatest
@@ -119,7 +119,9 @@ fun AlarmBottomSheet(
 ) {
     viewModel.setAlarm(AlarmMapper().mapToDomainModel(alarm))
     val scaffoldState = rememberBottomSheetScaffoldState()
-    var showDialog by remember { mutableStateOf(false) }
+    var showTimePickerDialog by remember { mutableStateOf(false) }
+    var showConfirmationDialog by remember { mutableStateOf(false) }
+    var showPermRequiredDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     val toneText = remember { mutableStateOf<String?>(null) }
@@ -130,7 +132,12 @@ fun AlarmBottomSheet(
         }
     result.value?.let {
         val alert = it.toString()
-        checkPermissions(context as Activity, listOf(alert))
+        checkPermissions(
+            activity = context as Activity,
+            tones = listOf(alert),
+            unplayableDialogTitle = strings.alert,
+            unplayableDialogMessage = strings.permissionsExternalStorageText,
+        )
         viewModel.onEvent(OnToneChange(alert))
         toneText.value =
             RingtoneManager.getRingtone(context, alert.toUri()).getTitle(context)
@@ -175,13 +182,15 @@ fun AlarmBottomSheet(
                 selectedDays = viewModel.dayChooser.value,
                 darkTheme = darkTheme,
                 currentTime = viewModel.alarmTime.value.formattedTime,
-                onTimeCardClick = { showDialog = true },
+                onTimeCardClick = { showTimePickerDialog = true },
                 onSelectedDaysChanged = {
                     viewModel.onEvent(ToggleDayChooser(it))
                 }
             )
         },
         bottomSection = {
+            val noPickerText = strings.noRingtonePicker
+            val defaultToneText = strings.defaultAlarmTone
             BottomSettingsSection(
                 repeatWeekly = viewModel.repeatWeekly.value,
                 vibrate = viewModel.vibrate.value,
@@ -198,9 +207,7 @@ fun AlarmBottomSheet(
                     } catch (e: Exception) {
                         Timber.e(e)
                         viewModel.onEvent(
-                            OnToneError(
-                                context.getString(R.string.details_no_ringtone_picker),
-                            ),
+                            OnToneError(message = noPickerText)
                         )
                     }
                 },
@@ -213,8 +220,8 @@ fun AlarmBottomSheet(
                         onValueChange = { newValue ->
                             viewModel.onEvent(EnteredTitle(newValue))
                         },
-                        label = { Text("Alarm title") },
-                        placeholder = { Text("Good day") },
+                        label = { Text(strings.alarmTitle) },
+                        placeholder = { Text(strings.goodDay) },
                     )
                 },
                 currentTone = when {
@@ -223,7 +230,7 @@ fun AlarmBottomSheet(
                     }
 
                     viewModel.tone.value == "" -> {
-                        context.getString(R.string.default_alarm_tone)
+                        defaultToneText
                     }
 
                     else -> {
@@ -246,28 +253,18 @@ fun AlarmBottomSheet(
                             ) {
                                 viewModel.onEvent(OnSaveTodoClick)
                             } else {
-                                confirmationDialog(
-                                    context = context,
-                                    message = "Notifications of this application are disabled. Please go to your device settings and enable them.",
-                                    positive = "ok"
-                                ) {
-                                    viewModel.onEvent(OnSaveTodoClick)
-                                }
+                                showConfirmationDialog = true
                             }
                         } else {
-                            permissionRequiredDialog(
-                                context = context,
-                                message = "You must allow the app to display notifications, else it cannot show alarms",
-                                onPositive = { context.openNotificationSettings() }
-                            )
+                            showPermRequiredDialog = true
                         }
                     }
                 }
             )
         },
-        timePickerDialog = {
+        dialogSection = {
             with(viewModel.alarmTime.value) {
-                if (showDialog) {
+                if (showTimePickerDialog) {
                     TimePickerDialog(
                         timeState = rememberTimePickerState(
                             initialHour = hour,
@@ -275,7 +272,7 @@ fun AlarmBottomSheet(
                         ),
                         darkTheme = darkTheme,
                         onCancel = {
-                            showDialog = false
+                            showTimePickerDialog = false
                         },
                         onConfirm = { newTime ->
                             val dtf = DateTimeFormatter.ofPattern(TIME_PATTERN)
@@ -288,11 +285,39 @@ fun AlarmBottomSheet(
                                     ),
                                 ),
                             )
-                            showDialog = false
+                            showTimePickerDialog = false
                         }
                     )
                 }
             }
+            MathAlarmDialog(
+                arguments = DialogArguments(
+                    title = strings.alert,
+                    text = strings.disabledNotificationMessageExtended,
+                    confirmText = strings.ok,
+                    dismissText = null,
+                    onConfirmAction = {
+                        viewModel.onEvent(OnSaveTodoClick)
+                        showConfirmationDialog = false
+                    }
+                ),
+                isDialogOpen = showConfirmationDialog,
+                onDismissRequest = { showConfirmationDialog = false }
+            )
+            MathAlarmDialog(
+                arguments = DialogArguments(
+                    title = strings.alert,
+                    text = strings.notificationPermissionDialogMessage,
+                    confirmText = strings.grantPermission,
+                    dismissText = strings.cancel,
+                    onConfirmAction = {
+                        context.openNotificationSettings()
+                        showPermRequiredDialog = false
+                    }
+                ),
+                isDialogOpen = showPermRequiredDialog,
+                onDismissRequest = { showPermRequiredDialog = false }
+            )
         }
     )
 }
@@ -302,7 +327,7 @@ private fun AlarmBottomSheetContent(
     topSection: @Composable () -> Unit,
     bottomSection: @Composable () -> Unit,
     buttonSection: @Composable () -> Unit,
-    timePickerDialog: @Composable () -> Unit
+    dialogSection: @Composable () -> Unit
 ) {
     with(MaterialTheme) {
         Surface {
@@ -326,7 +351,7 @@ private fun AlarmBottomSheetContent(
                     bottomSection()
                     buttonSection()
                 }
-                timePickerDialog()
+                dialogSection()
             }
         }
     }
@@ -400,12 +425,12 @@ private fun BottomSettingsSection(
         horizontalArrangement = SpaceBetween,
     ) {
         TextWithCheckbox(
-            text = "Repeat Weekly",
+            text = strings.repeatWeekly,
             initialState = repeatWeekly,
         ) {
             onRepeatToggle(it)
         }
-        TextWithCheckbox(text = "Vibrate", initialState = vibrate) {
+        TextWithCheckbox(text = strings.vibrate, initialState = vibrate) {
             onVibrateToggle(it)
         }
     }
@@ -457,7 +482,7 @@ private fun SheetActionButtons(
     ) {
         Text(
             fontSize = TEST_BUTTON_FONT_SIZE,
-            text = "TEST ALARM",
+            text = strings.testAlarm.uppercase(),
         )
     }
     Button(
@@ -471,7 +496,7 @@ private fun SheetActionButtons(
     ) {
         Text(
             fontSize = SAVE_BUTTON_FONT_SIZE,
-            text = "SAVE",
+            text = strings.save.uppercase(),
         )
     }
 }

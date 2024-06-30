@@ -17,7 +17,7 @@ import androidx.core.app.ActivityCompat
 import androidx.core.app.AlarmManagerCompat
 import androidx.core.content.ContextCompat
 import timber.log.Timber
-import java.util.*
+import java.util.Calendar
 
 /**
  * Sets a alarm using [AlarmManagerCompat] to be triggered based on the given parameter.

@@ -11,13 +11,17 @@ import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import androidx.core.net.toUri
-import com.timilehinaregbesola.mathalarm.R
 import timber.log.Timber
 
 /**
  * Checks if all ringtones can be played, and requests permissions if it is not the case
  */
-fun checkPermissions(activity: Activity, tones: List<String>) {
+fun checkPermissions(
+    activity: Activity,
+    tones: List<String>,
+    unplayableDialogTitle: String,
+    unplayableDialogMessage: (String) -> String
+) {
     if (Build.VERSION.SDK_INT >= 23 && activity.checkSelfPermission(READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
         val unplayable = tones
             .filter { alarmtone ->
@@ -43,8 +47,8 @@ fun checkPermissions(activity: Activity, tones: List<String>) {
 
         if (unplayable.isNotEmpty()) {
             try {
-                AlertDialog.Builder(activity).setTitle(activity.getString(R.string.alert))
-                    .setMessage(activity.getString(R.string.permissions_external_storage_text, unplayable.joinToString(", ")))
+                AlertDialog.Builder(activity).setTitle(unplayableDialogTitle)
+                    .setMessage(unplayableDialogMessage(unplayable.joinToString(", ")))
                     .setPositiveButton(android.R.string.ok) { _, _ ->
                         activity.requestPermissions(arrayOf(READ_EXTERNAL_STORAGE), 3)
                     }

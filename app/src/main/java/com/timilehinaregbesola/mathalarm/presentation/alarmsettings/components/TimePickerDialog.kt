@@ -44,6 +44,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.DialogProperties
+import cafe.adriel.lyricist.strings
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimary
 import java.time.LocalTime
@@ -75,7 +76,7 @@ fun TimePickerDialog(
         modifier = modifier,
         onDismissRequest = onCancel,
         darkTheme = darkTheme,
-        title = { Text("Select hour") },
+        title = { Text(strings.selectHour) },
         buttons = {
             DisplayModeToggleButton(
                 displayMode = mode,
@@ -84,13 +85,13 @@ fun TimePickerDialog(
             Spacer(Modifier.weight(1f))
             TextButton(onClick = onCancel) {
                 Text(
-                    text = "Cancel",
+                    text = strings.cancel,
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             }
             TextButton(onClick = ::onConfirmClicked) {
                 Text(
-                    text = "Ok",
+                    text = strings.ok,
                     color = MaterialTheme.colorScheme.onPrimary
                 )
             }
@@ -118,7 +119,7 @@ private fun DisplayModeToggleButton(
         ) {
             Icon(
                 imageVector = Icons.Outlined.Keyboard,
-                contentDescription = "Input",
+                contentDescription = strings.input,
                 tint = MaterialTheme.colorScheme.onPrimary
             )
         }
@@ -129,7 +130,7 @@ private fun DisplayModeToggleButton(
         ) {
             Icon(
                 imageVector = Icons.Outlined.Schedule,
-                contentDescription = "Picker",
+                contentDescription = strings.picker,
                 tint = MaterialTheme.colorScheme.onPrimary
             )
         }

@@ -21,21 +21,29 @@ fun MathAlarmDialog(
     onDismissRequest: () -> Unit,
 ) {
     if (isDialogOpen) {
-        AlertDialog(
-            onDismissRequest = onDismissRequest,
-            title = { Text(text = arguments.title) },
-            text = { Text(text = arguments.text) },
-            confirmButton = {
-                Button(onClick = arguments.onConfirmAction) {
-                    Text(text = arguments.confirmText)
-                }
-            },
-            dismissButton = {
-                Button(onClick = onDismissRequest) {
-                    Text(text = arguments.dismissText)
-                }
-            },
-        )
+        with(arguments) {
+            AlertDialog(
+                onDismissRequest = onDismissRequest,
+                title = if (title != null) {
+                    { Text(text = title) }
+                } else {
+                    null
+                },
+                text = { Text(text = text) },
+                confirmButton = {
+                    Button(onClick = onConfirmAction) {
+                        Text(text = confirmText)
+                    }
+                },
+                dismissButton = if (dismissText != null) {
+                    {
+                        Button(onClick = onDismissRequest) {
+                            Text(text = dismissText)
+                        }
+                    }
+                } else null,
+            )
+        }
     }
 }
 
@@ -49,10 +57,10 @@ fun MathAlarmDialog(
 * @property onConfirmAction the action to be executed when the user confirms the dialog
 */
 data class DialogArguments(
-    val title: String,
+    val title: String?,
     val text: String,
     val confirmText: String,
-    val dismissText: String,
+    val dismissText: String?,
     val onConfirmAction: () -> Unit,
 )
 
