@@ -21,7 +21,7 @@ hilt_android = "2.51"
 hilt_android_compiler = "2.51"
 hilt_nav_compose = "1.2.0"
 # @pin
-kotlin_gradle_plugin = "1.9.10"
+kotlin_gradle_plugin = "1.9.22"
 lottie = "6.4.0"
 material = "1.11.0"
 moshi = "1.15.1"
@@ -32,6 +32,8 @@ test_junit = "4.13.2"
 test_junit_ext = "1.2.0-alpha03"
 test_mockk = "1.13.10"
 timber = "4.7.1"
+lyricist = "1.7.0"
+ksp = "1.9.22-1.0.17"
 
 [libraries]
 accompanist_navigation_material = { module = "com.google.accompanist:accompanist-navigation-material", version.ref = "accompanist" }
@@ -71,10 +73,13 @@ hilt_android_compiler = { module = "com.google.dagger:hilt-android-compiler", ve
 hilt_android_testing = { module = "com.google.dagger:hilt-android-testing", version.ref = "hilt_android_compiler" }
 junit = { module = "junit:junit", version.ref = "test_junit" }
 lottie_compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottie" }
+lyricist = { module = "cafe.adriel.lyricist:lyricist", version.ref = "lyricist" }
+lyricist-processor = { module = "cafe.adriel.lyricist:lyricist-processor", version.ref = "lyricist" }
 mockk = { module = "io.mockk:mockk", version.ref = "test_mockk" }
 moshi = { module = "com.squareup.moshi:moshi-kotlin", version.ref = "moshi" }
 plugin_android_gradle = { module = "com.android.tools.build:gradle", version.ref = "android_gradle_plugin" }
 plugin_crashlytics_gradle = { module = "com.google.firebase:firebase-crashlytics-gradle", version.ref = "crashlytics_plugin" }
 plugin_hilt_gradle = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "hilt_android" }
 plugin_kotlin_gradle = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin_gradle_plugin" }
+plugin-ksp = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }

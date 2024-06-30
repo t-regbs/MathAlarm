@@ -43,7 +43,7 @@ class AlarmSettingsViewModel @Inject constructor(
     private val _vibrate = mutableStateOf(false)
     val vibrate: State<Boolean> = _vibrate
 
-    private val _difficulty = mutableStateOf(0)
+    private val _difficulty = mutableIntStateOf(0)
     val difficulty: State<Int> = _difficulty
 
     private val _tone = mutableStateOf("")

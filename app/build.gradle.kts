@@ -6,6 +6,11 @@ plugins {
     id("com.google.gms.google-services")
     id("org.jetbrains.kotlin.plugin.parcelize")
     id("com.google.firebase.crashlytics")
+    id("com.google.devtools.ksp")
+}
+
+ksp {
+    arg("lyricist.generateStringsProperty", "true")
 }
 
 android {
@@ -54,7 +59,7 @@ android {
     }
 
     composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.3"
+        kotlinCompilerExtensionVersion = "1.5.8"
     }
 
     packagingOptions {
@@ -132,4 +137,7 @@ dependencies {
     implementation(libs.androidx.compose.runtime.saveable)
     implementation(libs.androidx.compose.runtime.livedata)
     androidTestImplementation(libs.androidx.compose.ui.test)
+
+    implementation(libs.lyricist)
+    ksp(libs.lyricist.processor)
 }

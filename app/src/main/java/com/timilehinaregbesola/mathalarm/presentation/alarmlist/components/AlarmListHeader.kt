@@ -15,6 +15,7 @@ import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cafe.adriel.lyricist.strings
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.LIST_HEADER_ALPHA
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.LIST_HEADER_ELEVATION
@@ -59,9 +60,9 @@ fun ListHeader(
         with(MaterialTheme.spacing) {
             Text(
                 text = if (enabled && nearestAlarmMessage != null) {
-                    "Next alarm in $nearestAlarmMessage"
+                    "${strings.nextAlarmText} $nearestAlarmMessage"
                 } else {
-                    "No upcoming alarms"
+                    strings.noUpcomingAlarms
                 },
                 modifier = Modifier
                     .padding(

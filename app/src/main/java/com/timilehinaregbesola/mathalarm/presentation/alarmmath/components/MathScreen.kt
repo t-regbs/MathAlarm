@@ -37,13 +37,11 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.livedata.observeAsState
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
@@ -62,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import cafe.adriel.lyricist.strings
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
@@ -380,7 +379,7 @@ private fun ButtonSection(
                     contentColor = White,
                 ),
             ) {
-                Text(text = "CLEAR", fontSize = CLEAR_FONT_SIZE)
+                Text(text = strings.clear.uppercase(), fontSize = CLEAR_FONT_SIZE)
             }
             Button(
                 modifier = Modifier.fillMaxWidth(),
@@ -393,7 +392,7 @@ private fun ButtonSection(
                     contentColor = White,
                 ),
             ) {
-                Text(text = "SNOOZE", fontSize = SNOOZE_FONT_SIZE)
+                Text(text = strings.snooze.uppercase(), fontSize = SNOOZE_FONT_SIZE)
             }
         }
         Button(
@@ -409,7 +408,7 @@ private fun ButtonSection(
                 contentColor = White,
             ),
         ) {
-            Text(text = "ENTER", fontSize = ENTER_FONT_SIZE)
+            Text(text = strings.enter.uppercase(), fontSize = ENTER_FONT_SIZE)
         }
     }
 }

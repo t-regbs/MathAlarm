@@ -12,20 +12,19 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.CornerSize
-import androidx.compose.material3.Card
-import androidx.compose.material3.Divider
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
-import androidx.compose.material3.Text
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.CardElevation
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Switch
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -42,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight.Companion.Normal
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cafe.adriel.lyricist.strings
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.ACTUAL_TIME_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.ALARM_INFO_FONT_SIZE
@@ -53,8 +53,6 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.DIVIDER_THICKNESS
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.EQUAL_WEIGHT
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.EXPANDED_SECTION_DIVIDER_SPACING
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.FIVE_OCLOCK
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.NOON
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.THREE_QUARTERS_WEIGHT
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.TIME_LENGTH_INDEX
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.TIME_OF_DAY_FONT_SIZE
@@ -177,20 +175,10 @@ fun AlarmItem(
                         val alarmInfoText = if (daysSet < DAYS_SET_LIMIT) {
                             sb.dropLast(TWO).toString()
                         } else {
-                            "Multiple Days"
+                            strings.multipleDays
                         }
 
-                        val moreInfo = when {
-                            alarm.hour < NOON -> {
-                                "Good morning"
-                            }
-                            alarm.hour in NOON..FIVE_OCLOCK -> {
-                                "Afternoon"
-                            }
-                            else -> {
-                                "Good Evening"
-                            }
-                        }
+                        val moreInfo = strings.greeting(alarm.hour)
 
                         Text(
                             text = "$alarmInfoText | $moreInfo",
@@ -200,7 +188,7 @@ fun AlarmItem(
                         if (!expandItem) {
                             Icon(
                                 imageVector = Icons.Default.KeyboardArrowDown,
-                                contentDescription = "Expand",
+                                contentDescription = strings.expand,
                                 modifier = Modifier
                                     .weight(EQUAL_WEIGHT)
                                     .align(CenterVertically)
@@ -232,7 +220,7 @@ private fun AlarmItemExpandableSection(
     with(MaterialTheme.spacing) {
         Column {
             Spacer(modifier = Modifier.height(small))
-            Divider(
+            HorizontalDivider(
                 thickness = DIVIDER_THICKNESS,
                 modifier = Modifier
                     .padding(
@@ -256,13 +244,13 @@ private fun AlarmItemExpandableSection(
                     ) {
                         Icon(
                             imageVector = Icons.Outlined.Delete,
-                            contentDescription = "Delete",
+                            contentDescription = strings.delete,
                             modifier = Modifier
                                 .padding(end = extraSmall)
                                 .clickable(onClick = onDeleteAlarm),
                         )
                         Text(
-                            text = "Delete",
+                            text = strings.delete,
                             modifier = Modifier
                                 .align(CenterVertically),
                         )
@@ -272,12 +260,12 @@ private fun AlarmItemExpandableSection(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Edit,
-                            contentDescription = "Edit",
+                            contentDescription = strings.edit,
                             modifier = Modifier
                                 .padding(end = extraSmall),
                         )
                         Text(
-                            text = "Edit",
+                            text = strings.edit,
                             modifier = Modifier
                                 .align(CenterVertically),
                         )
@@ -285,7 +273,7 @@ private fun AlarmItemExpandableSection(
                 }
                 Icon(
                     imageVector = Icons.Default.KeyboardArrowUp,
-                    contentDescription = "Collapse",
+                    contentDescription = strings.collapse,
                     modifier = Modifier
                         .weight(EQUAL_WEIGHT)
                         .align(CenterVertically)
@@ -326,8 +314,6 @@ private object AlarmItem {
     const val TIME_LENGTH_INDEX = 5
     const val EQUAL_WEIGHT = 1f
     const val ALARM_ITEM_LIGHT_BACKGROUND_HEX = 0x99FFFFFF
-    const val NOON = 12
-    const val FIVE_OCLOCK = 17
     const val THREE_QUARTERS_WEIGHT = 3f
     val ALARM_ITEM_ELEVATION = 4.dp
     val ALARM_TITLE_FONT_SIZE = 15.sp

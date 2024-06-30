@@ -37,7 +37,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -45,6 +44,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavHostController
+import cafe.adriel.lyricist.strings
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.timilehinaregbesola.mathalarm.R
@@ -210,6 +210,7 @@ fun ListDisplayScreen(
                             ),
                         contentAlignment = TopStart,
                     ) {
+                        val alarmSetText = strings.alarmSet
                         AlarmListContent(
                             alarmList = alarmList,
                             calendar = viewModel.calender.getCurrentCalendar(),
@@ -241,7 +242,7 @@ fun ListDisplayScreen(
                                         viewModel.scheduleAlarm(
                                             alarm = curAlarm,
                                             reschedule = b,
-                                            message = "Alarm set for ${
+                                            message = "$alarmSetText ${
                                                 curAlarm.getTimeLeft(
                                                     getCalendarFromAlarm(
                                                         curAlarm,
@@ -368,10 +369,10 @@ private fun AlarmPermissionDialog(
     onCloseDialog: () -> Unit,
 ) {
     val arguments = DialogArguments(
-        title = stringResource(id = R.string.task_alarm_permission_dialog_title),
-        text = stringResource(id = R.string.task_alarm_permission_dialog_text),
-        confirmText = stringResource(id = R.string.task_alarm_permission_dialog_confirm),
-        dismissText = stringResource(id = R.string.task_alarm_permission_dialog_cancel),
+        title = strings.alarms,
+        text = strings.taskAlarmPermissionDialogText,
+        confirmText = strings.taskAlarmPermissionDialogConfirm,
+        dismissText = strings.taskAlarmPermissionDialogCancel,
         onConfirmAction = {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 val intent = Intent().apply {

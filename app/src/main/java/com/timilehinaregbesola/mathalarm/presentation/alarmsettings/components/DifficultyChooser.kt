@@ -13,11 +13,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
+import cafe.adriel.lyricist.strings
 
 @Composable
 fun DifficultyChooser(initialDiff: Int, onValueChange: (Int) -> Unit) {
     var expanded by remember { mutableStateOf(false) }
-    val items = listOf("Easy Math", "Medium Math", "Hard Math")
+    val items = listOf(strings.easyMath, strings.mediumMath, strings.hardMath)
     Box {
         Text(
             items[initialDiff],
