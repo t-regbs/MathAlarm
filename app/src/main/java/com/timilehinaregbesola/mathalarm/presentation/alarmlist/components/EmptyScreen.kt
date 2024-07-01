@@ -26,6 +26,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cafe.adriel.lyricist.strings
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.EmptyScreen.EMPTY_IMAGE_END_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.EmptyScreen.EMPTY_IMAGE_HEIGHT
@@ -87,7 +88,7 @@ fun AlarmEmptyScreen(
                 modifier = Modifier
                     .padding(top = EMPTY_TEXT_TOP_PADDING)
                     .align(CenterHorizontally),
-                text = "Nothing to see here",
+                text = strings.nothingToSee,
                 fontSize = EMPTY_TEXT_FONT_SIZE,
             )
         }

@@ -72,5 +72,12 @@ data class Strings(
 
 object Locales {
     const val EN = "en"
+    const val ES = "es"
     const val DE = "de"
+    const val RU = "ru"
+    const val PT = "pt"
+    const val HI = "hi"
+    const val PA = "pa"
+    const val BN = "bn"
+    const val ZH = "zh"
 }
