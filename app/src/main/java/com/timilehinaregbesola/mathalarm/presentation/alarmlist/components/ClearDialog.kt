@@ -2,6 +2,7 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
+import cafe.adriel.lyricist.strings
 
 @Composable
 fun ClearDialog(
@@ -10,10 +11,10 @@ fun ClearDialog(
     onCloseDialog: () -> Unit,
 ) {
     val arguments = DialogArguments(
-        title = "Clear Alarms",
-        text = "Are you sure you want to clear the alarms?",
-        confirmText = "Yes",
-        dismissText = "No",
+        title = strings.clearAlarmDialogTitle,
+        text = strings.clearAlarmDialogText,
+        confirmText = strings.clearAlarmDialogConfirm,
+        dismissText = strings.clearAlarmDialogCancel,
         onConfirmAction = {
             onClear()
             onCloseDialog()

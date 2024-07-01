@@ -13,6 +13,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cafe.adriel.lyricist.strings
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.ListTopAppBar.APP_BAR_TITLE
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.ListTopAppBar.LIST_TITLE_FONT_SIZE
 
@@ -26,7 +27,7 @@ fun ListTopAppBar(
         modifier = Modifier.shadow(elevation = APP_BAR_TITLE),
         title = {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Center) {
-                Text(text = "Alarms", fontSize = LIST_TITLE_FONT_SIZE)
+                Text(text = strings.alarms, fontSize = LIST_TITLE_FONT_SIZE)
             }
         },
         actions = {
