@@ -6,6 +6,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.parcelize")
     id("com.google.firebase.crashlytics")
     id("com.google.devtools.ksp")
+    alias(libs.plugins.kotlin.compose)
 }
 
 ksp {
@@ -83,7 +84,7 @@ dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
     implementation(project(":core"))
 
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:1.1.5")
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     implementation(libs.android.material)
     implementation(libs.androidx.ktx)
@@ -106,7 +107,6 @@ dependencies {
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
 
-    implementation(libs.androidx.activity.compose)
     implementation(libs.accompanist.navigation.material)
     implementation(libs.androidx.hilt.navigation.compose)
 
@@ -132,10 +132,6 @@ dependencies {
     implementation(libs.androidx.compose.material.icons)
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.compose.ui.tooling.preview)
-    implementation(libs.androidx.compose.runtime)
-    implementation(libs.androidx.compose.runtime.saveable)
-    implementation(libs.androidx.compose.runtime.livedata)
-    androidTestImplementation(libs.androidx.compose.ui.test)
 
     implementation(libs.lyricist)
     ksp(libs.lyricist.processor)

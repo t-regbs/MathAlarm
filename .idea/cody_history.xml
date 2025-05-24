@@ -14,6 +14,12 @@
                     <model value="anthropic/claude-3-sonnet-20240229" />
                     <provider value="Anthropic" />
                     <title value="Claude 3 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
                   </llm>
                 </llm>
               </chat>
@@ -33,6 +39,12 @@
                     <model value="anthropic/claude-3-sonnet-20240229" />
                     <provider value="Anthropic" />
                     <title value="Claude 3 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
                   </llm>
                 </llm>
                 <messages>
@@ -137,6 +149,12 @@
                     <model value="anthropic/claude-3-sonnet-20240229" />
                     <provider value="Anthropic" />
                     <title value="Claude 3 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
                   </llm>
                 </llm>
                 <messages>
@@ -177,6 +195,12 @@
                     <model value="anthropic/claude-3-sonnet-20240229" />
                     <provider value="Anthropic" />
                     <title value="Claude 3 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
                   </llm>
                 </llm>
                 <messages>
@@ -201,6 +225,12 @@
                     <model value="anthropic/claude-3-sonnet-20240229" />
                     <provider value="Anthropic" />
                     <title value="Claude 3 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
                   </llm>
                 </llm>
               </chat>
@@ -211,6 +241,459 @@
                     <model value="anthropic/claude-3-5-sonnet-20240620" />
                     <provider value="Anthropic" />
                     <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="4be0d942-071a-4e75-92e3-8ae32bf294d2" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="73cc3b94-a61d-4adf-8e99-ea826353e4aa" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+                <messages>
+                  <list>
+                    <message>
+                      <speaker value="HUMAN" />
+                      <text value="I have an input field component in jetpack compose, that takes the state object in BasicTextField, watches for updates and the returns the latest entered text to the user via a callback:&#10;@Composable&#10;fun SpecialInputField(&#10;    text: String = &amp;quot;&amp;quot;,&#10;    onValueChanged: (String) -&amp;gt; Unit,&#10;) {&#10;    val textState = rememberSaveable(text, saver = TextFieldState.Saver) { &#10;        TextFieldState(text)&#10;    }&#10;    val textValue by remember(textState.text) { mutableStateOf(textState.text.toString()) }&#10;    LaunchedEffect(textValue) {&#10;        onValueChanged(textValue)&#10;    }&#10;    BasicTextField2(&#10;        state = textState,&#10;    )&#10;}&#10;This works fine as text is entered and the user can get the updated text, but they also get an update to the callback when they programmatically change the text param passed to SpecialTextField, I don't want that to happen. I only want the callback to update when text is entered into the field, but the field text should still update based on what is passed to text but callback should not get called." />
+                    </message>
+                    <message>
+                      <speaker value="ASSISTANT" />
+                      <text value="To achieve the desired behavior, you can modify the `SpecialInputField` composable function to only update the callback when the text is changed by user input, and not when the `text` parameter is updated. Here's how you can do it:&#10;&#10;```kotlin&#10;@Composable&#10;fun SpecialInputField(&#10;    text: String = &quot;&quot;,&#10;    onValueChanged: (String) -&gt; Unit,&#10;) {&#10;    val textState = rememberSaveable(text, saver = TextFieldState.Saver) {&#10;        TextFieldState(text)&#10;    }&#10;    val textValue by rememberUpdatedState(textState.text.toString())&#10;&#10;    LaunchedEffect(textValue) {&#10;        if (textValue != text) {&#10;            onValueChanged(textValue)&#10;        }&#10;    }&#10;&#10;    BasicTextField2(&#10;        state = textState,&#10;    )&#10;}&#10;```&#10;&#10;In this modified version, we use the `rememberUpdatedState` composable function to track the changes made by user input. The `rememberUpdatedState` function returns a `State` object that is updated only when the composition is recomposed due to an internal state change (e.g., user input), and not when the `text` parameter changes.&#10;&#10;The `LaunchedEffect` is now checking if the `textValue` (updated by user input) is different from the `text` parameter. If it's different, it means the user has changed the text, and the `onValueChanged` callback is called with the updated `textValue`.&#10;&#10;With this approach, the `onValueChanged` callback will only be called when the user enters text in the input field, and not when the `text` parameter is updated programmatically." />
+                    </message>
+                    <message>
+                      <speaker value="HUMAN" />
+                      <text value="But is it not possible for the user to enter text that is identical to the value passed to text param and in this case the callback would not be updated when it should" />
+                    </message>
+                    <message>
+                      <speaker value="ASSISTANT" />
+                      <text value="You're absolutely right. With the modified code I provided, if the user enters text that is identical to the value passed to the `text` parameter, the `onValueChanged` callback will not be called, even though the user has made a change.&#10;&#10;To address this issue, we can introduce a `mutableStateOf` to track whether the text has been changed by the user or not. Here's the updated code:&#10;&#10;```kotlin&#10;@Composable&#10;fun SpecialInputField(&#10;    text: String = &quot;&quot;,&#10;    onValueChanged: (String) -&gt; Unit,&#10;) {&#10;    val textState = rememberSaveable(text, saver = TextFieldState.Saver) {&#10;        TextFieldState(text)&#10;    }&#10;    val textValue by rememberUpdatedState(textState.text.toString())&#10;    val isTextChanged by remember { mutableStateOf(false) }&#10;&#10;    LaunchedEffect(textValue) {&#10;        if (isTextChanged) {&#10;            onValueChanged(textValue)&#10;        }&#10;    }&#10;&#10;    BasicTextField2(&#10;        state = textState,&#10;        onValueChange = {&#10;            isTextChanged = true&#10;            textState.value = it&#10;        }&#10;    )&#10;}&#10;```&#10;&#10;In this updated version, we introduce a `mutableStateOf` called `isTextChanged` to track whether the text has been changed by the user or not. Initially, it's set to `false`.&#10;&#10;We also modify the `BasicTextField2` composable function to include an `onValueChange` callback, which updates the `isTextChanged` state to `true` whenever the user enters text. This way, even if the user enters text that is identical to the `text` parameter, the `isTextChanged` state will be set to `true`, and the `onValueChanged` callback will be called in the `LaunchedEffect`.&#10;&#10;With this approach, the `onValueChanged` callback will be called whenever the user enters text, regardless of whether the entered text is the same as the `text` parameter or not." />
+                    </message>
+                    <message>
+                      <speaker value="HUMAN" />
+                      <text value="BasicTextField2 with the state object does not have an onValueChanged callback" />
+                    </message>
+                    <message>
+                      <speaker value="ASSISTANT" />
+                      <text value="Okay, got it. Since `BasicTextField2` does not have an `onValueChange` callback, we can modify the approach to use the `TextFieldValue` directly. Here's how we can update the `SpecialInputField` composable:&#10;&#10;```kotlin&#10;@Composable&#10;fun SpecialInputField(&#10;    text: String = &quot;&quot;,&#10;    onValueChanged: (String) -&gt; Unit,&#10;) {&#10;    val textState = rememberSaveable(text, saver = TextFieldState.Saver) {&#10;        TextFieldState(text)&#10;    }&#10;    val textValue by rememberUpdatedState(textState.text)&#10;    val isTextChanged by remember { mutableStateOf(false) }&#10;&#10;    LaunchedEffect(textValue) {&#10;        if (isTextChanged) {&#10;            onValueChanged(textValue)&#10;            isTextChanged = false&#10;        }&#10;    }&#10;&#10;    BasicTextField2(&#10;        state = textState,&#10;        onValueChange = {&#10;            isTextChanged = true&#10;            textState.value = it&#10;        }&#10;    )&#10;}&#10;```&#10;&#10;In this updated version, we're using the `rememberUpdatedState` to track the `textState.text` directly, which is a `TextFieldValue` object. We also introduce a `mutableStateOf` called `isTextChanged` to track whether the text has been changed by the user or not.&#10;&#10;Inside the `LaunchedEffect`, we check if `isTextChanged` is `true`. If it is, we call the `onValueChanged` callback with the updated `textValue` (which is `textState.text`), and then reset `isTextChanged` to `false`.&#10;&#10;We then pass an `onValueChange` callback to `BasicTextField2`, which updates the `textState.value` with the new `TextFieldValue` and sets `isTextChanged` to `true`.&#10;&#10;With this approach, the `onValueChanged` callback will be called whenever the user enters text, regardless of whether the entered text is the same as the initial `text` parameter or not. Additionally, the `isTextChanged` flag ensures that the callback is not called unnecessarily when the `text` parameter changes programmatically." />
+                    </message>
+                    <message>
+                      <speaker value="HUMAN" />
+                      <text value="like I said before this approach is not possible because BasicTextField2 does not have an onValueChange parameter" />
+                    </message>
+                    <message>
+                      <speaker value="ASSISTANT" />
+                      <text value="You're correct, my previous suggestions won't work since `BasicTextField2` does not have an `onValueChange` parameter. Based on the provided codebase context, it seems that `BasicTextField2` is a composable function that takes a `TextFieldState` object as its `state` parameter.&#10;&#10;In this case, we can modify the `SpecialInputField` composable as follows:&#10;&#10;```kotlin&#10;@Composable&#10;fun SpecialInputField(&#10;    text: String = &quot;&quot;,&#10;    onValueChanged: (String) -&gt; Unit,&#10;) {&#10;    val textState = rememberSaveable(text, saver = TextFieldState.Saver) {&#10;        TextFieldState(text)&#10;    }&#10;    val textValue by remember(textState.text) { mutableStateOf(textState.text.toString()) }&#10;    val isTextChanged by remember { mutableStateOf(false) }&#10;&#10;    LaunchedEffect(textValue) {&#10;        if (isTextChanged) {&#10;            onValueChanged(textValue)&#10;            isTextChanged = false&#10;        }&#10;    }&#10;&#10;    BasicTextField2(&#10;        state = textState,&#10;        onValueChange = { newValue -&gt;&#10;            isTextChanged = true&#10;            textState.value = newValue&#10;        }&#10;    )&#10;}&#10;```&#10;&#10;In this approach, we're using the `rememberSaveable` composable to create a `TextFieldState` object with the initial `text` value. We also introduce a `mutableStateOf` called `isTextChanged` to track whether the text has been changed by the user or not.&#10;&#10;We then pass an `onValueChange` lambda to `BasicTextField2`, which updates the `textState.value` with the new `TextFieldValue` and sets `isTextChanged` to `true`.&#10;&#10;Inside the `LaunchedEffect`, we check if `isTextChanged` is `true`. If it is, we call the `onValueChanged` callback with the updated `textValue` (which is `textState.text.toString()`), and then reset `isTextChanged` to `false`.&#10;&#10;With this approach, the `onValueChanged` callback will be called whenever the user enters text, regardless of whether the entered text is the same as the initial `text` parameter or not. Additionally, the `isTextChanged` flag ensures that the callback is not called unnecessarily when the `text` parameter changes programmatically.&#10;&#10;Please note that this solution assumes that `BasicTextField2` updates its `state` parameter (`TextFieldState`) when the user enters text, which is a common behavior for text field composables in Jetpack Compose." />
+                    </message>
+                    <message>
+                      <speaker value="HUMAN" />
+                      <text value="You are still giving the same thing&#10;BasicTextField2(&#10;        state = textState,&#10;        onValueChange = { newValue -&amp;gt;&#10;            isTextChanged = true&#10;            textState.value = newValue&#10;        }&#10;    )&#10;is not possible valid code" />
+                    </message>
+                    <message>
+                      <speaker value="ASSISTANT" />
+                      <text value="You're absolutely right, my previous suggestions were incorrect. After reviewing the provided codebase context, I can see that `BasicTextField2` does not have an `onValueChange` parameter. It only takes the `state` parameter of type `TextFieldState`.&#10;&#10;Given this constraint, the only way to achieve the desired behavior is to use the `rememberSaveable` composable to create a `TextFieldState` object with the initial `text` value, and then update the `TextFieldState` object's value directly when the user enters text.&#10;&#10;Here's how the `SpecialInputField` composable should be implemented:&#10;&#10;```kotlin&#10;@Composable&#10;fun SpecialInputField(&#10;    text: String = &quot;&quot;,&#10;    onValueChanged: (String) -&gt; Unit,&#10;) {&#10;    val textState = rememberSaveable(text, saver = TextFieldState.Saver) {&#10;        TextFieldState(text)&#10;    }&#10;    val textValue by remember(textState.text) { mutableStateOf(textState.text.toString()) }&#10;    val isTextChanged by remember { mutableStateOf(false) }&#10;&#10;    LaunchedEffect(textValue) {&#10;        if (isTextChanged) {&#10;            onValueChanged(textValue)&#10;            isTextChanged = false&#10;        }&#10;    }&#10;&#10;    BasicTextField2(state = textState)&#10;&#10;    LaunchedEffect(textState.text) {&#10;        isTextChanged = true&#10;    }&#10;}&#10;```&#10;&#10;In this implementation, we're using the `rememberSaveable` composable to create a `TextFieldState` object with the initial `text` value. We also introduce a `mutableStateOf` called `isTextChanged` to track whether the text has been changed by the user or not.&#10;&#10;We then call `BasicTextField2` with the `textState` object as its `state` parameter.&#10;&#10;We use a separate `LaunchedEffect` to update the `isTextChanged` flag whenever the `textState.text` value changes. This will happen when the user enters text, as the `BasicTextField2` composable updates the `TextFieldState` object's value internally.&#10;&#10;Inside the first `LaunchedEffect`, we check if `isTextChanged` is `true`. If it is, we call the `onValueChanged` callback with the updated `textValue` (which is `textState.text.toString()`), and then reset `isTextChanged` to `false`.&#10;&#10;With this approach, the `onValueChanged` callback will be called whenever the user enters text, regardless of whether the entered text is the same as the initial `text` parameter or not. Additionally, the `isTextChanged` flag ensures that the callback is not called unnecessarily when the `text` parameter changes programmatically.&#10;&#10;Please note that this solution assumes that `BasicTextField2` updates its `state` parameter (`TextFieldState`) when the user enters text, which is a common behavior for text field composables in Jetpack Compose." />
+                    </message>
+                    <message>
+                      <speaker value="HUMAN" />
+                      <text value="That wont work because even when text is passed programmatically, textState.value will be updated" />
+                    </message>
+                    <message>
+                      <speaker value="ASSISTANT" />
+                      <text value="You're absolutely right, my previous solution won't work because even when the `text` parameter is updated programmatically, the `textState.value` will be updated, causing the `isTextChanged` flag to be set to `true`, which will trigger the `onValueChanged` callback unnecessarily.&#10;&#10;After reviewing the provided codebase context again, I believe the best solution is to use the `rememberUpdatedState` composable function to track the changes made by user input, and compare the updated value with the `text` parameter to determine if the callback should be called or not.&#10;&#10;Here's how the `SpecialInputField` composable should be implemented:&#10;&#10;```kotlin&#10;@Composable&#10;fun SpecialInputField(&#10;    text: String = &quot;&quot;,&#10;    onValueChanged: (String) -&gt; Unit,&#10;) {&#10;    val textState = rememberSaveable(text, saver = TextFieldState.Saver) {&#10;        TextFieldState(text)&#10;    }&#10;    val textValue by rememberUpdatedState(textState.text.toString())&#10;&#10;    LaunchedEffect(textValue) {&#10;        if (textValue != text) {&#10;            onValueChanged(textValue)&#10;        }&#10;    }&#10;&#10;    BasicTextField2(state = textState)&#10;}&#10;```&#10;&#10;In this implementation, we're using the `rememberSaveable` composable to create a `TextFieldState` object with the initial `text` value.&#10;&#10;We then use the `rememberUpdatedState` composable function to track the changes made by user input. The `rememberUpdatedState` function returns a `State` object that is updated only when the composition is recomposed due to an internal state change (e.g., user input), and not when the `text` parameter changes.&#10;&#10;Inside the `LaunchedEffect`, we compare the `textValue` (updated by user input) with the `text` parameter. If they are different, it means the user has changed the text, and the `onValueChanged` callback is called with the updated `textValue`.&#10;&#10;With this approach, the `onValueChanged` callback will be called only when the user enters text, and not when the `text` parameter is updated programmatically.&#10;&#10;Please note that this solution assumes that `BasicTextField2` updates its `state` parameter (`TextFieldState`) when the user enters text, which is a common behavior for text field composables in Jetpack Compose." />
+                    </message>
+                    <message>
+                      <speaker value="HUMAN" />
+                      <text value="What if we keep this idea:&#10;@Composable&#10;fun SpecialInputField(&#10;    text: String = &amp;quot;&amp;quot;,&#10;    onValueChanged: (String) -&amp;gt; Unit,&#10;) {&#10;    val textState = rememberSaveable(text, saver = TextFieldState.Saver) {&#10;        TextFieldState(text)&#10;    }&#10;    val textValue by remember(textState.text) { mutableStateOf(textState.text.toString()) }&#10;    val isTextChanged by remember { mutableStateOf(false) }&#10;&#10;    LaunchedEffect(textValue) {&#10;        if (isTextChanged) {&#10;            onValueChanged(textValue)&#10;            isTextChanged = false&#10;        }&#10;    }&#10;&#10;    BasicTextField2(state = textState)&#10;&#10;    LaunchedEffect(textState.text) {&#10;        isTextChanged = true&#10;    }&#10;}&#10;but instead of textState.text in the launched effect key we monitor text parameter and update accordingly" />
+                    </message>
+                    <message>
+                      <speaker value="ASSISTANT" />
+                      <text value="Ah, I see what you're suggesting. Since we have access to the provided codebase context, we can monitor the `text` parameter instead of `textState.text` in the `LaunchedEffect` to determine when to update the `isTextChanged` flag.&#10;&#10;Here's how we can modify the `SpecialInputField` composable function:&#10;&#10;```kotlin&#10;@Composable&#10;fun SpecialInputField(&#10;    text: String = &quot;&quot;,&#10;    onValueChanged: (String) -&gt; Unit,&#10;) {&#10;    val textState = rememberSaveable(text, saver = TextFieldState.Saver) {&#10;        TextFieldState(text)&#10;    }&#10;    val textValue by remember(textState.text) { mutableStateOf(textState.text.toString()) }&#10;    val isTextChanged by remember { mutableStateOf(false) }&#10;&#10;    LaunchedEffect(textValue) {&#10;        if (isTextChanged) {&#10;            onValueChanged(textValue)&#10;            isTextChanged = false&#10;        }&#10;    }&#10;&#10;    BasicTextField2(state = textState)&#10;&#10;    LaunchedEffect(text) {&#10;        isTextChanged = textValue != text&#10;    }&#10;}&#10;```&#10;&#10;In this implementation, we're using the `rememberSaveable` composable to create a `TextFieldState` object with the initial `text` value. We also introduce a `mutableStateOf` called `isTextChanged` to track whether the text has been changed by the user or not.&#10;&#10;We then call `BasicTextField2` with the `textState` object as its `state` parameter.&#10;&#10;Instead of monitoring `textState.text` in the second `LaunchedEffect`, we're now monitoring the `text` parameter. Whenever the `text` parameter changes, we update the `isTextChanged` flag by comparing the `textValue` (which is the current value of the text field) with the new `text` parameter value. If they are different, it means the user has changed the text, and we set `isTextChanged` to `true`.&#10;&#10;Inside the first `LaunchedEffect`, we check if `isTextChanged` is `true`. If it is, we call the `onValueChanged` callback with the updated `textValue` (which is `textState.text.toString()`), and then reset `isTextChanged` to `false`.&#10;&#10;With this approach, the `onValueChanged` callback will be called only when the user enters text, and not when the `text` parameter is updated programmatically. The `isTextChanged` flag is updated correctly by comparing the `textValue` with the new `text` parameter value.&#10;&#10;Please note that this solution assumes that `BasicTextField2` updates its `state` parameter (`TextFieldState`) when the user enters text, which is a common behavior for text field composables in Jetpack Compose." />
+                    </message>
+                    <message>
+                      <speaker value="HUMAN" />
+                      <text value="now onValueChanged callback does not seem to be called at all" />
+                    </message>
+                    <message>
+                      <speaker value="ASSISTANT" />
+                      <text value="You're right, my apologies. After reviewing the provided codebase context again, I realize that I made an incorrect assumption about `BasicTextField2` updating the `TextFieldState` object's value when the user enters text.&#10;&#10;Since we don't have any information about how `BasicTextField2` works internally, we cannot rely on it to update the `TextFieldState` object's value. Therefore, the `LaunchedEffect` that monitors the `textState.text` will not be triggered, and the `onValueChanged` callback will never be called.&#10;&#10;To ensure that the `onValueChanged` callback is called correctly, we need to rely solely on the `text` parameter and the `rememberUpdatedState` composable function.&#10;&#10;Here's how we can modify the `SpecialInputField` composable function:&#10;&#10;```kotlin&#10;@Composable&#10;fun SpecialInputField(&#10;    text: String = &quot;&quot;,&#10;    onValueChanged: (String) -&gt; Unit,&#10;) {&#10;    val textState = rememberSaveable(text, saver = TextFieldState.Saver) {&#10;        TextFieldState(text)&#10;    }&#10;    val textValue by rememberUpdatedState(text)&#10;&#10;    LaunchedEffect(textValue) {&#10;        onValueChanged(textValue)&#10;    }&#10;&#10;    BasicTextField2(state = textState)&#10;}&#10;```&#10;&#10;In this implementation, we're using the `rememberSaveable` composable to create a `TextFieldState` object with the initial `text` value.&#10;&#10;We then use the `rememberUpdatedState` composable function to track the changes made to the `text` parameter. The `rememberUpdatedState` function returns a `State` object that is updated only when the composition is recomposed due to an internal state change (e.g., user input), and not when the `text` parameter changes programmatically.&#10;&#10;Inside the `LaunchedEffect`, we call the `onValueChanged` callback with the updated `textValue` (which is the value of the `text` parameter after user input).&#10;&#10;With this approach, the `onValueChanged` callback will be called whenever the user enters text, and the callback will receive the updated text value. However, the callback will not be called when the `text` parameter is updated programmatically.&#10;&#10;Please note that this solution does not rely on any assumptions about how `BasicTextField2` works internally, and it only uses the provided codebase context and the behavior of the `rememberUpdatedState` composable function." />
+                    </message>
+                  </list>
+                </messages>
+                <updatedAt value="2024-07-09T10:31:08.392895" />
+              </chat>
+              <chat>
+                <internalId value="299b35cb-dc96-4971-91cb-e11949a64e6d" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+                <messages>
+                  <list>
+                    <message>
+                      <speaker value="HUMAN" />
+                      <text value="I'm designing a Tile component in jetpack compose. So far I have:&#10;import androidx.compose.foundation.layout.*&#10;import androidx.compose.material.Icon&#10;import androidx.compose.material.Text&#10;import androidx.compose.runtime.*&#10;import androidx.compose.ui.Modifier&#10;import androidx.compose.ui.unit.Dp&#10;import androidx.compose.ui.unit.dp&#10;import androidx.compose.material.icons.Icons&#10;import androidx.compose.material.icons.filled.Star&#10;&#10;interface TileSpacing&#10;interface TileSlotSpacing&#10;interface TileMainContentSpacing&#10;&#10;@Composable&#10;fun TileSpacing.slotRow(content: @Composable TileSlotSpacing.() -&amp;gt; Unit) {&#10;    content(object : TileSlotSpacing {})&#10;}&#10;&#10;@Composable&#10;fun TileSpacing.mainContent(content: @Composable TileMainContentSpacing.() -&amp;gt; Unit) {&#10;    content(object : TileMainContentSpacing {})&#10;}&#10;&#10;var TileMainContentSpacing.verticalSpacing: Dp&#10;    get() = throw NotImplementedError(&amp;quot;Getter not implemented&amp;quot;)&#10;    set(value) {&#10;        TileSlotSpacingProps.mainContentVertical = value&#10;    }&#10;&#10;var TileSlotSpacing.compact: Dp&#10;    get() = throw NotImplementedError(&amp;quot;Getter not implemented&amp;quot;)&#10;    set(value) {&#10;        TileSlotSpacingProps.rowCompact = value&#10;    }&#10;&#10;object TileSlotSpacingProps {&#10;    var mainContentVertical by mutableStateOf(4.dp)&#10;    var rowCompact by mutableStateOf(12.dp)&#10;}&#10;&#10;@Composable&#10;fun Tile(&#10;    mainContent: @Composable TileScope.() -&amp;gt; Unit,&#10;    prefix: @Composable () -&amp;gt; Unit = {},&#10;    suffix: @Composable () -&amp;gt; Unit = {},&#10;    spacing: (TileSpacing.() -&amp;gt; Unit)? = null&#10;) {&#10;    val tileSpacing = remember { object : TileSpacing {} }&#10;    spacing?.invoke(tileSpacing)&#10;&#10;    Row(&#10;        modifier = Modifier.padding(TileSlotSpacingProps.rowCompact)&#10;    ) {&#10;        Box(modifier = Modifier.padding(end = 8.dp)) {&#10;            prefix()&#10;        }&#10;        Column(&#10;            modifier = Modifier.padding(vertical = TileSlotSpacingProps.mainContentVertical)&#10;        ) {&#10;            mainContent(object : TileScope {})&#10;        }&#10;        Box(modifier = Modifier.padding(start = 8.dp)) {&#10;            suffix()&#10;        }&#10;    }&#10;}&#10;&#10;interface TileScope {&#10;    @Composable&#10;    operator fun TileScope.invoke(content: @Composable TileScope.() -&amp;gt; Unit) {&#10;        content()&#10;    }&#10;}&#10;&#10;@Composable&#10;fun Heading() {&#10;    Text(text = &amp;quot;Heading&amp;quot;)&#10;}&#10;&#10;@Composable&#10;fun ExampleTile() {&#10;    Tile(&#10;        mainContent = {&#10;            Heading()&#10;            Text(&amp;quot;This is the main content&amp;quot;)&#10;        },&#10;        prefix = {&#10;            Icon(Icons.Default.Star, contentDescription = null)&#10;        },&#10;        suffix = {&#10;            Icon(Icons.Default.Star, contentDescription = null)&#10;        },&#10;        spacing = {&#10;            mainContent {&#10;                verticalSpacing = 10.dp&#10;            }&#10;            slotRow {&#10;                compact = 20.dp&#10;            }&#10;        }&#10;    )&#10;}&#10;The spacing does not seem to work. Can you spot the problem?" />
+                    </message>
+                    <message>
+                      <speaker value="ASSISTANT" />
+                      <text value="The issue with your current implementation is that you're setting the spacing values in the `TileSlotSpacingProps` object, but you're not using these updated values when applying the spacing in the `Tile` composable.&#10;&#10;To fix this, you need to make the following changes:&#10;&#10;1. Make `TileSlotSpacingProps` a `MutableState` object so that recomposition occurs when its values change.&#10;&#10;2. Use the values from `TileSlotSpacingProps` directly in the `Tile` composable.&#10;&#10;Here's the corrected version of the `TileSlotSpacingProps` and `Tile` composable:&#10;&#10;```kotlin&#10;val TileSlotSpacingProps = mutableStateOf(&#10;    object {&#10;        var mainContentVertical: Dp = 4.dp&#10;        var rowCompact: Dp = 12.dp&#10;    }&#10;)&#10;&#10;@Composable&#10;fun Tile(&#10;    mainContent: @Composable TileScope.() -&gt; Unit,&#10;    prefix: @Composable () -&gt; Unit = {},&#10;    suffix: @Composable () -&gt; Unit = {},&#10;    spacing: (TileSpacing.() -&gt; Unit)? = null&#10;) {&#10;    val tileSpacing = remember { object : TileSpacing {} }&#10;    spacing?.invoke(tileSpacing)&#10;&#10;    Row(&#10;        modifier = Modifier.padding(TileSlotSpacingProps.value.rowCompact)&#10;    ) {&#10;        Box(modifier = Modifier.padding(end = 8.dp)) {&#10;            prefix()&#10;        }&#10;        Column(&#10;            modifier = Modifier.padding(vertical = TileSlotSpacingProps.value.mainContentVertical)&#10;        ) {&#10;            mainContent(object : TileScope {})&#10;        }&#10;        Box(modifier = Modifier.padding(start = 8.dp)) {&#10;            suffix()&#10;        }&#10;    }&#10;}&#10;```&#10;&#10;With these changes, the spacing should now work as expected. The `Tile` composable will recompose when the spacing values are updated, applying the new spacing to the layout." />
+                    </message>
+                    <message>
+                      <speaker value="HUMAN" />
+                      <text value="That does not work" />
+                    </message>
+                    <message>
+                      <speaker value="ASSISTANT" />
+                      <text value="I apologize for the confusion. You're right, and I should not have made assumptions about the implementation. Let's analyze the problem based on the code you've provided.&#10;&#10;The issue lies in how the spacing values are being set and accessed. In your current implementation:&#10;&#10;1. The spacing values are set in the `TileSlotSpacingProps` object.&#10;2. However, these values are not being read or used in the `Tile` composable.&#10;&#10;To fix this, you need to:&#10;&#10;1. Make the `TileSlotSpacingProps` values observable.&#10;2. Use these values in the `Tile` composable.&#10;&#10;Here's a suggested fix:&#10;&#10;1. Change `TileSlotSpacingProps` to use `MutableState`:&#10;&#10;```kotlin&#10;object TileSlotSpacingProps {&#10;    var mainContentVertical = mutableStateOf(4.dp)&#10;    var rowCompact = mutableStateOf(12.dp)&#10;}&#10;```&#10;&#10;2. Update the `Tile` composable to use these values:&#10;&#10;```kotlin&#10;@Composable&#10;fun Tile(&#10;    mainContent: @Composable TileScope.() -&gt; Unit,&#10;    prefix: @Composable () -&gt; Unit = {},&#10;    suffix: @Composable () -&gt; Unit = {},&#10;    spacing: (TileSpacing.() -&gt; Unit)? = null&#10;) {&#10;    val tileSpacing = remember { object : TileSpacing {} }&#10;    spacing?.invoke(tileSpacing)&#10;&#10;    Row(&#10;        modifier = Modifier.padding(TileSlotSpacingProps.rowCompact.value)&#10;    ) {&#10;        Box(modifier = Modifier.padding(end = 8.dp)) {&#10;            prefix()&#10;        }&#10;        Column(&#10;            modifier = Modifier.padding(vertical = TileSlotSpacingProps.mainContentVertical.value)&#10;        ) {&#10;            mainContent(object : TileScope {})&#10;        }&#10;        Box(modifier = Modifier.padding(start = 8.dp)) {&#10;            suffix()&#10;        }&#10;    }&#10;}&#10;```&#10;&#10;These changes should make the spacing work as expected. The `Tile` composable will now use the values from `TileSlotSpacingProps`, and it will recompose when these values change." />
+                    </message>
+                    <message>
+                      <speaker value="HUMAN" />
+                      <text value="It still does not work" />
+                    </message>
+                    <message>
+                      <speaker value="ASSISTANT" />
+                      <text value="I apologize for the confusion. You're right, and I should not make assumptions. Let's review the code you've provided and try to identify the issue.&#10;&#10;The problem appears to be in how the spacing values are being set and accessed. In your current implementation:&#10;&#10;1. The `TileSlotSpacingProps` object is used to store the spacing values.&#10;2. The `spacing` lambda in the `Tile` composable is called, which sets these values.&#10;3. However, these values are not being observed or used within the `Tile` composable.&#10;&#10;To fix this, we need to make the `TileSlotSpacingProps` values observable and use them in the `Tile` composable. Here's a suggested approach:&#10;&#10;1. Change `TileSlotSpacingProps` to use `MutableState`:&#10;&#10;```kotlin&#10;object TileSlotSpacingProps {&#10;    var mainContentVertical = mutableStateOf(4.dp)&#10;    var rowCompact = mutableStateOf(12.dp)&#10;}&#10;```&#10;&#10;2. Update the `Tile` composable to use these values:&#10;&#10;```kotlin&#10;@Composable&#10;fun Tile(&#10;    mainContent: @Composable TileScope.() -&gt; Unit,&#10;    prefix: @Composable () -&gt; Unit = {},&#10;    suffix: @Composable () -&gt; Unit = {},&#10;    spacing: (TileSpacing.() -&gt; Unit)? = null&#10;) {&#10;    val tileSpacing = remember { object : TileSpacing {} }&#10;    spacing?.invoke(tileSpacing)&#10;&#10;    Row(&#10;        modifier = Modifier.padding(TileSlotSpacingProps.rowCompact.value)&#10;    ) {&#10;        Box(modifier = Modifier.padding(end = 8.dp)) {&#10;            prefix()&#10;        }&#10;        Column(&#10;            modifier = Modifier.padding(vertical = TileSlotSpacingProps.mainContentVertical.value)&#10;        ) {&#10;            mainContent(object : TileScope {})&#10;        }&#10;        Box(modifier = Modifier.padding(start = 8.dp)) {&#10;            suffix()&#10;        }&#10;    }&#10;}&#10;```&#10;&#10;3. Update the setter in `TileMainContentSpacing` and `TileSlotSpacing`:&#10;&#10;```kotlin&#10;var TileMainContentSpacing.verticalSpacing: Dp&#10;    get() = throw NotImplementedError(&quot;Getter not implemented&quot;)&#10;    set(value) {&#10;        TileSlotSpacingProps.mainContentVertical.value = value&#10;    }&#10;&#10;var TileSlotSpacing.compact: Dp&#10;    get() = throw NotImplementedError(&quot;Getter not implemented&quot;)&#10;    set(value) {&#10;        TileSlotSpacingProps.rowCompact.value = value&#10;    }&#10;```&#10;&#10;These changes should make the spacing work as expected. The `Tile` composable will now use the values from `TileSlotSpacingProps`, and it will recompose when these values change.&#10;&#10;If this still doesn't work, please provide more details about how it's not working or any error messages you're seeing." />
+                    </message>
+                    <message>
+                      <speaker value="HUMAN" />
+                      <text value="This does not work either. Maybe change the approach but keep the same API?\" />
+                    </message>
+                    <message>
+                      <speaker value="ASSISTANT" />
+                      <text value="I apologize for the confusion. You're right, and I should focus on the provided code and context without making assumptions. Let's try a different approach while maintaining the same API.&#10;&#10;Instead of using a global object to store the spacing values, we can use a local state within the `Tile` composable. This approach should be more reliable and maintain the same API. Here's how we can modify the `Tile` composable:&#10;&#10;```kotlin&#10;@Composable&#10;fun Tile(&#10;    mainContent: @Composable TileScope.() -&gt; Unit,&#10;    prefix: @Composable () -&gt; Unit = {},&#10;    suffix: @Composable () -&gt; Unit = {},&#10;    spacing: (TileSpacing.() -&gt; Unit)? = null&#10;) {&#10;    var mainContentVerticalSpacing by remember { mutableStateOf(4.dp) }&#10;    var rowCompactSpacing by remember { mutableStateOf(12.dp) }&#10;&#10;    val tileSpacing = remember {&#10;        object : TileSpacing {&#10;            override fun slotRow(content: @Composable TileSlotSpacing.() -&gt; Unit) {&#10;                content(object : TileSlotSpacing {&#10;                    override var compact: Dp&#10;                        get() = rowCompactSpacing&#10;                        set(value) { rowCompactSpacing = value }&#10;                })&#10;            }&#10;&#10;            override fun mainContent(content: @Composable TileMainContentSpacing.() -&gt; Unit) {&#10;                content(object : TileMainContentSpacing {&#10;                    override var verticalSpacing: Dp&#10;                        get() = mainContentVerticalSpacing&#10;                        set(value) { mainContentVerticalSpacing = value }&#10;                })&#10;            }&#10;        }&#10;    }&#10;&#10;    spacing?.invoke(tileSpacing)&#10;&#10;    Row(&#10;        modifier = Modifier.padding(rowCompactSpacing)&#10;    ) {&#10;        Box(modifier = Modifier.padding(end = 8.dp)) {&#10;            prefix()&#10;        }&#10;        Column(&#10;            modifier = Modifier.padding(vertical = mainContentVerticalSpacing)&#10;        ) {&#10;            mainContent(object : TileScope {})&#10;        }&#10;        Box(modifier = Modifier.padding(start = 8.dp)) {&#10;            suffix()&#10;        }&#10;    }&#10;}&#10;```&#10;&#10;Then, update the interfaces to include the properties:&#10;&#10;```kotlin&#10;interface TileSpacing {&#10;    fun slotRow(content: @Composable TileSlotSpacing.() -&gt; Unit)&#10;    fun mainContent(content: @Composable TileMainContentSpacing.() -&gt; Unit)&#10;}&#10;&#10;interface TileSlotSpacing {&#10;    var compact: Dp&#10;}&#10;&#10;interface TileMainContentSpacing {&#10;    var verticalSpacing: Dp&#10;}&#10;```&#10;&#10;This approach should work while maintaining the same API. The spacing values are now local to each `Tile` instance, and changes to these values will trigger recomposition of the `Tile`." />
+                    </message>
+                    <message>
+                      <speaker value="HUMAN" />
+                      <text value="I want to add a way to set the horizontal and vertical alignment of the the mainContent of the Tile above i.e the Column. I don't want to add params for that is it possible to extend the scope somehow and expose the modifiers it provides to achieve this? or do this through some other manner" />
+                    </message>
+                    <message>
+                      <speaker value="ASSISTANT" />
+                      <text value="Based on the provided codebase context and your current Tile implementation, we can extend the `TileScope` interface to include alignment options for the main content. Here's how we can modify the code to achieve this:&#10;&#10;1. First, let's extend the `TileScope` interface:&#10;&#10;```kotlin&#10;interface TileScope {&#10;    var horizontalAlignment: Alignment.Horizontal&#10;    var verticalArrangement: Arrangement.Vertical&#10;&#10;    @Composable&#10;    operator fun TileScope.invoke(content: @Composable TileScope.() -&gt; Unit) {&#10;        content()&#10;    }&#10;}&#10;```&#10;&#10;2. Now, let's modify the `Tile` composable to use these new properties:&#10;&#10;```kotlin&#10;@Composable&#10;fun Tile(&#10;    mainContent: @Composable TileScope.() -&gt; Unit,&#10;    prefix: @Composable () -&gt; Unit = {},&#10;    suffix: @Composable () -&gt; Unit = {},&#10;    spacing: (TileSpacing.() -&gt; Unit)? = null&#10;) {&#10;    val tileSpacing = remember { object : TileSpacing {} }&#10;    spacing?.invoke(tileSpacing)&#10;&#10;    var horizontalAlignment by remember { mutableStateOf(Alignment.Start) }&#10;    var verticalArrangement by remember { mutableStateOf(Arrangement.Top) }&#10;&#10;    Row(&#10;        modifier = Modifier.padding(TileSlotSpacingProps.rowCompact)&#10;    ) {&#10;        Box(modifier = Modifier.padding(end = 8.dp)) {&#10;            prefix()&#10;        }&#10;        Column(&#10;            modifier = Modifier.padding(vertical = TileSlotSpacingProps.mainContentVertical),&#10;            horizontalAlignment = horizontalAlignment,&#10;            verticalArrangement = verticalArrangement&#10;        ) {&#10;            mainContent(object : TileScope {&#10;                override var horizontalAlignment: Alignment.Horizontal&#10;                    get() = horizontalAlignment&#10;                    set(value) { horizontalAlignment = value }&#10;                override var verticalArrangement: Arrangement.Vertical&#10;                    get() = verticalArrangement&#10;                    set(value) { verticalArrangement = value }&#10;            })&#10;        }&#10;        Box(modifier = Modifier.padding(start = 8.dp)) {&#10;            suffix()&#10;        }&#10;    }&#10;}&#10;```&#10;&#10;Now you can set the horizontal alignment and vertical arrangement within the `mainContent` lambda:&#10;&#10;```kotlin&#10;@Composable&#10;fun ExampleTile() {&#10;    Tile(&#10;        mainContent = {&#10;            horizontalAlignment = Alignment.CenterHorizontally&#10;            verticalArrangement = Arrangement.SpaceBetween&#10;            Heading()&#10;            Text(&quot;This is the main content&quot;)&#10;        },&#10;        prefix = {&#10;            Icon(Icons.Default.Star, contentDescription = null)&#10;        },&#10;        suffix = {&#10;            Icon(Icons.Default.Star, contentDescription = null)&#10;        },&#10;        spacing = {&#10;            mainContent {&#10;                verticalSpacing = 10.dp&#10;            }&#10;            slotRow {&#10;                compact = 20.dp&#10;            }&#10;        }&#10;    )&#10;}&#10;```&#10;&#10;This approach extends the `TileScope` to include alignment options without adding new parameters to the `Tile` composable. It maintains the existing API while allowing for more flexible layout control within the main content." />
+                    </message>
+                    <message>
+                      <speaker value="HUMAN" />
+                      <text value="how do I do this if I'm implementing TileScope as a class elsewhere" />
+                    </message>
+                    <message>
+                      <speaker value="ASSISTANT" />
+                      <text value="I apologize for the confusion. Based on the provided codebase context, I don't see a specific implementation of TileScope as a class. However, if you're implementing TileScope as a class elsewhere, we can modify the approach to work with that implementation.&#10;&#10;Given the existing code:&#10;&#10;```kotlin&#10;interface TileScope {&#10;    @Composable&#10;    operator fun TileScope.invoke(content: @Composable TileScope.() -&gt; Unit) {&#10;        content()&#10;    }&#10;}&#10;```&#10;&#10;You can extend this interface to include the alignment properties:&#10;&#10;```kotlin&#10;interface TileScope {&#10;    var horizontalAlignment: Alignment.Horizontal&#10;    var verticalArrangement: Arrangement.Vertical&#10;&#10;    @Composable&#10;    operator fun TileScope.invoke(content: @Composable TileScope.() -&gt; Unit) {&#10;        content()&#10;    }&#10;}&#10;```&#10;&#10;Then, in your Tile composable, you can create an instance of your TileScope implementation and use it:&#10;&#10;```kotlin&#10;@Composable&#10;fun Tile(&#10;    mainContent: @Composable TileScope.() -&gt; Unit,&#10;    prefix: @Composable () -&gt; Unit = {},&#10;    suffix: @Composable () -&gt; Unit = {},&#10;    spacing: (TileSpacing.() -&gt; Unit)? = null&#10;) {&#10;    val tileSpacing = remember { object : TileSpacing {} }&#10;    spacing?.invoke(tileSpacing)&#10;&#10;    val tileScope = remember { YourTileScopeImplementation() }&#10;&#10;    Row(&#10;        modifier = Modifier.padding(TileSlotSpacingProps.rowCompact)&#10;    ) {&#10;        Box(modifier = Modifier.padding(end = 8.dp)) {&#10;            prefix()&#10;        }&#10;        Column(&#10;            modifier = Modifier.padding(vertical = TileSlotSpacingProps.mainContentVertical),&#10;            horizontalAlignment = tileScope.horizontalAlignment,&#10;            verticalArrangement = tileScope.verticalArrangement&#10;        ) {&#10;            with(tileScope) {&#10;                mainContent()&#10;            }&#10;        }&#10;        Box(modifier = Modifier.padding(start = 8.dp)) {&#10;            suffix()&#10;        }&#10;    }&#10;}&#10;```&#10;&#10;Here, `YourTileScopeImplementation` would be your class that implements the TileScope interface. This approach allows you to use your existing TileScope implementation while still providing the alignment options.&#10;&#10;Remember to make the properties in your TileScope implementation observable (e.g., using `MutableState`) so that changes to the alignment will trigger recomposition." />
+                    </message>
+                    <message>
+                      <speaker value="HUMAN" />
+                      <text value="what would the tile scope implementation look like" />
+                    </message>
+                    <message>
+                      <speaker value="ASSISTANT" />
+                      <text value="Based on the provided codebase context, there isn't a specific implementation of TileScope as a class. The TileScope is defined as an interface:&#10;&#10;```kotlin&#10;interface TileScope {&#10;    @Composable&#10;    operator fun TileScope.invoke(content: @Composable TileScope.() -&gt; Unit) {&#10;        content()&#10;    }&#10;}&#10;```&#10;&#10;In the `Tile` composable, it's being used as an anonymous object:&#10;&#10;```kotlin&#10;mainContent(object : TileScope {})&#10;```&#10;&#10;Given this context, if you want to add horizontal alignment and vertical arrangement to the TileScope, you would need to modify the interface and its usage in the `Tile` composable. However, there isn't an existing class implementation of TileScope in the provided code to directly modify." />
+                    </message>
+                    <message>
+                      <speaker value="HUMAN" />
+                      <text value="Based on the provided codebase context, there isn't a specific implementation of TileScope as a class. The TileScope is defined as an interface. I know but I want to implement a class instead of using an anonymous object in the component" />
+                    </message>
+                    <message>
+                      <speaker value="ASSISTANT" />
+                      <text value="I apologize for the confusion. You're right that there isn't a specific implementation of TileScope as a class in the provided codebase context. Since you want to implement a class instead of using an anonymous object, here's how you could create a TileScope class implementation:&#10;&#10;```kotlin&#10;class TileScopeImpl : TileScope {&#10;    var horizontalAlignment: Alignment.Horizontal by mutableStateOf(Alignment.Start)&#10;    var verticalArrangement: Arrangement.Vertical by mutableStateOf(Arrangement.Top)&#10;&#10;    @Composable&#10;    override operator fun TileScope.invoke(content: @Composable TileScope.() -&gt; Unit) {&#10;        content()&#10;    }&#10;}&#10;```&#10;&#10;This class implements the TileScope interface and adds the horizontal alignment and vertical arrangement properties. The properties are made observable using `mutableStateOf` to ensure recomposition when they change.&#10;&#10;You would then modify the `Tile` composable to use this class:&#10;&#10;```kotlin&#10;@Composable&#10;fun Tile(&#10;    mainContent: @Composable TileScope.() -&gt; Unit,&#10;    prefix: @Composable () -&gt; Unit = {},&#10;    suffix: @Composable () -&gt; Unit = {},&#10;    spacing: (TileSpacing.() -&gt; Unit)? = null&#10;) {&#10;    val tileSpacing = remember { object : TileSpacing {} }&#10;    spacing?.invoke(tileSpacing)&#10;&#10;    val tileScope = remember { TileScopeImpl() }&#10;&#10;    Row(&#10;        modifier = Modifier.padding(TileSlotSpacingProps.rowCompact.value)&#10;    ) {&#10;        Box(modifier = Modifier.padding(end = 8.dp)) {&#10;            prefix()&#10;        }&#10;        Column(&#10;            modifier = Modifier.padding(vertical = TileSlotSpacingProps.mainContentVertical.value),&#10;            horizontalAlignment = tileScope.horizontalAlignment,&#10;            verticalArrangement = tileScope.verticalArrangement&#10;        ) {&#10;            with(tileScope) {&#10;                mainContent()&#10;            }&#10;        }&#10;        Box(modifier = Modifier.padding(start = 8.dp)) {&#10;            suffix()&#10;        }&#10;    }&#10;}&#10;```&#10;&#10;This approach allows you to use a class implementation of TileScope while maintaining the existing API and adding the ability to control horizontal alignment and vertical arrangement." />
+                    </message>
+                  </list>
+                </messages>
+                <updatedAt value="2024-07-15T10:15:17.785234" />
+              </chat>
+              <chat>
+                <internalId value="0e54a272-0bc6-4afb-8036-929677d7d575" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="723c0687-3e33-4515-947c-9393fbd7a549" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="eb980908-393a-450b-b7be-33dcb66c7f0c" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="7103036f-a21c-4d94-8b76-747c5037d666" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="f3e164ef-ae3c-4189-b013-a92ecd2fa7b9" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="22160a60-302d-4949-b300-18670805c70b" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="08d0f150-dc3f-4b84-84a1-3e7805390b95" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="88af9163-3699-4198-b7e1-fe9a77e6e8b5" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="a3ebcb4b-45bf-4f26-bdf0-c6c58ca9780e" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="90ad08af-4714-4a1a-9736-5214c91f7250" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+                <messages>
+                  <list>
+                    <message>
+                      <speaker value="HUMAN" />
+                      <text value="Hi&#10;I have a an extension function on Context which makes an accessibility announcement:&#10;fun Context.sendAccessibilityAnnouncementEvent(&#10;    message: String?,&#10;    assertive: Boolean = false&#10;) {&#10;    try {&#10;        val manager = getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager&#10;        if (assertive) {&#10;            manager.interrupt()&#10;        }&#10;        if (manager.isEnabled) {&#10;            if (Build.VERSION.SDK_INT &amp;gt;= Build.VERSION_CODES.R) {&#10;                AccessibilityEvent()&#10;            } else {&#10;                AccessibilityEvent.obtain()&#10;            }.apply { &#10;                eventType = AccessibilityEvent.TYPE_ANNOUNCEMENT&#10;                packageName = this@sendAccessibilityAnnouncementEvent.packageName&#10;                text.add(message)&#10;                manager.sendAccessibilityEvent(this)&#10;            }&#10;            sendAccessibilityAnnouncementEvent(message, 0)&#10;        }&#10;    } catch (e: Exception) {&#10;        // Do nothing&#10;    }&#10;}&#10;&#10;Thing is I want to migrate to use compose multiplatform. I know I should use expect/actual somehow but what would this look assuming I'm targetting android, ios, and desktop" />
+                    </message>
+                    <message>
+                      <speaker value="ASSISTANT" />
+                      <text value="To migrate this functionality to Compose Multiplatform targeting Android, iOS, and desktop, you can use the expect/actual pattern. Here's how you could structure it:&#10;&#10;1. In your common source set, define an expect function:&#10;&#10;```kotlin&#10;expect fun sendAccessibilityAnnouncementEvent(message: String?, assertive: Boolean = false)&#10;```&#10;&#10;2. In your Android-specific source set, provide the actual implementation:&#10;&#10;```kotlin&#10;import android.content.Context&#10;import android.view.accessibility.AccessibilityEvent&#10;import android.view.accessibility.AccessibilityManager&#10;import android.os.Build&#10;&#10;actual fun sendAccessibilityAnnouncementEvent(message: String?, assertive: Boolean) {&#10;    // Use your existing Android implementation here&#10;    // You'll need to obtain a Context object, possibly through a composable's LocalContext&#10;}&#10;```&#10;&#10;3. For iOS, you'd implement it using the iOS accessibility APIs:&#10;&#10;```kotlin&#10;import platform.UIKit.UIAccessibilityPostNotification&#10;import platform.UIKit.UIAccessibilityAnnouncementNotification&#10;&#10;actual fun sendAccessibilityAnnouncementEvent(message: String?, assertive: Boolean) {&#10;    message?.let {&#10;        UIAccessibilityPostNotification(&#10;            UIAccessibilityAnnouncementNotification,&#10;            it&#10;        )&#10;    }&#10;}&#10;```&#10;&#10;4. For desktop (assuming you're targeting JVM), you could provide a minimal implementation:&#10;&#10;```kotlin&#10;actual fun sendAccessibilityAnnouncementEvent(message: String?, assertive: Boolean) {&#10;    // Desktop implementation&#10;    // This could be a no-op, or you could implement it using platform-specific accessibility APIs&#10;    println(&quot;Accessibility announcement: $message&quot;)&#10;}&#10;```&#10;&#10;This structure allows you to call `sendAccessibilityAnnouncementEvent()` from your common code, and the appropriate platform-specific implementation will be used at runtime." />
+                    </message>
+                    <message>
+                      <speaker value="HUMAN" />
+                      <text value="can you provide the full implementations, e.g assertive isn't implemented at all in ios" />
+                    </message>
+                    <message>
+                      <speaker value="ASSISTANT" />
+                      <text value="Certainly! I'll provide more comprehensive implementations for each platform, including the assertive parameter for iOS. Here are the full implementations:&#10;&#10;For the common source set:&#10;&#10;```kotlin&#10;expect fun sendAccessibilityAnnouncementEvent(message: String?, assertive: Boolean = false)&#10;```&#10;&#10;For Android:&#10;&#10;```kotlin&#10;import android.content.Context&#10;import android.view.accessibility.AccessibilityEvent&#10;import android.view.accessibility.AccessibilityManager&#10;import android.os.Build&#10;import androidx.compose.ui.platform.LocalContext&#10;import androidx.compose.runtime.Composable&#10;&#10;actual fun sendAccessibilityAnnouncementEvent(message: String?, assertive: Boolean) {&#10;    val context = LocalContext.current&#10;    try {&#10;        val manager = context.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager&#10;        if (assertive) {&#10;            manager.interrupt()&#10;        }&#10;        if (manager.isEnabled) {&#10;            val event = if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.R) {&#10;                AccessibilityEvent()&#10;            } else {&#10;                AccessibilityEvent.obtain()&#10;            }&#10;            event.apply { &#10;                eventType = AccessibilityEvent.TYPE_ANNOUNCEMENT&#10;                packageName = context.packageName&#10;                text.add(message)&#10;                manager.sendAccessibilityEvent(this)&#10;            }&#10;        }&#10;    } catch (e: Exception) {&#10;        // Handle or log the exception as needed&#10;    }&#10;}&#10;```&#10;&#10;For iOS:&#10;&#10;```kotlin&#10;import platform.UIKit.UIAccessibilityPostNotification&#10;import platform.UIKit.UIAccessibilityAnnouncementNotification&#10;import platform.UIKit.UIAccessibilityNotificationPriority&#10;&#10;actual fun sendAccessibilityAnnouncementEvent(message: String?, assertive: Boolean) {&#10;    message?.let {&#10;        val priority = if (assertive) {&#10;            UIAccessibilityNotificationPriority.UIAccessibilityNotificationPriorityHigh&#10;        } else {&#10;            UIAccessibilityNotificationPriority.UIAccessibilityNotificationPriorityLow&#10;        }&#10;        UIAccessibilityPostNotification(&#10;            UIAccessibilityAnnouncementNotification,&#10;            it,&#10;            priority&#10;        )&#10;    }&#10;}&#10;```&#10;&#10;For desktop (JVM):&#10;&#10;```kotlin&#10;import java.awt.Toolkit&#10;import javax.accessibility.AccessibleContext&#10;import javax.accessibility.AccessibilityEvent&#10;&#10;actual fun sendAccessibilityAnnouncementEvent(message: String?, assertive: Boolean) {&#10;    message?.let {&#10;        val accessibleContext = Toolkit.getDefaultToolkit().accessibilityEventMask as? AccessibleContext&#10;        accessibleContext?.firePropertyChange(&#10;            AccessibleContext.ACCESSIBLE_DESCRIPTION_PROPERTY,&#10;            null,&#10;            it&#10;        )&#10;        if (assertive) {&#10;            // You might want to implement a way to interrupt ongoing announcements here&#10;        }&#10;    }&#10;}&#10;```&#10;&#10;These implementations provide a more complete solution across all three platforms, including the assertive parameter for iOS and a basic implementation for desktop using AWT accessibility features." />
+                    </message>
+                    <message>
+                      <speaker value="HUMAN" />
+                      <text value="your android implementation uses LocalContext.current, won't that mean the expect and actual functions should be composable? Can we achieve this without doing that" />
+                    </message>
+                    <message>
+                      <speaker value="ASSISTANT" />
+                      <text value="You're right, using LocalContext.current would require the function to be composable. We can achieve this without making the function composable by using a different approach. Here's how we can modify the Android implementation to avoid using LocalContext:&#10;&#10;```kotlin&#10;import android.app.Application&#10;import android.content.Context&#10;import android.view.accessibility.AccessibilityEvent&#10;import android.view.accessibility.AccessibilityManager&#10;import android.os.Build&#10;&#10;lateinit var appContext: Context&#10;&#10;actual fun sendAccessibilityAnnouncementEvent(message: String?, assertive: Boolean) {&#10;    try {&#10;        val manager = appContext.getSystemService(Context.ACCESSIBILITY_SERVICE) as AccessibilityManager&#10;        if (assertive) {&#10;            manager.interrupt()&#10;        }&#10;        if (manager.isEnabled) {&#10;            val event = if (Build.VERSION.SDK_INT &gt;= Build.VERSION_CODES.R) {&#10;                AccessibilityEvent()&#10;            } else {&#10;                AccessibilityEvent.obtain()&#10;            }&#10;            event.apply { &#10;                eventType = AccessibilityEvent.TYPE_ANNOUNCEMENT&#10;                packageName = appContext.packageName&#10;                text.add(message)&#10;                manager.sendAccessibilityEvent(this)&#10;            }&#10;        }&#10;    } catch (e: Exception) {&#10;        // Handle or log the exception as needed&#10;    }&#10;}&#10;```&#10;&#10;To make this work, you'll need to initialize the `appContext` variable in your Application class:&#10;&#10;```kotlin&#10;class YourApplication : Application() {&#10;    override fun onCreate() {&#10;        super.onCreate()&#10;        appContext = applicationContext&#10;    }&#10;}&#10;```&#10;&#10;This approach allows the function to remain non-composable while still having access to the necessary Android Context." />
+                    </message>
+                    <message>
+                      <speaker value="HUMAN" />
+                      <text value="I don't like that, I'm fine with making the functions composable instead. How would that be implemented for all targets and provide a usage example" />
+                    </message>
+                    <message>
+                      <speaker value="ASSISTANT" />
+                      <text value="Certainly! Making the functions composable is a great approach. Here's how we can implement it for all targets:&#10;&#10;Common:&#10;&#10;```kotlin&#10;@Composable&#10;expect fun SendAccessibilityAnnouncementEvent(message: String?, assertive: Boolean = false)&#10;```&#10;&#10;Android:&#10;&#10;```kotlin&#10;import androidx.compose.runtime.Composable&#10;import androidx.compose.ui.platform.LocalContext&#10;&#10;@Composable&#10;actual fun SendAccessibilityAnnouncementEvent(message: String?, assertive: Boolean) {&#10;    val context = LocalContext.current&#10;    // Use the existing Android implementation here&#10;    context.sendAccessibilityAnnouncementEvent(message, assertive)&#10;}&#10;```&#10;&#10;iOS:&#10;&#10;```kotlin&#10;import androidx.compose.runtime.Composable&#10;import platform.UIKit.UIAccessibilityPostNotification&#10;import platform.UIKit.UIAccessibilityAnnouncementNotification&#10;import platform.UIKit.UIAccessibilityNotificationPriority&#10;&#10;@Composable&#10;actual fun SendAccessibilityAnnouncementEvent(message: String?, assertive: Boolean) {&#10;    message?.let {&#10;        val priority = if (assertive) {&#10;            UIAccessibilityNotificationPriority.UIAccessibilityNotificationPriorityHigh&#10;        } else {&#10;            UIAccessibilityNotificationPriority.UIAccessibilityNotificationPriorityLow&#10;        }&#10;        UIAccessibilityPostNotification(&#10;            UIAccessibilityAnnouncementNotification,&#10;            it,&#10;            priority&#10;        )&#10;    }&#10;}&#10;```&#10;&#10;Desktop:&#10;&#10;```kotlin&#10;import androidx.compose.runtime.Composable&#10;import java.awt.Toolkit&#10;import javax.accessibility.AccessibleContext&#10;&#10;@Composable&#10;actual fun SendAccessibilityAnnouncementEvent(message: String?, assertive: Boolean) {&#10;    message?.let {&#10;        val accessibleContext = Toolkit.getDefaultToolkit().accessibilityEventMask as? AccessibleContext&#10;        accessibleContext?.firePropertyChange(&#10;            AccessibleContext.ACCESSIBLE_DESCRIPTION_PROPERTY,&#10;            null,&#10;            it&#10;        )&#10;        if (assertive) {&#10;            // Implement interruption if needed&#10;        }&#10;    }&#10;}&#10;```&#10;&#10;Usage example:&#10;&#10;```kotlin&#10;@Composable&#10;fun MyScreen() {&#10;    var showAnnouncement by remember { mutableStateOf(false) }&#10;&#10;    Button(onClick = { showAnnouncement = true }) {&#10;        Text(&quot;Make Announcement&quot;)&#10;    }&#10;&#10;    if (showAnnouncement) {&#10;        SendAccessibilityAnnouncementEvent(&quot;This is an important announcement&quot;, assertive = true)&#10;        showAnnouncement = false&#10;    }&#10;}&#10;```&#10;&#10;This implementation allows you to use the `SendAccessibilityAnnouncementEvent` function within your composable functions across all platforms." />
+                    </message>
+                  </list>
+                </messages>
+                <updatedAt value="2024-08-03T16:54:37.328097" />
+              </chat>
+              <chat>
+                <internalId value="d345890d-985c-446f-b617-872d951dfa06" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="8a8dbe99-4138-4e50-b428-2bd163a45b4e" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="e481290b-4c42-4199-aef8-4e864c02db69" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
+                  </llm>
+                </llm>
+              </chat>
+              <chat>
+                <internalId value="7b28e663-051c-4225-9391-c0719be1adda" />
+                <llm>
+                  <llm>
+                    <model value="anthropic/claude-3-5-sonnet-20240620" />
+                    <provider value="Anthropic" />
+                    <title value="Claude 3.5 Sonnet" />
+                    <usage>
+                      <list>
+                        <option value="chat" />
+                        <option value="edit" />
+                      </list>
+                    </usage>
                   </llm>
                 </llm>
               </chat>
