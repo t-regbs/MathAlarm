@@ -3,6 +3,7 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -17,9 +18,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.lyricist.strings
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.LIST_HEADER_ALPHA
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.LIST_HEADER_ELEVATION
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.LIST_HEADER_FONT_SIZE
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.ListHeaderAlpha
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.ONE_WEEK_IN_MILLISECONDS
 import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimaryLight
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
@@ -53,10 +54,11 @@ fun ListHeader(
         modifier = Modifier
             .fillMaxWidth()
             .background(
-                color = if (isDark) darkPrimaryLight else LightGray.copy(alpha = LIST_HEADER_ALPHA),
+                color = if (isDark) darkPrimaryLight else LightGray.copy(alpha = ListHeaderAlpha),
             ),
         tonalElevation = LIST_HEADER_ELEVATION,
     ) {
+        LinearProgressIndicator()
         with(MaterialTheme.spacing) {
             Text(
                 text = if (enabled && nearestAlarmMessage != null) {
@@ -118,7 +120,7 @@ private fun ListHeaderPreview() {
 }
 
 private object AlarmListHeader {
-    const val LIST_HEADER_ALPHA = 0.1f
+    const val ListHeaderAlpha = 0.1f
     const val ONE_WEEK_IN_MILLISECONDS = 7 * 24 * 60 * 60 * 1000
     val LIST_HEADER_ELEVATION = 4.dp
     val LIST_HEADER_FONT_SIZE = 16.sp
