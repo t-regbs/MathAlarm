@@ -6,7 +6,7 @@ import com.timilehinaregbesola.mathalarm.fake.AlarmInteractorFake
 import com.timilehinaregbesola.mathalarm.fake.AlarmRepositoryFake
 import com.timilehinaregbesola.mathalarm.fake.NotificationInteractorFake
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
@@ -26,14 +26,14 @@ class CancelAlarmTest {
     private val cancelAlarmUseCase = CancelAlarm(alarmInteractor)
 
     @Before
-    fun setup() = runBlockingTest {
+    fun setup() = runTest {
         alarmRepository.clear()
         alarmInteractor.clear()
         notificationInteractor.clear()
     }
 
     @Test
-    fun `test if the alarm is canceled`() = runBlockingTest {
+    fun `test if the alarm is canceled`() = runTest {
         val alarm = Alarm(alarmId = 11, title = "letsss gooo")
         addAlarmUseCase(alarm)
         cancelAlarmUseCase(alarm)

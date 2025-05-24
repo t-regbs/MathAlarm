@@ -9,7 +9,7 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert
 import org.junit.Test
@@ -27,14 +27,14 @@ class GetSavedAlarmsTest {
     private val getSavedAlarmsUseCase = GetSavedAlarms(alarmRepository)
 
     @After
-    fun tearDown() = runBlockingTest {
+    fun tearDown() = runTest {
         alarmRepository.clear()
         alarmInteractor.clear()
     }
 
     @FlowPreview
     @Test
-    fun `test if saved alarms are retrieved`() = runBlockingTest {
+    fun `test if saved alarms are retrieved`() = runTest {
         val alarm1 = Alarm(alarmId = 1, title = "alarm 1", isSaved = false, isOn = true)
         val alarm2 = Alarm(alarmId = 2, title = "alarm 2", isSaved = true, isOn = false)
         val alarm3 = Alarm(alarmId = 3, title = "alarm 3", isSaved = false, isOn = true)
