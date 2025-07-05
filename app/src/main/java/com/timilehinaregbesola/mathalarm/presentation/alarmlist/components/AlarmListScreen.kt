@@ -9,6 +9,7 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -68,10 +69,8 @@ import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_SETTINGS_SHEET
 import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_SETTINGS_SHEET_ARGUMENT
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.Navigate
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.ShowSnackbar
-import com.timilehinaregbesola.mathalarm.utils.getCalendarFromAlarm
-import com.timilehinaregbesola.mathalarm.utils.getTimeLeft
+import com.timilehinaregbesola.mathalarm.utils.getTimeLeftKmp
 import java.net.URLEncoder
-import java.util.Calendar
 
 @SuppressLint("UnrememberedMutableState")
 @ExperimentalAnimationApi
@@ -204,7 +203,7 @@ fun ListDisplayScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(top = MaterialTheme.spacing.medium)
+                            .padding(padding)
                             .background(
                                 color = LightGray.copy(alpha = LIST_ALARM_BACKGROUND_ALPHA),
                             ),
@@ -213,7 +212,6 @@ fun ListDisplayScreen(
                         val alarmSetText = strings.alarmSet
                         AlarmListContent(
                             alarmList = alarmList,
-                            calendar = viewModel.calender.getCurrentCalendar(),
                             darkTheme = darkTheme,
                             onEditAlarm = {
                                 isLoading = true
@@ -238,19 +236,10 @@ fun ListDisplayScreen(
                                 checkPermissionAndPerformAction(
                                     value = alarmPermission.hasExactAlarmPermission(),
                                     action = {
-                                        val calender = viewModel.calender.getCurrentCalendar()
                                         viewModel.scheduleAlarm(
                                             alarm = curAlarm,
                                             reschedule = b,
-                                            message = "$alarmSetText ${
-                                                curAlarm.getTimeLeft(
-                                                    getCalendarFromAlarm(
-                                                        curAlarm,
-                                                        calender
-                                                    ).timeInMillis,
-                                                    calender,
-                                                )
-                                            }",
+                                            message = "$alarmSetText ${curAlarm.getTimeLeftKmp()}"
                                         )
                                     },
                                     onPermissionAbsent = { showPermissionDialog = true },
@@ -297,7 +286,6 @@ fun ListDisplayScreen(
 @Composable
 private fun AlarmListContent(
     alarmList: List<Alarm>,
-    calendar: Calendar,
     darkTheme: Boolean,
     onEditAlarm: (Alarm) -> Unit,
     onUpdateAlarm: (Alarm) -> Unit,
@@ -318,8 +306,7 @@ private fun AlarmListContent(
                 ListHeader(
                     enabled = alarmList.any { it.isOn },
                     alarmList = alarmList,
-                    calendar = calendar,
-                    isDark = darkTheme,
+                    isDark = darkTheme
                 )
             }
             items(
@@ -397,7 +384,6 @@ private fun AlarmListScreenPreview() {
     MathAlarmTheme {
         AlarmListContent(
             alarmList = listOf(Alarm(), Alarm(alarmId = 1L)),
-            calendar = Calendar.getInstance(),
             darkTheme = false,
             onEditAlarm = {},
             onUpdateAlarm = {},

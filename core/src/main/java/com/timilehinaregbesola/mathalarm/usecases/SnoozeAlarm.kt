@@ -3,14 +3,19 @@ package com.timilehinaregbesola.mathalarm.usecases
 import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
 import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractor
-import com.timilehinaregbesola.mathalarm.provider.CalendarProvider
-import java.util.*
+import com.timilehinaregbesola.mathalarm.provider.DateTimeProvider
+import kotlinx.datetime.DateTimeUnit
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.plus
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 
 /**
  * Use case to snooze an alarm.
  */
 class SnoozeAlarm(
-    private val calendarProvider: CalendarProvider,
+    private val dateTimeProvider: DateTimeProvider,
     private val notificationInteractor: NotificationInteractor,
     private val alarmInteractor: AlarmInteractor,
     private val alarmRepository: AlarmRepository
@@ -28,18 +33,21 @@ class SnoozeAlarm(
         require(minutes > 0) { "The delay minutes must be positive" }
         val alarm = alarmRepository.findAlarm(alarmId) ?: return
 
-        val snoozedTime = getSnoozedAlarm(calendarProvider.getCurrentCalendar(), minutes)
+        val snoozedTime = getSnoozedDateTime(dateTimeProvider.getCurrentDateTime(), minutes)
         alarm.apply {
-            hour = snoozedTime[Calendar.HOUR_OF_DAY]
-            minute = snoozedTime[Calendar.MINUTE]
+            hour = snoozedTime.hour
+            minute = snoozedTime.minute
         }
         alarmInteractor.schedule(alarm, alarm.repeat)
         notificationInteractor.dismiss(alarmId)
-//        logger.debug("Task snoozed in $minutes minutes")
     }
 
-    private fun getSnoozedAlarm(calendar: Calendar, minutes: Int): Calendar =
-        calendar.apply { add(Calendar.MINUTE, minutes) }
+    private fun getSnoozedDateTime(dateTime: LocalDateTime, minutes: Int): LocalDateTime {
+        val tz = TimeZone.currentSystemDefault()
+        val instant = dateTime.toInstant(tz)
+        val newInstant = instant.plus(minutes.toLong(), DateTimeUnit.MINUTE)
+        return newInstant.toLocalDateTime(tz)
+    }
 
     companion object {
         private const val DEFAULT_SNOOZE = 5

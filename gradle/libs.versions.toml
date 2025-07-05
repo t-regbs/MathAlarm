@@ -14,6 +14,7 @@ androidx_room = "2.7.1"
 compose = "2025.05.01"
 coroutines = "1.10.2"
 crashlytics_plugin = "3.0.3"
+datetime = "0.6.2"
 desugar_jdk_libs = "2.1.5"
 firebase = "33.14.0"
 google_services = "4.4.2"
@@ -74,6 +75,7 @@ hilt_android_compiler = { module = "com.google.dagger:hilt-android-compiler", ve
 hilt_android_testing = { module = "com.google.dagger:hilt-android-testing", version.ref = "hilt_android_compiler" }
 junit = { module = "junit:junit", version.ref = "test_junit" }
 kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlinStdlib" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 lottie_compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottie" }
 lyricist = { module = "cafe.adriel.lyricist:lyricist", version.ref = "lyricist" }
 lyricist-processor = { module = "cafe.adriel.lyricist:lyricist-processor", version.ref = "lyricist" }

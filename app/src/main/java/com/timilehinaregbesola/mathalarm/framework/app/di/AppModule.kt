@@ -28,8 +28,8 @@ import com.timilehinaregbesola.mathalarm.notification.AlarmNotificationScheduler
 import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotification
 import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotificationChannel
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AppThemeOptionsMapper
-import com.timilehinaregbesola.mathalarm.provider.CalendarProvider
-import com.timilehinaregbesola.mathalarm.provider.CalendarProviderImpl
+import com.timilehinaregbesola.mathalarm.provider.DateTimeProvider
+import com.timilehinaregbesola.mathalarm.provider.DateTimeProviderImpl
 import com.timilehinaregbesola.mathalarm.usecases.AddAlarm
 import com.timilehinaregbesola.mathalarm.usecases.CancelAlarm
 import com.timilehinaregbesola.mathalarm.usecases.ClearAlarms
@@ -89,8 +89,8 @@ object AppModule {
 
     @Provides
     @Singleton
-    fun provideCalenderProvider(): CalendarProvider {
-        return CalendarProviderImpl()
+    fun provideCalenderProvider(): DateTimeProvider {
+        return DateTimeProviderImpl()
     }
 
     @Provides
@@ -123,7 +123,7 @@ object AppModule {
         repository: AlarmRepository,
         alarmInteractor: AlarmInteractor,
         notificationInteractor: NotificationInteractor,
-        calendarProvider: CalendarProvider,
+        calendarProvider: DateTimeProvider,
         scheduleNextAlarm: ScheduleNextAlarm
     ): Usecases {
         return Usecases(
