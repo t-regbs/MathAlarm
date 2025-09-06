@@ -106,6 +106,7 @@ import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
 import timber.log.Timber
 import java.io.IOException
+import androidx.core.net.toUri
 
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @ExperimentalMaterial3Api
@@ -155,11 +156,10 @@ fun MathScreen(
                     if (!alarm.repeat) {
                         viewModel.completeAlarm(AlarmMapper().mapToDomainModel(alarm))
                     }
-                    val fromSheet = navController
-                        .previousBackStackEntry?.savedStateHandle?.remove<Boolean>(FROM_SHEET_KEY)
-                    fromSheet?.let {
-                        navController.previousBackStackEntry?.savedStateHandle?.set(TEST_ALARM_KEY, alarm)
-                    }
+                    navController.previousBackStackEntry?.savedStateHandle?.set(
+                        "should_reopen_sheet",
+                        true
+                    )
                     navController.popBackStack()
                 }
                 is AlarmMathViewModel.UiEvent.StopVibrateAndHideKeyboard -> {
@@ -181,7 +181,7 @@ fun MathScreen(
             }
         }
         if (alarm.alarmTone.isNotEmpty()) {
-            val alarmUri = Uri.parse(alarm.alarmTone)
+            val alarmUri = alarm.alarmTone.toUri()
             println(navController.previousBackStackEntry?.destination?.id)
             if (navController.previousBackStackEntry?.destination?.id == SETTINGS_ID) {
                 try {

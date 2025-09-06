@@ -78,7 +78,6 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.A
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.DIFFICULTY_SECTION_HORIZONTAL_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.DIFFICULTY_SECTION_TOP_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.DIVIDER_THICKNESS
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.FROM_SHEET_KEY
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.MIDDLE_CONTROL_SECTION_TOP_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.NO_ELEVATION
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.SAVE_BUTTON_FONT_SIZE
@@ -117,6 +116,7 @@ fun AlarmBottomSheet(
     navController: NavHostController,
     darkTheme: Boolean,
     alarm: AlarmEntity,
+    onDismiss: () -> Unit = {},
 ) {
     LaunchedEffect(Unit) {
         viewModel.setAlarm(AlarmMapper().mapToDomainModel(alarm))
@@ -155,11 +155,14 @@ fun AlarmBottomSheet(
                     )
                 }
                 is AlarmSettingsViewModel.UiEvent.SaveAlarm -> {
-                    navController.navigateUp()
+                    onDismiss()
                 }
                 is AlarmSettingsViewModel.UiEvent.TestAlarm -> {
-                    navController
-                        .previousBackStackEntry?.savedStateHandle?.set(FROM_SHEET_KEY, true)
+                    // Set tested alarm for return navigation
+                    navController.currentBackStackEntry?.savedStateHandle?.set(
+                        "testedAlarm",
+                        AlarmMapper().mapFromDomainModel(event.alarm)
+                    )
                     // Nav to Math Screen
                     launch(IO) {
                         val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()

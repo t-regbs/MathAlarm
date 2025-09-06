@@ -40,14 +40,14 @@ android {
         // Flag to enable support for the new language APIs
         isCoreLibraryDesugaringEnabled = true
 
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
     kotlinOptions {
         allWarningsAsErrors = false
         freeCompilerArgs = listOf("-Xopt-in=kotlin.RequiresOptIn", "-Xopt-in=kotlin.Experimental")
-        jvmTarget = "17"
+        jvmTarget = "21"
     }
     lint {
         disable += setOf("LogNotTimber", "StringFormatInTimber", "ThrowableNotAtBeginning", "BinaryOperationInTimber", "TimberArgCount", "TimberArgTypes", "TimberTagLength", "TimberExceptionLogging")
