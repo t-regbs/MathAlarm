@@ -1,6 +1,7 @@
 plugins {
     id("com.android.application")
     id("kotlin-android")
+    alias(libs.plugins.serialization)
     id("dagger.hilt.android.plugin")
     id("com.google.gms.google-services")
     id("org.jetbrains.kotlin.plugin.parcelize")
@@ -124,6 +125,7 @@ dependencies {
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.moshi)
     implementation(libs.androidx.datastore)
+    implementation(libs.kotlinx.serialization)
 
     val composeBom = platform(libs.compose.bom)
     implementation(composeBom)
@@ -137,6 +139,12 @@ dependencies {
     implementation(libs.androidx.compose.runtime.saveable)
     implementation(libs.androidx.compose.runtime.livedata)
     androidTestImplementation(libs.androidx.compose.ui.test)
+
+    implementation(libs.androidx.navigation3.runtime)
+    implementation(libs.androidx.navigation3.ui)
+    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
+    implementation(libs.androidx.adaptive.navigation3)
+    implementation(libs.androidx.appcompat)
 
     implementation(libs.lyricist)
     ksp(libs.lyricist.processor)

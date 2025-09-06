@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation.NavHostController
+import androidx.navigation3.runtime.NavBackStack
 import cafe.adriel.lyricist.strings
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
@@ -102,6 +103,7 @@ import com.timilehinaregbesola.mathalarm.presentation.ui.shapes
 import com.timilehinaregbesola.mathalarm.presentation.ui.snoozeButtonColor
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
+import com.timilehinaregbesola.mathalarm.utils.Destinations
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
 import timber.log.Timber
@@ -113,10 +115,11 @@ import java.io.IOException
 @ExperimentalComposeUiApi
 @Composable
 fun MathScreen(
-    navController: NavHostController,
+    backStack: NavBackStack,
     alarm: AlarmEntity,
     viewModel: AlarmMathViewModel = hiltViewModel(),
     darkTheme: Boolean,
+    fromSheet: Boolean = false
 ) {
     var vibrator: Vibrator? = null
     val context = LocalContext.current
@@ -155,12 +158,13 @@ fun MathScreen(
                     if (!alarm.repeat) {
                         viewModel.completeAlarm(AlarmMapper().mapToDomainModel(alarm))
                     }
-                    val fromSheet = navController
-                        .previousBackStackEntry?.savedStateHandle?.remove<Boolean>(FROM_SHEET_KEY)
-                    fromSheet?.let {
-                        navController.previousBackStackEntry?.savedStateHandle?.set(TEST_ALARM_KEY, alarm)
-                    }
-                    navController.popBackStack()
+//                    val fromSheet = navController
+//                        .previousBackStackEntry?.savedStateHandle?.remove<Boolean>(FROM_SHEET_KEY)
+//                    fromSheet?.let {
+//                        navController.previousBackStackEntry?.savedStateHandle?.set(TEST_ALARM_KEY, alarm)
+//                    }
+//                    navController.popBackStack()
+                    backStack.removeLastOrNull()
                 }
                 is AlarmMathViewModel.UiEvent.StopVibrateAndHideKeyboard -> {
                     vibrator?.cancel()
@@ -182,8 +186,8 @@ fun MathScreen(
         }
         if (alarm.alarmTone.isNotEmpty()) {
             val alarmUri = Uri.parse(alarm.alarmTone)
-            println(navController.previousBackStackEntry?.destination?.id)
-            if (navController.previousBackStackEntry?.destination?.id == SETTINGS_ID) {
+//            println(navController.previousBackStackEntry?.destination?.id)
+            if (fromSheet) {
                 try {
                     viewModel.audioPlayer.apply {
                         stop()
@@ -239,7 +243,8 @@ fun MathScreen(
                 },
                 onSnoozeClick = {
                     viewModel.onEvent(OnSnoozeClick(alarm.alarmId))
-                    navController.popBackStack()
+//                    navController.popBackStack()
+                    backStack.removeLastOrNull()
                 }
             )
         }

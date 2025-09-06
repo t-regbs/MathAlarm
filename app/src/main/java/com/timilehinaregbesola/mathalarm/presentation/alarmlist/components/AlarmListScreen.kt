@@ -44,6 +44,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.LifecycleOwner
 import androidx.navigation.NavHostController
+import androidx.navigation3.runtime.NavBackStack
 import cafe.adriel.lyricist.strings
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
@@ -63,6 +64,9 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.TEST_ALARM_KEY
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
+import com.timilehinaregbesola.mathalarm.utils.Destinations
+import com.timilehinaregbesola.mathalarm.utils.Destinations.AppSettings
+import com.timilehinaregbesola.mathalarm.utils.Destinations.SettingsSheet
 import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_APP_SETTINGS
 import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_SETTINGS_SHEET
 import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_SETTINGS_SHEET_ARGUMENT
@@ -80,7 +84,7 @@ import java.util.Calendar
 @Composable
 fun ListDisplayScreen(
     viewModel: AlarmListViewModel = hiltViewModel(),
-    navController: NavHostController,
+    backstack: NavBackStack,
     darkTheme: Boolean,
 ) {
     val alarms by viewModel.alarms.collectAsState(null)
@@ -109,12 +113,7 @@ fun ListDisplayScreen(
 
                 is Navigate -> {
                     buildArgAndNavigate(AlarmMapper().mapFromDomainModel(event.alarm)) { alarmJson ->
-                        navController.navigate(
-                            NAV_SETTINGS_SHEET.replace(
-                                "{$NAV_SETTINGS_SHEET_ARGUMENT}",
-                                alarmJson,
-                            ),
-                        )
+                        backstack.add(SettingsSheet(alarmJson))
                     }
                     isLoading = false
                 }
@@ -129,25 +128,25 @@ fun ListDisplayScreen(
             override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
                 when (event) {
                     Lifecycle.Event.ON_RESUME -> {
-                        val cancelled = navController
-                            .currentBackStackEntry?.savedStateHandle?.remove<AlarmEntity>(
-                                TEST_ALARM_KEY
-                            )
+//                        val cancelled = navController
+//                            .currentBackStackEntry?.savedStateHandle?.remove<AlarmEntity>(
+//                                TEST_ALARM_KEY
+//                            )
 
-                        cancelled?.let {
-                            buildArgAndNavigate(it) { alarmJson ->
-                                navController.navigate(
-                                    NAV_SETTINGS_SHEET.replace(
-                                        "{$NAV_SETTINGS_SHEET_ARGUMENT}",
-                                        alarmJson,
-                                    ),
-                                )
-                            }
-                        }
+//                        cancelled?.let {
+//                            buildArgAndNavigate(it) { alarmJson ->
+//                                navController.navigate(
+//                                    NAV_SETTINGS_SHEET.replace(
+//                                        "{$NAV_SETTINGS_SHEET_ARGUMENT}",
+//                                        alarmJson,
+//                                    ),
+//                                )
+//                            }
+//                        }
                     }
 
                     Lifecycle.Event.ON_DESTROY -> {
-                        navController.currentBackStackEntry?.lifecycle?.removeObserver(this)
+//                        navController.currentBackStackEntry?.lifecycle?.removeObserver(this)
                     }
 
                     else -> Unit
@@ -155,10 +154,10 @@ fun ListDisplayScreen(
             }
         }
 
-        navController.currentBackStackEntry?.lifecycle?.addObserver(observer)
+//        navController.currentBackStackEntry?.lifecycle?.addObserver(observer)
 
         onDispose {
-            navController.currentBackStackEntry?.lifecycle?.removeObserver(observer)
+//            navController.currentBackStackEntry?.lifecycle?.removeObserver(observer)
         }
     }
 
@@ -176,7 +175,7 @@ fun ListDisplayScreen(
                     ListTopAppBar(
                         openDialog = { deleteAllAlarmsDialog = it },
                         onSettingsClick = {
-                            navController.navigate(NAV_APP_SETTINGS)
+                            backstack.add(AppSettings)
                         },
                     )
                 },
@@ -358,8 +357,8 @@ private fun buildArgAndNavigate(alarm: AlarmEntity, onNavigate: (String) -> Unit
     val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
     val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
     val json = jsonAdapter.toJson(alarm)
-    val alarmJson = URLEncoder.encode(json, "utf-8")
-    onNavigate(alarmJson)
+//    val alarmJson = URLEncoder.encode(json, "utf-8")
+    onNavigate(json)
 }
 
 @Composable

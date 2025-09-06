@@ -1,31 +1,13 @@
-buildscript {
-    repositories {
-        mavenCentral()
-        google()
-    }
-    dependencies {
-        classpath(libs.plugin.android.gradle)
-        classpath(libs.plugin.kotlin.gradle)
-        classpath(libs.google.services)
-        classpath(libs.plugin.crashlytics.gradle)
-        classpath(libs.plugin.hilt.gradle)
-//        classpath(libs.plugin.ksp)
-    }
-}
-
 plugins {
     id("com.github.ben-manes.versions") version "0.41.0"
     id("nl.littlerobots.version-catalog-update") version "0.5.3"
-    id("com.google.devtools.ksp") version "2.2.0-2.0.2"
+    alias(libs.plugins.ksp)
     alias(libs.plugins.compose.compiler) apply false
-}
-
-allprojects {
-    repositories {
-        google()
-        jcenter()
-        mavenCentral()
-    }
+    alias(libs.plugins.android.gradle) apply false
+    alias(libs.plugins.kotlin.gradle) apply false
+    alias(libs.plugins.google.services) apply false
+    alias(libs.plugins.crashlytics.gradle) apply false
+    alias(libs.plugins.hilt.gradle) apply false
 }
 
 tasks.register("clean") {
