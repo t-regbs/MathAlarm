@@ -85,8 +85,6 @@ fun AlarmItem(
                 .padding(
                     top = small,
                     bottom = small,
-                    start = extraMedium,
-                    end = extraMedium,
                 ),
             elevation = CardDefaults.cardElevation(defaultElevation = ALARM_ITEM_ELEVATION),
             shape = MaterialTheme.shapes.medium.copy(CornerSize(ALARM_ITEM_CORNER_SIZE)),

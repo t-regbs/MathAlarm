@@ -9,8 +9,10 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -150,8 +152,8 @@ fun ListDisplayScreen(
                 } else {
                     Box(
                         modifier = Modifier
+                            .safeContentPadding()
                             .fillMaxSize()
-                            .padding(top = MaterialTheme.spacing.medium)
                             .background(
                                 color = LightGray.copy(alpha = LIST_ALARM_BACKGROUND_ALPHA),
                             ),
@@ -206,12 +208,7 @@ fun ListDisplayScreen(
                         )
                         val fabImage = painterResource(id = R.drawable.fab_icon)
                         AddAlarmFab(
-                            modifier = Modifier
-                                .padding(
-                                    bottom = MaterialTheme.spacing.medium,
-                                    end = MaterialTheme.spacing.medium,
-                                )
-                                .align(BottomEnd),
+                            modifier = Modifier.align(BottomEnd),
                             fabImage = fabImage,
                             onClick = {
                                 isLoading = true

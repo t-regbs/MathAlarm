@@ -51,6 +51,7 @@ fun ListHeader(
     }
     Surface(
         modifier = Modifier
+            .padding(top = MaterialTheme.spacing.small)
             .fillMaxWidth()
             .background(
                 color = if (isDark) darkPrimaryLight else LightGray.copy(alpha = LIST_HEADER_ALPHA),
