@@ -9,7 +9,7 @@ java {
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.8.21")
+    implementation(kotlin("stdlib-jdk8"))
     implementation(libs.coroutines.android)
     implementation(libs.timber)
 }

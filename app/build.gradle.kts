@@ -6,6 +6,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.parcelize")
     id("com.google.firebase.crashlytics")
     id("com.google.devtools.ksp")
+    alias(libs.plugins.compose.compiler)
 }
 
 ksp {
@@ -57,9 +58,9 @@ android {
         buildConfig = true
     }
 
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.8"
-    }
+//    composeOptions {
+//        kotlinCompilerExtensionVersion = "1.5.8"
+//    }
 
     packagingOptions {
         resources.excludes.apply {
@@ -83,7 +84,7 @@ dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
     implementation(project(":core"))
 
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:1.1.5")
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 
     implementation(libs.android.material)
     implementation(libs.androidx.ktx)

@@ -338,11 +338,12 @@ private fun MathInputField(
             fontSize = ANSWER_FIELD_FONT_SIZE,
             textAlign = TextAlign.Center,
         ),
-        colors = TextFieldDefaults.textFieldColors(
-            containerColor = if (darkTheme) DarkGray else unSelectedDay,
+        colors = TextFieldDefaults.colors(
+            unfocusedContainerColor = if (darkTheme) DarkGray else unSelectedDay,
+            focusedContainerColor = if (darkTheme) DarkGray else unSelectedDay,
             focusedIndicatorColor = Transparent,
             unfocusedIndicatorColor = Transparent,
-            disabledIndicatorColor = Transparent,
+            disabledIndicatorColor = Transparent
         ),
         shape = shapes.medium.copy(CornerSize(ANSWER_FIELD_CORNER_SIZE)),
     )
