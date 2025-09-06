@@ -16,7 +16,8 @@ buildscript {
 plugins {
     id("com.github.ben-manes.versions") version "0.41.0"
     id("nl.littlerobots.version-catalog-update") version "0.5.3"
-    id("com.google.devtools.ksp") version "1.9.22-1.0.17"
+    id("com.google.devtools.ksp") version "2.2.0-2.0.2"
+    alias(libs.plugins.compose.compiler) apply false
 }
 
 allprojects {
