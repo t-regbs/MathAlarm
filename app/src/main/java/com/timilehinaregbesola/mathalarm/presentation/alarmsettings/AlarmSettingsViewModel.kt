@@ -8,13 +8,21 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.Usecases
-import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
+import com.timilehinaregbesola.mathalarm.utils.FRI
+import com.timilehinaregbesola.mathalarm.utils.MON
+import com.timilehinaregbesola.mathalarm.utils.SAT
+import com.timilehinaregbesola.mathalarm.utils.SUN
+import com.timilehinaregbesola.mathalarm.utils.THU
+import com.timilehinaregbesola.mathalarm.utils.TUE
+import com.timilehinaregbesola.mathalarm.utils.WED
 import com.timilehinaregbesola.mathalarm.utils.getFormatTime
+import com.timilehinaregbesola.mathalarm.utils.initLocalDateTimeInSystemZone
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import java.util.*
+import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalDateTime
 import javax.inject.Inject
 
 @HiltViewModel
@@ -74,9 +82,6 @@ class AlarmSettingsViewModel @Inject constructor(
                 }
             }
             is AddEditAlarmEvent.OnTestClick -> {
-//                runBlocking {
-//                    usecases.addAlarm(createAlarm())
-//                }
                 viewModelScope.launch {
                     _eventFlow.emit(UiEvent.TestAlarm(createAlarm()))
                 }
@@ -135,13 +140,7 @@ class AlarmSettingsViewModel @Inject constructor(
         isSaved = _isSaved.value,
     )
 
-    private fun initCalendar(alarm: Alarm): Calendar {
-        val cal = Calendar.getInstance()
-        cal[Calendar.HOUR_OF_DAY] = alarm.hour
-        cal[Calendar.MINUTE] = alarm.minute
-        cal[Calendar.SECOND] = 0
-        return cal
-    }
+    private fun initDateTime(alarm: Alarm): LocalDateTime = alarm.initLocalDateTimeInSystemZone()
 
     fun setAlarm(curAlarm: Alarm) {
         if (currentAlarmId == null) {
@@ -155,9 +154,16 @@ class AlarmSettingsViewModel @Inject constructor(
                 if (alarm.repeatDays == "FFFFFFF") {
                     isNewAlarm = true
                     val sb = StringBuilder("FFFFFFF")
-                    val cal = initCalendar(alarm)
-                    val dayOfTheWeek =
-                        getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
+                    val dateTime = initDateTime(alarm)
+                    val dayOfTheWeek = when (dateTime.date.dayOfWeek) {
+                        DayOfWeek.SUNDAY -> SUN
+                        DayOfWeek.MONDAY -> MON
+                        DayOfWeek.TUESDAY -> TUE
+                        DayOfWeek.WEDNESDAY -> WED
+                        DayOfWeek.THURSDAY -> THU
+                        DayOfWeek.FRIDAY -> FRI
+                        DayOfWeek.SATURDAY -> SAT
+                    }
                     sb.setCharAt(dayOfTheWeek, 'T')
                     _dayChooser.value = sb.toString()
                 } else {

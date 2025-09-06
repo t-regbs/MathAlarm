@@ -23,7 +23,7 @@ class AlarmNotificationSchedulerTest {
         every { mockAlarm.repeatDays } returns "FFFTFFF"
         every { mockAlarm.alarmId } returns 22L
         every { mockAlarm.repeat } returns false
-        every { mockAlarm.newCal } returns cal
+//        every { mockAlarm.newCal } returns cal
         every { mockAlarm.hour } returns cal[Calendar.HOUR_OF_DAY]
         every { mockAlarm.minute } returns cal[Calendar.MINUTE]
     }

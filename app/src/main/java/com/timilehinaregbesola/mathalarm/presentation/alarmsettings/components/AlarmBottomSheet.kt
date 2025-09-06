@@ -78,7 +78,6 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.A
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.DIFFICULTY_SECTION_HORIZONTAL_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.DIFFICULTY_SECTION_TOP_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.DIVIDER_THICKNESS
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.FROM_SHEET_KEY
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.MIDDLE_CONTROL_SECTION_TOP_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.NO_ELEVATION
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.SAVE_BUTTON_FONT_SIZE
@@ -86,7 +85,6 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.A
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TEST_BUTTON_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_CARD_CORNER_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_CARD_HEIGHT
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_PATTERN
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_TEXT_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_TEXT_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.URL_ENCODER
@@ -105,9 +103,11 @@ import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.format
+import kotlinx.datetime.format.char
 import timber.log.Timber
 import java.net.URLEncoder
-import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -116,8 +116,11 @@ fun AlarmBottomSheet(
     navController: NavHostController,
     darkTheme: Boolean,
     alarm: AlarmEntity,
+    onDismiss: () -> Unit = {},
 ) {
-    viewModel.setAlarm(AlarmMapper().mapToDomainModel(alarm))
+    LaunchedEffect(Unit) {
+        viewModel.setAlarm(AlarmMapper().mapToDomainModel(alarm))
+    }
     val scaffoldState = rememberBottomSheetScaffoldState()
     var showTimePickerDialog by remember { mutableStateOf(false) }
     var showConfirmationDialog by remember { mutableStateOf(false) }
@@ -152,11 +155,14 @@ fun AlarmBottomSheet(
                     )
                 }
                 is AlarmSettingsViewModel.UiEvent.SaveAlarm -> {
-                    navController.navigateUp()
+                    onDismiss()
                 }
                 is AlarmSettingsViewModel.UiEvent.TestAlarm -> {
-                    navController
-                        .previousBackStackEntry?.savedStateHandle?.set(FROM_SHEET_KEY, true)
+                    // Set tested alarm for return navigation
+                    navController.currentBackStackEntry?.savedStateHandle?.set(
+                        "testedAlarm",
+                        AlarmMapper().mapFromDomainModel(event.alarm)
+                    )
                     // Nav to Math Screen
                     launch(IO) {
                         val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
@@ -275,13 +281,19 @@ fun AlarmBottomSheet(
                             showTimePickerDialog = false
                         },
                         onConfirm = { newTime ->
-                            val dtf = DateTimeFormatter.ofPattern(TIME_PATTERN)
+                            val tf = LocalTime.Format {
+                                amPmHour()
+                                char(':')
+                                minute()
+                                char(' ')
+                                amPmMarker("AM", "PM")
+                            }
                             viewModel.onEvent(
                                 AddEditAlarmEvent.ChangeTime(
                                     TimeState(
                                         hour = newTime.hour,
                                         minute = newTime.minute,
-                                        formattedTime = newTime.format(dtf).toString(),
+                                        formattedTime = newTime.format(tf)
                                     ),
                                 ),
                             )
@@ -472,9 +484,7 @@ private fun SheetActionButtons(
         modifier = Modifier
             .padding(top = MaterialTheme.spacing.large)
             .fillMaxWidth(),
-        onClick = {
-            onTestClick()
-        },
+        onClick = onTestClick,
         colors = buttonColors(
             containerColor = unSelectedDay,
             contentColor = Black,
@@ -489,9 +499,7 @@ private fun SheetActionButtons(
         modifier = Modifier
             .padding(top = SAVE_BUTTON_TOP_PADDING)
             .fillMaxWidth(),
-        onClick = {
-            onSaveClick()
-        },
+        onClick = onSaveClick,
         colors = buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
     ) {
         Text(

@@ -14,18 +14,20 @@ buildscript {
 }
 
 plugins {
-    id("com.github.ben-manes.versions") version "0.41.0"
-    id("nl.littlerobots.version-catalog-update") version "0.5.3"
-    id("com.google.devtools.ksp") version "1.9.22-1.0.17"
+    id("com.github.ben-manes.versions") version "0.52.0"
+    id("nl.littlerobots.version-catalog-update") version "1.0.0"
+    id("com.google.devtools.ksp") version "2.1.21-2.0.1"
+    alias(libs.plugins.kotlin.compose) apply false
 }
 
-allprojects {
-    repositories {
-        google()
-        jcenter()
-        mavenCentral()
-    }
-}
+//allprojects {
+//    repositories {
+//        google()
+//        mavenCentral()
+//        maven { url = uri("https://jitpack.io") }
+//        // jcenter() is deprecated, removed
+//    }
+//}
 
 tasks.register("clean") {
     delete(rootProject.buildDir)

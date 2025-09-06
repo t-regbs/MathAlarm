@@ -6,6 +6,7 @@ plugins {
     id("org.jetbrains.kotlin.plugin.parcelize")
     id("com.google.firebase.crashlytics")
     id("com.google.devtools.ksp")
+    alias(libs.plugins.kotlin.compose)
 }
 
 ksp {
@@ -39,14 +40,14 @@ android {
         // Flag to enable support for the new language APIs
         isCoreLibraryDesugaringEnabled = true
 
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
+        sourceCompatibility = JavaVersion.VERSION_21
+        targetCompatibility = JavaVersion.VERSION_21
     }
 
     kotlinOptions {
         allWarningsAsErrors = false
         freeCompilerArgs = listOf("-Xopt-in=kotlin.RequiresOptIn", "-Xopt-in=kotlin.Experimental")
-        jvmTarget = "17"
+        jvmTarget = "21"
     }
     lint {
         disable += setOf("LogNotTimber", "StringFormatInTimber", "ThrowableNotAtBeginning", "BinaryOperationInTimber", "TimberArgCount", "TimberArgTypes", "TimberTagLength", "TimberExceptionLogging")
@@ -83,7 +84,7 @@ dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
     implementation(project(":core"))
 
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:1.1.5")
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
 
     implementation(libs.android.material)
     implementation(libs.androidx.ktx)
@@ -106,7 +107,6 @@ dependencies {
     implementation(libs.coroutines.core)
     implementation(libs.coroutines.android)
 
-    implementation(libs.androidx.activity.compose)
     implementation(libs.accompanist.navigation.material)
     implementation(libs.androidx.hilt.navigation.compose)
 
@@ -132,10 +132,7 @@ dependencies {
     implementation(libs.androidx.compose.material.icons)
     debugImplementation(libs.androidx.compose.ui.tooling)
     implementation(libs.androidx.compose.ui.tooling.preview)
-    implementation(libs.androidx.compose.runtime)
-    implementation(libs.androidx.compose.runtime.saveable)
-    implementation(libs.androidx.compose.runtime.livedata)
-    androidTestImplementation(libs.androidx.compose.ui.test)
+    implementation(libs.kotlinx.datetime)
 
     implementation(libs.lyricist)
     ksp(libs.lyricist.processor)

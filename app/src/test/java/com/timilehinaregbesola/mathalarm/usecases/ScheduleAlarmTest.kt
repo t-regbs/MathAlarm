@@ -5,7 +5,7 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.fake.AlarmInteractorFake
 import com.timilehinaregbesola.mathalarm.fake.AlarmRepositoryFake
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -25,13 +25,13 @@ class ScheduleAlarmTest {
     private val scheduleAlarmUseCase = ScheduleAlarm(alarmRepository, alarmInteractor)
 
     @Before
-    fun setup() = runBlockingTest {
+    fun setup() = runTest {
         alarmRepository.clear()
         alarmInteractor.clear()
     }
 
     @Test
-    fun `test if alarm is scheduled`() = runBlockingTest {
+    fun `test if alarm is scheduled`() = runTest {
         val newAlarm = Alarm(alarmId = 2, vibrate = true)
         val reschedule = false
         addAlarmUseCase(newAlarm)

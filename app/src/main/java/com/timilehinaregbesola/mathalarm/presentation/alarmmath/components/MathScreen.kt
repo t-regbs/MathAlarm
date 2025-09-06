@@ -38,7 +38,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.livedata.observeAsState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -106,6 +106,7 @@ import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
 import timber.log.Timber
 import java.io.IOException
+import androidx.core.net.toUri
 
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
 @ExperimentalMaterial3Api
@@ -126,7 +127,7 @@ fun MathScreen(
         SnackbarHostState()
     }
     val keyboardController = LocalSoftwareKeyboardController.current
-    val toneState by viewModel.state.observeAsState()
+    val toneState by viewModel.state.collectAsState()
     val progress by remember(viewModel.audioPlayer.currentPosition) {
         mutableFloatStateOf(
             if (toneState is Countdown) {
@@ -155,11 +156,10 @@ fun MathScreen(
                     if (!alarm.repeat) {
                         viewModel.completeAlarm(AlarmMapper().mapToDomainModel(alarm))
                     }
-                    val fromSheet = navController
-                        .previousBackStackEntry?.savedStateHandle?.remove<Boolean>(FROM_SHEET_KEY)
-                    fromSheet?.let {
-                        navController.previousBackStackEntry?.savedStateHandle?.set(TEST_ALARM_KEY, alarm)
-                    }
+                    navController.previousBackStackEntry?.savedStateHandle?.set(
+                        "should_reopen_sheet",
+                        true
+                    )
                     navController.popBackStack()
                 }
                 is AlarmMathViewModel.UiEvent.StopVibrateAndHideKeyboard -> {
@@ -181,7 +181,7 @@ fun MathScreen(
             }
         }
         if (alarm.alarmTone.isNotEmpty()) {
-            val alarmUri = Uri.parse(alarm.alarmTone)
+            val alarmUri = alarm.alarmTone.toUri()
             println(navController.previousBackStackEntry?.destination?.id)
             if (navController.previousBackStackEntry?.destination?.id == SETTINGS_ID) {
                 try {
@@ -338,11 +338,12 @@ private fun MathInputField(
             fontSize = ANSWER_FIELD_FONT_SIZE,
             textAlign = TextAlign.Center,
         ),
-        colors = TextFieldDefaults.textFieldColors(
-            containerColor = if (darkTheme) DarkGray else unSelectedDay,
+        colors = TextFieldDefaults.colors(
+            unfocusedContainerColor = if (darkTheme) DarkGray else unSelectedDay,
+            focusedContainerColor = if (darkTheme) DarkGray else unSelectedDay,
             focusedIndicatorColor = Transparent,
             unfocusedIndicatorColor = Transparent,
-            disabledIndicatorColor = Transparent,
+            disabledIndicatorColor = Transparent
         ),
         shape = shapes.medium.copy(CornerSize(ANSWER_FIELD_CORNER_SIZE)),
     )

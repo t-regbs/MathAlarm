@@ -5,7 +5,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextField
-import androidx.compose.material3.TextFieldDefaults.textFieldColors
+import androidx.compose.material3.TextFieldDefaults.colors
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Label
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -34,7 +34,7 @@ fun LabelTextField(
         label = label,
         placeholder = placeholder,
         singleLine = true,
-        colors = textFieldColors(containerColor = Transparent),
+        colors = colors(unfocusedContainerColor = Transparent, focusedContainerColor = Transparent)
     )
 }
 

@@ -2,8 +2,6 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmmath
 
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
-import androidx.lifecycle.LiveData
-import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
@@ -13,7 +11,10 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.flow
 import javax.inject.Inject
 
@@ -22,8 +23,8 @@ class AlarmMathViewModel @Inject constructor(
     private val usecases: Usecases,
     val audioPlayer: AudioPlayer,
 ) : ViewModel() {
-    private val _state = MutableLiveData<ToneState>(ToneState.Stopped())
-    val state: LiveData<ToneState> = _state
+    private val _state = MutableStateFlow<ToneState>(ToneState.Stopped())
+    val state: StateFlow<ToneState> = _state.asStateFlow()
     private val _answerText = mutableStateOf("")
     val answerText: State<String> = _answerText
     private val _eventFlow = MutableSharedFlow<UiEvent>()

@@ -4,12 +4,13 @@ plugins {
 }
 
 java {
-    sourceCompatibility = JavaVersion.VERSION_17
-    targetCompatibility = JavaVersion.VERSION_17
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
 }
 
 dependencies {
-    implementation("org.jetbrains.kotlin:kotlin-stdlib:1.8.21")
+    implementation(libs.kotlin.stdlib)
     implementation(libs.coroutines.android)
-    implementation(libs.timber)
+//    implementation(libs.timber)
+    implementation(libs.kotlinx.datetime)
 }

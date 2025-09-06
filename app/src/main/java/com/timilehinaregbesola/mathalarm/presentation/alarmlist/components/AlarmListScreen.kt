@@ -9,6 +9,7 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -16,11 +17,13 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult.ActionPerformed
 import androidx.compose.material3.Surface
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -60,18 +63,14 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewMod
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.LIST_ALARM_BACKGROUND_ALPHA
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.LOADER_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.LOADING_SHIMMER_IMAGE_HEIGHT
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.TEST_ALARM_KEY
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_APP_SETTINGS
-import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_SETTINGS_SHEET
-import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_SETTINGS_SHEET_ARGUMENT
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.Navigate
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.ShowSnackbar
-import com.timilehinaregbesola.mathalarm.utils.getCalendarFromAlarm
-import com.timilehinaregbesola.mathalarm.utils.getTimeLeft
+import com.timilehinaregbesola.mathalarm.utils.getTimeLeftKmp
 import java.net.URLEncoder
-import java.util.Calendar
 
 @SuppressLint("UnrememberedMutableState")
 @ExperimentalAnimationApi
@@ -86,11 +85,13 @@ fun ListDisplayScreen(
     val alarms by viewModel.alarms.collectAsState(null)
     val alarmPermission = viewModel.permission
     var deleteAllAlarmsDialog by remember { mutableStateOf(false) }
-    val snackbarHoststate = remember {
-        SnackbarHostState()
-    }
+    val snackbarHoststate = remember { SnackbarHostState() }
     var showPermissionDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
+    // Bottom sheet state
+    var showBottomSheet by remember { mutableStateOf(false) }
+    var selectedAlarm by remember { mutableStateOf<AlarmEntity?>(null) }
+    val bottomSheetState = rememberModalBottomSheetState()
 
     LaunchedEffect(key1 = true) {
         viewModel.uiEvent.collect { event ->
@@ -108,14 +109,8 @@ fun ListDisplayScreen(
                 }
 
                 is Navigate -> {
-                    buildArgAndNavigate(AlarmMapper().mapFromDomainModel(event.alarm)) { alarmJson ->
-                        navController.navigate(
-                            NAV_SETTINGS_SHEET.replace(
-                                "{$NAV_SETTINGS_SHEET_ARGUMENT}",
-                                alarmJson,
-                            ),
-                        )
-                    }
+                    selectedAlarm = AlarmMapper().mapFromDomainModel(event.alarm)
+                    showBottomSheet = true
                     isLoading = false
                 }
 
@@ -129,20 +124,21 @@ fun ListDisplayScreen(
             override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
                 when (event) {
                     Lifecycle.Event.ON_RESUME -> {
-                        val cancelled = navController
-                            .currentBackStackEntry?.savedStateHandle?.remove<AlarmEntity>(
-                                TEST_ALARM_KEY
-                            )
-
-                        cancelled?.let {
-                            buildArgAndNavigate(it) { alarmJson ->
-                                navController.navigate(
-                                    NAV_SETTINGS_SHEET.replace(
-                                        "{$NAV_SETTINGS_SHEET_ARGUMENT}",
-                                        alarmJson,
-                                    ),
+                        val shouldReopen =
+                            navController.currentBackStackEntry?.savedStateHandle?.get<Boolean>("should_reopen_sheet")
+                        if (shouldReopen == true) {
+                            val testedAlarm =
+                                navController.currentBackStackEntry?.savedStateHandle?.get<AlarmEntity>(
+                                    "testedAlarm"
                                 )
+                            if (testedAlarm != null) {
+                                selectedAlarm = testedAlarm
+                                showBottomSheet = true
                             }
+                            navController.currentBackStackEntry?.savedStateHandle?.remove<Boolean>("should_reopen_sheet")
+                            navController.currentBackStackEntry?.savedStateHandle?.remove<AlarmEntity>(
+                                "testedAlarm"
+                            )
                         }
                     }
 
@@ -168,8 +164,7 @@ fun ListDisplayScreen(
     val context = LocalContext.current
     alarms?.let { alarmList ->
         Surface(
-            modifier = Modifier
-                .fillMaxSize(),
+            modifier = Modifier.fillMaxSize(),
         ) {
             Scaffold(
                 topBar = {
@@ -204,7 +199,7 @@ fun ListDisplayScreen(
                     Box(
                         modifier = Modifier
                             .fillMaxSize()
-                            .padding(top = MaterialTheme.spacing.medium)
+                            .padding(padding)
                             .background(
                                 color = LightGray.copy(alpha = LIST_ALARM_BACKGROUND_ALPHA),
                             ),
@@ -213,7 +208,6 @@ fun ListDisplayScreen(
                         val alarmSetText = strings.alarmSet
                         AlarmListContent(
                             alarmList = alarmList,
-                            calendar = viewModel.calender.getCurrentCalendar(),
                             darkTheme = darkTheme,
                             onEditAlarm = {
                                 isLoading = true
@@ -238,19 +232,10 @@ fun ListDisplayScreen(
                                 checkPermissionAndPerformAction(
                                     value = alarmPermission.hasExactAlarmPermission(),
                                     action = {
-                                        val calender = viewModel.calender.getCurrentCalendar()
                                         viewModel.scheduleAlarm(
                                             alarm = curAlarm,
                                             reschedule = b,
-                                            message = "$alarmSetText ${
-                                                curAlarm.getTimeLeft(
-                                                    getCalendarFromAlarm(
-                                                        curAlarm,
-                                                        calender
-                                                    ).timeInMillis,
-                                                    calender,
-                                                )
-                                            }",
+                                            message = "$alarmSetText ${curAlarm.getTimeLeftKmp()}"
                                         )
                                     },
                                     onPermissionAbsent = { showPermissionDialog = true },
@@ -285,6 +270,26 @@ fun ListDisplayScreen(
                     }
                 }
             }
+            // Material3 ModalBottomSheet
+            if (showBottomSheet && selectedAlarm != null) {
+                ModalBottomSheet(
+                    onDismissRequest = {
+                        showBottomSheet = false
+                        selectedAlarm = null
+                    },
+                    sheetState = bottomSheetState
+                ) {
+                    AlarmBottomSheet(
+                        navController = navController,
+                        darkTheme = darkTheme,
+                        alarm = selectedAlarm!!,
+                        onDismiss = {
+                            showBottomSheet = false
+                            selectedAlarm = null
+                        }
+                    )
+                }
+            }
         }
     }
 }
@@ -297,7 +302,6 @@ fun ListDisplayScreen(
 @Composable
 private fun AlarmListContent(
     alarmList: List<Alarm>,
-    calendar: Calendar,
     darkTheme: Boolean,
     onEditAlarm: (Alarm) -> Unit,
     onUpdateAlarm: (Alarm) -> Unit,
@@ -318,8 +322,7 @@ private fun AlarmListContent(
                 ListHeader(
                     enabled = alarmList.any { it.isOn },
                     alarmList = alarmList,
-                    calendar = calendar,
-                    isDark = darkTheme,
+                    isDark = darkTheme
                 )
             }
             items(
@@ -352,14 +355,6 @@ fun checkPermissionAndPerformAction(
     } else {
         onPermissionAbsent()
     }
-}
-
-private fun buildArgAndNavigate(alarm: AlarmEntity, onNavigate: (String) -> Unit) {
-    val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
-    val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
-    val json = jsonAdapter.toJson(alarm)
-    val alarmJson = URLEncoder.encode(json, "utf-8")
-    onNavigate(alarmJson)
 }
 
 @Composable
@@ -397,7 +392,6 @@ private fun AlarmListScreenPreview() {
     MathAlarmTheme {
         AlarmListContent(
             alarmList = listOf(Alarm(), Alarm(alarmId = 1L)),
-            calendar = Calendar.getInstance(),
             darkTheme = false,
             onEditAlarm = {},
             onUpdateAlarm = {},
@@ -408,7 +402,6 @@ private fun AlarmListScreenPreview() {
 }
 
 private object AlarmListScreen {
-    const val TEST_ALARM_KEY = "testAlarm"
     const val LIST_ALARM_BACKGROUND_ALPHA = 0.1f
     val LOADING_SHIMMER_IMAGE_HEIGHT = 180.dp
     val LOADER_SIZE = 50.dp

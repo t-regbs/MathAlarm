@@ -1,39 +1,41 @@
 [versions]
-accompanist = "0.35.0-alpha"
+accompanist = "0.36.0"
 # @keep
-android_compile_sdk = "34"
-android_gradle_plugin = "8.4.1"
+android_compile_sdk = "35"
+android_gradle_plugin = "8.7.2"
 # @keep
 android_min_sdk = "21"
 # @keep
-android_target_sdk = "34"
-androidx_activity_compose = "1.9.0-alpha03"
-androidx_datastore = "1.1.0-beta02"
-androidx_ktx = "1.13.0-alpha05"
-androidx_room = "2.6.1"
-androidx_test_core = "1.5.0"
-compose = "2024.02.02"
-coroutines = "1.8.0"
-crashlytics_plugin = "2.9.9"
-firebase = "32.7.4"
-google_services = "4.4.1"
-hilt_android = "2.51"
-hilt_android_compiler = "2.51"
-hilt_nav_compose = "1.2.0"
+android_target_sdk = "35"
+androidx_activity_compose = "1.12.0-alpha01"
+androidx_datastore = "1.2.0-alpha02"
+androidx_ktx = "1.16.0"
+androidx_room = "2.7.1"
+compose = "2025.05.01"
+coroutines = "1.10.2"
+crashlytics_plugin = "3.0.3"
+datetime = "0.6.2"
+desugar_jdk_libs = "2.1.5"
+firebase = "33.14.0"
+google_services = "4.4.2"
+hilt_android = "2.56.2"
+hilt_android_compiler = "2.56.2"
+hilt_nav_compose = "1.3.0-alpha01"
 # @pin
-kotlin_gradle_plugin = "1.9.22"
-lottie = "6.4.0"
-material = "1.11.0"
-moshi = "1.15.1"
-splashscreen = "1.1.0-alpha02"
-test_coroutines = "1.8.0"
-test_espresso_core = "3.6.0-alpha03"
-test_junit = "4.13.2"
-test_junit_ext = "1.2.0-alpha03"
-test_mockk = "1.13.10"
-timber = "4.7.1"
+kotlin_gradle_plugin = "2.1.21"
+kotlinStdlib = "2.1.21"
+lottie = "6.6.6"
 lyricist = "1.7.0"
-ksp = "1.9.22-1.0.17"
+material = "1.14.0-alpha01"
+moshi = "1.15.2"
+splashscreen = "1.2.0-beta02"
+test_coroutines = "1.10.2"
+test_espresso_core = "3.7.0-alpha03"
+test_junit = "4.13.2"
+test_junit_ext = "1.3.0-alpha03"
+test_mockk = "1.14.2"
+timber = "5.0.1"
+kotlin = "2.1.21"
 
 [libraries]
 accompanist_navigation_material = { module = "com.google.accompanist:accompanist-navigation-material", version.ref = "accompanist" }
@@ -55,14 +57,14 @@ androidx_ktx = { module = "androidx.core:core-ktx", version.ref = "androidx_ktx"
 androidx_room_compiler = { module = "androidx.room:room-compiler", version.ref = "androidx_room" }
 androidx_room_ktx = { module = "androidx.room:room-ktx", version.ref = "androidx_room" }
 androidx_room_runtime = { module = "androidx.room:room-runtime", version.ref = "androidx_room" }
-androidx_test_core = { module = "androidx.test:core", version.ref = "androidx_test_core" }
-androidx_test_core_ktx = "androidx.test:core-ktx:1.6.0-alpha05"
+androidx_test_core_ktx = "androidx.test:core-ktx:1.7.0-alpha03"
 androidx_test_espresso_core = { module = "androidx.test.espresso:espresso-core", version.ref = "test_espresso_core" }
 androidx_test_ext_junit = { module = "androidx.test.ext:junit", version.ref = "test_junit_ext" }
 compose_bom = { module = "androidx.compose:compose-bom", version.ref = "compose" }
 coroutines_android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "coroutines" }
 coroutines_core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
 coroutines_test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "test_coroutines" }
+desugar_jdk_libs = { module = "com.android.tools:desugar_jdk_libs", version.ref = "desugar_jdk_libs" }
 firebase_analytics = { module = "com.google.firebase:firebase-analytics-ktx" }
 firebase_bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase" }
 firebase_crashlytics = { module = "com.google.firebase:firebase-crashlytics" }
@@ -72,6 +74,8 @@ hilt_android = { module = "com.google.dagger:hilt-android", version.ref = "hilt_
 hilt_android_compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt_android_compiler" }
 hilt_android_testing = { module = "com.google.dagger:hilt-android-testing", version.ref = "hilt_android_compiler" }
 junit = { module = "junit:junit", version.ref = "test_junit" }
+kotlin-stdlib = { module = "org.jetbrains.kotlin:kotlin-stdlib", version.ref = "kotlinStdlib" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 lottie_compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottie" }
 lyricist = { module = "cafe.adriel.lyricist:lyricist", version.ref = "lyricist" }
 lyricist-processor = { module = "cafe.adriel.lyricist:lyricist-processor", version.ref = "lyricist" }
@@ -81,5 +85,6 @@ plugin_android_gradle = { module = "com.android.tools.build:gradle", version.ref
 plugin_crashlytics_gradle = { module = "com.google.firebase:firebase-crashlytics-gradle", version.ref = "crashlytics_plugin" }
 plugin_hilt_gradle = { module = "com.google.dagger:hilt-android-gradle-plugin", version.ref = "hilt_android" }
 plugin_kotlin_gradle = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin_gradle_plugin" }
-plugin-ksp = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
+[plugins]
+kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

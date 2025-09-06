@@ -1,15 +1,15 @@
 package com.timilehinaregbesola.mathalarm.domain.model
 
-import java.util.*
+import kotlinx.datetime.*
 
 data class Alarm(
     var alarmId: Long = 0L,
 
-    val newCal: Calendar = Calendar.getInstance(),
+    val newDateTime: LocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()),
 
-    val newHour: Int = newCal[Calendar.HOUR_OF_DAY],
+    val newHour: Int = newDateTime.hour,
 
-    val newMinute: Int = newCal[Calendar.MINUTE],
+    val newMinute: Int = newDateTime.minute,
 
     var hour: Int = newHour,
 
