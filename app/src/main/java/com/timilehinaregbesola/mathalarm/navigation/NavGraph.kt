@@ -10,7 +10,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
@@ -20,10 +22,8 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
-import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
+import com.timilehinaregbesola.mathalarm.presentation.MainActivity.Companion.deeplinkInfo
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.ListDisplayScreen
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet
@@ -35,9 +35,8 @@ import com.timilehinaregbesola.mathalarm.utils.Destinations.AlarmMath
 import com.timilehinaregbesola.mathalarm.utils.Destinations.AppSettings
 import com.timilehinaregbesola.mathalarm.utils.Destinations.SettingsSheet
 import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.serialization.json.Json
 
-@OptIn(ExperimentalMaterialNavigationApi::class)
-@ExperimentalMaterialNavigationApi
 @ExperimentalAnimationApi
 @InternalCoroutinesApi
 @ExperimentalComposeUiApi
@@ -49,6 +48,13 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
 
         val backStack = rememberNavBackStack(AlarmList)
         val bottomSheetStrategy = remember { BottomSheetSceneStrategy<NavKey>() }
+
+        val currentDeeplinkInfo = rememberUpdatedState(deeplinkInfo)
+        LaunchedEffect(currentDeeplinkInfo) {
+            currentDeeplinkInfo.value?.let {
+                backStack.add(AlarmMath(it, false))
+            }
+        }
 
         NavDisplay(
             backStack = backStack,
@@ -82,23 +88,19 @@ fun NavGraph(preferences: AlarmPreferencesImpl) {
                 entry<SettingsSheet>(
                     metadata = BottomSheetSceneStrategy.bottomSheet()
                 ) {
-                    val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
-                    val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
-                    val alarmObject = jsonAdapter.fromJson(it.settingsAlarm)
+                    val alarmObject = Json.decodeFromString<AlarmEntity>(it.settingsAlarm)
                     AlarmBottomSheet(
                         backstack = backStack,
                         darkTheme = preferences.shouldUseDarkColors(),
-                        alarm = alarmObject!!,
+                        alarm = alarmObject
                     )
                 }
 
                 entry<AlarmMath> {
-                    val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
-                    val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
-                    val alarmObject = jsonAdapter.fromJson(it.alarmJson)
+                    val alarmObject = Json.decodeFromString<AlarmEntity>(it.alarmJson)
                     MathScreen(
                         backStack = backStack,
-                        alarm = alarmObject!!,
+                        alarm = alarmObject,
                         darkTheme = preferences.shouldUseDarkColors(),
                         fromSheet = it.fromSheet
                     )

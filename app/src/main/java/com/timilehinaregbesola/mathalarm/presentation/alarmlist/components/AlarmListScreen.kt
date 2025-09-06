@@ -22,7 +22,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.SnackbarResult.ActionPerformed
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -40,17 +39,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.lifecycle.Lifecycle
-import androidx.lifecycle.LifecycleEventObserver
-import androidx.lifecycle.LifecycleOwner
-import androidx.navigation.NavHostController
 import androidx.navigation3.runtime.NavBackStack
 import cafe.adriel.lyricist.strings
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
-import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnAddAlarmClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnClearAlarmsClick
@@ -61,20 +53,15 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewMod
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.LIST_ALARM_BACKGROUND_ALPHA
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.LOADER_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.LOADING_SHIMMER_IMAGE_HEIGHT
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.TEST_ALARM_KEY
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
-import com.timilehinaregbesola.mathalarm.utils.Destinations
 import com.timilehinaregbesola.mathalarm.utils.Destinations.AppSettings
 import com.timilehinaregbesola.mathalarm.utils.Destinations.SettingsSheet
-import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_APP_SETTINGS
-import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_SETTINGS_SHEET
-import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_SETTINGS_SHEET_ARGUMENT
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.Navigate
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.ShowSnackbar
 import com.timilehinaregbesola.mathalarm.utils.getCalendarFromAlarm
 import com.timilehinaregbesola.mathalarm.utils.getTimeLeft
-import java.net.URLEncoder
+import kotlinx.serialization.json.Json
 import java.util.Calendar
 
 @SuppressLint("UnrememberedMutableState")
@@ -112,52 +99,13 @@ fun ListDisplayScreen(
                 }
 
                 is Navigate -> {
-                    buildArgAndNavigate(AlarmMapper().mapFromDomainModel(event.alarm)) { alarmJson ->
-                        backstack.add(SettingsSheet(alarmJson))
-                    }
+                    val alarmJson = Json.encodeToString(AlarmMapper().mapFromDomainModel(event.alarm))
+                    backstack.add(SettingsSheet(alarmJson))
                     isLoading = false
                 }
 
                 else -> Unit
             }
-        }
-    }
-
-    DisposableEffect(Unit) {
-        val observer = object : LifecycleEventObserver {
-            override fun onStateChanged(source: LifecycleOwner, event: Lifecycle.Event) {
-                when (event) {
-                    Lifecycle.Event.ON_RESUME -> {
-//                        val cancelled = navController
-//                            .currentBackStackEntry?.savedStateHandle?.remove<AlarmEntity>(
-//                                TEST_ALARM_KEY
-//                            )
-
-//                        cancelled?.let {
-//                            buildArgAndNavigate(it) { alarmJson ->
-//                                navController.navigate(
-//                                    NAV_SETTINGS_SHEET.replace(
-//                                        "{$NAV_SETTINGS_SHEET_ARGUMENT}",
-//                                        alarmJson,
-//                                    ),
-//                                )
-//                            }
-//                        }
-                    }
-
-                    Lifecycle.Event.ON_DESTROY -> {
-//                        navController.currentBackStackEntry?.lifecycle?.removeObserver(this)
-                    }
-
-                    else -> Unit
-                }
-            }
-        }
-
-//        navController.currentBackStackEntry?.lifecycle?.addObserver(observer)
-
-        onDispose {
-//            navController.currentBackStackEntry?.lifecycle?.removeObserver(observer)
         }
     }
 
@@ -353,14 +301,6 @@ fun checkPermissionAndPerformAction(
     }
 }
 
-private fun buildArgAndNavigate(alarm: AlarmEntity, onNavigate: (String) -> Unit) {
-    val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
-    val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
-    val json = jsonAdapter.toJson(alarm)
-//    val alarmJson = URLEncoder.encode(json, "utf-8")
-    onNavigate(json)
-}
-
 @Composable
 private fun AlarmPermissionDialog(
     context: Context,
@@ -407,7 +347,6 @@ private fun AlarmListScreenPreview() {
 }
 
 private object AlarmListScreen {
-    const val TEST_ALARM_KEY = "testAlarm"
     const val LIST_ALARM_BACKGROUND_ALPHA = 0.1f
     val LOADING_SHIMMER_IMAGE_HEIGHT = 180.dp
     val LOADER_SIZE = 50.dp

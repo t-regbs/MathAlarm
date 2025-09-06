@@ -56,8 +56,6 @@ import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation3.runtime.NavBackStack
 import cafe.adriel.lyricist.strings
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.DialogArguments
@@ -89,7 +87,6 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.A
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_PATTERN
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_TEXT_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_TEXT_PADDING
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.URL_ENCODER
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimaryLight
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
@@ -104,8 +101,8 @@ import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import timber.log.Timber
-import java.net.URLEncoder
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -155,22 +152,11 @@ fun AlarmBottomSheet(
                     backstack.removeLastOrNull()
                 }
                 is AlarmSettingsViewModel.UiEvent.TestAlarm -> {
-//                    navController
-//                        .previousBackStackEntry?.savedStateHandle?.set(FROM_SHEET_KEY, true)
-                    // Nav to Math Screen
                     launch(IO) {
-                        val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
-                        val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
-                        val json = jsonAdapter.toJson(AlarmMapper().mapFromDomainModel(event.alarm))
-//                        val alarmJson = URLEncoder.encode(json, URL_ENCODER)
+                        val alarmEntity = AlarmMapper().mapFromDomainModel(event.alarm)
+                        val json = Json.encodeToString(alarmEntity)
                         withContext(Main) {
                             backstack.add(AlarmMath(alarmJson = json, fromSheet = true))
-//                            navController.navigate(
-//                                NAV_ALARM_MATH.replace(
-//                                    "{$NAV_ALARM_MATH_ARGUMENT}",
-//                                    alarmJson,
-//                                ),
-//                            )
                         }
                     }
                 }

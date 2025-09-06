@@ -1,12 +1,12 @@
 plugins {
-    id("com.android.application")
+    alias(libs.plugins.android.gradle)
     id("kotlin-android")
     alias(libs.plugins.serialization)
     id("dagger.hilt.android.plugin")
-    id("com.google.gms.google-services")
     id("org.jetbrains.kotlin.plugin.parcelize")
-    id("com.google.firebase.crashlytics")
-    id("com.google.devtools.ksp")
+    alias(libs.plugins.google.services)
+    alias(libs.plugins.crashlytics.gradle)
+    alias(libs.plugins.ksp)
     alias(libs.plugins.compose.compiler)
 }
 
@@ -59,10 +59,6 @@ android {
         buildConfig = true
     }
 
-//    composeOptions {
-//        kotlinCompilerExtensionVersion = "1.5.8"
-//    }
-
     packagingOptions {
         resources.excludes.apply {
             add("META-INF/DEPENDENCIES")
@@ -109,7 +105,6 @@ dependencies {
     implementation(libs.coroutines.android)
 
     implementation(libs.androidx.activity.compose)
-    implementation(libs.accompanist.navigation.material)
     implementation(libs.androidx.hilt.navigation.compose)
 
     implementation(libs.timber)
@@ -123,7 +118,6 @@ dependencies {
     implementation(libs.firebase.messaging)
 
     implementation(libs.androidx.core.splashscreen)
-    implementation(libs.moshi)
     implementation(libs.androidx.datastore)
     implementation(libs.kotlinx.serialization)
 
