@@ -5,8 +5,9 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.fake.AlarmInteractorFake
 import com.timilehinaregbesola.mathalarm.fake.AlarmRepositoryFake
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
-import org.junit.Assert.*
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Test
 
@@ -27,14 +28,14 @@ class DeleteAlarmTest {
     private val baseAlarm = Alarm(alarmId = 11, isOn = true, title = "Delete me!!")
 
     @Before
-    fun setup() = runBlockingTest {
+    fun setup() = runTest {
         alarmRepository.clear()
         alarmInteractor.clear()
         addAlarmUseCase(baseAlarm)
     }
 
     @Test
-    fun `test if alarm is deleted`() = runBlockingTest {
+    fun `test if alarm is deleted`() = runTest {
         deleteAlarmUseCase(baseAlarm)
 
         val assertAlarm = findAlarmUseCase(baseAlarm.alarmId)
@@ -43,14 +44,14 @@ class DeleteAlarmTest {
     }
 
     @Test
-    fun `test if deleted alarm is cancelled`() = runBlockingTest {
+    fun `test if deleted alarm is cancelled`() = runTest {
         deleteAlarmUseCase(baseAlarm)
 
         assertFalse(alarmInteractor.isAlarmScheduled(baseAlarm))
     }
 
     @Test
-    fun `test if alarm is deleted with id`() = runBlockingTest {
+    fun `test if alarm is deleted with id`() = runTest {
         addAlarmUseCase(baseAlarm)
         deleteAlarmUseCase(baseAlarm.alarmId)
 
@@ -60,7 +61,7 @@ class DeleteAlarmTest {
     }
 
     @Test
-    fun `test if deleted alarm by id is cancelled`() = runBlockingTest {
+    fun `test if deleted alarm by id is cancelled`() = runTest {
         deleteAlarmUseCase(baseAlarm.alarmId)
 
         assertFalse(alarmInteractor.isAlarmScheduled(baseAlarm))

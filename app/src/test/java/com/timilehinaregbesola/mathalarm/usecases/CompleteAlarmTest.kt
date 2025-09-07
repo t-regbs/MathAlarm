@@ -6,7 +6,7 @@ import com.timilehinaregbesola.mathalarm.fake.AlarmInteractorFake
 import com.timilehinaregbesola.mathalarm.fake.AlarmRepositoryFake
 import com.timilehinaregbesola.mathalarm.fake.NotificationInteractorFake
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -30,14 +30,14 @@ class CompleteAlarmTest {
     private val baseAlarm = Alarm(alarmId = 6, title = "turn me off", isOn = true)
 
     @Before
-    fun setup() = runBlockingTest {
+    fun setup() = runTest {
         alarmRepository.clear()
         alarmInteractor.clear()
         addAlarmUseCase(baseAlarm)
     }
 
     @Test
-    fun `test if an alarm is turned off after completion`() = runBlockingTest {
+    fun `test if an alarm is turned off after completion`() = runTest {
         completeAlarmUseCase(baseAlarm)
 
         val result = findAlarmUseCase(baseAlarm.alarmId)
@@ -47,7 +47,7 @@ class CompleteAlarmTest {
     }
 
     @Test
-    fun `test if an alarm is turned off after completion by id`() = runBlockingTest {
+    fun `test if an alarm is turned off after completion by id`() = runTest {
         completeAlarmUseCase(baseAlarm.alarmId)
 
         val result = findAlarmUseCase(baseAlarm.alarmId)
@@ -57,28 +57,28 @@ class CompleteAlarmTest {
     }
 
     @Test
-    fun `test if an alarm is cancelled after completion`() = runBlockingTest {
+    fun `test if an alarm is cancelled after completion`() = runTest {
         completeAlarmUseCase(baseAlarm)
 
         Assert.assertFalse(alarmInteractor.isAlarmScheduled(baseAlarm))
     }
 
     @Test
-    fun `test if an alarm is cancelled after completion by id`() = runBlockingTest {
+    fun `test if an alarm is cancelled after completion by id`() = runTest {
         completeAlarmUseCase(baseAlarm.alarmId)
 
         Assert.assertFalse(alarmInteractor.isAlarmScheduled(baseAlarm))
     }
 
     @Test
-    fun `test if notification is dismissed after alarm is completed`() = runBlockingTest {
+    fun `test if notification is dismissed after alarm is completed`() = runTest {
         completeAlarmUseCase(baseAlarm)
 
         Assert.assertFalse(notificationInteractor.isNotificationShown(baseAlarm.alarmId))
     }
 
     @Test
-    fun `test if notification is dismissed after alarm is completed by id`() = runBlockingTest {
+    fun `test if notification is dismissed after alarm is completed by id`() = runTest {
         completeAlarmUseCase(baseAlarm.alarmId)
 
         Assert.assertFalse(notificationInteractor.isNotificationShown(baseAlarm.alarmId))

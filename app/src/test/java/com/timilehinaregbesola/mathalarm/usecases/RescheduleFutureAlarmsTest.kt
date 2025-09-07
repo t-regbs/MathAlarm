@@ -5,7 +5,7 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.fake.AlarmInteractorFake
 import com.timilehinaregbesola.mathalarm.fake.AlarmRepositoryFake
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -23,13 +23,13 @@ class RescheduleFutureAlarmsTest {
     private val rescheduleFutureAlarmUseCase = RescheduleFutureAlarms(alarmRepository, alarmInteractor)
 
     @Before
-    fun setup() = runBlockingTest {
+    fun setup() = runTest {
         alarmRepository.clear()
         alarmInteractor.clear()
     }
 
     @Test
-    fun `test if saved alarms that are on are rescheduled`() = runBlockingTest {
+    fun `test if saved alarms that are on are rescheduled`() = runTest {
         val alarm1 = Alarm(alarmId = 1, title = "alarm 1", isSaved = true, isOn = true)
         val alarm2 = Alarm(alarmId = 2, title = "alarm 2", isSaved = true, isOn = false)
         val alarm3 = Alarm(alarmId = 3, title = "alarm 3", isSaved = true, isOn = true)
@@ -48,7 +48,7 @@ class RescheduleFutureAlarmsTest {
     }
 
     @Test
-    fun `test if unsaved alarms are not rescheduled`() = runBlockingTest {
+    fun `test if unsaved alarms are not rescheduled`() = runTest {
         val alarm1 = Alarm(alarmId = 1, title = "alarm 1", isSaved = false, isOn = true)
         val alarm2 = Alarm(alarmId = 2, title = "alarm 2", isSaved = true, isOn = true)
         val alarm3 = Alarm(alarmId = 3, title = "alarm 3", isSaved = false, isOn = true)
