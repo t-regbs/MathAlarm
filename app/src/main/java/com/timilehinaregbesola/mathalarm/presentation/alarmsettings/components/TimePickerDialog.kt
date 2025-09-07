@@ -47,8 +47,7 @@ import androidx.compose.ui.window.DialogProperties
 import cafe.adriel.lyricist.strings
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimary
-import java.time.LocalTime
-import java.util.Calendar
+import kotlinx.datetime.LocalTime
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -60,13 +59,10 @@ fun TimePickerDialog(
     darkTheme: Boolean = false,
 ) {
 
-    val time = Calendar.getInstance()
-    time.timeInMillis = System.currentTimeMillis()
-
     var mode: DisplayMode by remember { mutableStateOf(DisplayMode.Picker) }
 
     fun onConfirmClicked() {
-        val currentTime = LocalTime.of(timeState.hour, timeState.minute)
+        val currentTime = LocalTime(timeState.hour, timeState.minute)
         onConfirm(currentTime)
     }
 

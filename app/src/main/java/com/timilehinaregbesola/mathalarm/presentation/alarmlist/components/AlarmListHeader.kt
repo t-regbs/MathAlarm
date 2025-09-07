@@ -17,36 +17,34 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.lyricist.strings
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.LIST_HEADER_ALPHA
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.LIST_HEADER_ELEVATION
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.LIST_HEADER_FONT_SIZE
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.ONE_WEEK_IN_MILLISECONDS
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.ListHeaderAlpha
 import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimaryLight
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
-import com.timilehinaregbesola.mathalarm.utils.getCalendarFromAlarm
+import com.timilehinaregbesola.mathalarm.utils.calculateNextAlarmTime
 import com.timilehinaregbesola.mathalarm.utils.getTimeLeft
-import timber.log.Timber
-import java.util.Calendar
+import kotlinx.datetime.TimeZone
+import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
+@OptIn(ExperimentalTime::class)
 @Composable
 fun ListHeader(
     modifier: Modifier = Modifier,
     enabled: Boolean,
-    calendar: Calendar,
+    timeZone: TimeZone = TimeZone.currentSystemDefault(),
     alarmList: List<Alarm>,
     isDark: Boolean
 ) {
     val (nearestTime, nearestIndex) = buildNearestTime(
         alarmList = alarmList,
-        calendar = calendar
+        timeZone = timeZone
     )
     val nearestAlarmMessage by remember(nearestTime, nearestIndex) {
         derivedStateOf {
-            nearestTime?.let { time ->
-                alarmList[nearestIndex].getTimeLeft(
-                    time,
-                    calendar
-                )
+            nearestTime?.let {
+                alarmList.getOrNull(nearestIndex)?.getTimeLeft()
             }
         }
     }
@@ -55,7 +53,7 @@ fun ListHeader(
             .padding(top = MaterialTheme.spacing.small)
             .fillMaxWidth()
             .background(
-                color = if (isDark) darkPrimaryLight else LightGray.copy(alpha = LIST_HEADER_ALPHA),
+                color = if (isDark) darkPrimaryLight else LightGray.copy(alpha = ListHeaderAlpha),
             )
             .then(modifier),
         tonalElevation = LIST_HEADER_ELEVATION,
@@ -79,28 +77,25 @@ fun ListHeader(
     }
 }
 
+@OptIn(ExperimentalTime::class)
 private fun buildNearestTime(
     alarmList: List<Alarm>,
-    calendar: Calendar
-): Pair<Long?, Int> {
-    var nearestTime: Long? = null
+    timeZone: TimeZone
+): Pair<Instant?, Int> {
+    var nearestTime: Instant? = null
     var nearestIndex = -1
+
     if (alarmList.isNotEmpty()) {
         alarmList
-            .filter { it.isOn }
-            .forEachIndexed { index, alarm ->
-                val cal = getCalendarFromAlarm(alarm, calendar)
-                var alarmTime = cal.timeInMillis
+            .forEachIndexed { originalIndex, alarm ->
+                if (alarm.isOn) {
+                    val alarmInstant = calculateNextAlarmTime(alarm, timeZone)
 
-                val now = System.currentTimeMillis()
-                Timber.d("time = $alarmTime")
-                if (alarmTime < now) {
-                    alarmTime += ONE_WEEK_IN_MILLISECONDS
-                }
-                val timeToAlarm = alarmTime - now
-                if (nearestTime == null || timeToAlarm < nearestTime!!) {
-                    nearestTime = timeToAlarm
-                    nearestIndex = index
+                    // If a valid future time was found and it's sooner than the current nearest, update
+                    if (alarmInstant != null && (nearestTime == null || alarmInstant < nearestTime)) {
+                        nearestTime = alarmInstant
+                        nearestIndex = originalIndex
+                    }
                 }
             }
     }
@@ -113,7 +108,6 @@ private fun ListHeaderPreview() {
     MaterialTheme {
         ListHeader(
             enabled = false,
-            calendar = Calendar.getInstance(),
             alarmList = emptyList(),
             isDark = true
         )
@@ -121,7 +115,7 @@ private fun ListHeaderPreview() {
 }
 
 private object AlarmListHeader {
-    const val LIST_HEADER_ALPHA = 0.1f
+    const val ListHeaderAlpha = 0.1f
     const val ONE_WEEK_IN_MILLISECONDS = 7 * 24 * 60 * 60 * 1000
     val LIST_HEADER_ELEVATION = 4.dp
     val LIST_HEADER_FONT_SIZE = 16.sp

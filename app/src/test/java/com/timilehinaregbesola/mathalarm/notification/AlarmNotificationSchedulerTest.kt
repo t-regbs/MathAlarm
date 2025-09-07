@@ -5,8 +5,8 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
+import kotlinx.datetime.LocalDateTime
 import org.junit.Before
-import java.util.Calendar
 
 class AlarmNotificationSchedulerTest {
 
@@ -18,20 +18,20 @@ class AlarmNotificationSchedulerTest {
 
     @Before
     fun setUp() {
-        val cal = Calendar.getInstance()
+        val now = LocalDateTime(2023, 1, 1, 10, 30) // Example LocalDateTime
         mockkStatic("com.timilehinaregbesola.mathalarm.utils.extension-context")
         every { mockAlarm.repeatDays } returns "FFFTFFF"
         every { mockAlarm.alarmId } returns 22L
         every { mockAlarm.repeat } returns false
-        every { mockAlarm.newCal } returns cal
-        every { mockAlarm.hour } returns cal[Calendar.HOUR_OF_DAY]
-        every { mockAlarm.minute } returns cal[Calendar.MINUTE]
+        every { mockAlarm.newDateTime } returns now
+        every { mockAlarm.hour } returns now.hour
+        every { mockAlarm.minute } returns now.minute
     }
 
 //    @Test
 //    fun `check if alarm scheduled is valid`() {
 //        scheduler.scheduleAlarm(mockAlarm, false)
-//        verify { mockContext.setAlarm(mockAlarm.newCal.time.time, any()) }
+//        verify { mockContext.setExactAlarm(mockAlarm.newDateTime.time.toNanosecondOfDay(), any()) }
 //    }
 //
 //    @Test

@@ -37,6 +37,7 @@ navigation3 = "1.0.0-alpha08"
 nav3Material = "1.0.0-SNAPSHOT"
 lifecycleViewmodel = "1.0.0-SNAPSHOT"
 appcompat = "1.7.1"
+datetime = "0.7.1"
 
 [libraries]
 android-material = { module = "com.google.android.material:material", version.ref = "material" }
@@ -85,6 +86,7 @@ lyricist-processor = { module = "cafe.adriel.lyricist:lyricist-processor", versi
 mockk = { module = "io.mockk:mockk", version.ref = "test_mockk" }
 plugin-ksp = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
+kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 
 [plugins]
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }

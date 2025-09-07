@@ -5,7 +5,7 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.fake.AlarmInteractorFake
 import com.timilehinaregbesola.mathalarm.fake.AlarmRepositoryFake
 import com.timilehinaregbesola.mathalarm.fake.NotificationInteractorFake
-import com.timilehinaregbesola.mathalarm.provider.CalendarProviderImpl
+import com.timilehinaregbesola.mathalarm.provider.DateTimeProviderImpl
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import org.junit.Before
@@ -21,7 +21,7 @@ class SnoozeAlarmTest {
 
     private val notificationInteractor = NotificationInteractorFake()
 
-    private val calendarProvider = CalendarProviderImpl()
+    private val calendarProvider = DateTimeProviderImpl()
 
     private val addAlarmUseCase = AddAlarm(alarmRepository)
 

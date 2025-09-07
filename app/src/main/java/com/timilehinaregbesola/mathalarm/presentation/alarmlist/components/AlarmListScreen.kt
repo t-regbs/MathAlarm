@@ -46,6 +46,7 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnAddAlarmClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnClearAlarmsClick
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnClearEmptyAlarmsClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnDeleteAlarmClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnEditAlarmClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnUndoDeleteClick
@@ -58,10 +59,8 @@ import com.timilehinaregbesola.mathalarm.utils.Destinations.AppSettings
 import com.timilehinaregbesola.mathalarm.utils.Destinations.SettingsSheet
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.Navigate
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.ShowSnackbar
-import com.timilehinaregbesola.mathalarm.utils.getCalendarFromAlarm
 import com.timilehinaregbesola.mathalarm.utils.getTimeLeft
 import kotlinx.serialization.json.Json
-import java.util.Calendar
 
 @SuppressLint("UnrememberedMutableState")
 @ExperimentalAnimationApi
@@ -116,7 +115,13 @@ fun ListDisplayScreen(
         Scaffold(
             topBar = {
                 ListTopAppBar(
-                    openDialog = { deleteAllAlarmsDialog = true },
+                    openDialog = {
+                        if (alarmList.isNotEmpty()) {
+                            deleteAllAlarmsDialog = true
+                        } else {
+                            viewModel.onEvent(OnClearEmptyAlarmsClick)
+                        }
+                    },
                     onSettingsClick = {
                         backstack.add(AppSettings)
                     },
@@ -155,7 +160,6 @@ fun ListDisplayScreen(
                     val alarmSetText = strings.alarmSet
                     AlarmListContent(
                         alarmList = alarmList,
-                        calendar = viewModel.calender.getCurrentCalendar(),
                         darkTheme = darkTheme,
                         onEditAlarm = {
                             isLoading = true
@@ -180,19 +184,10 @@ fun ListDisplayScreen(
                             checkPermissionAndPerformAction(
                                 value = alarmPermission.hasExactAlarmPermission(),
                                 action = {
-                                    val calender = viewModel.calender.getCurrentCalendar()
                                     viewModel.scheduleAlarm(
                                         alarm = curAlarm,
                                         reschedule = b,
-                                        message = "$alarmSetText ${
-                                            curAlarm.getTimeLeft(
-                                                getCalendarFromAlarm(
-                                                    curAlarm,
-                                                    calender
-                                                ).timeInMillis,
-                                                calender,
-                                            )
-                                        }",
+                                        message = "$alarmSetText ${curAlarm.getTimeLeft()}",
                                     )
                                 },
                                 onPermissionAbsent = { showPermissionDialog = true },
@@ -233,7 +228,6 @@ fun ListDisplayScreen(
 @Composable
 private fun AlarmListContent(
     alarmList: List<Alarm>,
-    calendar: Calendar,
     darkTheme: Boolean,
     onEditAlarm: (Alarm) -> Unit,
     onUpdateAlarm: (Alarm) -> Unit,
@@ -254,8 +248,7 @@ private fun AlarmListContent(
                 ListHeader(
                     enabled = alarmList.any { it.isOn },
                     alarmList = alarmList,
-                    calendar = calendar,
-                    isDark = darkTheme,
+                    isDark = darkTheme
                 )
             }
             items(
@@ -325,7 +318,6 @@ private fun AlarmListScreenPreview() {
     MathAlarmTheme {
         AlarmListContent(
             alarmList = listOf(Alarm(), Alarm(alarmId = 1L)),
-            calendar = Calendar.getInstance(),
             darkTheme = false,
             onEditAlarm = {},
             onUpdateAlarm = {},

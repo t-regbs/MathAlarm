@@ -139,6 +139,7 @@ dependencies {
     implementation(libs.androidx.lifecycle.viewmodel.navigation3)
     implementation(libs.androidx.adaptive.navigation3)
     implementation(libs.androidx.appcompat)
+    implementation(libs.kotlinx.datetime)
 
     implementation(libs.lyricist)
     ksp(libs.lyricist.processor)

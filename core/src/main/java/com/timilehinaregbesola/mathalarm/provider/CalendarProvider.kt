@@ -1,16 +1,16 @@
 package com.timilehinaregbesola.mathalarm.provider
 
-import java.util.Calendar
+import kotlinx.datetime.LocalDateTime
 
 /**
  * Provide the date and time to be used on the alarm use cases, respecting the Inversion of Control.
  */
-interface CalendarProvider {
+interface DateTimeProvider {
 
     /**
-     * Gets the current [Calendar].
+     * Gets the current [LocalDateTime] in the system default time zone.
      *
-     * @return the current [Calendar]
+     * @return the current [LocalDateTime]
      */
-    fun getCurrentCalendar(): Calendar
+    fun getCurrentDateTime(): LocalDateTime
 }
