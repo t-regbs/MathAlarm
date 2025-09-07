@@ -1,26 +1,29 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmsettings
 
 import android.media.RingtoneManager
-import androidx.compose.runtime.*
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.text.input.TextFieldValue
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.Usecases
-import com.timilehinaregbesola.mathalarm.utils.getDayOfWeek
 import com.timilehinaregbesola.mathalarm.utils.getFormatTime
+import com.timilehinaregbesola.mathalarm.utils.initLocalDateTimeInSystemZone
+import com.timilehinaregbesola.mathalarm.utils.toIndex
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
-import java.util.*
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
+import kotlinx.datetime.LocalDateTime
 import javax.inject.Inject
 
 @HiltViewModel
 class AlarmSettingsViewModel @Inject constructor(
     private val usecases: Usecases,
-    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
     private var isNewAlarm: Boolean? = null
@@ -74,9 +77,6 @@ class AlarmSettingsViewModel @Inject constructor(
                 }
             }
             is AddEditAlarmEvent.OnTestClick -> {
-//                runBlocking {
-//                    usecases.addAlarm(createAlarm())
-//                }
                 viewModelScope.launch {
                     _eventFlow.emit(UiEvent.TestAlarm(createAlarm()))
                 }
@@ -106,7 +106,7 @@ class AlarmSettingsViewModel @Inject constructor(
                 _dayChooser.value = event.value
             }
             is AddEditAlarmEvent.OnDifficultyChange -> {
-                _difficulty.value = event.value
+                _difficulty.intValue = event.value
             }
             is AddEditAlarmEvent.OnToneChange -> {
                 _tone.value = event.value
@@ -135,13 +135,7 @@ class AlarmSettingsViewModel @Inject constructor(
         isSaved = _isSaved.value,
     )
 
-    private fun initCalendar(alarm: Alarm): Calendar {
-        val cal = Calendar.getInstance()
-        cal[Calendar.HOUR_OF_DAY] = alarm.hour
-        cal[Calendar.MINUTE] = alarm.minute
-        cal[Calendar.SECOND] = 0
-        return cal
-    }
+    private fun initDateTime(alarm: Alarm): LocalDateTime = alarm.initLocalDateTimeInSystemZone()
 
     fun setAlarm(curAlarm: Alarm) {
         if (currentAlarmId == null) {
@@ -155,9 +149,8 @@ class AlarmSettingsViewModel @Inject constructor(
                 if (alarm.repeatDays == "FFFFFFF") {
                     isNewAlarm = true
                     val sb = StringBuilder("FFFFFFF")
-                    val cal = initCalendar(alarm)
-                    val dayOfTheWeek =
-                        getDayOfWeek(cal[Calendar.DAY_OF_WEEK])
+                    val dateTime = initDateTime(alarm)
+                    val dayOfTheWeek = dateTime.date.dayOfWeek.toIndex()
                     sb.setCharAt(dayOfTheWeek, 'T')
                     _dayChooser.value = sb.toString()
                 } else {
@@ -166,7 +159,7 @@ class AlarmSettingsViewModel @Inject constructor(
                 }
                 _repeatWeekly.value = alarm.repeat
                 _vibrate.value = alarm.vibrate
-                _difficulty.value = alarm.difficulty
+                _difficulty.intValue = alarm.difficulty
                 if (alarm.alarmTone == "") {
                     _tone.value = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString()
                 } else {

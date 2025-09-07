@@ -12,4 +12,5 @@ dependencies {
     implementation(kotlin("stdlib-jdk8"))
     implementation(libs.coroutines.android)
     implementation(libs.timber)
+    implementation(libs.kotlinx.datetime)
 }

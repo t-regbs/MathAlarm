@@ -6,20 +6,17 @@ import android.app.Activity
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
-import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
-import android.view.ContextThemeWrapper
-import android.widget.Toast
-import androidx.annotation.StringRes
 import androidx.core.app.ActivityCompat
 import androidx.core.app.AlarmManagerCompat
 import androidx.core.content.ContextCompat
 import timber.log.Timber
-import java.util.Calendar
+import kotlin.time.Clock
+import kotlin.time.ExperimentalTime
 
 /**
  * Sets a alarm using [AlarmManagerCompat] to be triggered based on the given parameter.
@@ -29,27 +26,48 @@ import java.util.Calendar
  * @param operation action to perform when the alarm goes off
  * @param type type to define how the alarm will behave
  */
+@OptIn(ExperimentalTime::class)
 fun Context.setExactAlarm(
     triggerAtMillis: Long,
     operation: PendingIntent?,
     type: Int = AlarmManager.RTC_WAKEUP,
 ) {
-    val currentTime = Calendar.getInstance().timeInMillis
-    if (triggerAtMillis <= currentTime) {
-        Timber.w("It is not possible to set alarm in the past")
-        return
+    var adjustedTriggerTime = triggerAtMillis
+    val currentTime = Clock.System.now().toEpochMilliseconds()
+
+    if (adjustedTriggerTime <= currentTime) {
+        // If the alarm time is in the past, add one week (7 days) to the trigger time
+        Timber.w("Alarm time is in the past, scheduling for next week")
+        val oneWeekInMillis = 7 * 24 * 60 * 60 * 1000L
+        adjustedTriggerTime += oneWeekInMillis
     }
 
     if (operation == null) {
-        Timber.e("PendingIntent is null")
+        Timber.e("PendingIntent is null, cannot schedule alarm")
         return
     }
 
     val manager = getAlarmManager()
-    manager?.let {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S || it.canScheduleExactAlarms()) {
-            AlarmManagerCompat.setExactAndAllowWhileIdle(it, type, triggerAtMillis, operation)
-        }
+    if (manager == null) {
+        Timber.e("AlarmManager is null, cannot schedule alarm")
+        return
+    }
+
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !manager.canScheduleExactAlarms()) {
+        Timber.e("Cannot schedule exact alarms - permission not granted on Android S+")
+        return
+    }
+
+    try {
+        AlarmManagerCompat.setExactAndAllowWhileIdle(
+            manager,
+            type,
+            adjustedTriggerTime,
+            operation
+        )
+        Timber.d("Alarm scheduled successfully")
+    } catch (e: Exception) {
+        Timber.e(e, "Failed to schedule alarm")
     }
 }
 
@@ -59,23 +77,26 @@ fun Context.setExactAlarm(
  * @param operation action to be canceled
  */
 fun Context.cancelAlarm(operation: PendingIntent?) {
+    Timber.d("cancelAlarm called with operation=${operation?.hashCode()}")
+
     if (operation == null) {
-        Timber.e("PendingIntent is null")
+        Timber.e("PendingIntent is null, cannot cancel alarm")
         return
     }
 
     val manager = getAlarmManager()
-    manager?.let { manager.cancel(operation) }
-}
+    if (manager == null) {
+        Timber.e("AlarmManager is null, cannot cancel alarm")
+        return
+    }
 
-/**
- * Shows a [Toast] with the given message.
- *
- * @param messageId the message String resource id
- * @param duration the Toast duration, if not provided will be set to [Toast.LENGTH_SHORT]
- */
-fun Context.showToast(@StringRes messageId: Int, duration: Int = Toast.LENGTH_SHORT) {
-    Toast.makeText(this, messageId, duration).show()
+    try {
+        Timber.d("Canceling alarm with AlarmManager.cancel")
+        manager.cancel(operation)
+        Timber.d("Alarm canceled successfully")
+    } catch (e: Exception) {
+        Timber.e(e, "Failed to cancel alarm")
+    }
 }
 
 fun Context.email(
