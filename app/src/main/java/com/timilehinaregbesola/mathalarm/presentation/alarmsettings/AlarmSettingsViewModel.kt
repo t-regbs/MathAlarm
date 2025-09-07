@@ -13,16 +13,13 @@ import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.utils.getFormatTime
 import com.timilehinaregbesola.mathalarm.utils.initLocalDateTimeInSystemZone
 import com.timilehinaregbesola.mathalarm.utils.toIndex
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.datetime.LocalDateTime
-import javax.inject.Inject
 
-@HiltViewModel
-class AlarmSettingsViewModel @Inject constructor(
+class AlarmSettingsViewModel(
     private val usecases: Usecases,
 ) : ViewModel() {
 

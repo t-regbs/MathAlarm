@@ -24,21 +24,18 @@ import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkC
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimary
 import com.timilehinaregbesola.mathalarm.utils.strings.Strings
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.InternalCoroutinesApi
+import org.koin.android.ext.android.inject
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
-import javax.inject.Inject
 
 @ExperimentalFoundationApi
 @ExperimentalMaterial3Api
 @ExperimentalComposeUiApi
 @InternalCoroutinesApi
 @ExperimentalAnimationApi
-@AndroidEntryPoint
 class MainActivity : AppCompatActivity() {
-    @Inject
-    lateinit var preferences: AlarmPreferencesImpl
+    val preferences: AlarmPreferencesImpl by inject()
     private lateinit var lyricist: Lyricist<Strings>
 
     override fun onCreate(savedInstanceState: Bundle?) {

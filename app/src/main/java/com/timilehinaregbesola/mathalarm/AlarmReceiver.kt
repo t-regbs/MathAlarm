@@ -8,19 +8,18 @@ import android.content.Context
 import android.content.Intent
 import android.os.PowerManager
 import com.timilehinaregbesola.mathalarm.framework.Usecases
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import org.koin.core.component.KoinComponent
+import org.koin.core.component.inject
 import timber.log.Timber
-import javax.inject.Inject
 
 /**
  * [BroadcastReceiver] to be notified by the [android.app.AlarmManager].
  */ 
-@AndroidEntryPoint
-class AlarmReceiver : BroadcastReceiver() {
-    @Inject lateinit var usecases: Usecases
+class AlarmReceiver : BroadcastReceiver(), KoinComponent {
+    val usecases: Usecases by inject()
 
     @OptIn(DelicateCoroutinesApi::class)
     override fun onReceive(context: Context, intent: Intent) {

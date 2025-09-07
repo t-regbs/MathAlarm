@@ -53,7 +53,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.net.toUri
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation3.runtime.NavBackStack
 import cafe.adriel.lyricist.strings
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
@@ -104,12 +103,13 @@ import kotlinx.datetime.LocalTime
 import kotlinx.datetime.format
 import kotlinx.datetime.format.char
 import kotlinx.serialization.json.Json
+import org.koin.compose.viewmodel.koinViewModel
 import timber.log.Timber
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlarmBottomSheet(
-    viewModel: AlarmSettingsViewModel = hiltViewModel(),
+    viewModel: AlarmSettingsViewModel = koinViewModel(),
     backstack: NavBackStack,
     darkTheme: Boolean,
     alarm: AlarmEntity,
