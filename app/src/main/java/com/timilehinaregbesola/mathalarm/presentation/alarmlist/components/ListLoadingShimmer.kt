@@ -8,6 +8,7 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -31,12 +32,15 @@ import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 
 @Composable
 fun ListLoadingShimmer(
+    modifier: Modifier = Modifier,
     imageHeight: Dp,
     padding: Dp = MaterialTheme.spacing.medium,
     isDark: Boolean,
 ) {
     BoxWithConstraints(
-        modifier = Modifier.fillMaxSize(),
+        modifier = Modifier
+            .fillMaxSize()
+            .then(modifier),
     ) {
         val cardWidthPx = with(LocalDensity.current) { (maxWidth - (padding * DOUBLE_PADDING)).toPx() }
         val cardHeightPx = with(LocalDensity.current) { (imageHeight - padding).toPx() }
@@ -88,12 +92,12 @@ fun ListLoadingShimmer(
         LazyColumn {
             items(SHIMMER_CARD_NUMBER) {
                 ShimmerCardItem(
+                    modifier = Modifier.padding(padding),
                     colors = if (isDark) darkColors else lightColors,
                     xShimmer = xCardShimmer.value,
                     yShimmer = yCardShimmer.value,
                     cardHeight = imageHeight,
-                    gradientWidth = gradientWidth,
-                    padding = padding,
+                    gradientWidth = gradientWidth
                 )
             }
         }

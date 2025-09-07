@@ -4,6 +4,7 @@ import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 
@@ -16,6 +17,7 @@ import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
  */
 @Composable
 fun MathAlarmDialog(
+    modifier: Modifier = Modifier,
     arguments: DialogArguments,
     isDialogOpen: Boolean,
     onDismissRequest: () -> Unit,
@@ -23,6 +25,7 @@ fun MathAlarmDialog(
     if (isDialogOpen) {
         with(arguments) {
             AlertDialog(
+                modifier = modifier,
                 onDismissRequest = onDismissRequest,
                 title = if (title != null) {
                     { Text(text = title) }

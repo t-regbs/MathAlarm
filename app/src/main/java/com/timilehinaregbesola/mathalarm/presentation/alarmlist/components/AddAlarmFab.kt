@@ -1,7 +1,6 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.size
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.MaterialTheme
@@ -14,7 +13,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AddAlarmFab.FAB_BACKGROUND_COLOR
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AddAlarmFab.FAB_IMAGE_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.ui.fabShape
 
 @ExperimentalMaterial3Api
@@ -31,7 +29,6 @@ fun AddAlarmFab(
         containerColor = Color(FAB_BACKGROUND_COLOR),
     ) {
         Image(
-//            modifier = Modifier.size(FAB_IMAGE_SIZE),
             painter = fabImage,
             contentDescription = null,
         )

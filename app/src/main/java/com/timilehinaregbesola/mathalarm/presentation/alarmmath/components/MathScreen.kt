@@ -2,7 +2,6 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmmath.components
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.net.Uri
 import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
@@ -58,8 +57,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavHostController
 import androidx.navigation3.runtime.NavBackStack
 import cafe.adriel.lyricist.strings
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
@@ -72,7 +71,6 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathScreenEvent.
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathScreenEvent.OnClearClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathScreenEvent.OnEnterClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathScreenEvent.OnSnoozeClick
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.ToneState
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.ToneState.Countdown
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.buildQuestionString
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ANSWER_FIELD_CORNER_SIZE
@@ -84,16 +82,13 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathS
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.CLEAR_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.DEFAULT_VIBRATION_PATTERN
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ENTER_FONT_SIZE
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.FROM_SHEET_KEY
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.INITIAL_INDICATOR_PROGRESS
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.MAX_ANSWER_CHARS
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.PROGRESS_INDICATOR_HEIGHT
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.PROGRESS_LABEL
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.QUESTION_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.REPEAT_INDEFINITELY
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.SETTINGS_ID
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.SNOOZE_FONT_SIZE
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.TEST_ALARM_KEY
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.generateMathProblem
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.presentation.ui.clearButtonColor
@@ -103,7 +98,6 @@ import com.timilehinaregbesola.mathalarm.presentation.ui.shapes
 import com.timilehinaregbesola.mathalarm.presentation.ui.snoozeButtonColor
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
-import com.timilehinaregbesola.mathalarm.utils.Destinations
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
 import timber.log.Timber
@@ -140,7 +134,7 @@ fun MathScreen(
             }
         )
     }
-    val animatedProgress = animateFloatAsState(
+    val animatedProgress by animateFloatAsState(
         targetValue = progress,
         animationSpec = ProgressAnimationSpec,
         label = PROGRESS_LABEL
@@ -158,12 +152,6 @@ fun MathScreen(
                     if (!alarm.repeat) {
                         viewModel.completeAlarm(AlarmMapper().mapToDomainModel(alarm))
                     }
-//                    val fromSheet = navController
-//                        .previousBackStackEntry?.savedStateHandle?.remove<Boolean>(FROM_SHEET_KEY)
-//                    fromSheet?.let {
-//                        navController.previousBackStackEntry?.savedStateHandle?.set(TEST_ALARM_KEY, alarm)
-//                    }
-//                    navController.popBackStack()
                     backStack.removeLastOrNull()
                 }
                 is AlarmMathViewModel.UiEvent.StopVibrateAndHideKeyboard -> {
@@ -185,8 +173,7 @@ fun MathScreen(
             }
         }
         if (alarm.alarmTone.isNotEmpty()) {
-            val alarmUri = Uri.parse(alarm.alarmTone)
-//            println(navController.previousBackStackEntry?.destination?.id)
+            val alarmUri = alarm.alarmTone.toUri()
             if (fromSheet) {
                 try {
                     viewModel.audioPlayer.apply {
@@ -214,8 +201,7 @@ fun MathScreen(
     MathScreenContent(
         snackbarHostState = snackbarHostState,
         question = question.value,
-        toneState = toneState,
-        animatedProgress = animatedProgress.value,
+        animatedProgress = animatedProgress,
         inputField = {
             MathInputField(
                 value = viewModel.answerText.value,
@@ -243,7 +229,6 @@ fun MathScreen(
                 },
                 onSnoozeClick = {
                     viewModel.onEvent(OnSnoozeClick(alarm.alarmId))
-//                    navController.popBackStack()
                     backStack.removeLastOrNull()
                 }
             )
@@ -256,13 +241,12 @@ fun MathScreen(
 private fun MathScreenContent(
     snackbarHostState: SnackbarHostState,
     question: String,
-    toneState: ToneState?,
     animatedProgress: Float,
     inputField: @Composable () -> Unit,
     buttonSection: @Composable () -> Unit
 ) {
     Scaffold(
-        snackbarHost = { AlarmSnack(snackbarHostState) },
+        snackbarHost = { AlarmSnack(state = snackbarHostState) },
     ) { padding ->
         with(MaterialTheme) {
             Surface(
@@ -273,16 +257,14 @@ private fun MathScreenContent(
             ) {
                 Column {
                     Spacer(modifier = Modifier.height(spacing.extraMedium))
-                    if (toneState is Countdown) {
-                        LinearProgressIndicator(
-                            progress = { animatedProgress },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(PROGRESS_INDICATOR_HEIGHT)
-                                .padding(horizontal = spacing.extraMedium),
-                            color = indicatorColor,
-                        )
-                    }
+                    LinearProgressIndicator(
+                        progress = { animatedProgress },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(PROGRESS_INDICATOR_HEIGHT)
+                            .padding(horizontal = spacing.extraMedium),
+                        color = indicatorColor,
+                    )
                     Spacer(modifier = Modifier.height(spacing.large))
                     Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -348,7 +330,8 @@ private fun MathInputField(
             focusedContainerColor = if (darkTheme) DarkGray else unSelectedDay,
             focusedIndicatorColor = Transparent,
             unfocusedIndicatorColor = Transparent,
-            disabledIndicatorColor = Transparent
+            disabledIndicatorColor = Transparent,
+            cursorColor = MaterialTheme.colorScheme.onSurface
         ),
         shape = shapes.medium.copy(CornerSize(ANSWER_FIELD_CORNER_SIZE)),
     )
@@ -429,7 +412,6 @@ fun MathPreview() {
         MathScreenContent(
             snackbarHostState = SnackbarHostState(),
             question = "1 + 1",
-            toneState = Countdown(5, 2),
             animatedProgress = INITIAL_INDICATOR_PROGRESS,
             inputField = {
                 MathInputField(

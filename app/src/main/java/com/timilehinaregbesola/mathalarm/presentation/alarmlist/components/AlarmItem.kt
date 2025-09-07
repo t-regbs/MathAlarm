@@ -69,6 +69,7 @@ import com.timilehinaregbesola.mathalarm.utils.getFormatTime
 @ExperimentalMaterial3Api
 @Composable
 fun AlarmItem(
+    modifier: Modifier = Modifier,
     alarm: Alarm,
     onEditAlarm: () -> Unit,
     onUpdateAlarm: (Alarm) -> Unit,
@@ -82,10 +83,8 @@ fun AlarmItem(
             modifier = Modifier
                 .fillMaxWidth()
                 .fillMaxHeight()
-                .padding(
-                    top = small,
-                    bottom = small,
-                ),
+                .padding(vertical = small)
+                .then(modifier),
             elevation = CardDefaults.cardElevation(defaultElevation = ALARM_ITEM_ELEVATION),
             shape = MaterialTheme.shapes.medium.copy(CornerSize(ALARM_ITEM_CORNER_SIZE)),
         ) {
