@@ -9,7 +9,7 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.flatMapConcat
 import kotlinx.coroutines.flow.toList
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert
 import org.junit.Test
@@ -27,14 +27,14 @@ class ClearAlarmsTest {
     private val clearAlarmsUseCase = ClearAlarms(alarmRepository, alarmInteractor)
 
     @After
-    fun tearDown() = runBlockingTest {
+    fun tearDown() = runTest {
         alarmRepository.clear()
         alarmInteractor.clear()
     }
 
     @FlowPreview
     @Test
-    fun `test if alarms are deleted`() = runBlockingTest {
+    fun `test if alarms are deleted`() = runTest {
         val alarm1 = Alarm(alarmId = 1, title = "alarm 1", isSaved = false, isOn = true)
         val alarm2 = Alarm(alarmId = 2, title = "alarm 2", isSaved = true, isOn = false)
         val alarm3 = Alarm(alarmId = 3, title = "alarm 3", isSaved = false, isOn = true)
@@ -50,7 +50,7 @@ class ClearAlarmsTest {
     }
 
     @Test
-    fun `test if cleared alarms are not scheduled`() = runBlockingTest {
+    fun `test if cleared alarms are not scheduled`() = runTest {
         val alarm1 = Alarm(alarmId = 1, title = "alarm 1", isSaved = false, isOn = true)
         val alarm2 = Alarm(alarmId = 2, title = "alarm 2", isSaved = true, isOn = false)
         val alarm3 = Alarm(alarmId = 3, title = "alarm 3", isSaved = false, isOn = true)

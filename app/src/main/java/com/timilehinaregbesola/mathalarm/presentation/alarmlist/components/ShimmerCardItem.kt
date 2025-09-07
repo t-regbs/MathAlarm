@@ -1,7 +1,11 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -14,12 +18,12 @@ import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 
 @Composable
 fun ShimmerCardItem(
+    modifier: Modifier = Modifier,
     colors: List<Color>,
     xShimmer: Float,
     yShimmer: Float,
     cardHeight: Dp,
-    gradientWidth: Float,
-    padding: Dp,
+    gradientWidth: Float
 ) {
     val brush = linearGradient(
         colors,
@@ -27,7 +31,7 @@ fun ShimmerCardItem(
         end = Offset(xShimmer, yShimmer),
     )
     with(MaterialTheme) {
-        Column(modifier = Modifier.padding(padding)) {
+        Column(modifier = modifier) {
             Surface(
                 shape = shapes.small,
             ) {

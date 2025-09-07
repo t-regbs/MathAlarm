@@ -13,17 +13,15 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.core.app.NotificationCompat
 import androidx.core.net.toUri
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.timilehinaregbesola.mathalarm.AlarmReceiver
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
-import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.interactors.AudioPlayer
 import com.timilehinaregbesola.mathalarm.presentation.MainActivity
 import com.timilehinaregbesola.mathalarm.utils.getNotificationManager
 import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.serialization.json.Json
 import timber.log.Timber
 import java.io.InputStream
 import java.net.URLEncoder
@@ -116,9 +114,8 @@ class MathAlarmNotification(
         }
 
     private fun buildPendingIntent(alarm: Alarm): PendingIntent {
-        val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
-        val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
-        val json = jsonAdapter.toJson(AlarmMapper().mapFromDomainModel(alarm))
+        val alarmEntity = AlarmMapper().mapFromDomainModel(alarm)
+        val json = Json.encodeToString(alarmEntity)
         val alarmJson = URLEncoder.encode(json, "utf-8")
         val notificationIntent = Intent(
             Intent.ACTION_VIEW,

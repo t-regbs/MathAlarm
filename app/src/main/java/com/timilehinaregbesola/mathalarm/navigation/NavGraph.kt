@@ -1,44 +1,44 @@
 package com.timilehinaregbesola.mathalarm.navigation
 
-import androidx.compose.animation.AnimatedContentTransitionScope
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.slideInHorizontally
+import androidx.compose.animation.slideOutHorizontally
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.background
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.unit.dp
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import androidx.navigation.navDeepLink
-import com.google.accompanist.navigation.material.ExperimentalMaterialNavigationApi
-import com.google.accompanist.navigation.material.ModalBottomSheetLayout
-import com.google.accompanist.navigation.material.bottomSheet
-import com.google.accompanist.navigation.material.rememberBottomSheetNavigator
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
+import androidx.compose.ui.Modifier
+import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
+import androidx.navigation3.runtime.NavKey
+import androidx.navigation3.runtime.entry
+import androidx.navigation3.runtime.entryProvider
+import androidx.navigation3.runtime.rememberNavBackStack
+import androidx.navigation3.runtime.rememberSavedStateNavEntryDecorator
+import androidx.navigation3.ui.NavDisplay
+import androidx.navigation3.ui.rememberSceneSetupNavEntryDecorator
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
+import com.timilehinaregbesola.mathalarm.navigation.NavGraph.ANIM_TRANSITION_DURATION
+import com.timilehinaregbesola.mathalarm.presentation.MainActivity.Companion.deeplinkInfo
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.ListDisplayScreen
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
-import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_ALARM_LIST
-import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_ALARM_MATH
-import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_ALARM_MATH_ARGUMENT
-import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_ALARM_MATH_URI
-import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_APP_SETTINGS
-import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_SETTINGS_SHEET
-import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_SETTINGS_SHEET_ARGUMENT
+import com.timilehinaregbesola.mathalarm.utils.Destinations.AlarmList
+import com.timilehinaregbesola.mathalarm.utils.Destinations.AlarmMath
+import com.timilehinaregbesola.mathalarm.utils.Destinations.AppSettings
+import com.timilehinaregbesola.mathalarm.utils.Destinations.SettingsSheet
 import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.serialization.json.Json
 
-@OptIn(ExperimentalMaterialNavigationApi::class)
-@ExperimentalMaterialNavigationApi
 @ExperimentalAnimationApi
 @InternalCoroutinesApi
 @ExperimentalComposeUiApi
@@ -46,94 +46,90 @@ import kotlinx.coroutines.InternalCoroutinesApi
 @ExperimentalFoundationApi
 @Composable
 fun NavGraph(preferences: AlarmPreferencesImpl) {
-    val bottomSheetNavigator = rememberBottomSheetNavigator()
-    val navController = rememberNavController(bottomSheetNavigator)
-    Surface(color = MaterialTheme.colorScheme.background) {
-        ModalBottomSheetLayout(
-            bottomSheetNavigator = bottomSheetNavigator,
-            sheetShape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp),
-        ) {
-            NavHost(navController = navController, startDestination = NAV_ALARM_LIST) {
-                composable(
-                    route = NAV_ALARM_LIST,
-                    enterTransition = {
-                        slideIntoContainer(
-                            AnimatedContentTransitionScope.SlideDirection.Right,
-                            animationSpec = tween(700),
-                        )
-                    },
-                    exitTransition = {
-                        slideOutOfContainer(
-                            AnimatedContentTransitionScope.SlideDirection.Left,
-                            animationSpec = tween(700),
-                        )
-                    },
-                ) {
-                    ListDisplayScreen(
-                        navController = navController,
-                        darkTheme = preferences.shouldUseDarkColors(),
-                    )
-                }
-                composable(
-                    route = NAV_ALARM_MATH,
-                    deepLinks = listOf(navDeepLink { uriPattern = NAV_ALARM_MATH_URI }),
-                    enterTransition = {
-                        slideIntoContainer(
-                            AnimatedContentTransitionScope.SlideDirection.Right,
-                            animationSpec = tween(700),
-                        )
-                    },
-                    exitTransition = {
-                        slideOutOfContainer(
-                            AnimatedContentTransitionScope.SlideDirection.Left,
-                            animationSpec = tween(700),
-                        )
-                    },
-                ) {
-                    val alarmJson = it.arguments?.getString(NAV_ALARM_MATH_ARGUMENT)
-                    val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
-                    val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
-                    val alarmObject = alarmJson?.let { it1 -> jsonAdapter.fromJson(it1) }
-                    MathScreen(
-                        navController = navController,
-                        alarm = alarmObject!!,
-                        darkTheme = preferences.shouldUseDarkColors(),
-                    )
-                }
-                composable(
-                    route = NAV_APP_SETTINGS,
-                    enterTransition = {
-                        slideIntoContainer(
-                            AnimatedContentTransitionScope.SlideDirection.Right,
-                            animationSpec = tween(700),
-                        )
-                    },
-                    exitTransition = {
-                        slideOutOfContainer(
-                            AnimatedContentTransitionScope.SlideDirection.Left,
-                            animationSpec = tween(700),
-                        )
-                    },
-                ) {
-                    AppSettingsScreen(
-                        onBackPress = { navController.popBackStack() },
-                        pref = preferences,
-                    )
-                }
-                bottomSheet(
-                    route = NAV_SETTINGS_SHEET,
-                ) { backStackEntry ->
-                    val alarmJson = backStackEntry.arguments?.getString(NAV_SETTINGS_SHEET_ARGUMENT)
-                    val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
-                    val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
-                    val alarmObject = alarmJson?.let { jsonAdapter.fromJson(it) }
-                    AlarmBottomSheet(
-                        navController = navController,
-                        darkTheme = preferences.shouldUseDarkColors(),
-                        alarm = alarmObject!!,
-                    )
-                }
-            }
+    val backStack = rememberNavBackStack(AlarmList)
+    val bottomSheetStrategy = remember { BottomSheetSceneStrategy<NavKey>() }
+
+    val currentDeeplinkInfo = rememberUpdatedState(deeplinkInfo)
+    LaunchedEffect(currentDeeplinkInfo) {
+        currentDeeplinkInfo.value?.let {
+            backStack.add(AlarmMath(it, false))
         }
     }
+
+    NavDisplay(
+        modifier = Modifier.background(color = MaterialTheme.colorScheme.background),
+        backStack = backStack,
+        onBack = { backStack.removeLastOrNull() },
+        sceneStrategy = bottomSheetStrategy,
+        entryDecorators = listOf(
+            rememberSceneSetupNavEntryDecorator(),
+            rememberSavedStateNavEntryDecorator(),
+            rememberViewModelStoreNavEntryDecorator()
+        ),
+        transitionSpec = {
+            slideInHorizontally(
+                animationSpec = tween(ANIM_TRANSITION_DURATION),
+                initialOffsetX = { -it }) togetherWith
+                    slideOutHorizontally(
+                        animationSpec = tween(ANIM_TRANSITION_DURATION),
+                        targetOffsetX = { -it })
+        },
+        popTransitionSpec = {
+            slideInHorizontally(
+                animationSpec = tween(ANIM_TRANSITION_DURATION),
+                initialOffsetX = { it }) togetherWith
+                    slideOutHorizontally(
+                        animationSpec = tween(ANIM_TRANSITION_DURATION),
+                        targetOffsetX = { it })
+        },
+        predictivePopTransitionSpec = {
+            slideInHorizontally(
+                animationSpec = tween(ANIM_TRANSITION_DURATION),
+                initialOffsetX = { it }) togetherWith
+                    slideOutHorizontally(
+                        animationSpec = tween(ANIM_TRANSITION_DURATION),
+                        targetOffsetX = { it })
+        },
+        entryProvider = entryProvider {
+            entry<AlarmList> {
+                ListDisplayScreen(
+                    backstack = backStack,
+                    darkTheme = preferences.shouldUseDarkColors(),
+                )
+            }
+
+            entry<SettingsSheet>(
+                metadata = BottomSheetSceneStrategy.bottomSheet()
+            ) {
+                val alarmObject = Json.decodeFromString<AlarmEntity>(it.settingsAlarm)
+                AlarmBottomSheet(
+                    backstack = backStack,
+                    darkTheme = preferences.shouldUseDarkColors(),
+                    alarm = alarmObject
+                )
+            }
+
+            entry<AlarmMath> {
+                val alarmObject = Json.decodeFromString<AlarmEntity>(it.alarmJson)
+                MathScreen(
+                    backStack = backStack,
+                    alarm = alarmObject,
+                    darkTheme = preferences.shouldUseDarkColors(),
+                    fromSheet = it.fromSheet
+                )
+            }
+
+            entry<AppSettings> {
+                AppSettingsScreen(
+                    onBackPress = { backStack.removeLastOrNull() },
+                    pref = preferences
+                )
+            }
+
+        }
+    )
+}
+
+private object NavGraph {
+    val ANIM_TRANSITION_DURATION = 700
 }

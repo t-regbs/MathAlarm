@@ -7,7 +7,7 @@ import com.timilehinaregbesola.mathalarm.fake.AlarmRepositoryFake
 import com.timilehinaregbesola.mathalarm.fake.NotificationInteractorFake
 import com.timilehinaregbesola.mathalarm.provider.CalendarProviderImpl
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Before
 import org.junit.Test
 
@@ -31,7 +31,7 @@ class SnoozeAlarmTest {
 
     private val baseAlarm = Alarm(alarmId = 216L, title = "snooze me", isOn = true)
     @Before
-    fun setup() = runBlockingTest {
+    fun setup() = runTest {
         alarmRepository.clear()
         alarmInteractor.clear()
         notificationInteractor.clear()
@@ -39,7 +39,7 @@ class SnoozeAlarmTest {
 
     // Test fails sometimes
  /*   @Test
-    fun `test if alarm is snoozed`() = runBlockingTest {
+    fun `test if alarm is snoozed`() = runTest {
         addAlarmUseCase(baseAlarm)
         val snoozeMinutes = 5
 
@@ -55,12 +55,12 @@ class SnoozeAlarmTest {
     }*/
 
     @Test(expected = IllegalArgumentException::class)
-    fun `test if error is shown when snoozing with negative number`() = runBlockingTest {
+    fun `test if error is shown when snoozing with negative number`() = runTest {
         snoozeAlarmUseCase(baseAlarm.alarmId, -5)
     }
 
     @Test
-    fun `test if notification is dismissed`() = runBlockingTest {
+    fun `test if notification is dismissed`() = runTest {
         notificationInteractor.show(baseAlarm)
 
         snoozeAlarmUseCase(baseAlarm.alarmId, 5)

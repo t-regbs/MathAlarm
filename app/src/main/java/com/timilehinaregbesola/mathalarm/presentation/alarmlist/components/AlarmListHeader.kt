@@ -30,6 +30,7 @@ import java.util.Calendar
 
 @Composable
 fun ListHeader(
+    modifier: Modifier = Modifier,
     enabled: Boolean,
     calendar: Calendar,
     alarmList: List<Alarm>,
@@ -51,10 +52,12 @@ fun ListHeader(
     }
     Surface(
         modifier = Modifier
+            .padding(top = MaterialTheme.spacing.small)
             .fillMaxWidth()
             .background(
                 color = if (isDark) darkPrimaryLight else LightGray.copy(alpha = LIST_HEADER_ALPHA),
-            ),
+            )
+            .then(modifier),
         tonalElevation = LIST_HEADER_ELEVATION,
     ) {
         with(MaterialTheme.spacing) {

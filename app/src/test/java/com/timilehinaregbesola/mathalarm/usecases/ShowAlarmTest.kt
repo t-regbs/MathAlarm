@@ -6,7 +6,7 @@ import com.timilehinaregbesola.mathalarm.fake.AlarmInteractorFake
 import com.timilehinaregbesola.mathalarm.fake.AlarmRepositoryFake
 import com.timilehinaregbesola.mathalarm.fake.NotificationInteractorFake
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.runBlockingTest
+import kotlinx.coroutines.test.runTest
 import org.junit.Assert
 import org.junit.Before
 import org.junit.Test
@@ -28,14 +28,14 @@ class ShowAlarmTest {
     private val showAlarmUseCase = ShowAlarm(alarmRepository, notificationInteractor, scheduleNextAlarmUseCase)
 
     @Before
-    fun setup() = runBlockingTest {
+    fun setup() = runTest {
         alarmRepository.clear()
         alarmInteractor.clear()
         notificationInteractor.clear()
     }
 
     @Test
-    fun `test if alarm is shown when alarm is on`() = runBlockingTest {
+    fun `test if alarm is shown when alarm is on`() = runTest {
         val alarm = Alarm(alarmId = 1, title = "should show", isOn = true)
         addAlarmUseCase(alarm)
         showAlarmUseCase(alarm.alarmId)
@@ -44,7 +44,7 @@ class ShowAlarmTest {
     }
 
     @Test
-    fun `test if alarm is ignored when alarm is not on`() = runBlockingTest {
+    fun `test if alarm is ignored when alarm is not on`() = runTest {
         val alarm = Alarm(alarmId = 2, title = "should not show")
         addAlarmUseCase(alarm)
         showAlarmUseCase(alarm.alarmId)
@@ -53,7 +53,7 @@ class ShowAlarmTest {
     }
 
     @Test
-    fun `test if next alarm is scheduled when alarm is repeating`() = runBlockingTest {
+    fun `test if next alarm is scheduled when alarm is repeating`() = runTest {
         val alarm = Alarm(alarmId = 3, title = "is repeating", repeat = true, isOn = true)
         addAlarmUseCase(alarm)
         showAlarmUseCase(alarm.alarmId)
@@ -62,7 +62,7 @@ class ShowAlarmTest {
     }
 
     @Test
-    fun `test if next alarm is not scheduled when alarm is not repeating`() = runBlockingTest {
+    fun `test if next alarm is not scheduled when alarm is not repeating`() = runTest {
         val alarm = Alarm(alarmId = 4, title = "should no repeat", repeat = false, isOn = true)
         addAlarmUseCase(alarm)
         showAlarmUseCase(alarm.alarmId)
@@ -71,7 +71,7 @@ class ShowAlarmTest {
     }
 
     @Test
-    fun `test if next alarm is not scheduled when alarm is not on`() = runBlockingTest {
+    fun `test if next alarm is not scheduled when alarm is not on`() = runTest {
         val alarm = Alarm(alarmId = 5, title = "alarm off", repeat = true, isOn = false)
         addAlarmUseCase(alarm)
         showAlarmUseCase(alarm.alarmId)

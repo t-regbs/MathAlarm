@@ -3,7 +3,7 @@ package com.timilehinaregbesola.mathalarm.fake
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
 import com.timilehinaregbesola.mathalarm.utils.getTime
-import java.util.*
+import java.util.Calendar
 
 class AlarmInteractorFake : AlarmInteractor {
     private val alarmMap: MutableMap<Long, FakeData> = mutableMapOf()

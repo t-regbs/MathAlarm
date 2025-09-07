@@ -3,10 +3,14 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 import androidx.compose.foundation.layout.Arrangement.Center
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.material3.*
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.outlined.DeleteSweep
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
@@ -20,18 +24,21 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.ListT
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ListTopAppBar(
-    openDialog: (Boolean) -> Unit,
+    modifier: Modifier = Modifier,
+    openDialog: () -> Unit,
     onSettingsClick: () -> Unit,
 ) {
     TopAppBar(
-        modifier = Modifier.shadow(elevation = APP_BAR_TITLE),
+        modifier = Modifier
+            .shadow(elevation = APP_BAR_TITLE)
+            .then(modifier),
         title = {
             Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Center) {
                 Text(text = strings.alarms, fontSize = LIST_TITLE_FONT_SIZE)
             }
         },
         actions = {
-            IconButton(onClick = { openDialog(true) }) {
+            IconButton(onClick = { openDialog() }) {
                 Icon(imageVector = Icons.Outlined.DeleteSweep, contentDescription = null)
             }
             IconButton(onClick = onSettingsClick) {

@@ -6,7 +6,7 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkStatic
 import org.junit.Before
-import java.util.*
+import java.util.Calendar
 
 class AlarmNotificationSchedulerTest {
 

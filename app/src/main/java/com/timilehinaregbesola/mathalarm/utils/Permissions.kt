@@ -62,7 +62,7 @@ fun checkPermissions(
     }
 }
 
-fun handleNotificationPermission(context: Context, callback: (granted: Boolean) -> Unit) {
+fun handleNotificationPermission(context: Activity, callback: (granted: Boolean) -> Unit) {
     if (Build.VERSION.SDK_INT >= 33) {
         context.handlePermission(Manifest.permission.POST_NOTIFICATIONS) { granted ->
             callback(granted)

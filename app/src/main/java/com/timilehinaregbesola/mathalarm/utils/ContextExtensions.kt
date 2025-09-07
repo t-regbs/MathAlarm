@@ -6,11 +6,13 @@ import android.app.Activity
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
+import android.content.ContextWrapper
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.net.Uri
 import android.os.Build
 import android.provider.Settings
+import android.view.ContextThemeWrapper
 import android.widget.Toast
 import androidx.annotation.StringRes
 import androidx.core.app.ActivityCompat
@@ -103,11 +105,11 @@ fun Context.email(
 fun Context.hasPermission(permission: String) =
     ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
 
-fun Context.handlePermission(permission: String, callback: (granted: Boolean) -> Unit) {
+fun Activity.handlePermission(permission: String, callback: (granted: Boolean) -> Unit) {
     if (hasPermission(permission)) {
         callback(true)
     } else {
-        ActivityCompat.requestPermissions(this as Activity, arrayOf(permission), 3)
+        ActivityCompat.requestPermissions(this, arrayOf(permission), 3)
     }
 }
 

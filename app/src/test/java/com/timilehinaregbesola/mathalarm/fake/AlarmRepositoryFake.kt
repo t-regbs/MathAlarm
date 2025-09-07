@@ -4,7 +4,7 @@ import com.timilehinaregbesola.mathalarm.data.AlarmDataSource
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flowOf
-import java.util.*
+import java.util.TreeMap
 
 class AlarmRepositoryFake : AlarmDataSource {
 

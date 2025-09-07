@@ -5,8 +5,8 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.fake.AlarmRepositoryFake
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.runBlocking
-import kotlinx.coroutines.test.runBlockingTest
-import org.junit.Assert.*
+import kotlinx.coroutines.test.runTest
+import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 
@@ -26,7 +26,7 @@ class AddAlarmTest {
 
     @ExperimentalCoroutinesApi
     @Test
-    fun `test if alarm is correctly added`() = runBlockingTest {
+    fun `test if alarm is correctly added`() = runTest {
         val alarm = Alarm(alarmId = 12, isOn = true, vibrate = true)
         addAlarmUseCase(alarm)
 

@@ -1,11 +1,16 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 
-import androidx.compose.material3.*
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Snackbar
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import cafe.adriel.lyricist.strings
 
 @Composable
 fun ClearDialog(
+    modifier: Modifier = Modifier,
     openDialog: Boolean,
     onClear: () -> Unit,
     onCloseDialog: () -> Unit,
@@ -21,6 +26,7 @@ fun ClearDialog(
         },
     )
     MathAlarmDialog(
+        modifier = modifier,
         arguments = arguments,
         isDialogOpen = openDialog,
         onDismissRequest = onCloseDialog,
@@ -29,8 +35,9 @@ fun ClearDialog(
 
 @ExperimentalMaterial3Api
 @Composable
-fun AlarmSnack(state: SnackbarHostState) {
+fun AlarmSnack(modifier: Modifier = Modifier, state: SnackbarHostState) {
     SnackbarHost(
+        modifier = modifier,
         hostState = state,
         snackbar = { data -> Snackbar(snackbarData = data) },
     )

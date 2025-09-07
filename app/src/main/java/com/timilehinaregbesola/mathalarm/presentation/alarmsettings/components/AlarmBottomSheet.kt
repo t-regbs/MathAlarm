@@ -3,6 +3,7 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components
 import android.app.Activity
 import android.media.RingtoneManager
 import android.net.Uri
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.Orientation.Vertical
@@ -53,10 +54,8 @@ import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.net.toUri
 import androidx.hilt.navigation.compose.hiltViewModel
-import androidx.navigation.NavHostController
+import androidx.navigation3.runtime.NavBackStack
 import cafe.adriel.lyricist.strings
-import com.squareup.moshi.Moshi
-import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.DialogArguments
@@ -78,7 +77,6 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.A
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.DIFFICULTY_SECTION_HORIZONTAL_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.DIFFICULTY_SECTION_TOP_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.DIVIDER_THICKNESS
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.FROM_SHEET_KEY
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.MIDDLE_CONTROL_SECTION_TOP_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.NO_ELEVATION
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.SAVE_BUTTON_FONT_SIZE
@@ -89,13 +87,11 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.A
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_PATTERN
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_TEXT_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_TEXT_PADDING
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.URL_ENCODER
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimaryLight
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
-import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_ALARM_MATH
-import com.timilehinaregbesola.mathalarm.utils.Navigation.NAV_ALARM_MATH_ARGUMENT
+import com.timilehinaregbesola.mathalarm.utils.Destinations.AlarmMath
 import com.timilehinaregbesola.mathalarm.utils.PickRingtone
 import com.timilehinaregbesola.mathalarm.utils.checkPermissions
 import com.timilehinaregbesola.mathalarm.utils.handleNotificationPermission
@@ -105,15 +101,15 @@ import kotlinx.coroutines.Dispatchers.Main
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.serialization.json.Json
 import timber.log.Timber
-import java.net.URLEncoder
 import java.time.format.DateTimeFormatter
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlarmBottomSheet(
     viewModel: AlarmSettingsViewModel = hiltViewModel(),
-    navController: NavHostController,
+    backstack: NavBackStack,
     darkTheme: Boolean,
     alarm: AlarmEntity,
 ) {
@@ -123,6 +119,7 @@ fun AlarmBottomSheet(
     var showConfirmationDialog by remember { mutableStateOf(false) }
     var showPermRequiredDialog by remember { mutableStateOf(false) }
     val context = LocalContext.current
+    val activity = LocalActivity.current
 
     val toneText = remember { mutableStateOf<String?>(null) }
     val result = remember { mutableStateOf<Uri?>(null) }
@@ -152,24 +149,14 @@ fun AlarmBottomSheet(
                     )
                 }
                 is AlarmSettingsViewModel.UiEvent.SaveAlarm -> {
-                    navController.navigateUp()
+                    backstack.removeLastOrNull()
                 }
                 is AlarmSettingsViewModel.UiEvent.TestAlarm -> {
-                    navController
-                        .previousBackStackEntry?.savedStateHandle?.set(FROM_SHEET_KEY, true)
-                    // Nav to Math Screen
                     launch(IO) {
-                        val moshi = Moshi.Builder().addLast(KotlinJsonAdapterFactory()).build()
-                        val jsonAdapter = moshi.adapter(AlarmEntity::class.java).lenient()
-                        val json = jsonAdapter.toJson(AlarmMapper().mapFromDomainModel(event.alarm))
-                        val alarmJson = URLEncoder.encode(json, URL_ENCODER)
+                        val alarmEntity = AlarmMapper().mapFromDomainModel(event.alarm)
+                        val json = Json.encodeToString(alarmEntity)
                         withContext(Main) {
-                            navController.navigate(
-                                NAV_ALARM_MATH.replace(
-                                    "{$NAV_ALARM_MATH_ARGUMENT}",
-                                    alarmJson,
-                                ),
-                            )
+                            backstack.add(AlarmMath(alarmJson = json, fromSheet = true))
                         }
                     }
                 }
@@ -246,17 +233,19 @@ fun AlarmBottomSheet(
                     viewModel.onEvent(OnTestClick)
                 },
                 onSaveClick = {
-                    handleNotificationPermission(context = context) {
-                        if (it) {
-                            if (NotificationManagerCompat.from(context)
-                                    .areNotificationsEnabled()
-                            ) {
-                                viewModel.onEvent(OnSaveTodoClick)
+                    activity?.let {
+                        handleNotificationPermission(context = activity) {
+                            if (it) {
+                                if (NotificationManagerCompat.from(context)
+                                        .areNotificationsEnabled()
+                                ) {
+                                    viewModel.onEvent(OnSaveTodoClick)
+                                } else {
+                                    showConfirmationDialog = true
+                                }
                             } else {
-                                showConfirmationDialog = true
+                                showPermRequiredDialog = true
                             }
-                        } else {
-                            showPermRequiredDialog = true
                         }
                     }
                 }
