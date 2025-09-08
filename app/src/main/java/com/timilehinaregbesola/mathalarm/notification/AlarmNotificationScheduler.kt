@@ -7,6 +7,7 @@ import android.app.PendingIntent.FLAG_UPDATE_CURRENT
 import android.content.Context
 import android.content.Intent
 import android.os.Build
+import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.AlarmReceiver
 import com.timilehinaregbesola.mathalarm.AlarmReceiver.Companion.ALARM_ACTION
 import com.timilehinaregbesola.mathalarm.AlarmReceiver.Companion.EXTRA_TASK
@@ -26,7 +27,6 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
-import timber.log.Timber
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
@@ -34,7 +34,7 @@ import kotlin.time.Instant
 /**
  * Alarm manager to schedule an event based on the time from a Alarm.
  */
-class AlarmNotificationScheduler(private val context: Context) {
+class AlarmNotificationScheduler(private val context: Context, private val logger: Logger) {
 
     /**
      * Schedules all the alarm of the object at once including repeating ones
@@ -45,7 +45,7 @@ class AlarmNotificationScheduler(private val context: Context) {
     @OptIn(ExperimentalTime::class)
     @SuppressLint("UnspecifiedImmutableFlag")
     fun scheduleAlarm(passedAlarm: Alarm, reschedule: Boolean): Boolean {
-        Timber.d("Schedule alarm for id=${passedAlarm.alarmId}, time=${passedAlarm.hour}:${passedAlarm.minute}, repeat=${passedAlarm.repeat}, repeatDays=${passedAlarm.repeatDays}, reschedule=$reschedule")
+        logger.d("Schedule alarm for id=${passedAlarm.alarmId}, time=${passedAlarm.hour}:${passedAlarm.minute}, repeat=${passedAlarm.repeat}, repeatDays=${passedAlarm.repeatDays}, reschedule=$reschedule")
         val alarmIntent = Intent(context, AlarmReceiver::class.java).apply {
             action = ALARM_ACTION
             putExtra(EXTRA_TASK, passedAlarm.alarmId)
@@ -57,20 +57,20 @@ class AlarmNotificationScheduler(private val context: Context) {
 
         // If there is no day set, set the alarm on the closest possible date
         if (passedAlarm.repeatDays == "FFFFFFF") {
-            Timber.d("No repeat days set, determining closest possible date")
+            logger.d("No repeat days set, determining closest possible date")
             val dateTime = passedAlarm.initLocalDateTimeInSystemZone()
             val instant = dateTime.toInstant(tz)
             val nowInstant = Clock.System.now()
-            Timber.d("Alarm datetime: $dateTime, instant: $instant, now: $nowInstant")
+            logger.d("Alarm datetime: $dateTime, instant: $instant, now: $nowInstant")
 
             var dayOfTheWeek = dateTime.date.dayOfWeek.toIndex()
-            Timber.d("Current day of week: $dayOfTheWeek")
+            logger.d("Current day of week: $dayOfTheWeek")
 
             if (instant > nowInstant) { // set it today
                 val sb = StringBuilder("FFFFFFF")
                 sb.setCharAt(dayOfTheWeek, 'T')
                 passedAlarm.repeatDays = sb.toString()
-                Timber.d("Alarm time is in the future, setting for today. New repeatDays: ${passedAlarm.repeatDays}")
+                logger.d("Alarm time is in the future, setting for today. New repeatDays: ${passedAlarm.repeatDays}")
             } else { // alarm time already passed for the day so set it tomorrow
                 val sb = StringBuilder("FFFFFFF")
                 if (dayOfTheWeek == SAT) { // if it is saturday
@@ -80,31 +80,31 @@ class AlarmNotificationScheduler(private val context: Context) {
                 }
                 sb.setCharAt(dayOfTheWeek, 'T')
                 passedAlarm.repeatDays = sb.toString()
-                Timber.d("Alarm time already passed, setting for tomorrow (day $dayOfTheWeek). New repeatDays: ${passedAlarm.repeatDays}")
+                logger.d("Alarm time already passed, setting for tomorrow (day $dayOfTheWeek). New repeatDays: ${passedAlarm.repeatDays}")
             }
         }
 
         for (i in SUN..SAT) {
             if (passedAlarm.repeatDays[i] == 'T') {
-                Timber.d("Processing day $i (${fullDays[i]}) which is set to true")
+                logger.d("Processing day $i (${fullDays[i]}) which is set to true")
                 val nowInstant = Clock.System.now()
                 val localNow = nowInstant.toLocalDateTime(tz)
                 val todayDate = localNow.date
 
                 val currentDay = todayDate.dayOfWeek.toIndex()
 
-                Timber.d("Current day: $currentDay (${fullDays[currentDay]})")
+                logger.d("Current day: $currentDay (${fullDays[currentDay]})")
 
                 val daysUntilAlarm: Int
                 val targetDate: LocalDate
 
                 val alarmTimeToday = passedAlarm.initLocalDateTimeInSystemZone()
                 val alarmInstantToday = alarmTimeToday.toInstant(tz)
-                Timber.d("Alarm time today would be: $alarmTimeToday (${alarmInstantToday})")
-                Timber.d("Current time is: $localNow (${nowInstant})")
+                logger.d("Alarm time today would be: $alarmTimeToday (${alarmInstantToday})")
+                logger.d("Current time is: $localNow (${nowInstant})")
 
                 val isPastToday = alarmInstantToday < nowInstant
-                Timber.d("Is alarm time past for today? $isPastToday")
+                logger.d("Is alarm time past for today? $isPastToday")
 
                 if (currentDay > i || (currentDay == i && isPastToday)) {
                     // days left till end of week(sat) + the day of the week of the alarm
@@ -113,13 +113,13 @@ class AlarmNotificationScheduler(private val context: Context) {
                     // end of week + 1 (to sunday) + day of week alarm is on = 3 + 1 + 2 = 6
                     daysUntilAlarm = SAT - currentDay + 1 + i
                     targetDate = todayDate.plus(DatePeriod(days = daysUntilAlarm))
-                    Timber.d("Current day ($currentDay) > alarm day ($i) or same day but time passed, scheduling for next week")
-                    Timber.d("Days until alarm: $daysUntilAlarm, target date: $targetDate")
+                    logger.d("Current day ($currentDay) > alarm day ($i) or same day but time passed, scheduling for next week")
+                    logger.d("Days until alarm: $daysUntilAlarm, target date: $targetDate")
                 } else {
                     daysUntilAlarm = i - currentDay
                     targetDate = todayDate.plus(DatePeriod(days = daysUntilAlarm))
-                    Timber.d("Current day ($currentDay) <= alarm day ($i) and time not passed, scheduling for this week")
-                    Timber.d("Days until alarm: $daysUntilAlarm, target date: $targetDate")
+                    logger.d("Current day ($currentDay) <= alarm day ($i) and time not passed, scheduling for this week")
+                    logger.d("Days until alarm: $daysUntilAlarm, target date: $targetDate")
                 }
 
                 val targetDateTime = LocalDateTime(
@@ -132,10 +132,10 @@ class AlarmNotificationScheduler(private val context: Context) {
                     .append(passedAlarm.hour).append(passedAlarm.minute)
                 val id = stringId.toString().split("-").joinToString("")
                 val intentId = id.toInt()
-                Timber.d("Generated intent ID: $intentId for alarm ID: ${passedAlarm.alarmId}, day: $i, time: ${passedAlarm.hour}:${passedAlarm.minute}")
+                logger.d("Generated intent ID: $intentId for alarm ID: ${passedAlarm.alarmId}, day: $i, time: ${passedAlarm.hour}:${passedAlarm.minute}")
 
                 // Check if a previous alarm has been set
-                Timber.d("Checking if a previous alarm with this ID already exists")
+                logger.d("Checking if a previous alarm with this ID already exists")
                 val isSet = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     PendingIntent.getBroadcast(
                         context,
@@ -148,14 +148,14 @@ class AlarmNotificationScheduler(private val context: Context) {
                 }
 
                 if (isSet != null) {
-                    Timber.d("An alarm with ID $intentId already exists")
+                    logger.d("An alarm with ID $intentId already exists")
                     hasExistingAlarms = true
                     if (!reschedule) {
-                        Timber.d("Not rescheduling because reschedule flag is false")
+                        logger.d("Not rescheduling because reschedule flag is false")
                         // context.showToast(R.string.alarm_duplicate_toast_text)
                     } else {
                         // If reschedule is true, cancel the existing alarm and create a new one
-                        Timber.d("Canceling existing alarm because reschedule flag is true")
+                        logger.d("Canceling existing alarm because reschedule flag is true")
                         context.cancelAlarm(isSet)
                         isSet.cancel()
                     }
@@ -163,7 +163,7 @@ class AlarmNotificationScheduler(private val context: Context) {
 
                 // If reschedule is true or no existing alarm was found, create a new one
                 if (isSet == null || reschedule) {
-                    Timber.d("Proceeding to create new alarm")
+                    logger.d("Proceeding to create new alarm")
 
                     val pendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         PendingIntent.getBroadcast(
@@ -189,20 +189,20 @@ class AlarmNotificationScheduler(private val context: Context) {
 
         // Return true if we scheduled new alarms OR if there were existing alarms
         if (alarmIntentList.isEmpty() && !hasExistingAlarms) {
-            Timber.w("No alarms were scheduled and no existing alarms found")
+            logger.w("No alarms were scheduled and no existing alarms found")
             return false
         }
 
-        Timber.d("Scheduling ${alarmIntentList.size} alarms")
+        logger.d("Scheduling ${alarmIntentList.size} alarms")
         for (i in alarmIntentList.indices) {
             val pendingIntent = alarmIntentList[i]
             val instant = timeInstants[i]
-            Timber.d("Scheduling alarm #${i+1}/${alarmIntentList.size} for time: ${instant}")
+            logger.d("Scheduling alarm #${i+1}/${alarmIntentList.size} for time: ${instant}")
             context.setExactAlarm(instant.toEpochMilliseconds(), pendingIntent)
-            Timber.d("Alarm #${i+1} scheduled successfully")
+            logger.d("Alarm #${i+1} scheduled successfully")
         }
 
-        Timber.d("All ${alarmIntentList.size} alarms scheduled successfully, returning true")
+        logger.d("All ${alarmIntentList.size} alarms scheduled successfully, returning true")
         return true
     }
 
@@ -212,7 +212,7 @@ class AlarmNotificationScheduler(private val context: Context) {
      * @param alarm alarm to be canceled
      */
     fun cancelAlarm(alarm: Alarm) {
-        Timber.d("AlarmNotificationScheduler.cancelAlarm called: alarmId=${alarm.alarmId}, time=${alarm.hour}:${alarm.minute}, repeat=${alarm.repeat}, repeatDays=${alarm.repeatDays}")
+        logger.d("AlarmNotificationScheduler.cancelAlarm called: alarmId=${alarm.alarmId}, time=${alarm.hour}:${alarm.minute}, repeat=${alarm.repeat}, repeatDays=${alarm.repeatDays}")
 
         val receiverIntent = Intent(context, AlarmReceiver::class.java)
         receiverIntent.action = ALARM_ACTION
@@ -221,13 +221,13 @@ class AlarmNotificationScheduler(private val context: Context) {
         var canceledCount = 0
         for (i in 0..6) { // For each day of the week
             if (alarm.repeatDays.getOrNull(i) == 'T') {
-                Timber.d("Canceling alarm for day $i (${fullDays[i]})")
+                logger.d("Canceling alarm for day $i (${fullDays[i]})")
 
                 val stringId: StringBuilder = StringBuilder().append(alarm.alarmId).append(i)
                     .append(alarm.hour).append(alarm.minute)
                 val id = stringId.toString().split("-").joinToString("")
                 val intentId = id.toInt()
-                Timber.d("Generated intent ID: $intentId for alarm ID: ${alarm.alarmId}, day: $i, time: ${alarm.hour}:${alarm.minute}")
+                logger.d("Generated intent ID: $intentId for alarm ID: ${alarm.alarmId}, day: $i, time: ${alarm.hour}:${alarm.minute}")
 
                 val cancelPendingIntent = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                     PendingIntent.getBroadcast(
@@ -245,14 +245,14 @@ class AlarmNotificationScheduler(private val context: Context) {
                     )
                 }
 
-                Timber.d("Calling context.cancelAlarm for intent ID: $intentId")
+                logger.d("Calling context.cancelAlarm for intent ID: $intentId")
                 context.cancelAlarm(cancelPendingIntent)
                 cancelPendingIntent.cancel()
-                Timber.d("Alarm canceled for day $i (${fullDays[i]})")
+                logger.d("Alarm canceled for day $i (${fullDays[i]})")
                 canceledCount++
             }
         }
 
-        Timber.d("AlarmNotificationScheduler.cancelAlarm completed for alarmId=${alarm.alarmId}, canceled $canceledCount alarms")
+        logger.d("AlarmNotificationScheduler.cancelAlarm completed for alarmId=${alarm.alarmId}, canceled $canceledCount alarms")
     }
 }

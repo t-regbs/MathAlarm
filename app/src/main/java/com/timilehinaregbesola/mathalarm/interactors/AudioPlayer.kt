@@ -4,7 +4,7 @@ import android.content.Context
 import android.media.AudioAttributes
 import android.media.MediaPlayer
 import android.net.Uri
-import timber.log.Timber
+import co.touchlab.kermit.Logger
 
 interface AudioPlayer {
 
@@ -29,6 +29,7 @@ interface AudioPlayer {
 class PlayerWrapper(
 //    val resources: Resources,
     val context: Context,
+    private val logger: Logger
 ) : AudioPlayer {
     override fun setDataSource(alarmtone: Uri) {
         // Fall back on the default alarm if the database does not have an
@@ -46,7 +47,7 @@ class PlayerWrapper(
     override fun init() {
         player = MediaPlayer().apply {
             setOnErrorListener { mp, _, _ ->
-                Timber.e("Error occurred while playing audio.")
+                logger.e("Error occurred while playing audio.")
                 mp.stop()
                 mp.release()
                 player = null

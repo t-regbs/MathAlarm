@@ -20,6 +20,7 @@ hilt_android = "2.57.1"
 hilt_android_compiler = "2.57.1"
 hilt_nav_compose = "1.2.0"
 # @pin
+kermit = "2.0.8"
 kotlin = "2.2.0"
 kotlinx_serialization = "1.9.0"
 lottie = "6.6.7"
@@ -38,6 +39,7 @@ nav3Material = "1.0.0-SNAPSHOT"
 lifecycleViewmodel = "1.0.0-SNAPSHOT"
 appcompat = "1.7.1"
 datetime = "0.7.1"
+koin-bom = "4.1.1"
 
 [libraries]
 android-material = { module = "com.google.android.material:material", version.ref = "material" }
@@ -53,12 +55,10 @@ androidx-compose-ui-tooling = { module = "androidx.compose.ui:ui-tooling" }
 androidx-compose-ui-tooling-preview = { module = "androidx.compose.ui:ui-tooling-preview" }
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "splashscreen" }
 androidx-datastore = { module = "androidx.datastore:datastore-preferences", version.ref = "androidx_datastore" }
-androidx-hilt-navigation-compose = { module = "androidx.hilt:hilt-navigation-compose", version.ref = "hilt_nav_compose" }
 androidx-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx_ktx" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "androidx_room" }
 androidx-room-ktx = { module = "androidx.room:room-ktx", version.ref = "androidx_room" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "androidx_room" }
-androidx-test-core = { module = "androidx.test:core", version.ref = "androidx_test_core" }
 androidx-test-core-ktx = "androidx.test:core-ktx:1.7.0"
 androidx-test-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "test_espresso_core" }
 androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "test_junit_ext" }
@@ -75,24 +75,27 @@ firebase-analytics = { module = "com.google.firebase:firebase-analytics-ktx" }
 firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "firebase" }
 firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics" }
 firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
-hilt-android = { module = "com.google.dagger:hilt-android", version.ref = "hilt_android" }
-hilt-android-compiler = { module = "com.google.dagger:hilt-android-compiler", version.ref = "hilt_android_compiler" }
-hilt-android-testing = { module = "com.google.dagger:hilt-android-testing", version.ref = "hilt_android_compiler" }
 junit = { module = "junit:junit", version.ref = "test_junit" }
+kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+kermit-crashlytics = { module = "co.touchlab:kermit-crashlytics", version.ref = "kermit" }
 kotlinx-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx_serialization" }
 lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottie" }
 lyricist = { module = "cafe.adriel.lyricist:lyricist", version.ref = "lyricist" }
 lyricist-processor = { module = "cafe.adriel.lyricist:lyricist-processor", version.ref = "lyricist" }
 mockk = { module = "io.mockk:mockk", version.ref = "test_mockk" }
-plugin-ksp = { module = "com.google.devtools.ksp:com.google.devtools.ksp.gradle.plugin", version.ref = "ksp" }
 timber = { module = "com.jakewharton.timber:timber", version.ref = "timber" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
+koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin-bom" }
+koin-core = { module = "io.insert-koin:koin-core" }
+koin-android = { module = "io.insert-koin:koin-android" }
+koin-compose = { module = "io.insert-koin:koin-compose" }
+koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel" }
+koin-compose-viewmodel-navigation = { module = "io.insert-koin:koin-compose-viewmodel-navigation" }
 
 [plugins]
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 android-gradle = { id = "com.android.application", version.ref = "android_gradle_plugin" }
 crashlytics-gradle = { id = "com.google.firebase.crashlytics", version.ref = "crashlytics_plugin" }
-hilt-gradle = { id = "com.google.dagger.hilt.android", version.ref = "hilt_android" }
 kotlin-gradle = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 google-services = { id = "com.google.gms.google-services", version.ref = "google_services" }

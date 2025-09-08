@@ -2,7 +2,6 @@ plugins {
     alias(libs.plugins.android.gradle)
     id("kotlin-android")
     alias(libs.plugins.serialization)
-    id("dagger.hilt.android.plugin")
     id("org.jetbrains.kotlin.plugin.parcelize")
     alias(libs.plugins.google.services)
     alias(libs.plugins.crashlytics.gradle)
@@ -91,8 +90,6 @@ dependencies {
     testImplementation(libs.coroutines.test)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
-    androidTestImplementation(libs.hilt.android.testing)
-    kspAndroidTest(libs.hilt.android.compiler)
     testImplementation(libs.mockk)
 
     implementation(libs.androidx.room.runtime)
@@ -105,12 +102,6 @@ dependencies {
     implementation(libs.coroutines.android)
 
     implementation(libs.androidx.activity.compose)
-    implementation(libs.androidx.hilt.navigation.compose)
-
-    implementation(libs.timber)
-
-    implementation(libs.hilt.android)
-    ksp(libs.hilt.android.compiler)
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
@@ -143,4 +134,14 @@ dependencies {
 
     implementation(libs.lyricist)
     ksp(libs.lyricist.processor)
+
+    val koinBom = platform(libs.koin.bom)
+    implementation(koinBom)
+    implementation(libs.koin.core)
+    implementation(libs.koin.android)
+    implementation(libs.koin.compose)
+    implementation(libs.koin.compose.viewmodel)
+
+    implementation(libs.kermit)
+    implementation(libs.kermit.crashlytics)
 }

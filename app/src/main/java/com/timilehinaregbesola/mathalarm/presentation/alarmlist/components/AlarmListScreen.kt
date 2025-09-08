@@ -38,7 +38,6 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation3.runtime.NavBackStack
 import cafe.adriel.lyricist.strings
 import com.timilehinaregbesola.mathalarm.R
@@ -61,6 +60,7 @@ import com.timilehinaregbesola.mathalarm.utils.UiEvent.Navigate
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.ShowSnackbar
 import com.timilehinaregbesola.mathalarm.utils.getTimeLeft
 import kotlinx.serialization.json.Json
+import org.koin.compose.viewmodel.koinViewModel
 
 @SuppressLint("UnrememberedMutableState")
 @ExperimentalAnimationApi
@@ -68,7 +68,7 @@ import kotlinx.serialization.json.Json
 @ExperimentalMaterial3Api
 @Composable
 fun ListDisplayScreen(
-    viewModel: AlarmListViewModel = hiltViewModel(),
+    viewModel: AlarmListViewModel = koinViewModel(),
     backstack: NavBackStack,
     darkTheme: Boolean,
 ) {

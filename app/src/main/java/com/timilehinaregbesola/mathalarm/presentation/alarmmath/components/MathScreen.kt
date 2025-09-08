@@ -36,8 +36,8 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -58,9 +58,9 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation3.runtime.NavBackStack
 import cafe.adriel.lyricist.strings
+import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
@@ -100,7 +100,7 @@ import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
-import timber.log.Timber
+import org.koin.compose.viewmodel.koinViewModel
 import java.io.IOException
 
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
@@ -111,7 +111,7 @@ import java.io.IOException
 fun MathScreen(
     backStack: NavBackStack,
     alarm: AlarmEntity,
-    viewModel: AlarmMathViewModel = hiltViewModel(),
+    viewModel: AlarmMathViewModel = koinViewModel(),
     darkTheme: Boolean,
     fromSheet: Boolean = false
 ) {
@@ -189,7 +189,7 @@ fun MathScreen(
                 }
             }
         } else {
-            Timber.d("Tone not available")
+            Logger.d("Tone not available")
             viewModel.onEvent(MathScreenEvent.OnToneError("Tone not available"))
         }
         onDispose {

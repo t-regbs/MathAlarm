@@ -14,9 +14,10 @@ import android.provider.Settings
 import androidx.core.app.ActivityCompat
 import androidx.core.app.AlarmManagerCompat
 import androidx.core.content.ContextCompat
-import timber.log.Timber
+import co.touchlab.kermit.Logger
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
+import androidx.core.net.toUri
 
 /**
  * Sets a alarm using [AlarmManagerCompat] to be triggered based on the given parameter.
@@ -37,24 +38,24 @@ fun Context.setExactAlarm(
 
     if (adjustedTriggerTime <= currentTime) {
         // If the alarm time is in the past, add one week (7 days) to the trigger time
-        Timber.w("Alarm time is in the past, scheduling for next week")
+        Logger.w(messageString = "Alarm time is in the past, scheduling for next week", tag = "Context setExactAlarm")
         val oneWeekInMillis = 7 * 24 * 60 * 60 * 1000L
         adjustedTriggerTime += oneWeekInMillis
     }
 
     if (operation == null) {
-        Timber.e("PendingIntent is null, cannot schedule alarm")
+        Logger.e(messageString = "PendingIntent is null, cannot schedule alarm", tag = "Context setExactAlarm")
         return
     }
 
     val manager = getAlarmManager()
     if (manager == null) {
-        Timber.e("AlarmManager is null, cannot schedule alarm")
+        Logger.e(messageString = "AlarmManager is null, cannot schedule alarm", tag = "Context setExactAlarm")
         return
     }
 
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !manager.canScheduleExactAlarms()) {
-        Timber.e("Cannot schedule exact alarms - permission not granted on Android S+")
+        Logger.e(messageString = "Cannot schedule exact alarms - permission not granted on Android S+", tag = "Context setExactAlarm")
         return
     }
 
@@ -65,9 +66,9 @@ fun Context.setExactAlarm(
             adjustedTriggerTime,
             operation
         )
-        Timber.d("Alarm scheduled successfully")
+        Logger.d(messageString = "Alarm scheduled successfully", tag = "Context setExactAlarm")
     } catch (e: Exception) {
-        Timber.e(e, "Failed to schedule alarm")
+        Logger.e(e, tag = "Context setExactAlarm") {"Failed to schedule alarm"}
     }
 }
 
@@ -77,25 +78,25 @@ fun Context.setExactAlarm(
  * @param operation action to be canceled
  */
 fun Context.cancelAlarm(operation: PendingIntent?) {
-    Timber.d("cancelAlarm called with operation=${operation?.hashCode()}")
+    Logger.d(messageString = "cancelAlarm called with operation=${operation?.hashCode()}", tag = "Context cancelAlarm")
 
     if (operation == null) {
-        Timber.e("PendingIntent is null, cannot cancel alarm")
+        Logger.e(messageString = "PendingIntent is null, cannot cancel alarm", tag = "Context cancelAlarm")
         return
     }
 
     val manager = getAlarmManager()
     if (manager == null) {
-        Timber.e("AlarmManager is null, cannot cancel alarm")
+        Logger.e(messageString = "AlarmManager is null, cannot cancel alarm", tag = "Context cancelAlarm")
         return
     }
 
     try {
-        Timber.d("Canceling alarm with AlarmManager.cancel")
+        Logger.d(messageString = "Canceling alarm with AlarmManager.cancel", tag = "Context cancelAlarm")
         manager.cancel(operation)
-        Timber.d("Alarm canceled successfully")
+        Logger.d(messageString = "Alarm canceled successfully", tag = "Context cancelAlarm")
     } catch (e: Exception) {
-        Timber.e(e, "Failed to cancel alarm")
+        Logger.e(e, tag = "Context cancelAlarm") {"Failed to cancel alarm"}
     }
 }
 
@@ -106,7 +107,7 @@ fun Context.email(
     text: String = "",
 ) {
     val intent = Intent(Intent.ACTION_SENDTO)
-    intent.data = Uri.parse("mailto:")
+    intent.data = "mailto:".toUri()
 
     if (email.isNotEmpty()) {
         intent.putExtra(Intent.EXTRA_EMAIL, arrayOf(email))

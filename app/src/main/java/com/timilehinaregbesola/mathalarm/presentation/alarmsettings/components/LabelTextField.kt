@@ -25,16 +25,20 @@ fun LabelTextField(
     onValueChange: (TextFieldValue) -> Unit,
 ) {
     TextField(
-        value = text,
-        onValueChange = onValueChange,
-        leadingIcon = { Icon(imageVector = Icons.Outlined.Label, contentDescription = null) },
         modifier = Modifier
             .padding(horizontal = MaterialTheme.spacing.medium)
             .fillMaxWidth(),
+        value = text,
+        onValueChange = onValueChange,
+        leadingIcon = { Icon(imageVector = Icons.Outlined.Label, contentDescription = null) },
         label = label,
         placeholder = placeholder,
         singleLine = true,
-        colors = colors(unfocusedContainerColor = Transparent, focusedContainerColor = Transparent)
+        colors = colors(
+            unfocusedContainerColor = Transparent,
+            focusedContainerColor = Transparent,
+            cursorColor = MaterialTheme.colorScheme.onSurface
+        )
     )
 }
 

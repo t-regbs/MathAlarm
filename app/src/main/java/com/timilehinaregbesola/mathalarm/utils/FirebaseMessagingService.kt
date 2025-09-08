@@ -22,14 +22,11 @@ import com.timilehinaregbesola.mathalarm.BuildConfig
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotificationChannel
 import com.timilehinaregbesola.mathalarm.presentation.MainActivity
-import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.InternalCoroutinesApi
-import javax.inject.Inject
+import org.koin.android.ext.android.inject
 
-@AndroidEntryPoint
 class FirebaseMessagingService : FirebaseMessagingService() {
-    @Inject
-    lateinit var channel: MathAlarmNotificationChannel
+    val channel: MathAlarmNotificationChannel by inject()
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
         if (remoteMessage.data.isNotEmpty()) {
             val updateApp = remoteMessage.data["updateApp"]!!.toInt()

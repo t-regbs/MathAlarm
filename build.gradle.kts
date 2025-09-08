@@ -7,7 +7,6 @@ plugins {
     alias(libs.plugins.kotlin.gradle) apply false
     alias(libs.plugins.google.services) apply false
     alias(libs.plugins.crashlytics.gradle) apply false
-    alias(libs.plugins.hilt.gradle) apply false
 }
 
 tasks.register("clean") {

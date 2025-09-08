@@ -53,9 +53,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.NotificationManagerCompat
 import androidx.core.net.toUri
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.navigation3.runtime.NavBackStack
 import cafe.adriel.lyricist.strings
+import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.DialogArguments
@@ -104,12 +104,12 @@ import kotlinx.datetime.LocalTime
 import kotlinx.datetime.format
 import kotlinx.datetime.format.char
 import kotlinx.serialization.json.Json
-import timber.log.Timber
+import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AlarmBottomSheet(
-    viewModel: AlarmSettingsViewModel = hiltViewModel(),
+    viewModel: AlarmSettingsViewModel = koinViewModel(),
     backstack: NavBackStack,
     darkTheme: Boolean,
     alarm: AlarmEntity,
@@ -195,7 +195,7 @@ fun AlarmBottomSheet(
                     try {
                         pickToneLauncher.launch(null)
                     } catch (e: Exception) {
-                        Timber.e(e)
+                        Logger.e("error launching tone picker", e)
                         viewModel.onEvent(
                             OnToneError(message = noPickerText)
                         )

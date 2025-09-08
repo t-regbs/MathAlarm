@@ -1,19 +1,22 @@
 package com.timilehinaregbesola.mathalarm.framework.app.di
 
-import android.app.Application
-import android.content.Context
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.room.Room
+import co.touchlab.kermit.ExperimentalKermitApi
+import co.touchlab.kermit.Logger
+import co.touchlab.kermit.StaticConfig
+import co.touchlab.kermit.crashlytics.CrashlyticsLogWriter
+import co.touchlab.kermit.platformLogWriter
+import com.timilehinaregbesola.mathalarm.data.AlarmDataSource
 import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.framework.RoomAlarmDataSource
 import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermission
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AndroidVersion
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AndroidVersionImpl
-import com.timilehinaregbesola.mathalarm.framework.database.AlarmDao
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmDatabase
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_2_3
@@ -27,6 +30,10 @@ import com.timilehinaregbesola.mathalarm.interactors.PlayerWrapper
 import com.timilehinaregbesola.mathalarm.notification.AlarmNotificationScheduler
 import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotification
 import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotificationChannel
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewModel
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.AlarmMathViewModel
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AlarmSettingsViewModel
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AppThemeOptionsMapper
 import com.timilehinaregbesola.mathalarm.provider.DateTimeProvider
 import com.timilehinaregbesola.mathalarm.provider.DateTimeProviderImpl
@@ -44,155 +51,121 @@ import com.timilehinaregbesola.mathalarm.usecases.ShowAlarm
 import com.timilehinaregbesola.mathalarm.usecases.SnoozeAlarm
 import com.timilehinaregbesola.mathalarm.usecases.UpdateAlarm
 import com.timilehinaregbesola.mathalarm.utils.getAlarmManager
-import dagger.Module
-import dagger.Provides
-import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
-import dagger.hilt.components.SingletonComponent
 import kotlinx.coroutines.InternalCoroutinesApi
-import javax.inject.Singleton
+import org.koin.android.ext.koin.androidApplication
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.module.dsl.viewModel
+import org.koin.core.parameter.parametersOf
+import org.koin.core.scope.Scope
+import org.koin.dsl.module
 
+@OptIn(ExperimentalKermitApi::class)
 @ExperimentalFoundationApi
 @ExperimentalComposeUiApi
 @InternalCoroutinesApi
 @ExperimentalAnimationApi
-@Module
-@InstallIn(SingletonComponent::class)
-object AppModule {
-    @Provides
-    @Singleton
-    fun provideNoteDatabase(app: Application): AlarmDatabase {
-        return Room.databaseBuilder(
-            app,
+val appModule = module {
+    single {
+        Room.databaseBuilder(
+            androidApplication(),
             AlarmDatabase::class.java,
             "alarm_history_database"
         ).addMigrations(MIGRATION_2_3, MIGRATION_3_4).build()
     }
 
-    @Provides
-    @Singleton
-    fun provideAlarmDao(database: AlarmDatabase): AlarmDao {
-        return database.alarmDatabaseDao
-    }
+    single { get<AlarmDatabase>().alarmDatabaseDao }
 
-    @Provides
-    @Singleton
-    fun provideAlarmMapper(): AlarmMapper {
-        return AlarmMapper()
-    }
+    single { AlarmMapper() }
 
-    @Provides
-    @Singleton
-    fun provideThemeMapper(): AppThemeOptionsMapper {
-        return AppThemeOptionsMapper()
-    }
+    single { AppThemeOptionsMapper() }
 
-    @Provides
-    @Singleton
-    fun provideCalenderProvider(): DateTimeProvider {
-        return DateTimeProviderImpl()
-    }
+    single<DateTimeProvider> { DateTimeProviderImpl() }
 
-    @Provides
-    @Singleton
-    fun provideScheduleNextAlarm(interactor: AlarmInteractor): ScheduleNextAlarm {
-        return ScheduleNextAlarm(interactor)
-    }
+    single { ScheduleNextAlarm(get()) }
 
-    @Provides
-    @Singleton
-    fun provideDataSource(alarmDao: AlarmDao, mapper: AlarmMapper): RoomAlarmDataSource {
-        return RoomAlarmDataSource(alarmDao, mapper)
-    }
+    single<AlarmDataSource> { RoomAlarmDataSource(get(), get()) }
 
-    @Provides
-    @Singleton
-    fun provideRepository(alarmDataSource: RoomAlarmDataSource): AlarmRepository {
-        return AlarmRepository(alarmDataSource)
-    }
+    single { AlarmRepository(get()) }
 
-    @Provides
-    @Singleton
-    fun provideAlarmInteractor(alarmManager: AlarmNotificationScheduler): AlarmInteractor {
-        return AlarmInteractorImpl(alarmManager)
-    }
+    single<AlarmInteractor> { AlarmInteractorImpl(get(), getWith("AlarmInteractorImpl")) }
 
-    @Provides
-    @Singleton
-    fun provideInteractors(
-        repository: AlarmRepository,
-        alarmInteractor: AlarmInteractor,
-        notificationInteractor: NotificationInteractor,
-        calendarProvider: DateTimeProvider,
-        scheduleNextAlarm: ScheduleNextAlarm
-    ): Usecases {
-        return Usecases(
-            addAlarm = AddAlarm(repository),
-            clearAlarms = ClearAlarms(repository, alarmInteractor),
-            deleteAlarm = DeleteAlarm(repository, alarmInteractor),
-            findAlarm = FindAlarm(repository),
-            getSavedAlarms = GetSavedAlarms(repository),
-            updateAlarm = UpdateAlarm(repository),
-            scheduleAlarm = ScheduleAlarm(repository, alarmInteractor),
-            completeAlarm = CompleteAlarm(repository, alarmInteractor, notificationInteractor),
-            rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor),
-            scheduleNextAlarm = ScheduleNextAlarm(alarmInteractor),
-            showAlarm = ShowAlarm(repository, notificationInteractor, scheduleNextAlarm),
-            snoozeAlarm = SnoozeAlarm(calendarProvider, notificationInteractor, alarmInteractor, repository),
-            cancelAlarm = CancelAlarm(alarmInteractor)
+    single {
+        Usecases(
+            addAlarm = AddAlarm(get()),
+            clearAlarms = ClearAlarms(get(), get()),
+            deleteAlarm = DeleteAlarm(get(), get()),
+            findAlarm = FindAlarm(get()),
+            getSavedAlarms = GetSavedAlarms(get()),
+            updateAlarm = UpdateAlarm(get()),
+            scheduleAlarm = ScheduleAlarm(get(), get()),
+            completeAlarm = CompleteAlarm(get(), get(), get()),
+            rescheduleFutureAlarms = RescheduleFutureAlarms(get(), get()),
+            scheduleNextAlarm = get(),
+            showAlarm = ShowAlarm(get(), get(), get()),
+            snoozeAlarm = SnoozeAlarm(get(), get(), get(), get()),
+            cancelAlarm = CancelAlarm(get())
         )
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
-    @Provides
-    @Singleton
-    fun provideAlarmNotification(
-        @ApplicationContext context: Context,
-        channel: MathAlarmNotificationChannel,
-        player: AudioPlayer
-    ): MathAlarmNotification {
-        return MathAlarmNotification(context, channel, player)
+    single {
+        MathAlarmNotification(
+            androidContext(),
+            get(),
+            get(),
+            getWith("MathAlarmNotification")
+        )
     }
 
-    @Provides
-    @Singleton
-    fun provideAudioPlayer(@ApplicationContext context: Context): AudioPlayer {
-        return PlayerWrapper(context)
-    }
+    single<AudioPlayer> { PlayerWrapper(androidContext(), getWith("PlayerWrapper")) }
 
-    @Provides
-    @Singleton
-    fun provideAlarmNotificationChannel(@ApplicationContext context: Context): MathAlarmNotificationChannel {
-        return MathAlarmNotificationChannel(context)
+    single { MathAlarmNotificationChannel(androidContext()) }
+
+    single {
+        AlarmPreferencesImpl(
+            androidContext(),
+            AppThemeOptionsMapper(),
+            getWith("AlarmPreferencesImpl")
+        )
     }
 
     @OptIn(
         ExperimentalAnimationApi::class,
         InternalCoroutinesApi::class,
         ExperimentalComposeUiApi::class,
-        ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class
+        ExperimentalFoundationApi::class,
+        ExperimentalMaterial3Api::class
     )
-    @Provides
-    @Singleton
-    fun provideNotificationInteractor(alarmNotification: MathAlarmNotification): NotificationInteractor {
-        return NotificationInteractorImpl(alarmNotification)
+    single<NotificationInteractor> {
+        NotificationInteractorImpl(
+            get(),
+            getWith("NotificationInteractorImpl")
+        )
     }
 
-    @Provides
-    @Singleton
-    fun provideNotificationScheduler(@ApplicationContext context: Context): AlarmNotificationScheduler {
-        return AlarmNotificationScheduler(context)
+    single { AlarmNotificationScheduler(androidContext(), getWith("AlarmNotificationScheduler")) }
+
+    single<AndroidVersion> { AndroidVersionImpl() }
+
+    single {
+        AlarmPermission(androidContext().getAlarmManager(), get())
     }
 
-    @Provides
-    @Singleton
-    fun provideAndroidVersion(): AndroidVersion {
-        return AndroidVersionImpl()
+    single { (tag: String) ->
+        Logger(
+            StaticConfig(
+                logWriterList = listOf(
+                    platformLogWriter(),
+                    CrashlyticsLogWriter()
+                )
+            ), tag
+        )
     }
 
-    @Provides
-    @Singleton
-    fun provideAlarmPermission(@ApplicationContext context: Context, version: AndroidVersion): AlarmPermission {
-        return AlarmPermission(context.getAlarmManager(), version)
-    }
+    viewModel { AlarmListViewModel(get(), get(), getWith("AlarmListViewModel")) }
+    viewModel { AlarmSettingsViewModel(get()) }
+    viewModel { AlarmMathViewModel(get(), get(), getWith("AlarmMathViewModel")) }
 }
+
+internal inline fun <reified T> Scope.getWith(vararg params: Any?): T =
+    get(parameters = { parametersOf(*params) })
