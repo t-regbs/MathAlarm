@@ -103,9 +103,6 @@ dependencies {
 
     implementation(libs.androidx.activity.compose)
 
-    implementation(libs.timber)
-
-
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
@@ -144,4 +141,7 @@ dependencies {
     implementation(libs.koin.android)
     implementation(libs.koin.compose)
     implementation(libs.koin.compose.viewmodel)
+
+    implementation(libs.kermit)
+    implementation(libs.kermit.crashlytics)
 }

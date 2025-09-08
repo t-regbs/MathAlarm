@@ -60,6 +60,7 @@ import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import androidx.navigation3.runtime.NavBackStack
 import cafe.adriel.lyricist.strings
+import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
@@ -100,7 +101,6 @@ import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
 import org.koin.compose.viewmodel.koinViewModel
-import timber.log.Timber
 import java.io.IOException
 
 @SuppressLint("UnusedMaterialScaffoldPaddingParameter")
@@ -189,7 +189,7 @@ fun MathScreen(
                 }
             }
         } else {
-            Timber.d("Tone not available")
+            Logger.d("Tone not available")
             viewModel.onEvent(MathScreenEvent.OnToneError("Tone not available"))
         }
         onDispose {

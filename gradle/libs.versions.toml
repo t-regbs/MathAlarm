@@ -20,6 +20,7 @@ hilt_android = "2.57.1"
 hilt_android_compiler = "2.57.1"
 hilt_nav_compose = "1.2.0"
 # @pin
+kermit = "2.0.8"
 kotlin = "2.2.0"
 kotlinx_serialization = "1.9.0"
 lottie = "6.6.7"
@@ -75,6 +76,8 @@ firebase-bom = { module = "com.google.firebase:firebase-bom", version.ref = "fir
 firebase-crashlytics = { module = "com.google.firebase:firebase-crashlytics" }
 firebase-messaging = { module = "com.google.firebase:firebase-messaging" }
 junit = { module = "junit:junit", version.ref = "test_junit" }
+kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
+kermit-crashlytics = { module = "co.touchlab:kermit-crashlytics", version.ref = "kermit" }
 kotlinx-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx_serialization" }
 lottie-compose = { module = "com.airbnb.android:lottie-compose", version.ref = "lottie" }
 lyricist = { module = "cafe.adriel.lyricist:lyricist", version.ref = "lyricist" }

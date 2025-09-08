@@ -7,13 +7,13 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.os.PowerManager
+import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.framework.Usecases
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import timber.log.Timber
 
 /**
  * [BroadcastReceiver] to be notified by the [android.app.AlarmManager].
@@ -23,7 +23,7 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
 
     @OptIn(DelicateCoroutinesApi::class)
     override fun onReceive(context: Context, intent: Intent) {
-        Timber.d("onReceive() - intent ${intent.action}")
+        Logger.d("onReceive() - intent ${intent.action}")
 
         if (intent.action == ALARM_ACTION) {
             val powerManager = context.getSystemService(Context.POWER_SERVICE) as PowerManager
@@ -47,12 +47,12 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
             "android.intent.action.QUICKBOOT_POWERON",
             "android.intent.action.MY_PACKAGE_REPLACED",
             AlarmManager.ACTION_SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED -> {
-                Timber.d("Reboot Reboot!!")
+                Logger.d("Reboot Reboot!!")
                 usecases.rescheduleFutureAlarms()
             }
             else -> {
-                Timber.e("action: ${intent?.action}")
-                Timber.e("Action not supported")
+                Logger.e("action: ${intent?.action}")
+                Logger.e("Action not supported")
             }
         }
     }

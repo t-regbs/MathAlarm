@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.emptyPreferences
 import androidx.datastore.preferences.core.intPreferencesKey
+import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.Theme
 import com.timilehinaregbesola.mathalarm.utils.dataStore
 import kotlinx.coroutines.flow.Flow
@@ -11,12 +12,12 @@ import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.runBlocking
-import timber.log.Timber
 import java.io.IOException
 
 class AlarmPreferencesImpl(
     private val context: Context,
-    private val mapper: AppThemeOptionsMapper
+    private val mapper: AppThemeOptionsMapper,
+    private val logger: Logger
 ) : AlarmPreferences {
     companion object {
         val APP_THEME_OPTION = intPreferencesKey("mathalarm_theme_option")
@@ -35,7 +36,7 @@ class AlarmPreferencesImpl(
     override fun loadAppTheme(): Flow<Theme> {
         return context.dataStore.data.catch { exception ->
             if (exception is IOException) {
-                Timber.e("Error reading preferences: ", exception)
+                logger.e("Error reading preferences: ", exception)
                 emit(emptyPreferences())
             } else {
                 throw exception

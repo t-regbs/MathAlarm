@@ -11,7 +11,7 @@ import android.media.RingtoneManager
 import android.net.Uri
 import android.os.Build
 import androidx.core.net.toUri
-import timber.log.Timber
+import co.touchlab.kermit.Logger
 
 /**
  * Checks if all ringtones can be played, and requests permissions if it is not the case
@@ -30,7 +30,7 @@ fun checkPermissions(
                     player.setDataSource(activity, alarmtone.toUri())
                     player.apply {
                         setOnErrorListener { mp, _, _ ->
-                            Timber.e("Error occured while playing audio.")
+                            Logger.e("Error occured while playing audio.")
                             mp.stop()
                             mp.release()
                             true
@@ -55,7 +55,7 @@ fun checkPermissions(
                     .setNegativeButton(android.R.string.cancel, null)
                     .show()
             } catch (e: Exception) {
-                Timber.e("Was not able to show dialog to request permission, continue without the dialog")
+                Logger.e("Was not able to show dialog to request permission, continue without the dialog")
                 activity.requestPermissions(arrayOf(READ_EXTERNAL_STORAGE), 3)
             }
         }

@@ -5,6 +5,11 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.room.Room
+import co.touchlab.kermit.ExperimentalKermitApi
+import co.touchlab.kermit.Logger
+import co.touchlab.kermit.StaticConfig
+import co.touchlab.kermit.crashlytics.CrashlyticsLogWriter
+import co.touchlab.kermit.platformLogWriter
 import com.timilehinaregbesola.mathalarm.data.AlarmDataSource
 import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.framework.RoomAlarmDataSource
@@ -50,8 +55,11 @@ import kotlinx.coroutines.InternalCoroutinesApi
 import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.dsl.viewModel
+import org.koin.core.parameter.parametersOf
+import org.koin.core.scope.Scope
 import org.koin.dsl.module
 
+@OptIn(ExperimentalKermitApi::class)
 @ExperimentalFoundationApi
 @ExperimentalComposeUiApi
 @InternalCoroutinesApi
@@ -79,7 +87,7 @@ val appModule = module {
 
     single { AlarmRepository(get()) }
 
-    single<AlarmInteractor> { AlarmInteractorImpl(get()) }
+    single<AlarmInteractor> { AlarmInteractorImpl(get(), getWith("AlarmInteractorImpl")) }
 
     single {
         Usecases(
@@ -100,13 +108,26 @@ val appModule = module {
     }
 
     @OptIn(ExperimentalMaterial3Api::class)
-    single { MathAlarmNotification(androidContext(), get(), get()) }
+    single {
+        MathAlarmNotification(
+            androidContext(),
+            get(),
+            get(),
+            getWith("MathAlarmNotification")
+        )
+    }
 
-    single<AudioPlayer> { PlayerWrapper(androidContext()) }
+    single<AudioPlayer> { PlayerWrapper(androidContext(), getWith("PlayerWrapper")) }
 
     single { MathAlarmNotificationChannel(androidContext()) }
 
-    single { AlarmPreferencesImpl(androidContext(), AppThemeOptionsMapper()) }
+    single {
+        AlarmPreferencesImpl(
+            androidContext(),
+            AppThemeOptionsMapper(),
+            getWith("AlarmPreferencesImpl")
+        )
+    }
 
     @OptIn(
         ExperimentalAnimationApi::class,
@@ -115,9 +136,14 @@ val appModule = module {
         ExperimentalFoundationApi::class,
         ExperimentalMaterial3Api::class
     )
-    single<NotificationInteractor> { NotificationInteractorImpl(get()) }
+    single<NotificationInteractor> {
+        NotificationInteractorImpl(
+            get(),
+            getWith("NotificationInteractorImpl")
+        )
+    }
 
-    single { AlarmNotificationScheduler(androidContext()) }
+    single { AlarmNotificationScheduler(androidContext(), getWith("AlarmNotificationScheduler")) }
 
     single<AndroidVersion> { AndroidVersionImpl() }
 
@@ -125,7 +151,21 @@ val appModule = module {
         AlarmPermission(androidContext().getAlarmManager(), get())
     }
 
-    viewModel { AlarmListViewModel(get(), get()) }
+    single { (tag: String) ->
+        Logger(
+            StaticConfig(
+                logWriterList = listOf(
+                    platformLogWriter(),
+                    CrashlyticsLogWriter()
+                )
+            ), tag
+        )
+    }
+
+    viewModel { AlarmListViewModel(get(), get(), getWith("AlarmListViewModel")) }
     viewModel { AlarmSettingsViewModel(get()) }
-    viewModel { AlarmMathViewModel(get(), get()) }
+    viewModel { AlarmMathViewModel(get(), get(), getWith("AlarmMathViewModel")) }
 }
+
+internal inline fun <reified T> Scope.getWith(vararg params: Any?): T =
+    get(parameters = { parametersOf(*params) })

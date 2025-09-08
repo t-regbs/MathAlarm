@@ -13,6 +13,7 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.core.app.NotificationCompat
 import androidx.core.net.toUri
+import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.AlarmReceiver
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
@@ -22,7 +23,6 @@ import com.timilehinaregbesola.mathalarm.presentation.MainActivity
 import com.timilehinaregbesola.mathalarm.utils.getNotificationManager
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.serialization.json.Json
-import timber.log.Timber
 import java.io.InputStream
 import java.net.URLEncoder
 
@@ -38,6 +38,7 @@ class MathAlarmNotification(
     private val context: Context,
     private val channel: MathAlarmNotificationChannel,
     private val player: AudioPlayer,
+    private val logger: Logger
 ) {
     /**
      * Shows the [MathAlarmNotification] based on the given Alarm.
@@ -45,7 +46,7 @@ class MathAlarmNotification(
      * @param alarm the alarm event to be shown in the notification
      */
     fun show(alarm: Alarm) {
-        Timber.d("Showing notification for '${alarm.title}'")
+        logger.d("Showing notification for '${alarm.title}'")
         val builder = buildNotification(alarm)
 //        builder.addAction(getCompleteAction(alarm))
         var uriExists: Boolean
@@ -59,7 +60,7 @@ class MathAlarmNotification(
                 uriExists = true
             } catch (e: Exception) {
                 uriExists = false
-                Timber.w("File corresponding to the uri does not exist $toneUri")
+                logger.w("File corresponding to the uri does not exist $toneUri")
             }
             toneUri = if (uriExists) toneUri else RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
             setDataSource(toneUri)
@@ -74,7 +75,7 @@ class MathAlarmNotification(
      * @param alarm the task to be shown in the notification
      */
     fun showRepeating(alarm: Alarm) {
-        Timber.d("Showing repeating notification for '${alarm.title}'")
+        logger.d("Showing repeating notification for '${alarm.title}'")
         val builder = buildNotification(alarm)
         context.getNotificationManager()?.notify(alarm.alarmId.toInt(), builder.build())
     }
@@ -85,7 +86,7 @@ class MathAlarmNotification(
      * @param notificationId the notification id to be dismissed
      */
     fun dismiss(notificationId: Long) {
-        Timber.d("Dismissing notification id '$notificationId'")
+        logger.d("Dismissing notification id '$notificationId'")
         player.stop()
         context.getNotificationManager()?.cancel(notificationId.toInt())
     }

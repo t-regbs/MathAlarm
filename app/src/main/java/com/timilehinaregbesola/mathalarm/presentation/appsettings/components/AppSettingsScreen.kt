@@ -1,6 +1,8 @@
 package com.timilehinaregbesola.mathalarm.presentation.appsettings.components
 
 import android.content.Intent
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -35,6 +37,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
@@ -47,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.lyricist.strings
 import com.timilehinaregbesola.mathalarm.BuildConfig
+import com.timilehinaregbesola.mathalarm.framework.app.di.appModule
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.Theme
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.Theme.DARK
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.Theme.LIGHT
@@ -66,7 +70,10 @@ import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkC
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.utils.email
+import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.launch
+import org.koin.compose.KoinApplicationPreview
+import org.koin.compose.koinInject
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -263,13 +270,18 @@ fun HelpItem(
     }
 }
 
+@OptIn(ExperimentalAnimationApi::class, ExperimentalComposeUiApi::class,
+    ExperimentalFoundationApi::class, InternalCoroutinesApi::class
+)
 @Preview
 @Composable
 private fun PreviewSettingsScreen() {
-    MathAlarmTheme {
-        AppSettingsScreen(
-            pref = AlarmPreferencesImpl(LocalContext.current, AppThemeOptionsMapper())
-        ) {}
+    KoinApplicationPreview(application = { modules(appModule) }) {
+        MathAlarmTheme {
+            AppSettingsScreen(
+                pref = koinInject()
+            ) {}
+        }
     }
 }
 

@@ -4,6 +4,7 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.interactors.AudioPlayer
@@ -22,6 +23,7 @@ import kotlinx.coroutines.launch
 class AlarmMathViewModel(
     private val usecases: Usecases,
     val audioPlayer: AudioPlayer,
+    private val logger: Logger
 ) : ViewModel() {
     private val _state = MutableStateFlow<ToneState>(ToneState.Stopped())
     val state: StateFlow<ToneState> = _state.asStateFlow()
