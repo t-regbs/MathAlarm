@@ -73,6 +73,8 @@
 
     <string name="channel_alarm_name">Math alarms</string>
     <string name="channel_alarm_description">Notifications for alarms</string>
+    <string name="channel_update_name">App Updates</string>
+    <string name="channel_update_description">Notifications about new app versions</string>
 
     <string name="notification_action_completed">Done</string>
     <string name="notification_action_snooze">In a few mins</string>

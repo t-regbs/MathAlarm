@@ -96,7 +96,7 @@ class MathAlarmNotification(
     }
 
     private fun buildNotification(alarm: Alarm) =
-        NotificationCompat.Builder(context, channel.getChannelId()).apply {
+        NotificationCompat.Builder(context, channel.getAlarmChannelId()).apply {
             val alarmImage = BitmapFactory.decodeResource(context.resources, R.drawable.icon)
             val vibratePattern = longArrayOf(0, 100, 200, 300)
             val bigPicStyle = NotificationCompat.BigPictureStyle()
