@@ -1,24 +1,133 @@
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
 plugins {
     alias(libs.plugins.android.gradle)
-    id("kotlin-android")
     alias(libs.plugins.serialization)
-    id("org.jetbrains.kotlin.plugin.parcelize")
     alias(libs.plugins.google.services)
     alias(libs.plugins.crashlytics.gradle)
     alias(libs.plugins.ksp)
     alias(libs.plugins.compose.compiler)
+    alias(libs.plugins.composeMultiplatform)
+    alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.androidx.room)
 }
 
 ksp {
     arg("lyricist.generateStringsProperty", "true")
 }
 
+// Room KMP configuration
+room {
+    schemaDirectory("$projectDir/schemas")
+}
+
+kotlin {
+    androidTarget {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_17)
+            allWarningsAsErrors = false
+            freeCompilerArgs = listOf("-Xopt-in=kotlin.RequiresOptIn", "-Xopt-in=kotlin.Experimental")
+        }
+    }
+
+    listOf(
+        iosArm64(),
+        iosSimulatorArm64()
+    ).forEach { iosTarget ->
+        iosTarget.binaries.framework {
+            baseName = "app"
+            isStatic = true
+        }
+    }
+    
+    // Swift Export configuration for AlarmKit integration
+    @OptIn(org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi::class)
+    swiftExport {
+        // Module name for Swift imports
+        moduleName = "MathAlarmShared"
+        
+        // Flatten package structure for cleaner Swift code
+        flattenPackage = "com.timilehinaregbesola.mathalarm.alarm"
+        
+        // Compiler configuration
+        configure {
+            freeCompilerArgs.add("-Xexpect-actual-classes")
+        }
+    }
+
+    sourceSets {
+        androidMain.dependencies {
+            implementation(compose.preview)
+            implementation(libs.androidx.activity.compose)
+            implementation(libs.androidx.sqlite.driver.android)
+            implementation(project.dependencies.platform(libs.firebase.bom))
+            implementation(libs.firebase.analytics)
+            implementation(libs.firebase.crashlytics)
+            implementation(libs.firebase.messaging)
+
+            implementation(libs.androidx.core.splashscreen)
+            implementation(libs.android.material)
+        }
+        commonMain {
+            kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
+            dependencies {
+                implementation(project(":core"))
+                implementation(libs.runtime)
+                implementation(libs.foundation)
+                implementation(libs.material3)
+                implementation(libs.ui)
+                implementation(libs.components.resources)
+                implementation(libs.ui.tooling.preview)
+
+                val koinBom = project.dependencies.platform(libs.koin.bom)
+                implementation(koinBom)
+                implementation(libs.koin.core)
+                implementation(libs.koin.compose)
+                implementation(libs.koin.compose.viewmodel)
+
+                implementation(libs.kermit)
+                implementation(libs.kermit.crashlytics)
+
+                implementation(libs.kotlinx.serialization)
+                implementation(libs.lyricist)
+
+                implementation(libs.jetbrains.navigation3.ui)
+                implementation(libs.jetbrains.lifecycle.viewmodel.navigation3)
+                implementation(libs.kotlinx.datetime)
+                implementation(libs.multiplatform.settings.no.arg)
+                
+                implementation(libs.androidx.room.runtime)
+                implementation(libs.androidx.sqlite.driver.bundled)
+
+                implementation(libs.compottie.lite)
+            }
+        }
+        
+        // iOS dependencies
+        val iosMain by creating {
+            dependsOn(commonMain.get())
+            dependencies {
+                implementation(libs.androidx.sqlite.driver.bundled)
+            }
+        }
+        val iosArm64Main by getting { dependsOn(iosMain) }
+        val iosSimulatorArm64Main by getting { dependsOn(iosMain) }
+        
+        commonTest.dependencies {
+            implementation(libs.kotlin.test)
+            implementation(libs.coroutines.test)
+            implementation(libs.turbine)
+            implementation(libs.kotest.assertions)
+        }
+    }
+}
+
 android {
     namespace = "com.timilehinaregbesola.mathalarm"
     defaultConfig {
         applicationId = "com.timilehinaregbesola.mathalarm"
-        versionCode = 20
-        versionName = "2.3.1"
+        versionCode = 21
+        versionName = "2.3.2"
         minSdk = libs.versions.android.min.sdk.get().toInt()
         targetSdk = libs.versions.android.target.sdk.get().toInt()
         compileSdk = libs.versions.android.compile.sdk.get().toInt()
@@ -37,18 +146,10 @@ android {
     }
 
     compileOptions {
-        // Flag to enable support for the new language APIs
-        isCoreLibraryDesugaringEnabled = true
-
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    kotlinOptions {
-        allWarningsAsErrors = false
-        freeCompilerArgs = listOf("-Xopt-in=kotlin.RequiresOptIn", "-Xopt-in=kotlin.Experimental")
-        jvmTarget = "17"
-    }
     lint {
         disable += setOf("LogNotTimber", "StringFormatInTimber", "ThrowableNotAtBeginning", "BinaryOperationInTimber", "TimberArgCount", "TimberArgTypes", "TimberTagLength", "TimberExceptionLogging")
     }
@@ -78,70 +179,32 @@ android {
 
 dependencies {
     implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
-    implementation(project(":core"))
 
-    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
-
-    implementation(libs.android.material)
-    implementation(libs.androidx.ktx)
-
-    implementation(libs.androidx.test.core.ktx)
     testImplementation(libs.junit)
     testImplementation(libs.coroutines.test)
     androidTestImplementation(libs.androidx.test.ext.junit)
     androidTestImplementation(libs.androidx.test.espresso.core)
     testImplementation(libs.mockk)
 
-    implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.room.ktx)
-    ksp(libs.androidx.room.compiler)
-
-    implementation(libs.lottie.compose)
-
-    implementation(libs.coroutines.core)
-    implementation(libs.coroutines.android)
-
-    implementation(libs.androidx.activity.compose)
-
-    implementation(platform(libs.firebase.bom))
-    implementation(libs.firebase.analytics)
-    implementation(libs.firebase.crashlytics)
-    implementation(libs.firebase.messaging)
-
-    implementation(libs.androidx.core.splashscreen)
-    implementation(libs.androidx.datastore)
-    implementation(libs.kotlinx.serialization)
-
-    val composeBom = platform(libs.compose.bom)
-    implementation(composeBom)
-    androidTestImplementation(composeBom)
-    implementation(libs.androidx.compose.ui)
-    implementation(libs.androidx.compose.material3)
-    implementation(libs.androidx.compose.material.icons)
-    debugImplementation(libs.androidx.compose.ui.tooling)
-    implementation(libs.androidx.compose.ui.tooling.preview)
-    implementation(libs.androidx.compose.runtime)
-    implementation(libs.androidx.compose.runtime.saveable)
-    implementation(libs.androidx.compose.runtime.livedata)
+    // Room KMP - compiler for each platform
+    add("kspAndroid", libs.androidx.room.compiler)
+    add("kspIosArm64", libs.androidx.room.compiler)
+    add("kspIosSimulatorArm64", libs.androidx.room.compiler)
     androidTestImplementation(libs.androidx.compose.ui.test)
 
-    implementation(libs.androidx.navigation3.runtime)
-    implementation(libs.androidx.navigation3.ui)
-    implementation(libs.androidx.lifecycle.viewmodel.navigation3)
-    implementation(libs.androidx.adaptive.navigation3)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.kotlinx.datetime)
+    add("kspCommonMainMetadata", libs.lyricist.processor)
+}
 
-    implementation(libs.lyricist)
-    ksp(libs.lyricist.processor)
+afterEvaluate {
+    // Make all compilation tasks depend on KSP common metadata
+    tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask<*>>().configureEach {
+        if (name != "kspCommonMainKotlinMetadata") {
+            dependsOn("kspCommonMainKotlinMetadata")
+        }
+    }
+}
 
-    val koinBom = platform(libs.koin.bom)
-    implementation(koinBom)
-    implementation(libs.koin.core)
-    implementation(libs.koin.android)
-    implementation(libs.koin.compose)
-    implementation(libs.koin.compose.viewmodel)
-
-    implementation(libs.kermit)
-    implementation(libs.kermit.crashlytics)
+// Ensure all KSP tasks run after common metadata KSP
+tasks.matching { it.name.startsWith("ksp") && it.name != "kspCommonMainKotlinMetadata" }.configureEach {
+    dependsOn(tasks.named("kspCommonMainKotlinMetadata"))
 }

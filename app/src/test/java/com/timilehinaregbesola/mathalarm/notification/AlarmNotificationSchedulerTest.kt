@@ -1,6 +1,7 @@
 package com.timilehinaregbesola.mathalarm.notification
 
 import android.content.Context
+import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import io.mockk.every
 import io.mockk.mockk
@@ -11,10 +12,11 @@ import org.junit.Before
 class AlarmNotificationSchedulerTest {
 
     private val mockContext = mockk<Context>(relaxed = true)
+    private val mockLogger = Logger.withTag("AlarmNotificationSchedulerTest")
 
     private val mockAlarm = mockk<Alarm>()
 
-    private val scheduler = AlarmNotificationScheduler(mockContext)
+    private val scheduler = AlarmNotificationScheduler(mockContext, mockLogger)
 
     @Before
     fun setUp() {

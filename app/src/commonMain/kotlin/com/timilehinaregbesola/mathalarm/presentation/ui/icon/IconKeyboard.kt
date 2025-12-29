@@ -1,0 +1,119 @@
+package com.timilehinaregbesola.mathalarm.presentation.ui.icon
+
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.graphics.vector.path
+import androidx.compose.ui.unit.dp
+
+val Keyboard: ImageVector
+    get() {
+        if (_Keyboard != null) {
+            return _Keyboard!!
+        }
+        _Keyboard = ImageVector.Builder(
+            name = "Keyboard",
+            defaultWidth = 24.dp,
+            defaultHeight = 24.dp,
+            viewportWidth = 960f,
+            viewportHeight = 960f
+        ).apply {
+            path(fill = SolidColor(Color.Black)) {
+                moveTo(160f, 760f)
+                quadToRelative(-33f, 0f, -56.5f, -23.5f)
+                reflectiveQuadTo(80f, 680f)
+                verticalLineToRelative(-400f)
+                quadToRelative(0f, -33f, 23.5f, -56.5f)
+                reflectiveQuadTo(160f, 200f)
+                horizontalLineToRelative(640f)
+                quadToRelative(33f, 0f, 56.5f, 23.5f)
+                reflectiveQuadTo(880f, 280f)
+                verticalLineToRelative(400f)
+                quadToRelative(0f, 33f, -23.5f, 56.5f)
+                reflectiveQuadTo(800f, 760f)
+                lineTo(160f, 760f)
+                close()
+                moveTo(160f, 680f)
+                horizontalLineToRelative(640f)
+                verticalLineToRelative(-400f)
+                lineTo(160f, 280f)
+                verticalLineToRelative(400f)
+                close()
+                moveTo(320f, 640f)
+                horizontalLineToRelative(320f)
+                verticalLineToRelative(-80f)
+                lineTo(320f, 560f)
+                verticalLineToRelative(80f)
+                close()
+                moveTo(200f, 520f)
+                horizontalLineToRelative(80f)
+                verticalLineToRelative(-80f)
+                horizontalLineToRelative(-80f)
+                verticalLineToRelative(80f)
+                close()
+                moveTo(320f, 520f)
+                horizontalLineToRelative(80f)
+                verticalLineToRelative(-80f)
+                horizontalLineToRelative(-80f)
+                verticalLineToRelative(80f)
+                close()
+                moveTo(440f, 520f)
+                horizontalLineToRelative(80f)
+                verticalLineToRelative(-80f)
+                horizontalLineToRelative(-80f)
+                verticalLineToRelative(80f)
+                close()
+                moveTo(560f, 520f)
+                horizontalLineToRelative(80f)
+                verticalLineToRelative(-80f)
+                horizontalLineToRelative(-80f)
+                verticalLineToRelative(80f)
+                close()
+                moveTo(680f, 520f)
+                horizontalLineToRelative(80f)
+                verticalLineToRelative(-80f)
+                horizontalLineToRelative(-80f)
+                verticalLineToRelative(80f)
+                close()
+                moveTo(200f, 400f)
+                horizontalLineToRelative(80f)
+                verticalLineToRelative(-80f)
+                horizontalLineToRelative(-80f)
+                verticalLineToRelative(80f)
+                close()
+                moveTo(320f, 400f)
+                horizontalLineToRelative(80f)
+                verticalLineToRelative(-80f)
+                horizontalLineToRelative(-80f)
+                verticalLineToRelative(80f)
+                close()
+                moveTo(440f, 400f)
+                horizontalLineToRelative(80f)
+                verticalLineToRelative(-80f)
+                horizontalLineToRelative(-80f)
+                verticalLineToRelative(80f)
+                close()
+                moveTo(560f, 400f)
+                horizontalLineToRelative(80f)
+                verticalLineToRelative(-80f)
+                horizontalLineToRelative(-80f)
+                verticalLineToRelative(80f)
+                close()
+                moveTo(680f, 400f)
+                horizontalLineToRelative(80f)
+                verticalLineToRelative(-80f)
+                horizontalLineToRelative(-80f)
+                verticalLineToRelative(80f)
+                close()
+                moveTo(160f, 680f)
+                verticalLineToRelative(-400f)
+                verticalLineToRelative(400f)
+                close()
+            }
+        }.build()
+
+        return _Keyboard!!
+    }
+
+@Suppress("ObjectPropertyName")
+private var _Keyboard: ImageVector? = null

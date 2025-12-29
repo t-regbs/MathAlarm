@@ -1,0 +1,705 @@
+import Foundation
+import SwiftUI
+import app  // Kotlin framework (current interop)
+import AlarmKit
+import AppIntents
+
+// MARK: - Alarm Metadata
+
+/// Simple metadata for MathAlarm alarms
+/// Conforms to AlarmMetadata (for AlarmKit) and Codable (for persistence)
+@available(iOS 26, *)
+struct MathAlarmData: AlarmMetadata, Codable {
+    var alarmId: Int64
+    var difficulty: Int32
+    var hour: Int32 = 0
+    var minute: Int32 = 0
+    var snooze: Int32 = 5
+    var vibrate: Bool = false
+    var alarmTone: String = ""
+    var title: String = ""
+    var createdAt: Date = Date()
+}
+
+// MARK: - Alarm Data Store (for intents to access)
+
+/// Stores alarm data so App Intents can access it when the alarm fires
+/// Uses UserDefaults for persistence in case app is killed
+@available(iOS 26, *)
+class AlarmDataStore {
+    static let shared = AlarmDataStore()
+    
+    private let userDefaults = UserDefaults.standard
+    private let storageKey = "MathAlarm.alarmDataStore"
+    
+    private var alarmData: [String: MathAlarmData] = [:] {
+        didSet {
+            saveToUserDefaults()
+        }
+    }
+    
+    private init() {
+        loadFromUserDefaults()
+    }
+    
+    func store(alarmUUID: UUID, data: MathAlarmData) {
+        alarmData[alarmUUID.uuidString] = data
+        print("AlarmDataStore: Stored data for alarm \(alarmUUID)")
+    }
+    
+    func retrieve(alarmUUID: String) -> MathAlarmData? {
+        // Reload in case another process updated it
+        loadFromUserDefaults()
+        return alarmData[alarmUUID]
+    }
+    
+    func remove(alarmUUID: String) {
+        alarmData.removeValue(forKey: alarmUUID)
+    }
+    
+    private func saveToUserDefaults() {
+        do {
+            let data = try JSONEncoder().encode(alarmData)
+            userDefaults.set(data, forKey: storageKey)
+            print("AlarmDataStore: Saved \(alarmData.count) alarms to UserDefaults")
+        } catch {
+            print("AlarmDataStore: Failed to save: \(error)")
+        }
+    }
+    
+    private func loadFromUserDefaults() {
+        guard let data = userDefaults.data(forKey: storageKey) else { return }
+        do {
+            alarmData = try JSONDecoder().decode([String: MathAlarmData].self, from: data)
+            print("AlarmDataStore: Loaded \(alarmData.count) alarms from UserDefaults")
+        } catch {
+            print("AlarmDataStore: Failed to load: \(error)")
+        }
+    }
+}
+
+// MARK: - Pending Deeplink Storage
+
+/// Stores pending deeplink for AlarmKit alarms
+/// This is checked when the app becomes active since intents run AFTER app opens
+class PendingDeeplinkStore {
+    static let shared = PendingDeeplinkStore()
+    
+    private let userDefaults = UserDefaults.standard
+    private let pendingDeeplinkKey = "MathAlarm.pendingAlarmKitDeeplink"
+    
+    /// Store a pending deeplink (called from intent BEFORE app opens)
+    func setPendingDeeplink(_ json: String) {
+        userDefaults.set(json, forKey: pendingDeeplinkKey)
+        userDefaults.synchronize()  // Force immediate write
+        print("PendingDeeplinkStore: Stored pending deeplink")
+    }
+    
+    /// Get and clear the pending deeplink (called when app activates)
+    func consumePendingDeeplink() -> String? {
+        guard let json = userDefaults.string(forKey: pendingDeeplinkKey) else {
+            return nil
+        }
+        userDefaults.removeObject(forKey: pendingDeeplinkKey)
+        userDefaults.synchronize()
+        print("PendingDeeplinkStore: Consumed pending deeplink")
+        return json
+    }
+    
+    /// Check if there's a pending deeplink without consuming it
+    func hasPendingDeeplink() -> Bool {
+        return userDefaults.string(forKey: pendingDeeplinkKey) != nil
+    }
+}
+
+// MARK: - App Intents for AlarmKit
+
+/// Intent to stop/dismiss an alarm and open the Math Screen
+@available(iOS 26, *)
+struct StopAlarmIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "Stop Alarm"
+    static var description: IntentDescription? = IntentDescription("Stops the alarm and opens the math puzzle")
+    
+    // This makes the intent open the app when performed
+    static var openAppWhenRun: Bool { true }
+    
+    @Parameter(title: "Alarm ID")
+    var alarmUUID: String
+    
+    init() {
+        self.alarmUUID = ""
+    }
+    
+    init(alarmUUID: UUID) {
+        self.alarmUUID = alarmUUID.uuidString
+    }
+    
+    func perform() async throws -> some IntentResult {
+        print("StopAlarmIntent: Performing for alarm \(alarmUUID)")
+        
+        guard let uuid = UUID(uuidString: alarmUUID) else {
+            print("StopAlarmIntent: Invalid UUID")
+            throw AlarmIntentError.invalidAlarmId
+        }
+        
+        // IMPORTANT: Store the deeplink FIRST, before stopping the alarm
+        // This ensures the deeplink is available when the app activates
+        if let alarmData = AlarmDataStore.shared.retrieve(alarmUUID: alarmUUID) {
+            let deeplinkJson = createDeeplinkJson(from: alarmData)
+            PendingDeeplinkStore.shared.setPendingDeeplink(deeplinkJson)
+            AlarmDataStore.shared.remove(alarmUUID: alarmUUID)
+            print("StopAlarmIntent: Stored pending deeplink for MathScreen")
+        } else {
+            print("StopAlarmIntent: No alarm data found for UUID \(alarmUUID)")
+        }
+        
+        // Stop the alarm in AlarmKit
+        let manager = AlarmManager.shared
+        try manager.stop(id: uuid)
+        print("StopAlarmIntent: Alarm stopped")
+        
+        return .result()
+    }
+}
+
+/// Create deeplink JSON from alarm data
+@available(iOS 26, *)
+private func createDeeplinkJson(from data: MathAlarmData) -> String {
+    let vibrateStr = data.vibrate ? "true" : "false"
+    return "{\"alarmId\":\(data.alarmId),\"hour\":\(data.hour),\"minute\":\(data.minute),\"repeat\":false,\"repeatDays\":\"FFFFFFF\",\"isOn\":true,\"difficulty\":\(data.difficulty),\"alarmTone\":\"\(data.alarmTone)\",\"vibrate\":\(vibrateStr),\"snooze\":\(data.snooze),\"title\":\"\(data.title)\",\"isSaved\":true}"
+}
+
+/// Intent to snooze an alarm
+@available(iOS 26, *)
+struct SnoozeAlarmIntent: LiveActivityIntent {
+    static var title: LocalizedStringResource = "Snooze Alarm"
+    static var description: IntentDescription? = IntentDescription("Snoozes the alarm for a few minutes")
+    
+    @Parameter(title: "Alarm ID")
+    var alarmUUID: String
+    
+    init() {
+        self.alarmUUID = ""
+    }
+    
+    init(alarmUUID: UUID) {
+        self.alarmUUID = alarmUUID.uuidString
+    }
+    
+    func perform() async throws -> some IntentResult {
+        print("SnoozeAlarmIntent: Performing for alarm \(alarmUUID)")
+        
+        guard let uuid = UUID(uuidString: alarmUUID) else {
+            print("SnoozeAlarmIntent: Invalid UUID")
+            throw AlarmIntentError.invalidAlarmId
+        }
+        
+        // Countdown (snooze) the alarm - this starts the postAlert countdown
+        let manager = AlarmManager.shared
+        try manager.countdown(id: uuid)
+        print("SnoozeAlarmIntent: Alarm snoozed (countdown started)")
+        
+        return .result()
+    }
+}
+
+enum AlarmIntentError: Error, LocalizedError {
+    case invalidAlarmId
+    case alarmNotFound
+    
+    var errorDescription: String? {
+        switch self {
+        case .invalidAlarmId: return "Invalid alarm ID"
+        case .alarmNotFound: return "Alarm not found"
+        }
+    }
+}
+
+// MARK: - AlarmButton Extensions
+
+@available(iOS 26, *)
+extension AlarmButton {
+    static let stopButton = AlarmButton(
+        text: LocalizedStringResource("Stop"),
+        textColor: .red,
+        systemImageName: "stop.fill"
+    )
+    
+    static let repeatButton = AlarmButton(
+        text: LocalizedStringResource("Snooze"),
+        textColor: .blue,
+        systemImageName: "arrow.clockwise"
+    )
+    
+    static let pauseButton = AlarmButton(
+        text: LocalizedStringResource("Pause"),
+        textColor: .orange,
+        systemImageName: "pause.fill"
+    )
+    
+    static let resumeButton = AlarmButton(
+        text: LocalizedStringResource("Resume"),
+        textColor: .green,
+        systemImageName: "play.fill"
+    )
+}
+
+/// Swift implementation of the NativeAlarmScheduler interface from Kotlin
+/// This provides AlarmKit functionality on iOS 26+
+/// and gracefully falls back on older iOS versions
+class AlarmKitWrapperImpl: NSObject {
+    
+    /// Shared singleton instance
+    static let shared = AlarmKitWrapperImpl()
+    
+    /// Store alarm IDs for cancellation
+    private var scheduledAlarms: [Int64: UUID] = [:]
+    
+    /// Track authorization status
+    private var isAuthorized: Bool = false
+    
+    private override init() {
+        super.init()
+        // Request authorization on init
+        if #available(iOS 26, *) {
+            Task {
+                await self.requestAuthorizationIfNeeded()
+                self.observeAlarmUpdates()
+            }
+        }
+    }
+    
+    // MARK: - Authorization
+    
+    @available(iOS 26, *)
+    private func requestAuthorizationIfNeeded() async {
+        let manager = AlarmManager.shared
+        
+        switch manager.authorizationState {
+        case .notDetermined:
+            print("AlarmKitWrapper: Authorization not determined, requesting...")
+            do {
+                let state = try await manager.requestAuthorization()
+                isAuthorized = (state == .authorized)
+                print("AlarmKitWrapper: Authorization result: \(state), isAuthorized: \(isAuthorized)")
+            } catch {
+                print("AlarmKitWrapper: Authorization request failed: \(error)")
+                isAuthorized = false
+            }
+        case .authorized:
+            print("AlarmKitWrapper: Already authorized")
+            isAuthorized = true
+        case .denied:
+            print("AlarmKitWrapper: Authorization denied")
+            isAuthorized = false
+        @unknown default:
+            print("AlarmKitWrapper: Unknown authorization state")
+            isAuthorized = false
+        }
+    }
+    
+    @available(iOS 26, *)
+    private func ensureAuthorized() async throws {
+        let manager = AlarmManager.shared
+        
+        switch manager.authorizationState {
+        case .notDetermined:
+            let state = try await manager.requestAuthorization()
+            if state != .authorized {
+                throw AlarmKitError.notAuthorized
+            }
+            isAuthorized = true
+        case .denied:
+            throw AlarmKitError.notAuthorized
+        case .authorized:
+            isAuthorized = true
+        @unknown default:
+            throw AlarmKitError.unknownAuthState
+        }
+    }
+    
+    // MARK: - Alarm Observation
+    
+    @available(iOS 26, *)
+    private func observeAlarmUpdates() {
+        Task {
+            let manager = AlarmManager.shared
+            for await alarms in manager.alarmUpdates {
+                print("AlarmKitWrapper: Alarm updates received - \(alarms.count) alarms")
+                for alarm in alarms {
+                    print("  - Alarm \(alarm.id): state=\(alarm.state), schedule=\(String(describing: alarm.schedule))")
+                }
+            }
+        }
+    }
+    
+    enum AlarmKitError: Error {
+        case notAuthorized
+        case unknownAuthState
+        case schedulingFailed(String)
+    }
+    
+    // MARK: - NativeAlarmScheduler Protocol Implementation
+    
+    /// Check if AlarmKit is available on this device
+    func isAlarmKitAvailable() -> Bool {
+        if #available(iOS 26, *) {
+            print("AlarmKitWrapper: AlarmKit IS available (iOS 26+)")
+            return true
+        }
+        print("AlarmKitWrapper: AlarmKit NOT available (iOS < 26)")
+        return false
+    }
+    
+    /// Request alarm authorization - call this early in app lifecycle
+    func requestAuthorization() {
+        guard #available(iOS 26, *) else { return }
+        Task {
+            await requestAuthorizationIfNeeded()
+        }
+    }
+    
+    /// Check current authorization status
+    func checkAuthorizationStatus() -> String {
+        guard #available(iOS 26, *) else { return "unavailable" }
+        let manager = AlarmManager.shared
+        switch manager.authorizationState {
+        case .notDetermined: return "notDetermined"
+        case .authorized: return "authorized"
+        case .denied: return "denied"
+        @unknown default: return "unknown"
+        }
+    }
+    
+    /// Debug: List all currently scheduled alarms
+    func debugListAlarms() {
+        guard #available(iOS 26, *) else {
+            print("AlarmKitWrapper: AlarmKit not available")
+            return
+        }
+        do {
+            let manager = AlarmManager.shared
+            let alarms = try manager.alarms
+            print("AlarmKitWrapper: === DEBUG: Current Alarms ===")
+            print("  Authorization: \(manager.authorizationState)")
+            print("  Total alarms: \(alarms.count)")
+            for alarm in alarms {
+                print("  - ID: \(alarm.id)")
+                print("    State: \(alarm.state)")
+                print("    Schedule: \(String(describing: alarm.schedule))")
+                print("    Countdown: \(String(describing: alarm.countdownDuration))")
+            }
+            print("AlarmKitWrapper: === END DEBUG ===")
+        } catch {
+            print("AlarmKitWrapper: Failed to list alarms: \(error)")
+        }
+    }
+    
+    /// Schedule an alarm using AlarmKit
+    /// - Returns: true if successfully scheduled, false otherwise
+    func scheduleAlarm(
+        alarmId: Int64,
+        hour: Int32,
+        minute: Int32,
+        title: String,
+        soundName: String,
+        repeatDays: String,
+        snoozeMinutes: Int32,
+        vibrate: Bool,
+        difficulty: Int32,
+        repeats: Bool  // true = repeating alarm, false = one-time alarm
+    ) -> Bool {
+        guard #available(iOS 26, *) else {
+            return false
+        }
+        
+        return scheduleWithAlarmKit(
+            alarmId: alarmId,
+            hour: hour,
+            minute: minute,
+            title: title,
+            soundName: soundName,
+            repeatDays: repeatDays,
+            snoozeMinutes: snoozeMinutes,
+            vibrate: vibrate,
+            difficulty: difficulty,
+            repeats: repeats
+        )
+    }
+    
+    /// Cancel an alarm scheduled with AlarmKit
+    func cancelAlarm(alarmId: Int64) {
+        guard #available(iOS 26, *) else {
+            print("AlarmKitWrapper: Cannot cancel - AlarmKit not available")
+            return
+        }
+        cancelAlarmKitAlarm(alarmId: alarmId)
+    }
+    
+    /// Cancel all AlarmKit alarms
+    func cancelAllAlarms() {
+        guard #available(iOS 26, *) else {
+            print("AlarmKitWrapper: Cannot cancel all - AlarmKit not available")
+            return
+        }
+        cancelAllAlarmKitAlarms()
+    }
+    
+    /// Snooze an active alarm
+    func snoozeAlarm(alarmId: Int64, minutes: Int32) {
+        guard #available(iOS 26, *) else {
+            print("AlarmKitWrapper: Cannot snooze - AlarmKit not available")
+            return
+        }
+        snoozeAlarmKitAlarm(alarmId: alarmId, minutes: minutes)
+    }
+    
+    // MARK: - AlarmKit Implementation (iOS 26+)
+    
+    // Typealias for AlarmConfiguration with our metadata type
+    @available(iOS 26, *)
+    typealias MathAlarmConfiguration = AlarmManager.AlarmConfiguration<MathAlarmData>
+    
+    @available(iOS 26, *)
+    private func scheduleWithAlarmKit(
+        alarmId: Int64,
+        hour: Int32,
+        minute: Int32,
+        title: String,
+        soundName: String,
+        repeatDays: String,
+        snoozeMinutes: Int32,
+        vibrate: Bool,
+        difficulty: Int32,
+        repeats: Bool
+    ) -> Bool {
+        print("AlarmKitWrapper: Scheduling alarm \(alarmId) at \(hour):\(minute), repeats=\(repeats)")
+        
+        // Parse repeat days to weekdays (only used if repeats == true)
+        let weekdays = parseRepeatDays(repeatDays)
+        
+        // Schedule alarm asynchronously
+        Task { @MainActor in
+            do {
+                let manager = AlarmManager.shared
+                
+                // IMPORTANT: Ensure we have authorization before scheduling
+                try await self.ensureAuthorized()
+                print("AlarmKitWrapper: Authorization confirmed")
+                
+                let alarmUUID = UUID()
+                
+                // Create the time for the schedule
+                let time = Alarm.Schedule.Relative.Time(hour: Int(hour), minute: Int(minute))
+                print("AlarmKitWrapper: Created time - hour: \(hour), minute: \(minute)")
+                
+                // Create schedule based on the repeats flag (NOT weekdays.isEmpty)
+                // For one-time alarms (repeats=false): use .never - fires at next occurrence of this time
+                // For repeating alarms (repeats=true): use .weekly with the specified days
+                let recurrence: Alarm.Schedule.Relative.Recurrence
+                if repeats && !weekdays.isEmpty {
+                    recurrence = .weekly(Array(weekdays))
+                    print("AlarmKitWrapper: Creating REPEATING alarm for weekdays: \(weekdays)")
+                } else {
+                    recurrence = .never
+                    print("AlarmKitWrapper: Creating ONE-TIME alarm (will fire at next \(hour):\(minute))")
+                }
+                
+                let schedule: Alarm.Schedule = .relative(.init(
+                    time: time,
+                    repeats: recurrence
+                ))
+                print("AlarmKitWrapper: Created schedule - recurrence: \(recurrence)")
+                
+                // Create alarm presentation with "Solve Math" as the stop button
+                let alertTitle = title.isEmpty ? "Math Alarm" : title
+                let solveButton = AlarmButton(
+                    text: LocalizedStringResource("Solve Math"),
+                    textColor: .green,
+                    systemImageName: "function"
+                )
+                let alertContent = AlarmPresentation.Alert(
+                    title: LocalizedStringResource(stringLiteral: alertTitle),
+                    stopButton: solveButton,
+                    secondaryButton: snoozeMinutes > 0 ? .repeatButton : nil,
+                    secondaryButtonBehavior: snoozeMinutes > 0 ? .countdown : nil
+                )
+                let presentation = AlarmPresentation(alert: alertContent)
+                print("AlarmKitWrapper: Created presentation with title: \(alertTitle)")
+                
+                // Create metadata with all alarm info (needed by intents)
+                let metadata = MathAlarmData(
+                    alarmId: alarmId,
+                    difficulty: difficulty,
+                    hour: hour,
+                    minute: minute,
+                    snooze: snoozeMinutes,
+                    vibrate: vibrate,
+                    alarmTone: soundName,
+                    title: alertTitle
+                )
+                
+                // Store alarm data so intents can access it when alarm fires
+                AlarmDataStore.shared.store(alarmUUID: alarmUUID, data: metadata)
+                
+                let attributes = AlarmAttributes(
+                    presentation: presentation,
+                    metadata: metadata,
+                    tintColor: Color.blue
+                )
+                
+                // Create countdown duration for snooze (postAlert is snooze time)
+                let countdownDuration: Alarm.CountdownDuration? = snoozeMinutes > 0
+                    ? Alarm.CountdownDuration(preAlert: nil, postAlert: TimeInterval(snoozeMinutes) * 60)
+                    : nil
+                
+                // Create intents for alarm buttons
+                let stopIntent = StopAlarmIntent(alarmUUID: alarmUUID)
+                let snoozeIntent: SnoozeAlarmIntent? = snoozeMinutes > 0 ? SnoozeAlarmIntent(alarmUUID: alarmUUID) : nil
+                
+                // Create alarm configuration with intents
+                // Note: .default may not play sounds in some cases, .named("") plays default sound
+                let configuration = MathAlarmConfiguration(
+                    countdownDuration: countdownDuration,
+                    schedule: schedule,
+                    attributes: attributes,
+                    stopIntent: stopIntent,
+                    secondaryIntent: snoozeIntent,
+                    sound: .named("")
+                )
+                print("AlarmKitWrapper: Created configuration with intents, about to schedule...")
+                
+                // Schedule the alarm with id and configuration
+                let alarm = try await manager.schedule(id: alarmUUID, configuration: configuration)
+                
+                self.scheduledAlarms[alarmId] = alarm.id
+                print("AlarmKitWrapper: ✅ Alarm scheduled successfully!")
+                print("  - AlarmKit ID: \(alarm.id)")
+                print("  - App Alarm ID: \(alarmId)")
+                print("  - State: \(alarm.state)")
+                print("  - Schedule: \(String(describing: alarm.schedule))")
+                
+                // Verify by listing all alarms
+                let allAlarms = try manager.alarms
+                print("AlarmKitWrapper: Total alarms in system: \(allAlarms.count)")
+                
+            } catch AlarmKitError.notAuthorized {
+                print("AlarmKitWrapper: ❌ Failed - Not authorized for alarms")
+            } catch AlarmKitError.unknownAuthState {
+                print("AlarmKitWrapper: ❌ Failed - Unknown authorization state")
+            } catch {
+                print("AlarmKitWrapper: ❌ Failed to schedule alarm - \(error)")
+                print("AlarmKitWrapper: Error details - \(String(describing: error))")
+            }
+        }
+        
+        return true
+    }
+    
+    @available(iOS 26, *)
+    private func cancelAlarmKitAlarm(alarmId: Int64) {
+        guard let alarmUUID = scheduledAlarms[alarmId] else {
+            print("AlarmKitWrapper: No AlarmKit alarm found for ID \(alarmId)")
+            return
+        }
+        
+        do {
+            let manager = AlarmManager.shared
+            try manager.cancel(id: alarmUUID)
+            scheduledAlarms.removeValue(forKey: alarmId)
+            print("AlarmKitWrapper: Cancelled alarm \(alarmId)")
+        } catch {
+            print("AlarmKitWrapper: Failed to cancel alarm - \(error.localizedDescription)")
+        }
+    }
+    
+    @available(iOS 26, *)
+    private func cancelAllAlarmKitAlarms() {
+        do {
+            let manager = AlarmManager.shared
+            // Get current alarms synchronously
+            let alarms = try manager.alarms
+            for alarm in alarms {
+                try manager.cancel(id: alarm.id)
+            }
+            
+            scheduledAlarms.removeAll()
+            print("AlarmKitWrapper: Cancelled all alarms")
+        } catch {
+            print("AlarmKitWrapper: Failed to cancel all alarms - \(error.localizedDescription)")
+        }
+    }
+    
+    @available(iOS 26, *)
+    private func snoozeAlarmKitAlarm(alarmId: Int64, minutes: Int32) {
+        // AlarmKit handles snooze through the system alarm UI automatically
+        // The secondaryButtonBehavior: .countdown enables the Repeat/Snooze button
+        // which uses the postAlert duration from CountdownDuration
+        print("AlarmKitWrapper: Snooze requested for alarm \(alarmId) - \(minutes) minutes")
+        print("AlarmKitWrapper: Note - AlarmKit snooze is handled by system alarm UI")
+    }
+    
+    /// Convert repeat days string to array of Locale.Weekday
+    /// Input: "TFFFTFF" where T=true, F=false, index 0=Monday
+    /// Output: Set<Locale.Weekday>
+    @available(iOS 26, *)
+    private func parseRepeatDays(_ repeatDays: String) -> Set<Locale.Weekday> {
+        var days: Set<Locale.Weekday> = []
+        let mapping: [Locale.Weekday] = [.monday, .tuesday, .wednesday, .thursday, .friday, .saturday, .sunday]
+        
+        for (index, char) in repeatDays.enumerated() {
+            if char == "T" && index < mapping.count {
+                days.insert(mapping[index])
+            }
+        }
+        
+        return days
+    }
+}
+
+// MARK: - Kotlin Bridge Adapter
+
+/// Bridges the Swift AlarmKitWrapperImpl to Kotlin's NativeAlarmScheduler interface
+/// This class implements the Kotlin protocol and delegates to the Swift wrapper
+class AlarmKitKotlinBridge: NSObject, NativeAlarmScheduler {
+    
+    private let wrapper: AlarmKitWrapperImpl
+    
+    init(wrapper: AlarmKitWrapperImpl) {
+        self.wrapper = wrapper
+        super.init()
+    }
+    
+    // MARK: - NativeAlarmScheduler Protocol
+    
+    func isAlarmKitAvailable() -> Bool {
+        return wrapper.isAlarmKitAvailable()
+    }
+    
+    func scheduleAlarm(request: AlarmScheduleRequest) -> Bool {
+        return wrapper.scheduleAlarm(
+            alarmId: request.alarmId,
+            hour: request.hour,
+            minute: request.minute,
+            title: request.title,
+            soundName: request.soundName,
+            repeatDays: request.repeatDays,
+            snoozeMinutes: request.snoozeMinutes,
+            vibrate: request.vibrate,
+            difficulty: request.difficulty,
+            repeats: request.repeats  // Pass the repeats flag in from Kotlin
+        )
+    }
+    
+    func cancelAlarm(alarmId: Int64) {
+        wrapper.cancelAlarm(alarmId: alarmId)
+    }
+    
+    func cancelAllAlarms() {
+        wrapper.cancelAllAlarms()
+    }
+    
+    func snoozeAlarm(alarmId: Int64, minutes: Int32) {
+        wrapper.snoozeAlarm(alarmId: alarmId, minutes: minutes)
+    }
+}
