@@ -114,7 +114,10 @@ kotlin {
         val iosSimulatorArm64Main by getting { dependsOn(iosMain) }
         
         commonTest.dependencies {
-//            implementation(libs.kotlin.test)
+            implementation(libs.kotlin.test)
+            implementation(libs.coroutines.test)
+            implementation(libs.turbine)
+            implementation(libs.kotest.assertions)
         }
     }
 }

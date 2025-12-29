@@ -68,6 +68,8 @@ kotlin {
         commonTest {
             dependencies {
                 implementation(libs.kotlin.test)
+                implementation(libs.kotest.assertions)
+                implementation(libs.coroutines.test)
             }
         }
 

@@ -13,7 +13,7 @@ class AlarmPermissionTest {
 
     private val androidVersion = AndroidVersionFake()
 
-    private val alarmPermission = AlarmPermission(alarmManager, androidVersion)
+    private val alarmPermission = AlarmPermissionImpl(alarmManager, androidVersion)
 
     @Test
     fun `test if when permission is granted returns true`() {

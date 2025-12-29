@@ -687,7 +687,7 @@ class AlarmKitKotlinBridge: NSObject, NativeAlarmScheduler {
             snoozeMinutes: request.snoozeMinutes,
             vibrate: request.vibrate,
             difficulty: request.difficulty,
-            repeats: request.repeats  // Pass the repeats flag from Kotlin
+            repeats: request.repeats  // Pass the repeats flag in from Kotlin
         )
     }
     

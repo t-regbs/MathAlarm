@@ -49,8 +49,6 @@
         <string>UIInterfaceOrientationLandscapeLeft</string>
         <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
-    <key>UIUserInterfaceStyle</key>
-    <string>Light</string>
     <key>NSUserNotificationUsageDescription</key>
     <string>MathAlarm needs notification permission to wake you up with alarms.</string>
     <key>UIBackgroundModes</key>
