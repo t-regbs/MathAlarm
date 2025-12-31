@@ -144,7 +144,7 @@ fun MathScreen(
                     if (!alarm.repeat) {
                         viewModel.completeAlarm(AlarmMapper().mapToDomainModel(alarm))
                     }
-                    backStack.removeLastOrNull()
+                    if (backStack.size > 1) backStack.removeLastOrNull()
                 }
                 is AlarmMathViewModel.UiEvent.StopVibrateAndHideKeyboard -> {
                     vibrator?.cancel()
@@ -209,7 +209,7 @@ fun MathScreen(
                 },
                 onSnoozeClick = {
                     viewModel.onEvent(OnSnoozeClick(alarm.alarmId))
-                    backStack.removeLastOrNull()
+                    if (backStack.size > 1) backStack.removeLastOrNull()
                 }
             )
         }

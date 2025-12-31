@@ -75,11 +75,14 @@ fun NavGraph(
     NavDisplay(
         modifier = Modifier.background(color = MaterialTheme.colorScheme.background),
         backStack = backStack,
-        onBack = { backStack.removeLastOrNull() },
+        onBack = {
+            // Block back navigation when on AlarmMath screen - user must solve or snooze
+            if (backStack.lastOrNull() !is AlarmMath && backStack.size > 1) {
+                backStack.removeLastOrNull()
+            }
+        },
         sceneStrategy = bottomSheetStrategy,
         entryDecorators = listOf(
-//            rememberSceneSetupNavEntryDecorator(),
-//            rememberSavedStateNavEntryDecorator(),
             rememberSaveableStateHolderNavEntryDecorator(),
             rememberViewModelStoreNavEntryDecorator()
         ),
@@ -138,7 +141,7 @@ fun NavGraph(
 
             entry<AppSettings> {
                 AppSettingsScreen(
-                    onBackPress = { backStack.removeLastOrNull() },
+                    onBackPress = { if (backStack.size > 1) backStack.removeLastOrNull() },
                     pref = preferences
                 )
             }

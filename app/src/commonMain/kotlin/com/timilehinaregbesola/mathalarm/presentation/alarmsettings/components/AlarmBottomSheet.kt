@@ -156,7 +156,7 @@ fun AlarmBottomSheet(
                     )
                 }
                 is AlarmSettingsViewModel.UiEvent.SaveAlarm -> {
-                    backstack.removeLastOrNull()
+                    if (backstack.size > 1) backstack.removeLastOrNull()
                 }
                 is AlarmSettingsViewModel.UiEvent.TestAlarm -> {
                     launch(Dispatchers.Default) {
