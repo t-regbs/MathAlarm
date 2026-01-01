@@ -16,6 +16,10 @@ import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermissio
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermissionImpl
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AndroidVersion
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AndroidVersionImpl
+import com.timilehinaregbesola.mathalarm.framework.app.permission.PermissionChecker
+import com.timilehinaregbesola.mathalarm.framework.app.permission.PermissionCheckerImpl
+import com.timilehinaregbesola.mathalarm.framework.app.permission.ScreenNavigator
+import com.timilehinaregbesola.mathalarm.framework.app.permission.ScreenNavigatorImpl
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmDatabase
 import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_2_3
 import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_3_4
@@ -28,6 +32,7 @@ import com.timilehinaregbesola.mathalarm.interactors.PlayerWrapper
 import com.timilehinaregbesola.mathalarm.notification.AlarmNotificationScheduler
 import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotification
 import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotificationChannel
+import com.timilehinaregbesola.mathalarm.notification.PendingIntentIdGenerator
 import com.timilehinaregbesola.mathalarm.utils.getAlarmManager
 import kotlinx.coroutines.InternalCoroutinesApi
 import org.koin.android.ext.koin.androidApplication
@@ -59,6 +64,10 @@ val androidModule = module {
 
     single { get<AlarmDatabase>().alarmDatabaseDao }
 
+    single { PendingIntentIdGenerator() }
+
+    single { AlarmNotificationScheduler(androidContext(), getWith("AlarmNotificationScheduler"), get()) }
+
     // Android Alarm Interactor
     single<AlarmInteractor> { AlarmInteractorImpl(get(), getWith("AlarmInteractorImpl")) }
 
@@ -74,8 +83,6 @@ val androidModule = module {
     }
 
     single { MathAlarmNotificationChannel(androidContext()) }
-
-    single { AlarmNotificationScheduler(androidContext(), getWith("AlarmNotificationScheduler")) }
 
     @OptIn(
         ExperimentalAnimationApi::class,
@@ -94,11 +101,17 @@ val androidModule = module {
     // Android Audio Player
     single<AudioPlayer> { PlayerWrapper(androidContext(), getWith("PlayerWrapper")) }
 
-    // Android Version and Permission
+    // Permission abstractions
     single<AndroidVersion> { AndroidVersionImpl() }
+    single<ScreenNavigator> { ScreenNavigatorImpl(androidContext()) }
+    single<PermissionChecker> { PermissionCheckerImpl(androidContext().getAlarmManager()) }
 
     single<AlarmPermission> {
-        AlarmPermissionImpl(androidContext().getAlarmManager(), get())
+        AlarmPermissionImpl(
+            screenNavigator = get(),
+            permissionChecker = get(),
+            androidVersion = get()
+        )
     }
 
     // Platform Logger - Android-specific with Crashlytics integration

@@ -13,13 +13,22 @@ class AlarmInteractorImpl(
 
     private val scheduler = IosAlarmScheduler(logger)
 
-    override fun schedule(alarm: Alarm, reschedule: Boolean): Boolean {
-        logger.d { "AlarmInteractorImpl.schedule called: alarmId=${alarm.alarmId}, time=${alarm.hour}:${alarm.minute}, reschedule=$reschedule" }
-        return scheduler.scheduleAlarm(alarm, reschedule)
+    override fun schedule(alarm: Alarm, timeInMillis: Long) {
+        logger.d { "AlarmInteractorImpl.schedule: alarmId=${alarm.alarmId}, timeInMillis=$timeInMillis" }
+        // iOS scheduler handles time internally via UNCalendarNotificationTrigger
+        // We pass the alarm and it schedules based on alarm's hour/minute
+        scheduler.scheduleAlarm(alarm, reschedule = false)
     }
 
     override fun cancel(alarm: Alarm) {
-        logger.d { "AlarmInteractorImpl.cancel called: alarmId=${alarm.alarmId}" }
+        logger.d { "AlarmInteractorImpl.cancel: alarmId=${alarm.alarmId}" }
         scheduler.cancelAlarm(alarm)
+    }
+
+    override fun update(alarm: Alarm) {
+        logger.d { "AlarmInteractorImpl.update: alarmId=${alarm.alarmId}" }
+        // On iOS, we need to cancel and reschedule to update
+        scheduler.cancelAlarm(alarm)
+        scheduler.scheduleAlarm(alarm, reschedule = true)
     }
 }

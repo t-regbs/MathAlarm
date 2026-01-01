@@ -35,11 +35,15 @@ class SnoozeAlarm(
         val alarm = alarmRepository.findAlarm(alarmId) ?: return
 
         val snoozedTime = getSnoozedDateTime(dateTimeProvider.getCurrentDateTime(), minutes)
-        alarm.apply {
-            hour = snoozedTime.hour
+        val updatedAlarm = alarm.copy(
+            hour = snoozedTime.hour,
             minute = snoozedTime.minute
-        }
-        alarmInteractor.schedule(alarm, alarm.repeat)
+        )
+        
+        // Calculate snooze time in millis and schedule
+        val tz = TimeZone.currentSystemDefault()
+        val timeInMillis = snoozedTime.toInstant(tz).toEpochMilliseconds()
+        alarmInteractor.schedule(updatedAlarm, timeInMillis)
         notificationInteractor.dismiss(alarmId)
     }
 

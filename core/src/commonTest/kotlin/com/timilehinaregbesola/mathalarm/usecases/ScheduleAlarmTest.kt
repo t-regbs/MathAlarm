@@ -4,6 +4,7 @@ import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.fake.AlarmInteractorFake
 import com.timilehinaregbesola.mathalarm.fake.AlarmRepositoryFake
+import com.timilehinaregbesola.mathalarm.fake.AlarmTimeCalculatorFake
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import kotlin.test.BeforeTest
@@ -17,12 +18,14 @@ class ScheduleAlarmTest {
     private val alarmRepository = AlarmRepository(dataSource)
 
     private val alarmInteractor = AlarmInteractorFake()
+    
+    private val alarmTimeCalculator = AlarmTimeCalculatorFake()
 
     private val addAlarmUseCase = AddAlarm(alarmRepository)
 
     private val findAlarmUseCase = FindAlarm(alarmRepository)
 
-    private val scheduleAlarmUseCase = ScheduleAlarm(alarmRepository, alarmInteractor)
+    private val scheduleAlarmUseCase = ScheduleAlarm(alarmRepository, alarmInteractor, alarmTimeCalculator)
 
     @BeforeTest
     fun setup() = runTest {
