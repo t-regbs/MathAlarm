@@ -5,42 +5,87 @@ import com.timilehinaregbesola.mathalarm.alarm.AlarmScheduleRequest
 import com.timilehinaregbesola.mathalarm.alarm.AlarmSchedulerBridge
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.datetime.Clock
-import kotlinx.datetime.DateTimeUnit
-import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
+import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import platform.Foundation.NSCalendar
 import platform.Foundation.NSCalendarUnitDay
 import platform.Foundation.NSCalendarUnitHour
 import platform.Foundation.NSCalendarUnitMinute
 import platform.Foundation.NSCalendarUnitMonth
-import platform.Foundation.NSCalendarUnitSecond
-import platform.Foundation.NSCalendarUnitWeekday
 import platform.Foundation.NSCalendarUnitYear
+import platform.Foundation.NSDate
 import platform.Foundation.NSDateComponents
+import platform.Foundation.dateWithTimeIntervalSince1970
 import platform.UserNotifications.UNAuthorizationOptionAlert
 import platform.UserNotifications.UNAuthorizationOptionBadge
 import platform.UserNotifications.UNAuthorizationOptionSound
 import platform.UserNotifications.UNCalendarNotificationTrigger
 import platform.UserNotifications.UNMutableNotificationContent
+import platform.UserNotifications.UNNotificationAction
+import platform.UserNotifications.UNNotificationActionOptionDestructive
+import platform.UserNotifications.UNNotificationActionOptionNone
+import platform.UserNotifications.UNNotificationCategory
+import platform.UserNotifications.UNNotificationCategoryOptionNone
 import platform.UserNotifications.UNNotificationRequest
 import platform.UserNotifications.UNNotificationSound
 import platform.UserNotifications.UNUserNotificationCenter
 import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 /**
  * iOS Alarm Scheduler - Hybrid Implementation
  * 
  * Uses AlarmKit on iOS 26+ for native alarm experience,
  * falls back to UNUserNotificationCenter on iOS 15-25.
+ * 
+ * Following Alkaa's patterns:
+ * - Registers notification categories with action buttons on init
+ * - Uses NSDate for cleaner time conversion
+ * - Separates notification display concerns to IosAlarmNotification
  */
 class IosAlarmScheduler(
     private val logger: Logger
 ) {
     private val notificationCenter = UNUserNotificationCenter.currentNotificationCenter()
+    
+    init {
+        registerNotificationCategories()
+    }
+    
+    /**
+     * Register notification categories with Snooze and Dismiss action buttons.
+     * This enables interactive buttons on the alarm notification.
+     */
+    private fun registerNotificationCategories() {
+        logger.d { "Registering notification categories with actions" }
+        
+        val snoozeAction = UNNotificationAction.actionWithIdentifier(
+            identifier = IosNotificationConstants.ACTION_IDENTIFIER_SNOOZE,
+            title = "Snooze",
+            options = UNNotificationActionOptionNone
+        )
+        
+        val dismissAction = UNNotificationAction.actionWithIdentifier(
+            identifier = IosNotificationConstants.ACTION_IDENTIFIER_DISMISS,
+            title = "Dismiss",
+            options = UNNotificationActionOptionDestructive
+        )
+        
+        val alarmCategory = UNNotificationCategory.categoryWithIdentifier(
+            identifier = IosNotificationConstants.CATEGORY_IDENTIFIER_ALARM,
+            actions = listOf(snoozeAction, dismissAction),
+            intentIdentifiers = emptyList<String>(),
+            options = UNNotificationCategoryOptionNone
+        )
+        
+        notificationCenter.setNotificationCategories(setOf(alarmCategory))
+        logger.d { "Notification categories registered successfully" }
+    }
     
     /**
      * Check if AlarmKit is available (iOS 26+)
@@ -146,18 +191,18 @@ class IosAlarmScheduler(
     }
     
     /**
-     * Schedule a one-time alarm that fires at the next occurrence of the specified time
+     * Schedule a one-time alarm that fires at the next occurrence of the specified time.
+     * Uses NSDate for cleaner time conversion following Alkaa's pattern.
      */
     @OptIn(ExperimentalForeignApi::class, ExperimentalTime::class)
     private fun scheduleOneTimeAlarm(alarm: Alarm): Boolean {
         val content = createNotificationContent(alarm)
         
-        // Create date components for the alarm time
-        val dateComponents = NSDateComponents().apply {
-            hour = alarm.hour.toLong()
-            minute = alarm.minute.toLong()
-            second = 0
-        }
+        // Calculate the next occurrence time in milliseconds
+        val timeInMillis = calculateNextAlarmTimeMillis(alarm.hour, alarm.minute)
+        
+        // Convert to NSDate and extract components (cleaner than manual NSDateComponents)
+        val dateComponents = dateComponentsFromMillis(timeInMillis)
         
         val trigger = UNCalendarNotificationTrigger.triggerWithDateMatchingComponents(
             dateComponents = dateComponents,
@@ -170,6 +215,7 @@ class IosAlarmScheduler(
             trigger = trigger
         )
         
+        logger.d { "Scheduling one-time alarm: id=${alarm.alarmId} at $timeInMillis" }
         notificationCenter.addNotificationRequest(request) { error ->
             if (error != null) {
                 logger.e { "Failed to schedule one-time alarm: ${error.localizedDescription}" }
@@ -179,6 +225,50 @@ class IosAlarmScheduler(
         }
         
         return true
+    }
+    
+    /**
+     * Convert milliseconds timestamp to NSDateComponents.
+     * Following Alkaa's cleaner approach using NSDate.
+     */
+    @OptIn(ExperimentalForeignApi::class)
+    private fun dateComponentsFromMillis(timeInMillis: Long): NSDateComponents {
+        val nsDate = NSDate.dateWithTimeIntervalSince1970(timeInMillis / 1000.0)
+        return NSCalendar.currentCalendar.components(
+            NSCalendarUnitYear or NSCalendarUnitMonth or NSCalendarUnitDay
+                or NSCalendarUnitHour or NSCalendarUnitMinute,
+            fromDate = nsDate
+        )
+    }
+    
+    /**
+     * Calculate the next occurrence of the given hour:minute in milliseconds.
+     */
+    @OptIn(ExperimentalTime::class)
+    private fun calculateNextAlarmTimeMillis(hour: Int, minute: Int): Long {
+        val now = Instant.fromEpochMilliseconds(kotlin.time.Clock.System.now().toEpochMilliseconds())
+        val tz = TimeZone.currentSystemDefault()
+        val localNow = now.toLocalDateTime(tz)
+        val today = localNow.date
+        
+        // Create alarm time for today
+        val alarmTimeToday = LocalDateTime(
+            date = today,
+            time = LocalTime(hour, minute, 0)
+        )
+        val alarmInstantToday = alarmTimeToday.toInstant(tz)
+        
+        // If alarm time has passed today, schedule for tomorrow
+        return if (alarmInstantToday > now) {
+            alarmInstantToday.toEpochMilliseconds()
+        } else {
+            val tomorrow = today.plus(DatePeriod(days = 1))
+            val alarmTimeTomorrow = LocalDateTime(
+                date = tomorrow,
+                time = LocalTime(hour, minute, 0)
+            )
+            alarmTimeTomorrow.toInstant(tz).toEpochMilliseconds()
+        }
     }
     
     /**
@@ -237,50 +327,57 @@ class IosAlarmScheduler(
     }
     
     /**
-     * Create notification content for an alarm
+     * Create notification content for an alarm.
+     * Uses constants from IosNotificationConstants for consistency.
+     * 
+     * Note: Critical alerts require special Apple entitlement (not available to most apps).
+     * Instead, we use:
+     * - TimeSensitive interruption level (breaks through Focus modes)
+     * - Default sound for notification
+     * - AlarmAudioController plays full alarm sound when notification arrives/is tapped
      */
     private fun createNotificationContent(alarm: Alarm): UNMutableNotificationContent {
         return UNMutableNotificationContent().apply {
             setTitle("Math Alarm")
             setBody(alarm.title.ifEmpty { "Time to wake up! Solve the math problem to dismiss." })
             
-            // Use critical sound with max volume for alarm
-            // This bypasses Do Not Disturb and silent mode
-            // Note: Critical alerts require special entitlement from Apple for App Store
-            // For development, we use the default critical sound
+            // Use default sound or custom sound if bundled
+            // The actual alarm sound is played by AlarmAudioController in Swift
+            // when the notification arrives (foreground) or is tapped (background)
             val alarmSound = if (alarm.alarmTone.isNotEmpty()) {
-                // Try to use custom sound file if specified
-                UNNotificationSound.criticalSoundNamed(alarm.alarmTone, withAudioVolume = 1.0f)
+                // Try to use custom sound from bundle (must be .caf, .wav, .aiff, max 30 seconds)
+                UNNotificationSound.soundNamed(alarm.alarmTone)
             } else {
-                // Use default critical sound at max volume
-                UNNotificationSound.defaultCriticalSoundWithAudioVolume(1.0f)
+                // Use default notification sound - AlarmAudioController handles full alarm
+                UNNotificationSound.defaultSound
             }
             setSound(alarmSound)
             
             // Set relevance score to maximum for alarm notifications
             setRelevanceScore(1.0)
             
-            // Mark as interruptive (iOS 15+)
-            setInterruptionLevel(platform.UserNotifications.UNNotificationInterruptionLevel.UNNotificationInterruptionLevelCritical)
+            // Use TimeSensitive interruption level (iOS 15+)
+            // This breaks through Focus modes without requiring critical alerts entitlement
+            setInterruptionLevel(platform.UserNotifications.UNNotificationInterruptionLevel.UNNotificationInterruptionLevelTimeSensitive)
             
-            // Add ALL alarm data to userInfo for handling when notification is tapped
-            // This data is used to navigate to the MathScreen with the alarm info
+            // Add alarm data to userInfo using constants for key names
+            // This data is used by NotificationActionDelegate and for navigating to MathScreen
             setUserInfo(mapOf(
-                "alarmId" to alarm.alarmId,
-                "hour" to alarm.hour,
-                "minute" to alarm.minute,
-                "repeat" to alarm.repeat,
-                "repeatDays" to alarm.repeatDays,
-                "difficulty" to alarm.difficulty,
-                "snooze" to alarm.snooze,
-                "vibrate" to alarm.vibrate,
-                "alarmTone" to alarm.alarmTone,
-                "title" to alarm.title,
-                "isOn" to alarm.isOn
+                IosNotificationConstants.USER_INFO_ALARM_ID to alarm.alarmId,
+                IosNotificationConstants.USER_INFO_HOUR to alarm.hour,
+                IosNotificationConstants.USER_INFO_MINUTE to alarm.minute,
+                IosNotificationConstants.USER_INFO_REPEAT to alarm.repeat,
+                IosNotificationConstants.USER_INFO_REPEAT_DAYS to alarm.repeatDays,
+                IosNotificationConstants.USER_INFO_DIFFICULTY to alarm.difficulty,
+                IosNotificationConstants.USER_INFO_SNOOZE to alarm.snooze,
+                IosNotificationConstants.USER_INFO_VIBRATE to alarm.vibrate,
+                IosNotificationConstants.USER_INFO_ALARM_TONE to alarm.alarmTone,
+                IosNotificationConstants.USER_INFO_TITLE to alarm.title,
+                IosNotificationConstants.USER_INFO_IS_ON to alarm.isOn
             ))
             
-            // Set category for action buttons
-            setCategoryIdentifier("ALARM_CATEGORY")
+            // Set category for action buttons (registered in init)
+            setCategoryIdentifier(IosNotificationConstants.CATEGORY_IDENTIFIER_ALARM)
         }
     }
     
