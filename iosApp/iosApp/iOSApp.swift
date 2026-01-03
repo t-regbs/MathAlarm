@@ -9,9 +9,23 @@ struct iOSApp: App {
     @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
     @Environment(\.scenePhase) private var scenePhase
     
+    init() {
+        print("iOSApp.init: Initializing Koin early (before UI)")
+        MainViewControllerKt.doInitKoin()
+        
+        // Prewarm database in background so it's ready when UI needs it
+        MainViewControllerKt.prewarmDatabaseInBackground()
+    }
+    
     var body: some Scene {
         WindowGroup {
-            ContentView().ignoresSafeArea()
+            ContentView()
+                .ignoresSafeArea()
+                .onAppear {
+                    // Request notification permissions after UI is shown
+                    // This is deferred to not block startup
+                    MainViewControllerKt.requestNotificationPermissionsDeferred()
+                }
         }
         .onChange(of: scenePhase) { newPhase in
             if newPhase == .active {
@@ -186,6 +200,9 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     
     // Handle alarm notification - start audio and set deeplink
     private func handleAlarmNotification(userInfo: [AnyHashable: Any]) {
+        print("iOSApp: 🔔 handleAlarmNotification called")
+        print("iOSApp: userInfo keys = \(userInfo.keys)")
+        
         // Extract alarm data
         let alarmId = (userInfo["alarmId"] as? NSNumber)?.int64Value ?? 0
         let hour = (userInfo["hour"] as? NSNumber)?.intValue ?? 0
@@ -196,9 +213,14 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         let title = (userInfo["title"] as? String) ?? ""
         let alarmTone = (userInfo["alarmTone"] as? String) ?? ""
         
+        print("iOSApp: Extracted - alarmId=\(alarmId), tone='\(alarmTone)', vibrate=\(vibrate)")
+        
         // Start alarm audio immediately when notification is tapped
-        print("iOSApp: Starting alarm audio - tone=\(alarmTone), vibrate=\(vibrate)")
-        AlarmAudioController.shared.startAlarm(soundName: alarmTone, vibrate: vibrate)
+        // Run on main thread to ensure audio session works correctly
+        print("iOSApp: 🔊 Starting AlarmAudioController...")
+        DispatchQueue.main.async {
+            AlarmAudioController.shared.startAlarm(soundName: alarmTone, vibrate: vibrate)
+        }
         
         // Create JSON string for the alarm - matching AlarmEntity format
         let vibrateStr = vibrate ? "true" : "false"
@@ -216,18 +238,26 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                                 withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
         let userInfo = notification.request.content.userInfo
         
-        print("iOSApp: Notification arrived in foreground")
+        print("iOSApp: 🔔 Notification arrived in foreground!")
+        print("iOSApp: userInfo = \(userInfo)")
         
         // Start alarm audio immediately when notification arrives in foreground
         let alarmTone = (userInfo["alarmTone"] as? String) ?? ""
         let vibrate = (userInfo["vibrate"] as? NSNumber)?.boolValue ?? false
         
-        AlarmAudioController.shared.startAlarm(soundName: alarmTone, vibrate: vibrate)
+        print("iOSApp: Starting AlarmAudioController - tone='\(alarmTone)', vibrate=\(vibrate)")
+        
+        // Run on main thread to ensure audio session works
+        DispatchQueue.main.async {
+            AlarmAudioController.shared.startAlarm(soundName: alarmTone, vibrate: vibrate)
+        }
         
         // Also set the deeplink so the UI navigates to MathScreen
         handleAlarmNotification(userInfo: userInfo)
         
-        // Show banner and badge (sound is handled by our audio player)
-        completionHandler([.banner, .badge])
+        // Show banner, badge, AND sound (sound as backup in case AlarmAudioController fails)
+        // Our AlarmAudioController provides the full looping alarm, but notification sound
+        // gives us at least something if that fails
+        completionHandler([.banner, .badge, .sound])
     }
 }

@@ -1,10 +1,17 @@
 package com.timilehinaregbesola.mathalarm.presentation
 
+import android.app.KeyguardManager
+import android.content.Context
 import android.content.Intent
 import android.graphics.Color
+import android.os.Build
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.appcompat.app.AppCompatActivity
+import co.touchlab.kermit.Logger
+import com.timilehinaregbesola.mathalarm.notification.ActiveAlarmManager
+import com.timilehinaregbesola.mathalarm.notification.AlarmService
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -37,10 +44,13 @@ import java.nio.charset.StandardCharsets
 class MainActivity : AppCompatActivity() {
     val preferences: AlarmPreferencesImpl by inject()
     private lateinit var lyricist: Lyricist<Strings>
+    private val logger = Logger.withTag("MainActivity")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+
+        setupLockScreenFlags()
 
         deeplinkInfo = intent.extractAlarmJson()
 
@@ -56,12 +66,38 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    private fun setupLockScreenFlags() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O_MR1) {
+            setShowWhenLocked(true)
+            setTurnScreenOn(true)
+            val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+            keyguardManager.requestDismissKeyguard(this, null)
+        } else {
+            @Suppress("DEPRECATION")
+            window.addFlags(
+                WindowManager.LayoutParams.FLAG_SHOW_WHEN_LOCKED or
+                    WindowManager.LayoutParams.FLAG_TURN_SCREEN_ON or
+                    WindowManager.LayoutParams.FLAG_DISMISS_KEYGUARD
+            )
+        }
+    }
+
     private fun updateTheme(darkTheme: Boolean) {
         window.apply {
             statusBarColor = if (darkTheme) darkPrimary.toArgb() else Color.WHITE
             navigationBarColor = if (darkTheme) darkPrimary.toArgb() else Color.WHITE
             WindowInsetsControllerCompat(this, this.decorView).isAppearanceLightStatusBars =
                 !darkTheme
+        }
+    }
+
+    override fun onStop() {
+        super.onStop()
+        // If user closes the app while alarm is active, refresh the notification
+        // This will trigger the full-screen intent to pop up again
+        if (ActiveAlarmManager.hasActiveAlarm()) {
+            logger.d("App stopped with active alarm - refreshing notification")
+            AlarmService.refreshNotification(this)
         }
     }
 

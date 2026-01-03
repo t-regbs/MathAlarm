@@ -1,11 +1,13 @@
 package com.timilehinaregbesola.mathalarm.framework.app.permission
 
-import android.annotation.SuppressLint
-import android.app.AlarmManager
 import android.os.Build
 
+/**
+ * Android implementation of [AlarmPermission] using abstracted dependencies.
+ */
 class AlarmPermissionImpl(
-    private val alarmManager: AlarmManager?,
+    private val screenNavigator: ScreenNavigator,
+    private val permissionChecker: PermissionChecker,
     private val androidVersion: AndroidVersion
 ) : AlarmPermission {
 
@@ -14,14 +16,19 @@ class AlarmPermissionImpl(
      *
      * @return `true` if the permission is granted, `false` otherwise
      */
-    @SuppressLint("NewApi")
     override fun hasExactAlarmPermission(): Boolean {
-        if (alarmManager == null) return false
-
         return if (androidVersion.currentVersion >= Build.VERSION_CODES.S) {
-            alarmManager.canScheduleExactAlarms()
+            permissionChecker.canScheduleExactAlarms()
         } else {
             true
         }
+    }
+
+    override fun openExactAlarmPermissionScreen() {
+        screenNavigator.openExactAlarmPermissionScreen()
+    }
+
+    override fun openAppSettings() {
+        screenNavigator.openAppSettings()
     }
 }

@@ -42,21 +42,22 @@ class AlarmListViewModelTest {
         dateTimeProvider = DateTimeProviderFake()
         permission = AlarmPermissionFake()
         
-        val scheduleNextAlarm = ScheduleNextAlarm(alarmInteractor)
+        val alarmTimeCalculator = AlarmTimeCalculatorFake()
+        val scheduleNextAlarm = ScheduleNextAlarm(alarmInteractor, alarmTimeCalculator)
         
         usecases = Usecases(
             addAlarm = AddAlarm(repository),
             findAlarm = FindAlarm(repository),
             deleteAlarm = DeleteAlarm(repository, alarmInteractor),
             getSavedAlarms = GetSavedAlarms(repository),
-            scheduleAlarm = ScheduleAlarm(repository, alarmInteractor),
+            scheduleAlarm = ScheduleAlarm(repository, alarmInteractor, alarmTimeCalculator),
             showAlarm = ShowAlarm(repository, notificationInteractor, scheduleNextAlarm),
             completeAlarm = CompleteAlarm(repository, alarmInteractor, notificationInteractor),
             updateAlarm = UpdateAlarm(repository),
             cancelAlarm = CancelAlarm(alarmInteractor),
             clearAlarms = ClearAlarms(repository, alarmInteractor),
             scheduleNextAlarm = scheduleNextAlarm,
-            rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor),
+            rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor, alarmTimeCalculator, scheduleNextAlarm),
             snoozeAlarm = SnoozeAlarm(dateTimeProvider, notificationInteractor, alarmInteractor, repository)
         )
         

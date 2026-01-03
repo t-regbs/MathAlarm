@@ -1,6 +1,7 @@
 package com.timilehinaregbesola.mathalarm.di
 
 import com.russhwolf.settings.Settings
+import com.timilehinaregbesola.mathalarm.coroutines.AppCoroutineScope
 import com.timilehinaregbesola.mathalarm.data.AlarmDataSource
 import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.framework.RoomAlarmDataSource
@@ -11,6 +12,8 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmmath.AlarmMathViewMod
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AlarmSettingsViewModel
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AppThemeOptionsMapper
+import com.timilehinaregbesola.mathalarm.provider.AlarmTimeCalculator
+import com.timilehinaregbesola.mathalarm.provider.AlarmTimeCalculatorImpl
 import com.timilehinaregbesola.mathalarm.provider.DateTimeProvider
 import com.timilehinaregbesola.mathalarm.provider.DateTimeProviderImpl
 import com.timilehinaregbesola.mathalarm.usecases.AddAlarm
@@ -36,11 +39,17 @@ val commonModule = module {
     single { AlarmMapper() }
     single { AppThemeOptionsMapper() }
     
+    // Coroutine Scope - replaces GlobalScope usage
+    single { AppCoroutineScope() }
+    
     // DateTime Provider
     single<DateTimeProvider> { DateTimeProviderImpl() }
     
-    // Schedule Next Alarm
-    single { ScheduleNextAlarm(get()) }
+    // Alarm Time Calculator - moves time calculation to domain layer
+    single<AlarmTimeCalculator> { AlarmTimeCalculatorImpl() }
+    
+    // Schedule Next Alarm (now depends on AlarmTimeCalculator)
+    single { ScheduleNextAlarm(get(), get()) }
     
     // Data Source and Repository
     single<AlarmDataSource> { RoomAlarmDataSource(get(), get()) }
@@ -65,9 +74,9 @@ val commonModule = module {
             findAlarm = FindAlarm(get()),
             getSavedAlarms = GetSavedAlarms(get()),
             updateAlarm = UpdateAlarm(get()),
-            scheduleAlarm = ScheduleAlarm(get(), get()),
+            scheduleAlarm = ScheduleAlarm(get(), get(), get()),
             completeAlarm = CompleteAlarm(get(), get(), get()),
-            rescheduleFutureAlarms = RescheduleFutureAlarms(get(), get()),
+            rescheduleFutureAlarms = RescheduleFutureAlarms(get(), get(), get(), get()),
             scheduleNextAlarm = get(),
             showAlarm = ShowAlarm(get(), get(), get()),
             snoozeAlarm = SnoozeAlarm(get(), get(), get(), get()),

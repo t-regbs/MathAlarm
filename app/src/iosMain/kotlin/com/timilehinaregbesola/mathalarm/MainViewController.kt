@@ -10,19 +10,67 @@ import androidx.compose.ui.window.ComposeUIViewController
 import cafe.adriel.lyricist.ProvideStrings
 import cafe.adriel.lyricist.rememberStrings
 import com.timilehinaregbesola.mathalarm.di.initKoin
+import com.timilehinaregbesola.mathalarm.di.prewarmDatabase
 import com.timilehinaregbesola.mathalarm.navigation.NavGraph
-import com.timilehinaregbesola.mathalarm.notification.IosNotificationSetup
 import com.timilehinaregbesola.mathalarm.notification.NotificationDeeplinkHolder
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import platform.UIKit.UIViewController
 
 /**
+ * Initialize Koin early - called from Swift App init() before UI loads.
+ */
+fun doInitKoin() {
+    initKoin()
+}
+
+/**
+ * Prewarm the database in background - called after Koin init
+ * This initializes Room in background so it's ready when UI needs it
+ */
+fun prewarmDatabaseInBackground() {
+    prewarmDatabase()
+}
+
+/**
+ * Request notification permissions in a non-blocking way.
+ * Call this after the UI is shown to avoid blocking startup.
+ * 
+ * The permission request is deferred to not block app launch,
+ * following best practices for permission timing.
+ */
+fun requestNotificationPermissionsDeferred() {
+    CoroutineScope(Dispatchers.Main).launch {
+        // Small delay to ensure UI is fully rendered first
+        delay(500)
+        
+        try {
+            val koinComponent = object : KoinComponent {}
+            val scheduler: com.timilehinaregbesola.mathalarm.notification.IosAlarmScheduler = 
+                koinComponent.getKoin().get()
+            
+            scheduler.requestPermissions { granted ->
+                println("requestNotificationPermissionsDeferred: granted = $granted")
+            }
+        } catch (e: Exception) {
+            println("requestNotificationPermissionsDeferred: error = ${e.message}")
+        }
+    }
+}
+
+/**
  * iOS Main View Controller - Entry point for the Compose Multiplatform UI
- * Note: Notification delegate is set up in Swift AppDelegate for proper timing
+ * 
+ * Note: Koin is initialized earlier via doInitKoin() from Swift's App init().
+ * Notification categories are registered via IosAlarmScheduler on first access.
+ * Notification delegate is set up in Swift AppDelegate for proper timing.
  */
 @OptIn(
     ExperimentalAnimationApi::class,
@@ -32,18 +80,7 @@ import platform.UIKit.UIViewController
     InternalCoroutinesApi::class
 )
 fun MainViewController(): UIViewController {
-    println("MainViewController: Initializing...")
-    
-    // Initialize Koin DI
-    initKoin()
-    
-    // Setup notification categories for alarm actions
-    IosNotificationSetup.setupNotificationCategories()
-    
-    // Request notification permissions
-    IosNotificationSetup.requestPermissions { granted ->
-        println("MainViewController: Notification permissions granted = $granted")
-    }
+    println("MainViewController: Creating Compose UI...")
     
     return ComposeUIViewController(configure = { enforceStrictPlistSanityCheck = false }) {
         val preferences = rememberKoinInject<AlarmPreferencesImpl>()

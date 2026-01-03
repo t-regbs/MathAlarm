@@ -2,7 +2,6 @@ package com.timilehinaregbesola.mathalarm.notification
 
 import platform.UserNotifications.UNAuthorizationOptionAlert
 import platform.UserNotifications.UNAuthorizationOptionBadge
-import platform.UserNotifications.UNAuthorizationOptionCriticalAlert
 import platform.UserNotifications.UNAuthorizationOptionSound
 import platform.UserNotifications.UNNotificationAction
 import platform.UserNotifications.UNNotificationActionOptionDestructive
@@ -61,16 +60,20 @@ object IosNotificationSetup {
     /**
      * Request notification permissions
      * Call this when appropriate in the app flow
+     * 
+     * Note: Critical alerts require special Apple entitlement (not available to most apps).
+     * We use standard notification permissions - actual alarm sound is played by
+     * AlarmAudioController when the notification arrives.
      */
     fun requestPermissions(onResult: (Boolean) -> Unit) {
         val notificationCenter = UNUserNotificationCenter.currentNotificationCenter()
         
-        // Request authorization including critical alerts for alarm sounds
+        // Request standard notification authorization
+        // Critical alerts require Apple approval - we handle alarm sounds via AlarmAudioController
         notificationCenter.requestAuthorizationWithOptions(
             options = UNAuthorizationOptionAlert or 
                      UNAuthorizationOptionSound or 
-                     UNAuthorizationOptionBadge or
-                     UNAuthorizationOptionCriticalAlert
+                     UNAuthorizationOptionBadge
         ) { granted, error ->
             onResult(granted)
         }

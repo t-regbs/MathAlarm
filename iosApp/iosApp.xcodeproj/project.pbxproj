@@ -11,6 +11,7 @@
 		058557D9273AAEEB004C7B11 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 058557D8273AAEEB004C7B11 /* ContentView.swift */; };
 		2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2152FB032600AC8F00CF470E /* iOSApp.swift */; };
 		ALARMKIT01273AAA24004C7B11 /* AlarmKitWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = ALARMKIT02273AAA24004C7B11 /* AlarmKitWrapper.swift */; };
+		ALARMAUDIO01273AAA24004C7B /* AlarmAudioController.swift in Sources */ = {isa = PBXBuildFile; fileRef = ALARMAUDIO02273AAA24004C7B /* AlarmAudioController.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -20,6 +21,7 @@
 		7555FF7B242A565900829871 /* MathAlarm.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MathAlarm.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7555FF8C242A565B00829871 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		ALARMKIT02273AAA24004C7B11 /* AlarmKitWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmKitWrapper.swift; sourceTree = "<group>"; };
+		ALARMAUDIO02273AAA24004C7B /* AlarmAudioController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmAudioController.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -36,6 +38,7 @@
 		058557D7273AAEEB004C7B11 /* iosApp */ = {
 			isa = PBXGroup;
 			children = (
+				ALARMAUDIO02273AAA24004C7B /* AlarmAudioController.swift */,
 				ALARMKIT02273AAA24004C7B11 /* AlarmKitWrapper.swift */,
 				058557BA273AAA24004C7B11 /* Assets.xcassets */,
 				058557D8273AAEEB004C7B11 /* ContentView.swift */,
@@ -160,6 +163,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				ALARMAUDIO01273AAA24004C7B /* AlarmAudioController.swift in Sources */,
 				ALARMKIT01273AAA24004C7B11 /* AlarmKitWrapper.swift in Sources */,
 				2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */,
 				058557D9273AAEEB004C7B11 /* ContentView.swift in Sources */,

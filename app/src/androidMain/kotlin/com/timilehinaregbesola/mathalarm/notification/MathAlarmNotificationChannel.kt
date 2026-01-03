@@ -18,6 +18,8 @@ class MathAlarmNotificationChannel(context: Context) {
         val alarmDescription = context.getString(R.string.channel_alarm_description)
         NotificationChannel(ALARM_CHANNEL_ID, alarmName, NotificationManager.IMPORTANCE_HIGH).apply {
             description = alarmDescription
+            setBypassDnd(true)
+            lockscreenVisibility = android.app.Notification.VISIBILITY_PUBLIC
             context.getNotificationManager()?.createNotificationChannel(this)
         }
 

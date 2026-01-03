@@ -557,16 +557,63 @@ class AlarmKitWrapperImpl: NSObject {
                 let stopIntent = StopAlarmIntent(alarmUUID: alarmUUID)
                 let snoozeIntent: SnoozeAlarmIntent? = snoozeMinutes > 0 ? SnoozeAlarmIntent(alarmUUID: alarmUUID) : nil
                 
-                // Create alarm configuration with intents
-                // Note: .default may not play sounds in some cases, .named("") plays default sound
-                let configuration = MathAlarmConfiguration(
-                    countdownDuration: countdownDuration,
-                    schedule: schedule,
-                    attributes: attributes,
-                    stopIntent: stopIntent,
-                    secondaryIntent: snoozeIntent,
-                    sound: .named("")
-                )
+                // Create alarm configuration
+                // Note on AlarmKit sounds (from https://levelup.gitconnected.com/swiftui-alarm-app-copycat-with-alarmkit-wwdc-2025-part-2-5c3cb2194c54):
+                // - .default does NOT play any sound (AlarmKit bug/quirk)
+                // - .named("") plays the default system alarm sound
+                // - .named("customSound") plays a custom sound from bundle
+                let hasCustomSound = !soundName.isEmpty && Bundle.main.url(forResource: soundName, withExtension: "caf") != nil
+                
+                let configuration: MathAlarmConfiguration
+                if countdownDuration == nil {
+                    // Traditional alarm without countdown - use .alarm() factory
+                    print("AlarmKitWrapper: Creating traditional alarm configuration")
+                    if hasCustomSound {
+                        print("AlarmKitWrapper: Using custom sound: \(soundName)")
+                        configuration = MathAlarmConfiguration.alarm(
+                            schedule: schedule,
+                            attributes: attributes,
+                            stopIntent: stopIntent,
+                            secondaryIntent: snoozeIntent,
+                            sound: .named(soundName)
+                        )
+                    } else {
+                        // Using .named("") to get default system alarm sound
+                        print("AlarmKitWrapper: Using default system alarm sound via .named(\"\")")
+                        configuration = MathAlarmConfiguration.alarm(
+                            schedule: schedule,
+                            attributes: attributes,
+                            stopIntent: stopIntent,
+                            secondaryIntent: snoozeIntent,
+                            sound: .named("")
+                        )
+                    }
+                } else {
+                    // Alarm with countdown/snooze - use generic initializer
+                    print("AlarmKitWrapper: Creating alarm with countdown configuration")
+                    if hasCustomSound {
+                        print("AlarmKitWrapper: Using custom sound: \(soundName)")
+                        configuration = MathAlarmConfiguration(
+                            countdownDuration: countdownDuration,
+                            schedule: schedule,
+                            attributes: attributes,
+                            stopIntent: stopIntent,
+                            secondaryIntent: snoozeIntent,
+                            sound: .named(soundName)
+                        )
+                    } else {
+                        // Using .named("") to get default system alarm sound
+                        print("AlarmKitWrapper: Using default system alarm sound via .named(\"\")")
+                        configuration = MathAlarmConfiguration(
+                            countdownDuration: countdownDuration,
+                            schedule: schedule,
+                            attributes: attributes,
+                            stopIntent: stopIntent,
+                            secondaryIntent: snoozeIntent,
+                            sound: .named("")
+                        )
+                    }
+                }
                 print("AlarmKitWrapper: Created configuration with intents, about to schedule...")
                 
                 // Schedule the alarm with id and configuration

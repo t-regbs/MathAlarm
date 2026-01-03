@@ -11,9 +11,9 @@ interface AlarmInteractor {
      * Schedules a new alarm.
      *
      * @param alarm the alarm
-     * @param reschedule whether repeating
+     * @param timeInMillis the time to schedule the alarm in milliseconds
      */
-    fun schedule(alarm: Alarm, reschedule: Boolean): Boolean
+    fun schedule(alarm: Alarm, timeInMillis: Long)
 
     /**
      * Cancels an alarm.
@@ -21,4 +21,13 @@ interface AlarmInteractor {
      * @param alarm the alarm
      */
     fun cancel(alarm: Alarm)
+
+    /**
+     * Updates an existing alarm.
+     * On Android, the notification will trigger a BroadcastReceiver which will always get the
+     * most recent Alarm data from the database, so this may be a no-op on some platforms.
+     *
+     * @param alarm the alarm to be updated
+     */
+    fun update(alarm: Alarm)
 }
