@@ -93,7 +93,7 @@ val androidModule = module {
     )
     single<NotificationInteractor> {
         NotificationInteractorImpl(
-            get(),
+            androidContext(),
             getWith("NotificationInteractorImpl")
         )
     }

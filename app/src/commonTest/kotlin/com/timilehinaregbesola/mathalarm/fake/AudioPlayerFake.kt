@@ -6,7 +6,8 @@ class AudioPlayerFake : AudioPlayer {
     var isInitialized = false
     var isReset = false
     var dataSource: String? = null
-    var isPlaying = false
+    private var _isPlaying = false
+    override val isPlaying: Boolean get() = _isPlaying
     var isStopped = false
     var volume: Float = 1.0f
     
@@ -27,13 +28,13 @@ class AudioPlayerFake : AudioPlayer {
     }
 
     override fun startAlarmAudio() {
-        isPlaying = true
+        _isPlaying = true
         isStopped = false
     }
 
     override fun stop() {
         isStopped = true
-        isPlaying = false
+        _isPlaying = false
     }
     
     override fun setPerceivedVolume(perceived: Float) {

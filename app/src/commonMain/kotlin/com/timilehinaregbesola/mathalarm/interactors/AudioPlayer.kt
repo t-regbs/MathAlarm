@@ -5,6 +5,7 @@ package com.timilehinaregbesola.mathalarm.interactors
 expect interface AudioPlayer {
     val currentPosition: Int
     val duration: Int
+    val isPlaying: Boolean
 
     fun init()
     fun startAlarmAudio()

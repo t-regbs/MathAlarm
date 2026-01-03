@@ -12,6 +12,7 @@ import platform.Foundation.NSURL
 actual interface AudioPlayer {
     actual val currentPosition: Int
     actual val duration: Int
+    actual val isPlaying: Boolean
 
     actual fun init()
     actual fun startAlarmAudio()
@@ -37,6 +38,9 @@ class IosAudioPlayer(
     
     override val duration: Int
         get() = (audioPlayer?.duration?.times(1000))?.toInt() ?: 0
+    
+    override val isPlaying: Boolean
+        get() = audioPlayer?.isPlaying() == true
     
     override fun init() {
         try {

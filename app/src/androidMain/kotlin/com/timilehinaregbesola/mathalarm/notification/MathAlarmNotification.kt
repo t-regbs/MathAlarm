@@ -49,26 +49,30 @@ class MathAlarmNotification(
         logger.d("Showing notification for '${alarm.title}'")
         val builder = buildNotification(alarm)
 //        builder.addAction(getCompleteAction(alarm))
-        var uriExists: Boolean
-        val toneUri = alarm.alarmTone.toUri()
-        player.apply {
-            init()
-            reset()
-            try {
-                val inputStream: InputStream? = context.contentResolver.openInputStream(toneUri)
-                inputStream?.close()
-                uriExists = true
-            } catch (e: Exception) {
-                uriExists = false
-                logger.w("File corresponding to the uri does not exist $toneUri")
+        
+        // Only start audio if not already playing (to avoid duplicate sounds on notification re-show)
+        if (!player.isPlaying) {
+            var uriExists: Boolean
+            val toneUri = alarm.alarmTone.toUri()
+            player.apply {
+                init()
+                reset()
+                try {
+                    val inputStream: InputStream? = context.contentResolver.openInputStream(toneUri)
+                    inputStream?.close()
+                    uriExists = true
+                } catch (e: Exception) {
+                    uriExists = false
+                    logger.w("File corresponding to the uri does not exist $toneUri")
+                }
+                val toneString = if (uriExists) {
+                    alarm.alarmTone
+                } else {
+                    RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString()
+                }
+                setDataSourceFromString(toneString)
+                startAlarmAudio()
             }
-            val toneString = if (uriExists) {
-                alarm.alarmTone
-            } else {
-                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString()
-            }
-            setDataSourceFromString(toneString)
-            startAlarmAudio()
         }
         context.getNotificationManager()?.notify(alarm.alarmId.toInt(), builder.build())
     }
@@ -116,6 +120,8 @@ class MathAlarmNotification(
             setAutoCancel(true)
             addAction(getSnoozeAction(alarm))
             setFullScreenIntent(buildPendingIntent(alarm), true)
+            // Re-show notification immediately if user tries to dismiss it
+            setDeleteIntent(getDismissIntent(alarm))
         }
 
     private fun buildPendingIntent(alarm: Alarm): PendingIntent {
@@ -150,6 +156,10 @@ class MathAlarmNotification(
         return NotificationCompat.Action(ACTION_NO_ICON, actionTitle, intent)
     }
 
+    private fun getDismissIntent(alarm: Alarm): PendingIntent {
+        return getIntent(alarm, AlarmReceiver.DISMISS_ACTION, REQUEST_CODE_ACTION_DISMISS)
+    }
+
     private fun getIntent(
         alarm: Alarm,
         intentAction: String,
@@ -176,6 +186,8 @@ class MathAlarmNotification(
         private const val REQUEST_CODE_ACTION_COMPLETE = 1_234
 
         private const val REQUEST_CODE_ACTION_SNOOZE = 4_321
+
+        private const val REQUEST_CODE_ACTION_DISMISS = 5_678
 
         private const val ACTION_NO_ICON = 0
     }

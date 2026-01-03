@@ -10,6 +10,7 @@ actual interface AudioPlayer {
 
     actual val currentPosition: Int
     actual val duration: Int
+    actual val isPlaying: Boolean
 
     actual fun init()
     actual fun startAlarmAudio()
@@ -36,6 +37,8 @@ class PlayerWrapper(
         get() = player?.currentPosition?: 0
     override val duration: Int
         get() = player?.duration?: 0
+    override val isPlaying: Boolean
+        get() = player?.isPlaying == true
 
     override fun init() {
         player = MediaPlayer().apply {

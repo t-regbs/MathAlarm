@@ -42,6 +42,11 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
             ALARM_ACTION -> getAlarmId(intent)?.let { usecases.showAlarm(it) }
             COMPLETE_ACTION -> getAlarmId(intent)?.let { usecases.completeAlarm(it) }
             SNOOZE_ACTION -> getAlarmId(intent)?.let { usecases.snoozeAlarm(it) }
+            DISMISS_ACTION -> {
+                // User swiped away the notification - immediately re-show it
+                Logger.d("Notification dismissed by user, re-showing alarm")
+                getAlarmId(intent)?.let { usecases.showAlarm(it) }
+            }
             Intent.ACTION_BOOT_COMPLETED,
             "android.intent.action.QUICKBOOT_POWERON",
             "android.intent.action.MY_PACKAGE_REPLACED",
@@ -67,5 +72,7 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
         const val COMPLETE_ACTION = "com.timilehinaregbesola.mathalarm.SET_COMPLETE"
 
         const val SNOOZE_ACTION = "com.timilehinaregbesola.mathalarm.SNOOZE"
+
+        const val DISMISS_ACTION = "com.timilehinaregbesola.mathalarm.NOTIFICATION_DISMISSED"
     }
 }
