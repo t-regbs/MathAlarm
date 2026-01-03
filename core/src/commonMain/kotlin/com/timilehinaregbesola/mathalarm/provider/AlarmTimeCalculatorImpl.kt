@@ -8,16 +8,12 @@ import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.plus
 import kotlinx.datetime.toInstant
-import kotlinx.datetime.toLocalDateTime
-import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
-/**
- * Implementation of [AlarmTimeCalculator] that calculates alarm times
- * using kotlinx-datetime.
- */
 @OptIn(ExperimentalTime::class)
-class AlarmTimeCalculatorImpl : AlarmTimeCalculator {
+class AlarmTimeCalculatorImpl(
+    private val dateTimeProvider: DateTimeProvider = DateTimeProviderImpl()
+) : AlarmTimeCalculator {
 
     companion object {
         private const val SUN = 0
@@ -26,8 +22,8 @@ class AlarmTimeCalculatorImpl : AlarmTimeCalculator {
 
     override fun calculateAlarmTimes(alarm: Alarm): List<Long> {
         val tz = TimeZone.currentSystemDefault()
-        val nowInstant = Clock.System.now()
-        val localNow = nowInstant.toLocalDateTime(tz)
+        val localNow = dateTimeProvider.getCurrentDateTime()
+        val nowInstant = localNow.toInstant(tz)
         val todayDate = localNow.date
         val currentDayIndex = todayDate.dayOfWeek.toIndex()
 
@@ -56,7 +52,6 @@ class AlarmTimeCalculatorImpl : AlarmTimeCalculator {
             alarm.repeatDays
         }
 
-        // Calculate time for each enabled day
         for (i in SUN..SAT) {
             if (repeatDays.getOrNull(i) == 'T') {
                 val targetDate = calculateTargetDate(
@@ -86,8 +81,10 @@ class AlarmTimeCalculatorImpl : AlarmTimeCalculator {
         return times.minOrNull()
     }
 
+    @OptIn(ExperimentalTime::class)
     override fun isInFuture(timeInMillis: Long): Boolean {
-        val currentTime = Clock.System.now().toEpochMilliseconds()
+        val tz = TimeZone.currentSystemDefault()
+        val currentTime = dateTimeProvider.getCurrentDateTime().toInstant(tz).toEpochMilliseconds()
         return timeInMillis > currentTime
     }
 

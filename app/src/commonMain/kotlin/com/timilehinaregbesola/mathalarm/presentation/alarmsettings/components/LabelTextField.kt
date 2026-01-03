@@ -2,6 +2,7 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components
 
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -10,6 +11,7 @@ import androidx.compose.material3.TextFieldDefaults.colors
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color.Companion.Transparent
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Label
@@ -33,6 +35,9 @@ fun LabelTextField(
         label = label,
         placeholder = placeholder,
         singleLine = true,
+        keyboardOptions = KeyboardOptions(
+            imeAction = ImeAction.Done
+        ),
         colors = colors(
             unfocusedContainerColor = Transparent,
             focusedContainerColor = Transparent,
