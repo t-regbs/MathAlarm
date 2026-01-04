@@ -3,11 +3,11 @@ package com.timilehinaregbesola.mathalarm.presentation
 import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
-import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.view.WindowManager
 import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.notification.ActiveAlarmManager
@@ -19,7 +19,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.graphics.toArgb
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowInsetsControllerCompat
 import cafe.adriel.lyricist.Lyricist
@@ -29,7 +28,6 @@ import com.timilehinaregbesola.mathalarm.navigation.NavGraph
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
-import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimary
 import com.timilehinaregbesola.mathalarm.utils.strings.Strings
 import kotlinx.coroutines.InternalCoroutinesApi
 import org.koin.android.ext.android.inject
@@ -55,9 +53,10 @@ class MainActivity : AppCompatActivity() {
         deeplinkInfo = intent.extractAlarmJson()
 
         setContent {
-            lyricist = rememberStrings()
             val isDarkTheme = preferences.shouldUseDarkColors()
-            updateTheme(isDarkTheme)
+            enableEdgeToEdge()
+            updateStatusBarColor(isDarkTheme)
+            lyricist = rememberStrings()
             ProvideStrings(lyricist) {
                 MathAlarmTheme(darkTheme = isDarkTheme) {
                     NavGraph(preferences, deeplinkInfo)
@@ -82,10 +81,8 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    private fun updateTheme(darkTheme: Boolean) {
+    private fun updateStatusBarColor(darkTheme: Boolean) {
         window.apply {
-            statusBarColor = if (darkTheme) darkPrimary.toArgb() else Color.WHITE
-            navigationBarColor = if (darkTheme) darkPrimary.toArgb() else Color.WHITE
             WindowInsetsControllerCompat(this, this.decorView).isAppearanceLightStatusBars =
                 !darkTheme
         }

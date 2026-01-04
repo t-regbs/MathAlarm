@@ -145,6 +145,7 @@ fun ListDisplayScreen(
                 Box(
                     modifier = Modifier
                         .safeContentPadding()
+                        .padding(horizontal = 4.dp)
                         .fillMaxSize()
                         .background(
                             color = LightGray.copy(alpha = LIST_ALARM_BACKGROUND_ALPHA),
