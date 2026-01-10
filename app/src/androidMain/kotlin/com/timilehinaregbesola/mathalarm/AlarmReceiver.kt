@@ -32,8 +32,29 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
             wakelock.acquire(3000)
         }
         
+        // Use goAsync() to preserve foreground service exemption during async work.
+        // This is critical for Android 12+ (API 31+) which requires foreground exemption
+        // to call startForegroundService(). Without goAsync(), the exemption is lost
+        // when onReceive() returns, causing ForegroundServiceStartNotAllowedException.
+        // See: https://developer.android.com/about/versions/12/foreground-services
+        val pendingResult = goAsync()
+        
         appScope.launch {
-            handleIntent(intent)
+            try {
+                handleIntent(intent)
+            } catch (e: Exception) {
+                Logger.e("Error handling intent in AlarmReceiver", e)
+            } finally {
+                // Release the async result to tell Android we're done
+                // This releases the foreground service exemption
+                // Note: pendingResult can be null in test environments
+                try {
+                    pendingResult?.finish()
+                } catch (e: IllegalStateException) {
+                    // finish() can throw if already finished - safe to ignore
+                    Logger.w("PendingResult already finished", e)
+                }
+            }
         }
     }
 
