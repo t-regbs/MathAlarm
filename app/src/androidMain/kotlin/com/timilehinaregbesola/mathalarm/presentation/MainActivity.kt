@@ -31,8 +31,7 @@ import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.utils.strings.Strings
 import kotlinx.coroutines.InternalCoroutinesApi
 import org.koin.android.ext.android.inject
-import java.net.URLDecoder
-import java.nio.charset.StandardCharsets
+import android.util.Base64
 
 @ExperimentalFoundationApi
 @ExperimentalMaterial3Api
@@ -102,7 +101,15 @@ class MainActivity : AppCompatActivity() {
         return data?.lastPathSegment
             ?.takeIf { it.startsWith("$PARAM=") }
             ?.substringAfter("$PARAM=")
-            ?.let { URLDecoder.decode(it, StandardCharsets.UTF_8.name()) }
+            ?.let { base64String ->
+                try {
+                    val decodedBytes = Base64.decode(base64String, Base64.URL_SAFE or Base64.NO_WRAP)
+                    String(decodedBytes, Charsets.UTF_8)
+                } catch (e: Exception) {
+                    logger.e("Failed to decode Base64 alarm data", e)
+                    null
+                }
+            }
     }
 
     companion object {

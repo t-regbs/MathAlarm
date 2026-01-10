@@ -33,7 +33,7 @@ import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.serialization.json.Json
 import org.koin.android.ext.android.inject
 import java.io.InputStream
-import java.net.URLEncoder
+import android.util.Base64
 
 /**
  * Foreground service that handles alarm playback independently of the app lifecycle.
@@ -288,7 +288,7 @@ class AlarmService : Service() {
     private fun buildPendingIntent(alarm: Alarm): PendingIntent {
         val alarmEntity = AlarmMapper().mapFromDomainModel(alarm)
         val json = Json.encodeToString(alarmEntity)
-        val alarmJson = URLEncoder.encode(json, "utf-8")
+        val alarmJson = Base64.encodeToString(json.toByteArray(), Base64.URL_SAFE or Base64.NO_WRAP)
         val notificationIntent = Intent(
             Intent.ACTION_VIEW,
             "https://timilehinaregbesola.com/alarmId=$alarmJson".toUri(),
