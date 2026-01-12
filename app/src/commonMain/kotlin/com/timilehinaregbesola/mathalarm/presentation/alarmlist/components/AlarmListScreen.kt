@@ -6,8 +6,8 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.safeContentPadding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -29,6 +29,7 @@ import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Alignment.Companion.TopStart
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color.Companion.LightGray
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
@@ -56,7 +57,6 @@ import kotlinx.serialization.json.Json
 import mathalarm.app.generated.resources.Res
 import mathalarm.app.generated.resources.fab_icon
 import org.jetbrains.compose.resources.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 
 @ExperimentalAnimationApi
@@ -135,7 +135,7 @@ fun ListDisplayScreen(
             )
             if (alarmList.isEmpty()) {
                 AlarmEmptyScreen(
-                    modifier = Modifier.padding(padding),
+                    modifier = Modifier.systemBarsPadding(),
                     onClickFab = {
                         viewModel.onEvent(OnAddAlarmClick)
                     },
@@ -144,8 +144,8 @@ fun ListDisplayScreen(
             } else {
                 Box(
                     modifier = Modifier
-                        .safeContentPadding()
-                        .padding(horizontal = 4.dp)
+                        .systemBarsPadding()
+                        .padding(horizontal = 16.dp)
                         .fillMaxSize()
                         .background(
                             color = LightGray.copy(alpha = LIST_ALARM_BACKGROUND_ALPHA),

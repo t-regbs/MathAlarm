@@ -46,6 +46,7 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
         super.onCreate(savedInstanceState)
+        enableEdgeToEdge()
 
         setupLockScreenFlags()
 
@@ -53,7 +54,6 @@ class MainActivity : AppCompatActivity() {
 
         setContent {
             val isDarkTheme = preferences.shouldUseDarkColors()
-            enableEdgeToEdge()
             updateStatusBarColor(isDarkTheme)
             lyricist = rememberStrings()
             ProvideStrings(lyricist) {
