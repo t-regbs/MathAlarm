@@ -141,9 +141,7 @@ fun MathScreen(
                     )
                 }
                 is AlarmMathViewModel.UiEvent.CompleteAndClose -> {
-                    if (!alarm.repeat) {
-                        viewModel.completeAlarm(AlarmMapper().mapToDomainModel(alarm))
-                    }
+                    viewModel.completeAlarm(AlarmMapper().mapToDomainModel(alarm))
                     if (backStack.size > 1) backStack.removeLastOrNull()
                 }
                 is AlarmMathViewModel.UiEvent.StopVibrateAndHideKeyboard -> {

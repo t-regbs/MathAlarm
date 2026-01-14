@@ -4,7 +4,6 @@ import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.fake.AlarmInteractorFake
 import com.timilehinaregbesola.mathalarm.fake.AlarmRepositoryFake
-import com.timilehinaregbesola.mathalarm.fake.AlarmTimeCalculatorFake
 import com.timilehinaregbesola.mathalarm.fake.NotificationInteractorFake
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
@@ -20,16 +19,12 @@ class ShowAlarmTest {
     private val alarmRepository = AlarmRepository(dataSource)
 
     private val alarmInteractor = AlarmInteractorFake()
-    
-    private val alarmTimeCalculator = AlarmTimeCalculatorFake()
 
     private val notificationInteractor = NotificationInteractorFake()
 
     private val addAlarmUseCase = AddAlarm(alarmRepository)
 
-    private val scheduleNextAlarmUseCase = ScheduleNextAlarm(alarmInteractor, alarmTimeCalculator)
-
-    private val showAlarmUseCase = ShowAlarm(alarmRepository, notificationInteractor, scheduleNextAlarmUseCase)
+    private val showAlarmUseCase = ShowAlarm(alarmRepository, notificationInteractor)
 
     @BeforeTest
     fun setup() = runTest {
@@ -57,29 +52,33 @@ class ShowAlarmTest {
     }
 
     @Test
-    fun `test if next alarm is scheduled when alarm is repeating`() = runTest {
+    fun `test notification is shown for repeating alarm`() = runTest {
         val alarm = Alarm(alarmId = 3, title = "is repeating", repeat = true, isOn = true)
         addAlarmUseCase(alarm)
         showAlarmUseCase(alarm.alarmId)
 
-        assertTrue(alarmInteractor.isAlarmScheduled(alarm))
-    }
-
-    @Test
-    fun `test if next alarm is not scheduled when alarm is not repeating`() = runTest {
-        val alarm = Alarm(alarmId = 4, title = "should no repeat", repeat = false, isOn = true)
-        addAlarmUseCase(alarm)
-        showAlarmUseCase(alarm.alarmId)
-
+        // ShowAlarm should show notification but not schedule next alarm
+        assertTrue(notificationInteractor.isNotificationShown(alarm.alarmId))
         assertFalse(alarmInteractor.isAlarmScheduled(alarm))
     }
 
     @Test
-    fun `test if next alarm is not scheduled when alarm is not on`() = runTest {
+    fun `test notification is shown for non-repeating alarm`() = runTest {
+        val alarm = Alarm(alarmId = 4, title = "should no repeat", repeat = false, isOn = true)
+        addAlarmUseCase(alarm)
+        showAlarmUseCase(alarm.alarmId)
+
+        assertTrue(notificationInteractor.isNotificationShown(alarm.alarmId))
+        assertFalse(alarmInteractor.isAlarmScheduled(alarm))
+    }
+
+    @Test
+    fun `test notification not shown when alarm is off`() = runTest {
         val alarm = Alarm(alarmId = 5, title = "alarm off", repeat = true, isOn = false)
         addAlarmUseCase(alarm)
         showAlarmUseCase(alarm.alarmId)
 
+        assertFalse(notificationInteractor.isNotificationShown(alarm.alarmId))
         assertFalse(alarmInteractor.isAlarmScheduled(alarm))
     }
 }

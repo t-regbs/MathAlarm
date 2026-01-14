@@ -75,10 +75,10 @@ val commonModule = module {
             getSavedAlarms = GetSavedAlarms(get()),
             updateAlarm = UpdateAlarm(get()),
             scheduleAlarm = ScheduleAlarm(get(), get(), get()),
-            completeAlarm = CompleteAlarm(get(), get(), get()),
+            completeAlarm = CompleteAlarm(get(), get(), get(), get()),
             rescheduleFutureAlarms = RescheduleFutureAlarms(get(), get(), get(), get()),
             scheduleNextAlarm = get(),
-            showAlarm = ShowAlarm(get(), get(), get()),
+            showAlarm = ShowAlarm(get(), get()),
             snoozeAlarm = SnoozeAlarm(get(), get(), get(), get()),
             cancelAlarm = CancelAlarm(get())
         )

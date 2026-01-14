@@ -231,6 +231,171 @@ class AlarmNotificationSchedulerTest {
     }
 
 
+    @Test
+    fun `scheduleAlarm for same alarm on different days should create separate alarms`() {
+        val alarm = createAlarm(id = 1L, hour = 7, minute = 0, repeatDays = "FFTFTFF") // Tuesday and Friday
+        val baseTime = System.currentTimeMillis()
+        
+        // Simulate scheduling for Tuesday (day index 2)
+        val tuesdayTime = baseTime + (2 * 24 * 60 * 60 * 1000L) // 2 days from now
+        scheduler.scheduleAlarm(alarm, tuesdayTime)
+        
+        // Simulate scheduling for Friday (day index 5)
+        val fridayTime = baseTime + (5 * 24 * 60 * 60 * 1000L) // 5 days from now
+        scheduler.scheduleAlarm(alarm, fridayTime)
+        
+        val scheduledAlarms = shadowAlarmManager.scheduledAlarms
+        assertEquals("Should have two scheduled alarms for different days", 2, scheduledAlarms.size)
+        
+        // Verify both times are present
+        val scheduledTimes = scheduledAlarms.map { it.triggerAtTime }.toSet()
+        assertTrue("Tuesday time should be scheduled", scheduledTimes.contains(tuesdayTime))
+        assertTrue("Friday time should be scheduled", scheduledTimes.contains(fridayTime))
+    }
+
+    @Test
+    fun `scheduleAlarm for same day twice should replace previous alarm`() {
+        val alarm = createAlarm(id = 1L, hour = 7, minute = 0)
+        val baseTime = System.currentTimeMillis()
+        
+        // Schedule Tuesday at 7:00 AM (day index 2)
+        val tuesdayTime1 = baseTime + (2 * 24 * 60 * 60 * 1000L)
+        scheduler.scheduleAlarm(alarm, tuesdayTime1)
+        
+        // Reschedule Tuesday at a different time (simulates rescheduling)
+        val tuesdayTime2 = baseTime + (9 * 24 * 60 * 60 * 1000L) // Next Tuesday
+        scheduler.scheduleAlarm(alarm, tuesdayTime2)
+        
+        val scheduledAlarms = shadowAlarmManager.scheduledAlarms
+        assertEquals("Should have only one alarm (replaced)", 1, scheduledAlarms.size)
+        assertEquals("Should have the new time", tuesdayTime2, scheduledAlarms[0].triggerAtTime)
+    }
+
+    @Test
+    fun `scheduleAlarm for all seven days should create seven separate alarms`() {
+        val alarm = createAlarm(id = 1L, hour = 8, minute = 30, repeatDays = "TTTTTTT") // All days
+        
+        // Create unique times that fall on different days of the week
+        // Using Calendar to ensure we get actual different days
+        val calendar = java.util.Calendar.getInstance()
+        calendar.set(java.util.Calendar.YEAR, 2025)
+        calendar.set(java.util.Calendar.MONTH, java.util.Calendar.JANUARY)
+        calendar.set(java.util.Calendar.DAY_OF_MONTH, 5) // Jan 5, 2025 is a Sunday
+        calendar.set(java.util.Calendar.HOUR_OF_DAY, 8)
+        calendar.set(java.util.Calendar.MINUTE, 30)
+        calendar.set(java.util.Calendar.SECOND, 0)
+        calendar.set(java.util.Calendar.MILLISECOND, 0)
+        
+        val times = mutableListOf<Long>()
+        
+        for (dayIndex in 0..6) {
+            val timeInMillis = calendar.timeInMillis
+            times.add(timeInMillis)
+            scheduler.scheduleAlarm(alarm, timeInMillis)
+            calendar.add(java.util.Calendar.DAY_OF_MONTH, 1) // Move to next day
+        }
+        
+        val scheduledAlarms = shadowAlarmManager.scheduledAlarms
+        
+        // We expect 7 alarms, one for each day of the week
+        assertEquals("Should have seven scheduled alarms for all days", 7, scheduledAlarms.size)
+    }
+
+    @Test
+    fun `different alarms on same day should not interfere`() {
+        val alarm1 = createAlarm(id = 1L, hour = 7, minute = 0)
+        val alarm2 = createAlarm(id = 2L, hour = 8, minute = 30)
+        val tuesdayTime = System.currentTimeMillis() + (2 * 24 * 60 * 60 * 1000L)
+        
+        scheduler.scheduleAlarm(alarm1, tuesdayTime)
+        scheduler.scheduleAlarm(alarm2, tuesdayTime)
+        
+        val scheduledAlarms = shadowAlarmManager.scheduledAlarms
+        assertEquals("Should have two alarms for different alarm IDs", 2, scheduledAlarms.size)
+    }
+
+    @Test
+    fun `cancelAlarm should cancel all day-specific alarms for multi-day alarm`() {
+        val alarm = createAlarm(id = 1L, hour = 7, minute = 0, repeatDays = "FFTFTFF") // Tuesday and Friday
+        val baseTime = System.currentTimeMillis()
+        
+        // Schedule for Tuesday and Friday
+        val tuesdayTime = baseTime + (2 * 24 * 60 * 60 * 1000L)
+        val fridayTime = baseTime + (5 * 24 * 60 * 60 * 1000L)
+        scheduler.scheduleAlarm(alarm, tuesdayTime)
+        scheduler.scheduleAlarm(alarm, fridayTime)
+        
+        assertEquals("Should have two scheduled alarms", 2, shadowAlarmManager.scheduledAlarms.size)
+        
+        // Cancel the alarm
+        scheduler.cancelAlarm(alarm)
+        
+        assertTrue("All alarms should be canceled", shadowAlarmManager.scheduledAlarms.isEmpty())
+    }
+
+    @Test
+    fun `cancelAlarm for one alarm should not affect other alarms`() {
+        val alarm1 = createAlarm(id = 1L, hour = 7, minute = 0, repeatDays = "FFTFTFF") // Tuesday and Friday
+        val alarm2 = createAlarm(id = 2L, hour = 8, minute = 0, repeatDays = "FFTFTFF") // Tuesday and Friday
+        val baseTime = System.currentTimeMillis()
+        
+        val tuesdayTime = baseTime + (2 * 24 * 60 * 60 * 1000L)
+        val fridayTime = baseTime + (5 * 24 * 60 * 60 * 1000L)
+        
+        // Schedule both alarms for Tuesday and Friday
+        scheduler.scheduleAlarm(alarm1, tuesdayTime)
+        scheduler.scheduleAlarm(alarm1, fridayTime)
+        scheduler.scheduleAlarm(alarm2, tuesdayTime)
+        scheduler.scheduleAlarm(alarm2, fridayTime)
+        
+        assertEquals("Should have four scheduled alarms", 4, shadowAlarmManager.scheduledAlarms.size)
+        
+        // Cancel only alarm1
+        scheduler.cancelAlarm(alarm1)
+        
+        val remainingAlarms = shadowAlarmManager.scheduledAlarms
+        assertEquals("Should have two remaining alarms for alarm2", 2, remainingAlarms.size)
+        
+        // Verify remaining alarms are for alarm2
+        remainingAlarms.forEach { scheduledAlarm ->
+            val pendingIntent = scheduledAlarm.operation
+            val shadowPendingIntent = shadowOf(pendingIntent)
+            val savedIntent = shadowPendingIntent.savedIntent
+            assertEquals("Remaining alarms should be for alarm2", 2L, savedIntent.getLongExtra(AlarmReceiver.EXTRA_TASK, -1))
+        }
+    }
+
+    @Test
+    fun `weekday alarm should create five separate alarms`() {
+        val alarm = createAlarm(id = 1L, hour = 6, minute = 30, repeatDays = "FTTTTTF") // Mon-Fri
+        val baseTime = System.currentTimeMillis()
+        
+        // Schedule for weekdays (indices 1-5)
+        for (day in 1..5) {
+            val dayTime = baseTime + (day * 24 * 60 * 60 * 1000L)
+            scheduler.scheduleAlarm(alarm, dayTime)
+        }
+        
+        val scheduledAlarms = shadowAlarmManager.scheduledAlarms
+        assertEquals("Should have five scheduled alarms for weekdays", 5, scheduledAlarms.size)
+    }
+
+    @Test
+    fun `weekend alarm should create two separate alarms`() {
+        val alarm = createAlarm(id = 1L, hour = 9, minute = 0, repeatDays = "TFFFFFT") // Sun and Sat
+        val baseTime = System.currentTimeMillis()
+        
+        // Schedule for Sunday (0) and Saturday (6)
+        val sundayTime = baseTime
+        val saturdayTime = baseTime + (6 * 24 * 60 * 60 * 1000L)
+        scheduler.scheduleAlarm(alarm, sundayTime)
+        scheduler.scheduleAlarm(alarm, saturdayTime)
+        
+        val scheduledAlarms = shadowAlarmManager.scheduledAlarms
+        assertEquals("Should have two scheduled alarms for weekend", 2, scheduledAlarms.size)
+    }
+
+
     private fun createAlarm(
         id: Long,
         hour: Int = 7,

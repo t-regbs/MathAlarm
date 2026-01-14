@@ -11,6 +11,10 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.utils.cancelAlarm
 import com.timilehinaregbesola.mathalarm.utils.fullDays
 import com.timilehinaregbesola.mathalarm.utils.setExactAlarm
+import com.timilehinaregbesola.mathalarm.utils.toIndex
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Instant
 
 /**
  * Alarm manager to schedule an event based on the time from a Alarm.
@@ -31,7 +35,13 @@ class AlarmNotificationScheduler(
         logger.d("Scheduling alarm: id=${alarm.alarmId}, time=$timeInMillis")
         
         val alarmIntent = createAlarmIntent(alarm)
-        val intentId = idGenerator.generateSimpleId(alarm.alarmId)
+        
+        val tz = TimeZone.currentSystemDefault()
+        val alarmDateTime = Instant.fromEpochMilliseconds(timeInMillis)
+            .toLocalDateTime(tz)
+        val dayIndex = alarmDateTime.dayOfWeek.toIndex()
+        
+        val intentId = idGenerator.generateId(alarm, dayIndex)
         
         val pendingIntent = PendingIntent.getBroadcast(
             context,
@@ -41,7 +51,7 @@ class AlarmNotificationScheduler(
         )
 
         context.setExactAlarm(timeInMillis, pendingIntent)
-        logger.d("Alarm scheduled successfully: id=${alarm.alarmId} at $timeInMillis")
+        logger.d("Alarm scheduled successfully: id=${alarm.alarmId} at $timeInMillis (day=${fullDays[dayIndex]}, intentId=$intentId)")
     }
 
     /**
@@ -65,15 +75,16 @@ class AlarmNotificationScheduler(
 
         val receiverIntent = createAlarmIntent(alarm)
 
+        // Cancel the base alarm (for backward compatibility with old alarms)
         cancelAlarmWithId(receiverIntent, idGenerator.generateSimpleId(alarm.alarmId))
 
-        // Also cancel any day-specific alarms for repeating alarms
+        // Cancel day-specific alarms for all days (0-6)
+        // We cancel all days, not just those marked 'T', because an alarm may have been
+        // edited and we need to ensure all previously scheduled instances are removed
         for (i in 0..6) {
-            if (alarm.repeatDays.getOrNull(i) == 'T') {
-                val intentId = idGenerator.generateId(alarm, i)
-                cancelAlarmWithId(receiverIntent, intentId)
-                logger.d("Canceled alarm for day $i (${fullDays[i]})")
-            }
+            val intentId = idGenerator.generateId(alarm, i)
+            cancelAlarmWithId(receiverIntent, intentId)
+            logger.d("Canceled alarm for day $i (${fullDays[i]})")
         }
 
         logger.d("Alarm canceled: id=${alarm.alarmId}")

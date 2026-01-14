@@ -10,20 +10,21 @@ class PendingIntentIdGenerator {
     /**
      * Generates a unique PendingIntent ID for a specific alarm and day combination.
      * 
-     * The ID is generated from: alarmId + dayIndex + hour + minute
-     * This ensures each alarm/day combination has a unique ID.
+     * The ID is generated using a hash of: alarmId, dayIndex, hour, and minute.
+     * This ensures each alarm/day combination has a unique ID while avoiding
+     * integer overflow issues with large alarm IDs.
      *
      * @param alarm the alarm
      * @param dayIndex the day index (0-6, Sunday to Saturday)
      * @return unique integer ID for the PendingIntent
      */
     fun generateId(alarm: Alarm, dayIndex: Int): Int {
-        val stringId = StringBuilder()
-            .append(alarm.alarmId)
-            .append(dayIndex)
-            .append(alarm.hour)
-            .append(alarm.minute)
-        return stringId.toString().replace("-", "").toInt()
+        // Use hashCode to combine the values, which handles large numbers gracefully
+        var result = alarm.alarmId.hashCode()
+        result = 31 * result + dayIndex
+        result = 31 * result + alarm.hour
+        result = 31 * result + alarm.minute
+        return result
     }
 
     /**
