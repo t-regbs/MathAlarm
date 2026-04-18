@@ -276,6 +276,56 @@ class AlarmSettingsViewModelTest {
     }
 
     @Test
+    fun `saving existing off alarm after changing only days should reschedule and turn it on`() = runTest {
+        val existingAlarm = Alarm(
+            alarmId = 444,
+            hour = 7,
+            minute = 0,
+            repeat = false,
+            repeatDays = "FTFFFFF", // Monday only
+            isOn = false,
+            isSaved = true,
+            alarmTone = "test_tone"
+        )
+        viewModel.setAlarm(existingAlarm)
+        viewModel.onEvent(AddEditAlarmEvent.ToggleDayChooser("FFTFFFF")) // Tuesday only
+
+        viewModel.eventFlow.test {
+            viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+            advanceUntilIdle()
+
+            awaitItem().shouldBeInstanceOf<AlarmSettingsViewModel.UiEvent.SaveAlarm>()
+
+            val savedAlarm = usecases.findAlarm(existingAlarm.alarmId)
+            savedAlarm?.repeatDays shouldBe "FFTFFFF"
+            savedAlarm?.isOn shouldBe true
+            alarmInteractor.isAlarmScheduled(savedAlarm!!) shouldBe true
+        }
+    }
+
+    @Test
+    fun `editing existing alarm schedule without saving should not cancel current alarm`() = runTest {
+        val existingAlarm = Alarm(
+            alarmId = 445,
+            hour = 7,
+            minute = 0,
+            repeat = false,
+            repeatDays = "FTFFFFF",
+            isOn = true,
+            isSaved = true,
+            alarmTone = "test_tone"
+        )
+        dataSource.addAlarm(existingAlarm)
+        alarmInteractor.schedule(existingAlarm, 1_000_000L)
+
+        viewModel.setAlarm(existingAlarm)
+        viewModel.onEvent(AddEditAlarmEvent.ToggleDayChooser("FFTFFFF"))
+        advanceUntilIdle()
+
+        alarmInteractor.isAlarmScheduled(existingAlarm) shouldBe true
+    }
+
+    @Test
     fun `multiple changes should be tracked correctly`() {
         val alarm = Alarm(alarmId = 333, alarmTone = "test_tone")
         viewModel.setAlarm(alarm)

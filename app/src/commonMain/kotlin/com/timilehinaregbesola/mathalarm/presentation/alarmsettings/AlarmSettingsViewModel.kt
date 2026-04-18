@@ -68,7 +68,7 @@ class AlarmSettingsViewModel(
                 runBlocking { usecases.addAlarm(alarm) }
                 viewModelScope.launch {
                     if (isNewAlarm == true || isRescheduled == true) {
-                        usecases.scheduleAlarm(alarm, _repeatWeekly.value)
+                        usecases.scheduleAlarm(alarm, isRescheduled == true)
                     }
                     _eventFlow.emit(UiEvent.SaveAlarm)
                 }
@@ -79,27 +79,21 @@ class AlarmSettingsViewModel(
                 }
             }
             is AddEditAlarmEvent.ChangeTime -> {
-                isNewAlarm?.let {
-                    if (!it) {
-                        isRescheduled = true
-                        val alarm = createAlarm()
-                        viewModelScope.launch {
-                            usecases.cancelAlarm(alarm)
-                        }
-                    }
-                }
+                markExistingAlarmForReschedule()
                 _alarmTime.value = event.value
             }
             is AddEditAlarmEvent.EnteredTitle -> {
                 _alarmTitle.value = event.value
             }
             is AddEditAlarmEvent.ToggleRepeat -> {
+                markExistingAlarmForReschedule()
                 _repeatWeekly.value = event.value
             }
             is AddEditAlarmEvent.ToggleVibrate -> {
                 _vibrate.value = event.value
             }
             is AddEditAlarmEvent.ToggleDayChooser -> {
+                markExistingAlarmForReschedule()
                 _dayChooser.value = event.value
             }
             is AddEditAlarmEvent.OnDifficultyChange -> {
@@ -133,6 +127,14 @@ class AlarmSettingsViewModel(
     )
 
     private fun initDateTime(alarm: Alarm): LocalDateTime = alarm.initLocalDateTimeInSystemZone()
+
+    private fun markExistingAlarmForReschedule() {
+        isNewAlarm?.let {
+            if (!it) {
+                isRescheduled = true
+            }
+        }
+    }
 
     fun setAlarm(curAlarm: Alarm) {
         if (currentAlarmId == null) {
