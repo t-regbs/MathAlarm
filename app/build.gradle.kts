@@ -129,8 +129,8 @@ android {
     namespace = "com.timilehinaregbesola.mathalarm"
     defaultConfig {
         applicationId = "com.timilehinaregbesola.mathalarm"
-        versionCode = 25
-        versionName = "2.4.2"
+        versionCode = 26
+        versionName = "2.4.3"
         minSdk = libs.versions.android.min.sdk.get().toInt()
         targetSdk = libs.versions.android.target.sdk.get().toInt()
         compileSdk = libs.versions.android.compile.sdk.get().toInt()

@@ -23,14 +23,14 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="com.timilehinaregbesola.mathalarm" />
-                  <option name="mobileSdkAppId" value="1:406930270459:android:91263401338179d44c685e" />
+                  <option name="appId" value="com.timilehinaregbesola.mathalarm.debug" />
+                  <option name="mobileSdkAppId" value="1:406930270459:android:69a779f6ddd5dfe74c685e" />
                   <option name="projectId" value="math-alarm-clock" />
                   <option name="projectNumber" value="406930270459" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />
-              <option name="timeIntervalDays" value="SEVEN_DAYS" />
+              <option name="timeIntervalDays" value="THIRTY_DAYS" />
               <option name="visibilityType" value="ALL" />
             </InsightsFilterSettings>
           </value>
