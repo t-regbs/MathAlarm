@@ -94,6 +94,7 @@ robolectric = { module = "org.robolectric:robolectric", version.ref = "test_robo
 turbine = { module = "app.cash.turbine:turbine", version.ref = "test_turbine" }
 kotest-assertions = { module = "io.kotest:kotest-assertions-core", version.ref = "test_kotest" }
 multiplatform-settings-no-arg = { module = "com.russhwolf:multiplatform-settings-no-arg", version.ref = "multiplatformSettingsNoArg" }
+multiplatform-settings-test = { module = "com.russhwolf:multiplatform-settings-test", version.ref = "multiplatformSettingsNoArg" }
 runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "runtime" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin-bom" }

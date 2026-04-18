@@ -2,10 +2,14 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmlist
 
 import app.cash.turbine.test
 import co.touchlab.kermit.Logger
+import com.russhwolf.settings.MapSettings
 import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.fake.*
 import com.timilehinaregbesola.mathalarm.framework.Usecases
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AppThemeOptionsMapper
 import com.timilehinaregbesola.mathalarm.usecases.*
 import com.timilehinaregbesola.mathalarm.utils.UiEvent
 import io.kotest.matchers.shouldBe
@@ -29,6 +33,7 @@ class AlarmListViewModelTest {
     private lateinit var dateTimeProvider: DateTimeProviderFake
     private lateinit var usecases: Usecases
     private lateinit var permission: AlarmPermissionFake
+    private lateinit var preferences: AlarmPreferencesImpl
     private val testDispatcher = StandardTestDispatcher()
 
     @BeforeTest
@@ -41,6 +46,11 @@ class AlarmListViewModelTest {
         notificationInteractor = NotificationInteractorFake()
         dateTimeProvider = DateTimeProviderFake()
         permission = AlarmPermissionFake()
+        preferences = AlarmPreferencesImpl(
+            mapper = AppThemeOptionsMapper(),
+            logger = Logger.withTag("AlarmPreferencesImplTest"),
+            settings = MapSettings()
+        )
         
         val alarmTimeCalculator = AlarmTimeCalculatorFake()
         val scheduleNextAlarm = ScheduleNextAlarm(alarmInteractor, alarmTimeCalculator)
@@ -64,6 +74,7 @@ class AlarmListViewModelTest {
         viewModel = AlarmListViewModel(
             usecases = usecases,
             permission = permission,
+            preferences = preferences,
             logger = Logger.withTag("AlarmListViewModelTest")
         )
     }
@@ -288,5 +299,37 @@ class AlarmListViewModelTest {
         val remainingAlarms = usecases.getSavedAlarms().first()
         remainingAlarms.size shouldBe 2
         remainingAlarms.any { it.alarmId == alarm2.alarmId } shouldBe false
+    }
+
+    @Test
+    fun `alarms keep creation order by default`() = runTest {
+        usecases.apply {
+            addAlarm(Alarm(alarmId = 1, hour = 7, minute = 50, isSaved = true))
+            addAlarm(Alarm(alarmId = 2, hour = 8, minute = 0, isSaved = true))
+            addAlarm(Alarm(alarmId = 3, hour = 7, minute = 55, isSaved = true))
+        }
+        advanceUntilIdle()
+
+        val alarms = viewModel.alarms.first()
+
+        alarms.map { it.alarmId } shouldBe listOf(3L, 2L, 1L)
+    }
+
+    @Test
+    fun `alarms sort by time when time sort preference is enabled`() = runTest {
+        usecases.apply {
+            addAlarm(Alarm(alarmId = 1, hour = 8, minute = 0, isSaved = true))
+            addAlarm(Alarm(alarmId = 2, hour = 7, minute = 50, isSaved = true))
+            addAlarm(Alarm(alarmId = 3, hour = 7, minute = 55, isSaved = true))
+            addAlarm(Alarm(alarmId = 4, hour = 7, minute = 55, isSaved = true))
+        }
+        advanceUntilIdle()
+
+        preferences.updateAlarmSortOrder(AlarmPreferences.AlarmSortOrder.TIME)
+        advanceUntilIdle()
+
+        val alarms = viewModel.alarms.first()
+
+        alarms.map { it.alarmId } shouldBe listOf(2L, 4L, 3L, 1L)
     }
 }

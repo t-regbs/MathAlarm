@@ -2,14 +2,18 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmlist
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import androidx.compose.runtime.snapshotFlow
 import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermission
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
 import com.timilehinaregbesola.mathalarm.utils.UiEvent
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.Navigate
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.ShowSnackbar
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.launch
@@ -17,9 +21,18 @@ import kotlinx.coroutines.launch
 class AlarmListViewModel(
     private val usecases: Usecases,
     val permission: AlarmPermission,
+    private val preferences: AlarmPreferencesImpl,
     private val logger: Logger
 ) : ViewModel() {
     var alarms = usecases.getSavedAlarms()
+        .combine(snapshotFlow { preferences.alarmSortOrderState.value }) { alarms, sortOrder ->
+            if (sortOrder == AlarmPreferences.AlarmSortOrder.TIME) {
+                alarms.sortedWith(compareBy<Alarm> { it.hour }.thenBy { it.minute }
+                    .thenByDescending { it.alarmId })
+            } else {
+                alarms
+            }
+        }
 
     private val _uiEvent = Channel<UiEvent>()
     val uiEvent = _uiEvent.receiveAsFlow()

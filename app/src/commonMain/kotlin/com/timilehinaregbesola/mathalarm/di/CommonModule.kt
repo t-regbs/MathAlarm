@@ -85,7 +85,7 @@ val commonModule = module {
     }
     
     // ViewModels
-    viewModel { AlarmListViewModel(get(), get(), getWith("AlarmListViewModel")) }
+    viewModel { AlarmListViewModel(get(), get(), get(), getWith("AlarmListViewModel")) }
     viewModel { AlarmSettingsViewModel(get()) }
     viewModel { AlarmMathViewModel(get(), get(), getWith("AlarmMathViewModel")) }
 }

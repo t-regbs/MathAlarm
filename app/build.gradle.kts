@@ -121,6 +121,7 @@ kotlin {
             implementation(libs.coroutines.test)
             implementation(libs.turbine)
             implementation(libs.kotest.assertions)
+            implementation(libs.multiplatform.settings.test)
         }
     }
 }

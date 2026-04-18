@@ -33,11 +33,11 @@ class AlarmRepositoryFake : AlarmDataSource {
     }
 
     override fun getAlarms(): Flow<List<Alarm>> = flow {
-        emit(alarmMap.values.toList())
+        emit(alarmMap.values.sortedByDescending { it.alarmId })
     }
 
     override fun getSavedAlarms(): Flow<List<Alarm>> = flow {
-        emit(alarmMap.values.toList().filter { it.isSaved })
+        emit(alarmMap.values.filter { it.isSaved }.sortedByDescending { it.alarmId })
     }
 
     override suspend fun getLatestAlarmFromDatabase(): Alarm? = alarmMap.values.maxByOrNull { it.alarmId }

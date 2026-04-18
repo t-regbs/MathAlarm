@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -31,12 +32,16 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.lyricist.strings
 import com.timilehinaregbesola.mathalarm.platform.getApplicationId
 import com.timilehinaregbesola.mathalarm.platform.sendEmail
 import com.timilehinaregbesola.mathalarm.platform.shareText
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.AlarmSortOrder.CREATION
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.AlarmSortOrder.TIME
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.Theme
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.Theme.DARK
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.Theme.LIGHT
@@ -49,17 +54,17 @@ import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.App
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.SEND_TEXT
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.SETTINGS_ICON_END_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.SETTINGS_WIDTH
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.SORT_SETTINGS_WIDTH
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.TOP_BAR_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
-import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
-import androidx.compose.ui.tooling.preview.Preview
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Announcement
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.ArrowBack
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.DarkMode
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Share
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Smartphone
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.WbSunny
+import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -68,12 +73,17 @@ fun AppSettingsScreen(
     onBackPress: () -> Unit
 ) {
     val isDark = pref.shouldUseDarkColors()
-    val options = listOf(
+    val themeOptions = listOf(
         Triple(strings.light, WbSunny, LIGHT),
         Triple(strings.dark, DarkMode, DARK),
         Triple(strings.system, Smartphone, SYSTEM)
     )
-    val selectedOption = pref.themeState.value
+    val sortOptions = listOf(
+        CREATION to strings.creationOrder,
+        TIME to strings.timeOrder
+    )
+    val selectedThemeOption = themeOptions.first { it.third == pref.themeState.value }
+    val selectedSortOption = sortOptions.first { it.first == pref.alarmSortOrderState.value }
     val onSelectionChange = { newTheme: Theme ->
         pref.updateAppTheme(newTheme)
     }
@@ -104,71 +114,41 @@ fun AppSettingsScreen(
         ) { paddingVals ->
             Column(Modifier.padding(paddingVals)) {
                 Column(modifier = Modifier.padding(horizontal = MaterialTheme.spacing.large)) {
-                    Text(
-                        modifier = Modifier.padding(top = MaterialTheme.spacing.medium),
-                        text = strings.colorTheme,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
-                    Row(
-                        horizontalArrangement = Arrangement.Center
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .background(
-                                    color = if (isDark) {
-                                        MaterialTheme.colorScheme.primaryContainer
-                                    } else {
-                                        Color.LightGray
-                                    },
-                                    shape = RoundedCornerShape(DEFAULT_SETTINGS_CORNER_SHAPE)
-                                )
-                                .padding(MaterialTheme.spacing.extraSmall)
-                        ) {
-                            Row {
-                                options.forEach { triple ->
-                                    Row(
-                                        modifier = Modifier
-                                            .width(SETTINGS_WIDTH)
-                                            .clip(
-                                                shape = RoundedCornerShape(
-                                                    DEFAULT_SETTINGS_CORNER_SHAPE
-                                                )
-                                            )
-                                            .clickable {
-                                                onSelectionChange(triple.third)
-                                            }
-                                            .background(
-                                                if (triple.third == selectedOption) {
-                                                    MaterialTheme.colorScheme.primary
-                                                } else {
-                                                    if (isDark) {
-                                                        MaterialTheme.colorScheme.primaryContainer
-                                                    } else {
-                                                        Color.LightGray
-                                                    }
-                                                }
-                                            )
-                                            .padding(vertical = MaterialTheme.spacing.extraSmall),
-                                        horizontalArrangement = Arrangement.Center,
-                                        verticalAlignment = Alignment.CenterVertically
-                                    ) {
-                                        Icon(
-                                            modifier = Modifier.padding(end = SETTINGS_ICON_END_PADDING),
-                                            imageVector = triple.second,
-                                            contentDescription = triple.first
-                                        )
-                                        if (triple.third == selectedOption) {
-                                            Text(
-                                                text = triple.first,
-                                                style = typography.bodyLarge.merge(),
-                                                fontWeight = FontWeight.Bold
-                                            )
-                                        }
-                                    }
-                                }
-                            }
+                    SegmentedSettingSection(
+                        title = strings.colorTheme,
+                        options = themeOptions,
+                        selectedOption = selectedThemeOption,
+                        isDark = isDark,
+                        optionWidth = SETTINGS_WIDTH,
+                        onOptionSelected = { onSelectionChange(it.third) }
+                    ) { option, isSelected ->
+                        Icon(
+                            modifier = Modifier.padding(end = SETTINGS_ICON_END_PADDING),
+                            imageVector = option.second,
+                            contentDescription = option.first
+                        )
+                        if (isSelected) {
+                            Text(
+                                text = option.first,
+                                style = typography.bodyLarge.merge(),
+                                fontWeight = FontWeight.Bold
+                            )
                         }
+                    }
+                    SegmentedSettingSection(
+                        title = strings.alarmOrder,
+                        supportingText = strings.alarmOrderDescription,
+                        options = sortOptions,
+                        selectedOption = selectedSortOption,
+                        isDark = isDark,
+                        optionWidth = SORT_SETTINGS_WIDTH,
+                        onOptionSelected = { pref.updateAlarmSortOrder(it.first) }
+                    ) { option, isSelected ->
+                        Text(
+                            text = option.second,
+                            style = typography.bodyLarge.merge(),
+                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                        )
                     }
                 }
                 Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
@@ -208,6 +188,76 @@ fun AppSettingsScreen(
             }
         }
     }
+}
+
+@Composable
+private fun <T> SegmentedSettingSection(
+    title: String,
+    options: List<T>,
+    selectedOption: T,
+    isDark: Boolean,
+    optionWidth: androidx.compose.ui.unit.Dp,
+    supportingText: String? = null,
+    onOptionSelected: (T) -> Unit,
+    optionContent: @Composable RowScope.(option: T, isSelected: Boolean) -> Unit
+) {
+    Text(
+        modifier = Modifier.padding(top = MaterialTheme.spacing.medium),
+        text = title,
+        color = MaterialTheme.colorScheme.secondary
+    )
+    supportingText?.let {
+        Spacer(modifier = Modifier.height(MaterialTheme.spacing.extraSmall))
+        Text(
+            text = it,
+            style = typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+    Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+    Row(horizontalArrangement = Arrangement.Center) {
+        Box(
+            modifier = Modifier
+                .background(
+                    color = if (isDark) {
+                        MaterialTheme.colorScheme.primaryContainer
+                    } else {
+                        Color.LightGray
+                    },
+                    shape = RoundedCornerShape(DEFAULT_SETTINGS_CORNER_SHAPE)
+                )
+                .padding(MaterialTheme.spacing.extraSmall)
+        ) {
+            Row {
+                options.forEach { option ->
+                    val isSelected = option == selectedOption
+                    Row(
+                        modifier = Modifier
+                            .width(optionWidth)
+                            .clip(RoundedCornerShape(DEFAULT_SETTINGS_CORNER_SHAPE))
+                            .clickable { onOptionSelected(option) }
+                            .background(
+                                if (isSelected) {
+                                    MaterialTheme.colorScheme.primary
+                                } else {
+                                    if (isDark) {
+                                        MaterialTheme.colorScheme.primaryContainer
+                                    } else {
+                                        Color.LightGray
+                                    }
+                                }
+                            )
+                            .padding(vertical = MaterialTheme.spacing.extraSmall),
+                        horizontalArrangement = Arrangement.Center,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        optionContent(option, isSelected)
+                    }
+                }
+            }
+        }
+    }
+    Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
 }
 
 @Composable
@@ -267,6 +317,7 @@ private object AppSettingsScreen {
     val HELP_ICON_SIZE = 50.dp
     val APP_BAR_SHADOW = 4.dp
     val SETTINGS_WIDTH = 100.dp
+    val SORT_SETTINGS_WIDTH = 140.dp
     val DEFAULT_SETTINGS_CORNER_SHAPE = 16.dp
     val SETTINGS_ICON_END_PADDING = 2.dp
     val HELP_ITEM_FONT_SIZE = 18.sp
