@@ -3,6 +3,7 @@ package com.timilehinaregbesola.mathalarm
 * This receives the intent from AlarmManager to start the math fragment
  */
 import android.app.AlarmManager
+import android.app.PendingIntent
 import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
@@ -41,7 +42,7 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
         
         appScope.launch {
             try {
-                handleIntent(intent)
+                handleIntent(context, intent)
             } catch (e: Exception) {
                 Logger.e("Error handling intent in AlarmReceiver", e)
             } finally {
@@ -58,9 +59,12 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
         }
     }
 
-    private suspend fun handleIntent(intent: Intent?) {
+    private suspend fun handleIntent(context: Context, intent: Intent?) {
         when (intent?.action) {
-            ALARM_ACTION -> getAlarmId(intent)?.let { usecases.showAlarm(it) }
+            ALARM_ACTION -> getAlarmId(intent)?.let {
+                cancelTriggeredPendingIntent(context, intent)
+                usecases.showAlarm(it)
+            }
             COMPLETE_ACTION -> getAlarmId(intent)?.let { usecases.completeAlarm(it) }
             SNOOZE_ACTION -> getAlarmId(intent)?.let { usecases.snoozeAlarm(it) }
             DISMISS_ACTION -> {
@@ -84,9 +88,30 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
 
     private fun getAlarmId(intent: Intent?) = intent?.getLongExtra(EXTRA_TASK, 0)
 
+    private fun cancelTriggeredPendingIntent(context: Context, intent: Intent) {
+        val requestCode = intent.getIntExtra(EXTRA_PENDING_INTENT_ID, Int.MIN_VALUE)
+        if (requestCode == Int.MIN_VALUE) return
+
+        val pendingIntent = PendingIntent.getBroadcast(
+            context,
+            requestCode,
+            Intent(context, AlarmReceiver::class.java).apply {
+                action = ALARM_ACTION
+                putExtra(EXTRA_TASK, intent.getLongExtra(EXTRA_TASK, 0))
+            },
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE,
+        ) ?: return
+
+        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
+        alarmManager.cancel(pendingIntent)
+        pendingIntent.cancel()
+    }
+
     companion object {
 
         const val EXTRA_TASK = "extra_task"
+
+        const val EXTRA_PENDING_INTENT_ID = "extra_pending_intent_id"
 
         const val ALARM_ACTION = "com.timilehinaregbesola.mathalarm.SET_ALARM"
 

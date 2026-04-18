@@ -4,7 +4,7 @@ import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.fake.AlarmInteractorFake
 import com.timilehinaregbesola.mathalarm.fake.AlarmRepositoryFake
-import com.timilehinaregbesola.mathalarm.fake.AlarmTimeCalculatorFake
+import com.timilehinaregbesola.mathalarm.fake.DateTimeProviderFake
 import com.timilehinaregbesola.mathalarm.fake.NotificationInteractorFake
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
@@ -13,6 +13,7 @@ import kotlin.test.assertEquals
 import kotlin.test.BeforeTest
 import kotlin.test.assertFalse
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 
 @ExperimentalCoroutinesApi
 class CompleteAlarmTest {
@@ -23,12 +24,10 @@ class CompleteAlarmTest {
     private val alarmInteractor = AlarmInteractorFake()
 
     private val notificationInteractor = NotificationInteractorFake()
-    
-    private val alarmTimeCalculator = AlarmTimeCalculatorFake()
-    
-    private val scheduleNextAlarm = ScheduleNextAlarm(alarmInteractor, alarmTimeCalculator)
 
-    private val completeAlarmUseCase = CompleteAlarm(alarmRepository, alarmInteractor, notificationInteractor, scheduleNextAlarm)
+    private val dateTimeProvider = DateTimeProviderFake()
+
+    private val completeAlarmUseCase = CompleteAlarm(alarmRepository, alarmInteractor, notificationInteractor, dateTimeProvider)
 
     private val addAlarmUseCase = AddAlarm(alarmRepository)
 
@@ -40,6 +39,7 @@ class CompleteAlarmTest {
     fun setup() = runTest {
         alarmRepository.clear()
         alarmInteractor.clear()
+        dateTimeProvider.clearFixedDateTime()
         addAlarmUseCase(baseAlarm)
     }
 
@@ -138,14 +138,16 @@ class CompleteAlarmTest {
     }
 
     @Test
-    fun `multiple day alarm without repeat flag should stay on after completion`() = runTest {
-        // Alarm set for Tuesday and Friday, repeat = false
+    fun `multiple day alarm without repeat flag should stay on while later selected day remains`() = runTest {
+        // Monday is completing, Wednesday is still pending this week.
+        dateTimeProvider.setFixedDateTime(2026, 4, 13, 7, 5)
+
         val alarm = Alarm(
             alarmId = 12,
             hour = 7,
             minute = 0,
             repeat = false,
-            repeatDays = "FFTFTFF", // Tuesday and Friday enabled
+            repeatDays = "FTFTFFF", // Monday and Wednesday enabled
             isOn = true,
             isSaved = true
         )
@@ -155,8 +157,59 @@ class CompleteAlarmTest {
 
         val result = findAlarmUseCase(alarm.alarmId)
         assertNotNull(result)
-        assertEquals(true, result.isOn, "Multiple day alarm should stay on after completion")
-        // Alarm should NOT be cancelled for repeating alarms
+        assertTrue(result.isOn, "Multi-day alarm without repeat should stay on until the last selected day completes")
+        assertFalse(alarmInteractor.isAlarmScheduled(alarm), "No new alarms should be scheduled during completion")
+        assertFalse(notificationInteractor.isNotificationShown(alarm.alarmId), "Notification should be dismissed")
+    }
+
+    @Test
+    fun `multiple day alarm without repeat flag should turn off after last selected day completes`() = runTest {
+        // Wednesday is completing and no selected day remains later this week.
+        dateTimeProvider.setFixedDateTime(2026, 4, 15, 7, 5)
+
+        val alarm = Alarm(
+            alarmId = 18,
+            hour = 7,
+            minute = 0,
+            repeat = false,
+            repeatDays = "FTFTFFF", // Monday and Wednesday enabled
+            isOn = true,
+            isSaved = true
+        )
+        addAlarmUseCase(alarm)
+
+        completeAlarmUseCase(alarm)
+
+        val result = findAlarmUseCase(alarm.alarmId)
+        assertNotNull(result)
+        assertFalse(result.isOn, "Multi-day alarm without repeat should turn off after the last selected day completes")
+        assertFalse(alarmInteractor.isAlarmScheduled(alarm), "Alarm should be cancelled after the last selected day")
+        assertFalse(notificationInteractor.isNotificationShown(alarm.alarmId), "Notification should be dismissed")
+    }
+
+    @Test
+    fun `multiple day alarm without repeat flag should stay on when remaining selected day wraps into next week`() = runTest {
+        // Saturday is completing, but Monday is still part of the originally scheduled one-time cycle.
+        dateTimeProvider.setFixedDateTime(2026, 4, 25, 7, 5)
+
+        val alarm = Alarm(
+            alarmId = 19,
+            hour = 7,
+            minute = 0,
+            repeat = false,
+            repeatDays = "FTFFFFT", // Monday and Saturday enabled
+            isOn = true,
+            isSaved = true
+        )
+        addAlarmUseCase(alarm)
+        alarmInteractor.schedule(alarm, 1_000_000L)
+
+        completeAlarmUseCase(alarm)
+
+        val result = findAlarmUseCase(alarm.alarmId)
+        assertNotNull(result)
+        assertTrue(result.isOn, "Alarm should stay on until the wrapped Monday occurrence completes")
+        assertTrue(alarmInteractor.isAlarmScheduled(alarm), "Existing future occurrence should remain scheduled")
         assertFalse(notificationInteractor.isNotificationShown(alarm.alarmId), "Notification should be dismissed")
     }
 

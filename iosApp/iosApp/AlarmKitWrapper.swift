@@ -350,6 +350,27 @@ class AlarmKitWrapperImpl: NSObject {
         print("AlarmKitWrapper: AlarmKit NOT available (iOS < 26)")
         return false
     }
+
+    /// Check whether AlarmKit still has a future occurrence pending for this app alarm id.
+    func hasPendingOccurrence(alarmId: Int64) -> Bool {
+        guard #available(iOS 26, *) else {
+            return false
+        }
+
+        do {
+            let manager = AlarmManager.shared
+            let alarms = try manager.alarms
+            return alarms.contains { alarm in
+                guard let metadata = AlarmDataStore.shared.retrieve(alarmUUID: alarm.id.uuidString) else {
+                    return false
+                }
+                return metadata.alarmId == alarmId
+            }
+        } catch {
+            print("AlarmKitWrapper: Failed to check pending occurrence for alarm \(alarmId): \(error)")
+            return false
+        }
+    }
     
     /// Request alarm authorization - call this early in app lifecycle
     func requestAuthorization() {
@@ -721,6 +742,10 @@ class AlarmKitKotlinBridge: NSObject, NativeAlarmScheduler {
     
     func isAlarmKitAvailable() -> Bool {
         return wrapper.isAlarmKitAvailable()
+    }
+
+    func hasPendingOccurrence(alarmId: Int64) -> Bool {
+        return wrapper.hasPendingOccurrence(alarmId: alarmId)
     }
     
     func scheduleAlarm(request: AlarmScheduleRequest) -> Bool {

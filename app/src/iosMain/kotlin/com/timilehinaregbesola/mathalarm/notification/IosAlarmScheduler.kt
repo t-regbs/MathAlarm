@@ -34,6 +34,8 @@ import platform.UserNotifications.UNNotificationCategoryOptionNone
 import platform.UserNotifications.UNNotificationRequest
 import platform.UserNotifications.UNNotificationSound
 import platform.UserNotifications.UNUserNotificationCenter
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
@@ -392,12 +394,7 @@ class IosAlarmScheduler(
         AlarmSchedulerBridge.cancelAlarm(alarm.alarmId)
         
         // Also cancel notification-based alarm (in case of migration or fallback)
-        val identifiers = mutableListOf("alarm_${alarm.alarmId}")
-        
-        // Also cancel any day-specific notifications for repeating alarms
-        for (i in 0..6) {
-            identifiers.add("alarm_${alarm.alarmId}_day_$i")
-        }
+        val identifiers = notificationIdentifiersForAlarm(alarm.alarmId)
         
         notificationCenter.removePendingNotificationRequestsWithIdentifiers(identifiers)
         notificationCenter.removeDeliveredNotificationsWithIdentifiers(identifiers)
@@ -421,6 +418,30 @@ class IosAlarmScheduler(
         // Cancel all notification-based alarms
         notificationCenter.removeAllPendingNotificationRequests()
         notificationCenter.removeAllDeliveredNotifications()
+    }
+
+    suspend fun hasPendingOccurrence(alarm: Alarm): Boolean {
+        if (AlarmSchedulerBridge.isAlarmKitAvailable()) {
+            return AlarmSchedulerBridge.hasPendingOccurrence(alarm.alarmId)
+        }
+
+        val identifiers = notificationIdentifiersForAlarm(alarm.alarmId).toSet()
+        return suspendCoroutine { continuation ->
+            notificationCenter.getPendingNotificationRequestsWithCompletionHandler { requests ->
+                val hasPending = requests?.any { request ->
+                    (request as? UNNotificationRequest)?.identifier in identifiers
+                } == true
+                continuation.resume(hasPending)
+            }
+        }
+    }
+
+    private fun notificationIdentifiersForAlarm(alarmId: Long): List<String> {
+        val identifiers = mutableListOf("alarm_$alarmId")
+        for (i in 0..6) {
+            identifiers.add("alarm_${alarmId}_day_$i")
+        }
+        return identifiers
     }
     
     /**

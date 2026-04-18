@@ -46,7 +46,7 @@ val commonModule = module {
     single<DateTimeProvider> { DateTimeProviderImpl() }
     
     // Alarm Time Calculator - moves time calculation to domain layer
-    single<AlarmTimeCalculator> { AlarmTimeCalculatorImpl() }
+    single<AlarmTimeCalculator> { AlarmTimeCalculatorImpl(get()) }
     
     // Schedule Next Alarm (now depends on AlarmTimeCalculator)
     single { ScheduleNextAlarm(get(), get()) }
@@ -78,7 +78,7 @@ val commonModule = module {
             completeAlarm = CompleteAlarm(get(), get(), get(), get()),
             rescheduleFutureAlarms = RescheduleFutureAlarms(get(), get(), get(), get()),
             scheduleNextAlarm = get(),
-            showAlarm = ShowAlarm(get(), get()),
+            showAlarm = ShowAlarm(get(), get(), get()),
             snoozeAlarm = SnoozeAlarm(get(), get(), get(), get()),
             cancelAlarm = CancelAlarm(get())
         )

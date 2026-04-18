@@ -9,6 +9,7 @@ import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractor
 class ShowAlarm(
     private val alarmRepository: AlarmRepository,
     private val notificationInteractor: NotificationInteractor,
+    private val scheduleNextAlarm: ScheduleNextAlarm,
 ) {
 
     /**
@@ -18,6 +19,10 @@ class ShowAlarm(
      */
     suspend operator fun invoke(alarmId: Long) {
         val alarm = alarmRepository.findAlarm(alarmId) ?: return
+
+        if (alarm.repeat && alarm.isOn) {
+            scheduleNextAlarm(alarm)
+        }
 
         if (alarm.isOn.not()) {
 //            Timber.d("Task '${alarm.title}' is already completed. Will not notify")

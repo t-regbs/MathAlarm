@@ -33,15 +33,14 @@ class AlarmNotificationScheduler(
      */
     fun scheduleAlarm(alarm: Alarm, timeInMillis: Long) {
         logger.d("Scheduling alarm: id=${alarm.alarmId}, time=$timeInMillis")
-        
-        val alarmIntent = createAlarmIntent(alarm)
-        
+
         val tz = TimeZone.currentSystemDefault()
         val alarmDateTime = Instant.fromEpochMilliseconds(timeInMillis)
             .toLocalDateTime(tz)
         val dayIndex = alarmDateTime.dayOfWeek.toIndex()
-        
+
         val intentId = idGenerator.generateId(alarm, dayIndex)
+        val alarmIntent = createAlarmIntent(alarm, intentId)
         
         val pendingIntent = PendingIntent.getBroadcast(
             context,
@@ -63,6 +62,24 @@ class AlarmNotificationScheduler(
         logger.d("Update alarm called for id=${alarm.alarmId} - no action needed on Android")
         // On Android, the notification will trigger a BroadcastReceiver which will always get the
         // most recent Alarm data from the database, so no action needed here.
+    }
+
+    fun hasPendingOccurrence(alarm: Alarm): Boolean {
+        val receiverIntent = createAlarmIntent(alarm)
+        val flags = PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
+
+        if (PendingIntent.getBroadcast(context, idGenerator.generateSimpleId(alarm.alarmId), receiverIntent, flags) != null) {
+            return true
+        }
+
+        return (0..6).any { dayIndex ->
+            PendingIntent.getBroadcast(
+                context,
+                idGenerator.generateId(alarm, dayIndex),
+                receiverIntent,
+                flags,
+            ) != null
+        }
     }
 
     /**
@@ -90,10 +107,11 @@ class AlarmNotificationScheduler(
         logger.d("Alarm canceled: id=${alarm.alarmId}")
     }
 
-    private fun createAlarmIntent(alarm: Alarm): Intent {
+    private fun createAlarmIntent(alarm: Alarm, pendingIntentId: Int? = null): Intent {
         return Intent(context, AlarmReceiver::class.java).apply {
             action = ALARM_ACTION
             putExtra(EXTRA_TASK, alarm.alarmId)
+            pendingIntentId?.let { putExtra(AlarmReceiver.EXTRA_PENDING_INTENT_ID, it) }
         }
     }
 

@@ -4,6 +4,7 @@ import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.fake.AlarmInteractorFake
 import com.timilehinaregbesola.mathalarm.fake.AlarmRepositoryFake
+import com.timilehinaregbesola.mathalarm.fake.AlarmTimeCalculatorFake
 import com.timilehinaregbesola.mathalarm.fake.NotificationInteractorFake
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
@@ -20,11 +21,15 @@ class ShowAlarmTest {
 
     private val alarmInteractor = AlarmInteractorFake()
 
+    private val alarmTimeCalculator = AlarmTimeCalculatorFake()
+
     private val notificationInteractor = NotificationInteractorFake()
 
     private val addAlarmUseCase = AddAlarm(alarmRepository)
 
-    private val showAlarmUseCase = ShowAlarm(alarmRepository, notificationInteractor)
+    private val scheduleNextAlarmUseCase = ScheduleNextAlarm(alarmInteractor, alarmTimeCalculator)
+
+    private val showAlarmUseCase = ShowAlarm(alarmRepository, notificationInteractor, scheduleNextAlarmUseCase)
 
     @BeforeTest
     fun setup() = runTest {
@@ -52,14 +57,13 @@ class ShowAlarmTest {
     }
 
     @Test
-    fun `test notification is shown for repeating alarm`() = runTest {
+    fun `repeating alarm schedules next occurrence when shown`() = runTest {
         val alarm = Alarm(alarmId = 3, title = "is repeating", repeat = true, isOn = true)
         addAlarmUseCase(alarm)
         showAlarmUseCase(alarm.alarmId)
 
-        // ShowAlarm should show notification but not schedule next alarm
         assertTrue(notificationInteractor.isNotificationShown(alarm.alarmId))
-        assertFalse(alarmInteractor.isAlarmScheduled(alarm))
+        assertTrue(alarmInteractor.isAlarmScheduled(alarm))
     }
 
     @Test

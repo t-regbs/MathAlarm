@@ -6,13 +6,17 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import androidx.test.core.app.ApplicationProvider
-import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.fake.DateTimeProviderFake
 import com.timilehinaregbesola.mathalarm.framework.Usecases
-import com.timilehinaregbesola.mathalarm.notification.AlarmNotificationScheduler
+import com.timilehinaregbesola.mathalarm.provider.DateTimeProvider
 import kotlinx.coroutines.runBlocking
-import org.junit.Assert.*
+import kotlinx.datetime.LocalDateTime
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -22,7 +26,8 @@ import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 import org.robolectric.shadows.ShadowAlarmManager
 import org.robolectric.shadows.ShadowLooper
-import java.util.Calendar
+import org.robolectric.shadows.ShadowSystemClock
+import java.util.concurrent.TimeUnit
 
 
 @RunWith(RobolectricTestRunner::class)
@@ -31,6 +36,7 @@ class AlarmSystemEndToEndTest {
 
     private lateinit var usecases: Usecases
     private lateinit var alarmRepository: AlarmRepository
+    private lateinit var dateTimeProvider: DateTimeProviderFake
     
     private lateinit var context: Context
     private lateinit var alarmManager: AlarmManager
@@ -48,6 +54,8 @@ class AlarmSystemEndToEndTest {
             // Get Koin dependencies from the global context
             usecases = GlobalContext.get().get()
             alarmRepository = GlobalContext.get().get()
+            dateTimeProvider = GlobalContext.get().get<DateTimeProvider>() as DateTimeProviderFake
+            dateTimeProvider.clearFixedDateTime()
         } catch (e: Exception) {
             // If Koin is not initialized, skip these tests
             // In a production setup, ensure TestApplication properly initializes Koin
@@ -56,17 +64,19 @@ class AlarmSystemEndToEndTest {
     }
 
     @Test
-    fun `end-to-end multi-day alarm - schedule Tuesday and Friday, let alarms fire naturally`() = runBlocking {
-        // Create alarm for Tuesday (index 2) and Friday (index 5) at 7:00 AM
+    fun `end-to-end multi-day alarm without repeat - Monday and Wednesday should both ring then stop`() = runBlocking {
+        dateTimeProvider.setFixedDateTime(LocalDateTime(2026, 4, 19, 6, 0))
+
+        // Create alarm for Monday (index 1) and Wednesday (index 3) at 7:00 AM
         val alarm = Alarm(
             alarmId = 0L, // Will be auto-assigned
             hour = 7,
             minute = 0,
             repeat = false,
-            repeatDays = "FFTFTFF", // Tuesday and Friday
+            repeatDays = "FTFTFFF", // Monday and Wednesday
             isOn = false,
             isSaved = true,
-            title = "Tuesday & Friday Alarm"
+            title = "Monday & Wednesday Alarm"
         )
         
         // Step 1: Add and schedule the alarm through the normal flow
@@ -78,65 +88,53 @@ class AlarmSystemEndToEndTest {
         val scheduledAlarm = alarmRepository.findAlarm(savedAlarm.alarmId)!!
         assertTrue("Alarm should be ON after scheduling", scheduledAlarm.isOn)
         
-        // Verify both days are scheduled in AlarmManager
+        // Verify both days are scheduled in AlarmManager and capture them in order.
         val scheduledAlarms = shadowAlarmManager.scheduledAlarms
-        assertEquals("Should have 2 scheduled alarms (Tuesday and Friday)", 2, scheduledAlarms.size)
-        
-        // Step 2: Let the next scheduled alarm fire naturally
-        val nextAlarm = shadowAlarmManager.nextScheduledAlarm
-        if (nextAlarm == null) {
-            // If there's no next alarm, fail with a helpful message
-            val allAlarms = shadowAlarmManager.scheduledAlarms
-            fail("Expected next alarm to be scheduled, but found ${allAlarms.size} total alarms")
-        }
-        
-        // Fire the next alarm (Tuesday) - this simulates the system triggering it
-        fireNextScheduledAlarm()
+            .filter {
+                val intent = shadowOf(it.operation).savedIntent
+                intent.getLongExtra(AlarmReceiver.EXTRA_TASK, -1) == savedAlarm.alarmId
+            }
+            .sortedBy { it.triggerAtTime }
+        assertEquals("Should have 2 scheduled alarms (Monday and Wednesday)", 2, scheduledAlarms.size)
+        val mondayAlarm = scheduledAlarms[0]
+        val wednesdayAlarm = scheduledAlarms[1]
+
+        // Step 2: Fire the Monday occurrence.
+        fireScheduledAlarm(mondayAlarm)
         processAsyncOperations()
-        
+
         // Complete the alarm (user solves the math problem)
+        dateTimeProvider.setFixedDateTime(LocalDateTime(2026, 4, 20, 7, 5))
         usecases.completeAlarm(savedAlarm.alarmId)
         processAsyncOperations()
         
-        // Step 3: Verify alarm is still ON (multi-day alarm should stay on)
-        val alarmAfterTuesday = alarmRepository.findAlarm(savedAlarm.alarmId)
-        assertNotNull("Alarm should still exist in database", alarmAfterTuesday)
-        assertTrue("Multi-day alarm should still be ON after Tuesday rings", alarmAfterTuesday!!.isOn)
-        
-        // Step 4: Verify there are still alarms scheduled (Friday and/or next week's Tuesday)
-        val allAlarmsAfter = shadowAlarmManager.scheduledAlarms
-        val remainingAlarms = allAlarmsAfter.filter {
+        // Step 3: Verify alarm is still ON because Wednesday is still pending this week
+        val alarmAfterMonday = alarmRepository.findAlarm(savedAlarm.alarmId)
+        assertNotNull("Alarm should still exist in database", alarmAfterMonday)
+        assertTrue("Multi-day alarm without repeat should stay ON after Monday rings", alarmAfterMonday!!.isOn)
+
+        // Step 4: Fire the originally scheduled Wednesday occurrence.
+        fireScheduledAlarm(wednesdayAlarm)
+        processAsyncOperations()
+
+        dateTimeProvider.setFixedDateTime(LocalDateTime(2026, 4, 22, 7, 5))
+        usecases.completeAlarm(savedAlarm.alarmId)
+        processAsyncOperations()
+
+        // Step 6: Verify alarm is now OFF after completing the last selected day
+        val alarmAfterWednesday = alarmRepository.findAlarm(savedAlarm.alarmId)
+        assertNotNull("Alarm should still exist in database after Wednesday", alarmAfterWednesday)
+        assertFalse("Multi-day alarm without repeat should turn OFF after Wednesday rings", alarmAfterWednesday!!.isOn)
+
+        // Step 7: Verify nothing else remains scheduled for this alarm
+        val remainingAfterWednesday = shadowAlarmManager.scheduledAlarms.filter {
             val intent = shadowOf(it.operation).savedIntent
             intent.getLongExtra(AlarmReceiver.EXTRA_TASK, -1) == savedAlarm.alarmId
         }
-        
-        // Debug: Print what we found
-        println("Total alarms after firing: ${allAlarmsAfter.size}")
-        println("Alarms for alarm ID ${savedAlarm.alarmId}: ${remainingAlarms.size}")
-        allAlarmsAfter.forEach {
-            val intent = shadowOf(it.operation).savedIntent
-            val alarmId = intent.getLongExtra(AlarmReceiver.EXTRA_TASK, -1)
-            println("  - Alarm ID: $alarmId, Time: ${it.triggerAtTime}")
-        }
-        
-        assertTrue("Should still have alarm(s) scheduled after Tuesday (e.g., Friday). " +
-            "Found ${remainingAlarms.size} alarms for this alarm ID out of ${allAlarmsAfter.size} total", 
-            remainingAlarms.isNotEmpty())
-        
-        // Step 5: If there's another alarm, let it fire and complete it
-        if (shadowAlarmManager.nextScheduledAlarm != null) {
-            fireNextScheduledAlarm()
-            processAsyncOperations()
-            
-            // Complete the alarm again
-            usecases.completeAlarm(savedAlarm.alarmId)
-            processAsyncOperations()
-            
-            // Alarm should still be ON
-            val alarmAfterSecond = alarmRepository.findAlarm(savedAlarm.alarmId)
-            assertNotNull("Alarm should still exist after second fire", alarmAfterSecond)
-            assertTrue("Multi-day alarm should still be ON after second day rings", alarmAfterSecond!!.isOn)
-        }
+        assertTrue(
+            "No future alarms should remain scheduled after Wednesday completes",
+            remainingAfterWednesday.isEmpty()
+        )
     }
     
     @Test
@@ -178,7 +176,7 @@ class AlarmSystemEndToEndTest {
         val remainingAlarms = shadowAlarmManager.scheduledAlarms
         assertTrue("Next week's alarm should be scheduled", remainingAlarms.isNotEmpty())
     }
-    
+
     @Test
     fun `end-to-end one-time alarm - let it ring, complete, verify turned off`() = runBlocking {
         // Create one-time alarm for tomorrow
@@ -205,6 +203,9 @@ class AlarmSystemEndToEndTest {
         // Let the alarm fire and get the intent details
         val nextAlarm = shadowAlarmManager.nextScheduledAlarm!!
         val baseIntent = shadowOf(nextAlarm.operation).savedIntent
+
+        fireScheduledAlarm(nextAlarm)
+        processAsyncOperations()
         
         // Simulate user completing the alarm after it rings
         val completeIntent = Intent(baseIntent).apply {
@@ -224,6 +225,45 @@ class AlarmSystemEndToEndTest {
                 val intent = shadowOf(it.operation).savedIntent
                 intent.getLongExtra(AlarmReceiver.EXTRA_TASK, -1) == savedAlarm.alarmId
             })
+    }
+
+    @Test
+    fun `end-to-end one-time alarm - complete after ring should turn off even before pendingintent cleanup`() = runBlocking {
+        val alarm = Alarm(
+            alarmId = 0L,
+            hour = 9,
+            minute = 0,
+            repeat = false,
+            repeatDays = "FFTFFFF",
+            isOn = false,
+            isSaved = true,
+            title = "One-time Alarm PendingIntent Regression"
+        )
+
+        usecases.addAlarm(alarm)
+        val savedAlarm = alarmRepository.getLatestAlarm()!!
+        usecases.scheduleAlarm(savedAlarm, reschedule = false)
+
+        assertTrue("Alarm should be ON", alarmRepository.findAlarm(savedAlarm.alarmId)!!.isOn)
+        assertEquals("Should have 1 scheduled alarm", 1, shadowAlarmManager.scheduledAlarms.size)
+
+        val nextAlarm = shadowAlarmManager.nextScheduledAlarm!!
+        val baseIntent = shadowOf(nextAlarm.operation).savedIntent
+
+        fireScheduledAlarmWithoutConsuming(nextAlarm)
+        processAsyncOperations()
+
+        val completeIntent = Intent(baseIntent).apply {
+            action = AlarmReceiver.COMPLETE_ACTION
+        }
+        alarmReceiver.onReceive(context, completeIntent)
+        processAsyncOperations()
+
+        val alarmAfterComplete = alarmRepository.findAlarm(savedAlarm.alarmId)!!
+        assertFalse(
+            "One-time alarm should be OFF after completion even if the fired PendingIntent token still exists",
+            alarmAfterComplete.isOn
+        )
     }
     
     @Test
@@ -315,6 +355,9 @@ class AlarmSystemEndToEndTest {
         val nextAlarm = shadowAlarmManager.nextScheduledAlarm!!
         val baseIntent = shadowOf(nextAlarm.operation).savedIntent
         val savedAlarm1Id = baseIntent.getLongExtra(AlarmReceiver.EXTRA_TASK, -1)
+
+        fireScheduledAlarm(nextAlarm)
+        processAsyncOperations()
         
         val completeIntent = Intent(baseIntent).apply {
             action = AlarmReceiver.COMPLETE_ACTION
@@ -476,14 +519,42 @@ class AlarmSystemEndToEndTest {
     private fun fireNextScheduledAlarm() {
         val nextAlarm = shadowAlarmManager.nextScheduledAlarm
         if (nextAlarm != null) {
-            val pendingIntent = nextAlarm.operation
+            val timeUntilAlarm = nextAlarm.triggerAtTime - ShadowSystemClock.currentTimeMillis()
+            if (timeUntilAlarm > 0) {
+                ShadowSystemClock.advanceBy(timeUntilAlarm, TimeUnit.MILLISECONDS)
+            }
+            val pendingIntent = nextAlarm.operation ?: return
             val intent = shadowOf(pendingIntent).savedIntent
+            alarmManager.cancel(pendingIntent)
+            pendingIntent.cancel()
             
             // Deliver the intent to the broadcast receiver (simulates system behavior)
             alarmReceiver.onReceive(context, intent)
         }
     }
-    
+
+    private fun fireScheduledAlarm(scheduledAlarm: ShadowAlarmManager.ScheduledAlarm) {
+        val timeUntilAlarm = scheduledAlarm.triggerAtTime - ShadowSystemClock.currentTimeMillis()
+        if (timeUntilAlarm > 0) {
+            ShadowSystemClock.advanceBy(timeUntilAlarm, TimeUnit.MILLISECONDS)
+        }
+        val pendingIntent = scheduledAlarm.operation ?: return
+        val intent = shadowOf(pendingIntent).savedIntent
+        alarmManager.cancel(pendingIntent)
+        pendingIntent.cancel()
+        alarmReceiver.onReceive(context, intent)
+    }
+
+    private fun fireScheduledAlarmWithoutConsuming(scheduledAlarm: ShadowAlarmManager.ScheduledAlarm) {
+        val timeUntilAlarm = scheduledAlarm.triggerAtTime - ShadowSystemClock.currentTimeMillis()
+        if (timeUntilAlarm > 0) {
+            ShadowSystemClock.advanceBy(timeUntilAlarm, TimeUnit.MILLISECONDS)
+        }
+        val pendingIntent = scheduledAlarm.operation ?: return
+        val intent = shadowOf(pendingIntent).savedIntent
+        alarmReceiver.onReceive(context, intent)
+    }
+
     /**
      * Process all async operations to completion.
      */

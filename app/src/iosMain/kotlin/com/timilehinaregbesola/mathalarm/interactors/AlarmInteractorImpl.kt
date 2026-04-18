@@ -31,4 +31,9 @@ class AlarmInteractorImpl(
         scheduler.cancelAlarm(alarm)
         scheduler.scheduleAlarm(alarm, reschedule = true)
     }
+
+    override suspend fun hasPendingOccurrence(alarm: Alarm): Boolean {
+        logger.d { "AlarmInteractorImpl.hasPendingOccurrence: alarmId=${alarm.alarmId}" }
+        return scheduler.hasPendingOccurrence(alarm)
+    }
 }

@@ -58,6 +58,11 @@ interface NativeAlarmScheduler {
      * Check if AlarmKit is available on this device (iOS 26+)
      */
     fun isAlarmKitAvailable(): Boolean
+
+    /**
+     * Returns true if a future occurrence for this alarm is still pending in AlarmKit.
+     */
+    fun hasPendingOccurrence(alarmId: Long): Boolean
     
     /**
      * Snooze an active alarm
@@ -153,6 +158,10 @@ object AlarmSchedulerBridge {
      */
     fun cancelAlarm(alarmId: Long) {
         nativeScheduler?.cancelAlarm(alarmId)
+    }
+
+    fun hasPendingOccurrence(alarmId: Long): Boolean {
+        return nativeScheduler?.hasPendingOccurrence(alarmId) == true
     }
     
     /**

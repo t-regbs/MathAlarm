@@ -30,6 +30,8 @@ class AlarmInteractorFake : AlarmInteractor {
         }
     }
 
+    override suspend fun hasPendingOccurrence(alarm: Alarm): Boolean = isAlarmScheduled(alarm)
+
     fun isAlarmScheduled(alarm: Alarm): Boolean = 
         alarmMap[alarm.alarmId]?.isNotEmpty() ?: false
 

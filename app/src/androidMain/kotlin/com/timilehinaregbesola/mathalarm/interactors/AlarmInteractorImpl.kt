@@ -23,4 +23,9 @@ class AlarmInteractorImpl(
         logger.d("AlarmInteractorImpl.update: alarmId=${alarm.alarmId}")
         alarmManager.updateAlarm(alarm)
     }
+
+    override suspend fun hasPendingOccurrence(alarm: Alarm): Boolean {
+        logger.d("AlarmInteractorImpl.hasPendingOccurrence: alarmId=${alarm.alarmId}")
+        return alarmManager.hasPendingOccurrence(alarm)
+    }
 }

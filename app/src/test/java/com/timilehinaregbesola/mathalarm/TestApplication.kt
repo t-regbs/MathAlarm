@@ -34,8 +34,9 @@ class TestApplication : Application() {
         
         // Initialize Koin with the same modules as the real app
         startKoin {
+            allowOverride(true)
             androidContext(this@TestApplication)
-            modules(appModule)
+            modules(appModule, testModule)
         }
         
         Logger.setTag("MathAlarmTest")

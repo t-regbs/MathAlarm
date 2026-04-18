@@ -30,4 +30,10 @@ interface AlarmInteractor {
      * @param alarm the alarm to be updated
      */
     fun update(alarm: Alarm)
+
+    /**
+     * Returns true when the platform still has a future occurrence pending for this alarm.
+     * Implementations that can't determine this can fall back to false.
+     */
+    suspend fun hasPendingOccurrence(alarm: Alarm): Boolean = false
 }
