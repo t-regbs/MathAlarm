@@ -4,6 +4,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
+import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavEntry
@@ -27,6 +28,9 @@ internal class BottomSheetScene<T : Any>(
 
     override val content: @Composable (() -> Unit) = {
         ModalBottomSheet(
+            sheetState = rememberModalBottomSheetState(
+                skipPartiallyExpanded = true
+            ),
             containerColor = MaterialTheme.colorScheme.background,
             shape = RoundedCornerShape(topStart = 40.dp, topEnd = 40.dp),
             onDismissRequest = { onBack() }
