@@ -65,6 +65,7 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarm
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarmEvent.OnToneError
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarmEvent.ToggleDayChooser
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarmEvent.ToggleRepeat
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarmEvent.ToggleSnooze
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarmEvent.ToggleVibrate
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AlarmSettingsViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.TimeState
@@ -187,10 +188,14 @@ fun AlarmBottomSheet(
             val defaultToneText = strings.defaultAlarmTone
             BottomSettingsSection(
                 repeatWeekly = viewModel.repeatWeekly.value,
+                snoozeEnabled = viewModel.snoozeEnabled.value,
                 vibrate = viewModel.vibrate.value,
                 difficulty = viewModel.difficulty.value,
                 onRepeatToggle = {
                     viewModel.onEvent(ToggleRepeat(it))
+                },
+                onSnoozeToggle = {
+                    viewModel.onEvent(ToggleSnooze(it))
                 },
                 onVibrateToggle = {
                     viewModel.onEvent(ToggleVibrate(it))
@@ -392,9 +397,11 @@ fun TopSection(
 @Composable
 private fun BottomSettingsSection(
     repeatWeekly: Boolean,
+    snoozeEnabled: Boolean,
     vibrate: Boolean,
     difficulty: Int,
     onRepeatToggle: (Boolean) -> Unit,
+    onSnoozeToggle: (Boolean) -> Unit,
     onVibrateToggle: (Boolean) -> Unit,
     onToneClick: () -> Unit,
     onDifficultyChange: (Int) -> Unit,
@@ -419,6 +426,19 @@ private fun BottomSettingsSection(
         }
         TextWithCheckbox(text = strings.vibrate, initialState = vibrate) {
             onVibrateToggle(it)
+        }
+    }
+    Row(
+        modifier = Modifier
+            .padding(
+                top = MaterialTheme.spacing.medium,
+                start = MaterialTheme.spacing.medium,
+                end = MaterialTheme.spacing.medium,
+            )
+            .fillMaxWidth(),
+    ) {
+        TextWithCheckbox(text = strings.snooze, initialState = snoozeEnabled) {
+            onSnoozeToggle(it)
         }
     }
     labelTextField()
@@ -501,9 +521,11 @@ private fun BottomSheetPreview() {
                 bottomSection = {
                     BottomSettingsSection(
                         repeatWeekly = true,
+                        snoozeEnabled = true,
                         vibrate = true,
                         difficulty = 1,
                         onRepeatToggle = {},
+                        onSnoozeToggle = {},
                         onVibrateToggle = {},
                         onToneClick = {},
                         onDifficultyChange = {},

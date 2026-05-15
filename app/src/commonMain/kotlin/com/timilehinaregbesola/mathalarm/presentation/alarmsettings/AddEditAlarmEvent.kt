@@ -7,6 +7,7 @@ sealed class AddEditAlarmEvent {
     data class ChangeTime(val value: TimeState) : AddEditAlarmEvent()
     data class EnteredTitle(val value: TextFieldValue) : AddEditAlarmEvent()
     data class ToggleVibrate(val value: Boolean) : AddEditAlarmEvent()
+    data class ToggleSnooze(val value: Boolean) : AddEditAlarmEvent()
     data class ToggleRepeat(val value: Boolean) : AddEditAlarmEvent()
     data class ToggleDayChooser(val value: String) : AddEditAlarmEvent()
     data class OnDifficultyChange(val value: Int) : AddEditAlarmEvent()

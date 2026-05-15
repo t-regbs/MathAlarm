@@ -73,6 +73,7 @@ class AlarmSettingsViewModelTest {
             dayChooser.value shouldBe "FFFFFFF"
             repeatWeekly.value shouldBe false
             vibrate.value shouldBe false
+            snoozeEnabled.value shouldBe true
             difficulty.value shouldBe 0
             isOn.value shouldBe false
             isSaved.value shouldBe false
@@ -113,6 +114,17 @@ class AlarmSettingsViewModelTest {
         viewModel.onEvent(AddEditAlarmEvent.ToggleVibrate(true))
         
         viewModel.vibrate.value shouldBe true
+    }
+
+    @Test
+    fun `onEvent ToggleSnooze should update snooze enabled state`() {
+        viewModel.onEvent(AddEditAlarmEvent.ToggleSnooze(false))
+
+        viewModel.snoozeEnabled.value shouldBe false
+
+        viewModel.onEvent(AddEditAlarmEvent.ToggleSnooze(true))
+
+        viewModel.snoozeEnabled.value shouldBe true
     }
 
     @Test
@@ -239,6 +251,15 @@ class AlarmSettingsViewModelTest {
     }
 
     @Test
+    fun `setAlarm should disable snooze when saved snooze is zero`() {
+        val alarm = Alarm(alarmId = 777, alarmTone = "test_tone", snooze = 0)
+
+        viewModel.setAlarm(alarm)
+
+        viewModel.snoozeEnabled.value shouldBe false
+    }
+
+    @Test
     fun `changing time on existing alarm should trigger reschedule`() = runTest {
         val existingAlarm = Alarm(
             alarmId = 111,
@@ -272,6 +293,92 @@ class AlarmSettingsViewModelTest {
             val savedAlarm = usecases.findAlarm(alarm.alarmId)
             savedAlarm?.repeat shouldBe true
             savedAlarm?.repeatDays shouldBe "TTTTTTT"
+        }
+    }
+
+    @Test
+    fun `saving alarm with snooze disabled should save snooze as zero`() = runTest {
+        val alarm = Alarm(alarmId = 223, hour = 7, minute = 0, alarmTone = "test_tone")
+        viewModel.setAlarm(alarm)
+        viewModel.onEvent(AddEditAlarmEvent.ToggleSnooze(false))
+
+        viewModel.eventFlow.test {
+            viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+            advanceUntilIdle()
+
+            awaitItem().shouldBeInstanceOf<AlarmSettingsViewModel.UiEvent.SaveAlarm>()
+
+            val savedAlarm = usecases.findAlarm(alarm.alarmId)
+            savedAlarm?.snooze shouldBe 0
+        }
+    }
+
+    @Test
+    fun `saving alarm with snooze enabled should save default snooze minutes`() = runTest {
+        val alarm = Alarm(alarmId = 224, hour = 7, minute = 0, alarmTone = "test_tone", snooze = 0)
+        viewModel.setAlarm(alarm)
+        viewModel.onEvent(AddEditAlarmEvent.ToggleSnooze(true))
+
+        viewModel.eventFlow.test {
+            viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+            advanceUntilIdle()
+
+            awaitItem().shouldBeInstanceOf<AlarmSettingsViewModel.UiEvent.SaveAlarm>()
+
+            val savedAlarm = usecases.findAlarm(alarm.alarmId)
+            savedAlarm?.snooze shouldBe 5
+        }
+    }
+
+    @Test
+    fun `saving existing on alarm after disabling snooze should reschedule with snooze disabled`() = runTest {
+        val existingAlarm = Alarm(
+            alarmId = 225,
+            hour = 7,
+            minute = 0,
+            repeatDays = "FTFFFFF",
+            isOn = true,
+            isSaved = true,
+            alarmTone = "test_tone",
+        )
+        viewModel.setAlarm(existingAlarm)
+        viewModel.onEvent(AddEditAlarmEvent.ToggleSnooze(false))
+
+        viewModel.eventFlow.test {
+            viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+            advanceUntilIdle()
+
+            awaitItem().shouldBeInstanceOf<AlarmSettingsViewModel.UiEvent.SaveAlarm>()
+
+            val savedAlarm = usecases.findAlarm(existingAlarm.alarmId)
+            savedAlarm?.snooze shouldBe 0
+            alarmInteractor.isAlarmScheduled(savedAlarm!!) shouldBe true
+        }
+    }
+
+    @Test
+    fun `saving existing off alarm after disabling snooze should not turn it on`() = runTest {
+        val existingAlarm = Alarm(
+            alarmId = 226,
+            hour = 7,
+            minute = 0,
+            repeatDays = "FTFFFFF",
+            isOn = false,
+            isSaved = true,
+            alarmTone = "test_tone",
+        )
+        viewModel.setAlarm(existingAlarm)
+        viewModel.onEvent(AddEditAlarmEvent.ToggleSnooze(false))
+
+        viewModel.eventFlow.test {
+            viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+            advanceUntilIdle()
+
+            awaitItem().shouldBeInstanceOf<AlarmSettingsViewModel.UiEvent.SaveAlarm>()
+
+            val savedAlarm = usecases.findAlarm(existingAlarm.alarmId)
+            savedAlarm?.snooze shouldBe 0
+            savedAlarm?.isOn shouldBe false
         }
     }
 

@@ -118,7 +118,9 @@ class MathAlarmNotification(
             setVibrate(vibratePattern)
             setPriority(NotificationCompat.PRIORITY_HIGH)
             setAutoCancel(true)
-            addAction(getSnoozeAction(alarm))
+            if (alarm.snooze != 0) {
+                addAction(getSnoozeAction(alarm))
+            }
             setFullScreenIntent(buildPendingIntent(alarm), true)
             // Re-show notification immediately if user tries to dismiss it
             setDeleteIntent(getDismissIntent(alarm))

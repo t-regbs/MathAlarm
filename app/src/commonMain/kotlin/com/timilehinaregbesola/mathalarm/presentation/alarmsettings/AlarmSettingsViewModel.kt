@@ -43,6 +43,9 @@ class AlarmSettingsViewModel(
     private val _vibrate = mutableStateOf(false)
     val vibrate: State<Boolean> = _vibrate
 
+    private val _snoozeEnabled = mutableStateOf(true)
+    val snoozeEnabled: State<Boolean> = _snoozeEnabled
+
     private val _difficulty = mutableIntStateOf(0)
     val difficulty: State<Int> = _difficulty
 
@@ -92,6 +95,12 @@ class AlarmSettingsViewModel(
             is AddEditAlarmEvent.ToggleVibrate -> {
                 _vibrate.value = event.value
             }
+            is AddEditAlarmEvent.ToggleSnooze -> {
+                if (isNewAlarm == false && _isOn.value) {
+                    isRescheduled = true
+                }
+                _snoozeEnabled.value = event.value
+            }
             is AddEditAlarmEvent.ToggleDayChooser -> {
                 markExistingAlarmForReschedule()
                 _dayChooser.value = event.value
@@ -124,6 +133,7 @@ class AlarmSettingsViewModel(
         difficulty = _difficulty.value,
         alarmTone = _tone.value,
         isSaved = _isSaved.value,
+        snooze = if (_snoozeEnabled.value) DEFAULT_SNOOZE_MINUTES else 0,
     )
 
     private fun initDateTime(alarm: Alarm): LocalDateTime = alarm.initLocalDateTimeInSystemZone()
@@ -158,6 +168,7 @@ class AlarmSettingsViewModel(
                 }
                 _repeatWeekly.value = alarm.repeat
                 _vibrate.value = alarm.vibrate
+                _snoozeEnabled.value = alarm.snooze != 0
                 _difficulty.intValue = alarm.difficulty
                 if (alarm.alarmTone == "") {
                     _tone.value = getDefaultAlarmTone()
@@ -178,3 +189,5 @@ class AlarmSettingsViewModel(
         data class TestAlarm(val alarm: Alarm) : UiEvent()
     }
 }
+
+private const val DEFAULT_SNOOZE_MINUTES = 5

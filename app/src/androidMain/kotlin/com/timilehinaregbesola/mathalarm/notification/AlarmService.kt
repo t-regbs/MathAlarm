@@ -271,7 +271,9 @@ class AlarmService : Service() {
             setPriority(NotificationCompat.PRIORITY_HIGH)
             setOngoing(true) // Cannot be dismissed by swiping
             setAutoCancel(false)
-            addAction(getSnoozeAction(alarm))
+            if (alarm.snooze != 0) {
+                addAction(getSnoozeAction(alarm))
+            }
             // Only set full-screen intent when actively ringing
             if (!isPaused) {
                 setFullScreenIntent(buildPendingIntent(alarm), true)

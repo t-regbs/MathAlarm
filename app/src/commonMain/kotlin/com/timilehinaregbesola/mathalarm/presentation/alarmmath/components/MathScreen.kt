@@ -322,6 +322,8 @@ private fun ButtonSection(
     onSnoozeClick: () -> Unit,
     onEnterClick: () -> Unit
 ) {
+    val snoozeEnabled = alarm.snooze != 0
+
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -337,10 +339,13 @@ private fun ButtonSection(
             verticalArrangement = SpaceBetween,
         ) {
             Button(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .then(if (snoozeEnabled) Modifier else Modifier.fillMaxHeight()),
                 onClick = {
                     onClearClick()
                 },
+                shape = if (snoozeEnabled) ButtonDefaults.shape else RoundedCornerShape(8.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = clearButtonColor,
                     contentColor = White,
@@ -348,18 +353,19 @@ private fun ButtonSection(
             ) {
                 Text(text = strings.clear.uppercase(), fontSize = CLEAR_FONT_SIZE)
             }
-            Button(
-                modifier = Modifier.fillMaxWidth(),
-                enabled = alarm.snooze != 0,
-                onClick = {
-                    onSnoozeClick()
-                },
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = snoozeButtonColor,
-                    contentColor = White,
-                ),
-            ) {
-                Text(text = strings.snooze.uppercase(), fontSize = SNOOZE_FONT_SIZE)
+            if (snoozeEnabled) {
+                Button(
+                    modifier = Modifier.fillMaxWidth(),
+                    onClick = {
+                        onSnoozeClick()
+                    },
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = snoozeButtonColor,
+                        contentColor = White,
+                    ),
+                ) {
+                    Text(text = strings.snooze.uppercase(), fontSize = SNOOZE_FONT_SIZE)
+                }
             }
         }
         Button(

@@ -116,6 +116,8 @@ class SnoozeAlarmTest {
 
     @Test
     fun `test if error is shown when snoozing with negative number`() = runTest {
+        addAlarmUseCase(baseAlarm)
+
         assertFailsWith<IllegalArgumentException> {
             snoozeAlarmUseCase(baseAlarm.alarmId, -5)
         }
@@ -123,9 +125,22 @@ class SnoozeAlarmTest {
 
     @Test
     fun `test if error is shown when snoozing with zero minutes`() = runTest {
+        addAlarmUseCase(baseAlarm)
+
         assertFailsWith<IllegalArgumentException> {
             snoozeAlarmUseCase(baseAlarm.alarmId, 0)
         }
+    }
+
+    @Test
+    fun `test default snooze does not schedule alarm when snooze is disabled`() = runTest {
+        dateTimeProvider.setFixedDateTime(2025, 1, 8, 7, 0)
+        val alarm = baseAlarm.copy(snooze = 0)
+        addAlarmUseCase(alarm)
+
+        snoozeAlarmUseCase(alarm.alarmId)
+
+        alarmInteractor.getAlarmTimeMillis(alarm.alarmId) shouldBe null
     }
 
     @Test

@@ -30,11 +30,16 @@ class SnoozeAlarm(
      *
      * @return observable to be subscribe
      */
-    suspend operator fun invoke(alarmId: Long, minutes: Int = DEFAULT_SNOOZE) {
-        require(minutes > 0) { "The delay minutes must be positive" }
+    suspend operator fun invoke(alarmId: Long, minutes: Int? = null) {
         val alarm = alarmRepository.findAlarm(alarmId) ?: return
+        val snoozeMinutes = minutes ?: run {
+            if (alarm.snooze == 0) return
+            alarm.snooze
+        }
 
-        val snoozedTime = getSnoozedDateTime(dateTimeProvider.getCurrentDateTime(), minutes)
+        require(snoozeMinutes > 0) { "The delay minutes must be positive" }
+
+        val snoozedTime = getSnoozedDateTime(dateTimeProvider.getCurrentDateTime(), snoozeMinutes)
         val updatedAlarm = alarm.copy(
             hour = snoozedTime.hour,
             minute = snoozedTime.minute
@@ -53,9 +58,5 @@ class SnoozeAlarm(
         val instant = dateTime.toInstant(tz)
         val newInstant = instant.plus(minutes.toLong(), DateTimeUnit.MINUTE)
         return newInstant.toLocalDateTime(tz)
-    }
-
-    companion object {
-        private const val DEFAULT_SNOOZE = 5
     }
 }
