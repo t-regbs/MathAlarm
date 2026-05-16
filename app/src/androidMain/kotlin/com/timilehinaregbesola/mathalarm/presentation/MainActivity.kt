@@ -58,10 +58,19 @@ class MainActivity : AppCompatActivity() {
             lyricist = rememberStrings()
             ProvideStrings(lyricist) {
                 MathAlarmTheme(darkTheme = isDarkTheme) {
-                    NavGraph(preferences, deeplinkInfo)
+                    NavGraph(
+                        preferences = preferences,
+                        deeplinkInfo = deeplinkInfo,
+                        onDeeplinkConsumed = ::consumeAlarmDeeplink
+                    )
                 }
             }
         }
+    }
+
+    private fun consumeAlarmDeeplink() {
+        deeplinkInfo = null
+        intent = intent.apply { data = null }
     }
 
     private fun setupLockScreenFlags() {

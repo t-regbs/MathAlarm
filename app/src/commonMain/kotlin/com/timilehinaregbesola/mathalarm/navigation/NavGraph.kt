@@ -52,7 +52,8 @@ import kotlinx.serialization.modules.polymorphic
 @Composable
 fun NavGraph(
     preferences: AlarmPreferencesImpl,
-    deeplinkInfo: String?
+    deeplinkInfo: String?,
+    onDeeplinkConsumed: () -> Unit = {}
 ) {
     val config = SavedStateConfiguration {
         serializersModule = SerializersModule {
@@ -80,6 +81,7 @@ fun NavGraph(
         deeplinkInfo?.let {
             println("NavGraph: Navigating to AlarmMath")
             backStack.add(AlarmMath(it, false))
+            onDeeplinkConsumed()
         }
     }
 
