@@ -38,6 +38,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.lyricist.strings
 import com.timilehinaregbesola.mathalarm.platform.getApplicationId
+import com.timilehinaregbesola.mathalarm.platform.applyPlatformNightMode
 import com.timilehinaregbesola.mathalarm.platform.sendEmail
 import com.timilehinaregbesola.mathalarm.platform.shareText
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences
@@ -88,6 +89,7 @@ fun AppSettingsScreen(
     val selectedSortOption = sortOptions.first { it.first == pref.alarmSortOrderState.value }
     val onSelectionChange = { newTheme: Theme ->
         pref.updateAppTheme(newTheme)
+        applyPlatformNightMode(newTheme)
     }
     Surface(modifier = Modifier.fillMaxSize()) {
         Scaffold(

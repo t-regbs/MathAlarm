@@ -2,6 +2,7 @@ package com.timilehinaregbesola.mathalarm.platform
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences
 
 // Vibration
 expect class PlatformVibrator() {
@@ -35,6 +36,9 @@ expect fun sendEmail(chooserTitle: String, email: String, subject: String = "", 
 
 // Get application ID for sharing
 expect fun getApplicationId(): String
+
+// Applies platform night mode state for Android XML resources and launch surfaces.
+expect fun applyPlatformNightMode(theme: AlarmPreferences.Theme)
 
 // CompositionLocal for optional access to PlatformVibrator (can be replaced in previews/tests)
 val LocalPlatformVibrator = staticCompositionLocalOf<PlatformVibrator?> { null }
