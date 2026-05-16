@@ -3,6 +3,7 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmmath.components
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement.Center
 import androidx.compose.foundation.layout.Arrangement.SpaceBetween
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
@@ -12,6 +13,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -77,6 +79,7 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathS
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.DEFAULT_VIBRATION_PATTERN
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ENTER_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.INITIAL_INDICATOR_PROGRESS
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.MATH_CONTENT_MAX_WIDTH
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.MAX_ANSWER_CHARS
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.PROGRESS_INDICATOR_HEIGHT
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.PROGRESS_LABEL
@@ -233,31 +236,43 @@ private fun MathScreenContent(
                     .padding(padding)
                     .padding(vertical = spacing.extraMedium),
             ) {
-                Column {
-                    Spacer(modifier = Modifier.height(spacing.extraMedium))
-                    LinearProgressIndicator(
-                        progress = { animatedProgress },
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(PROGRESS_INDICATOR_HEIGHT)
-                            .padding(horizontal = spacing.extraMedium),
-                        color = indicatorColor,
-                    )
-                    Spacer(modifier = Modifier.height(spacing.large))
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Center,
-                    ) {
-                        Text(
-                            text = question,
-                            fontSize = QUESTION_FONT_SIZE,
-                            fontWeight = Bold,
-                        )
+                BoxWithConstraints(
+                    modifier = Modifier.fillMaxWidth(),
+                    contentAlignment = androidx.compose.ui.Alignment.TopCenter,
+                ) {
+                    val contentWidthModifier = if (maxWidth > MATH_CONTENT_MAX_WIDTH) {
+                        Modifier.width(MATH_CONTENT_MAX_WIDTH)
+                    } else {
+                        Modifier.fillMaxWidth()
                     }
-                    Spacer(modifier = Modifier.height(spacing.medium))
-                    inputField()
-                    Spacer(modifier = Modifier.height(spacing.medium))
-                    buttonSection()
+                    Column(
+                        modifier = contentWidthModifier,
+                    ) {
+                        Spacer(modifier = Modifier.height(spacing.extraMedium))
+                        LinearProgressIndicator(
+                            progress = { animatedProgress },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(PROGRESS_INDICATOR_HEIGHT)
+                                .padding(horizontal = spacing.extraMedium),
+                            color = indicatorColor,
+                        )
+                        Spacer(modifier = Modifier.height(spacing.large))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Center,
+                        ) {
+                            Text(
+                                text = question,
+                                fontSize = QUESTION_FONT_SIZE,
+                                fontWeight = Bold,
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(spacing.medium))
+                        inputField()
+                        Spacer(modifier = Modifier.height(spacing.medium))
+                        buttonSection()
+                    }
                 }
             }
         }
@@ -437,4 +452,5 @@ private object MathScreen {
     val ENTER_FONT_SIZE = 19.sp
     val SNOOZE_FONT_SIZE = 19.sp
     val CLEAR_FONT_SIZE = 19.sp
+    val MATH_CONTENT_MAX_WIDTH = 520.dp
 }

@@ -69,7 +69,7 @@ internal class BottomSheetScene<T : Any>(
  *
  * This strategy should always be added before any non-overlay scene strategies.
  */
-class BottomSheetSceneStrategy<T : Any>() : SceneStrategy<T> {
+class BottomSheetSceneStrategy<T : Any> : SceneStrategy<T> {
 
     override fun SceneStrategyScope<T>.calculateScene(
         entries: List<NavEntry<T>>

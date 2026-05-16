@@ -7,6 +7,10 @@ import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
+import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
@@ -21,6 +25,7 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.savedstate.serialization.SavedStateConfiguration
+import androidx.window.core.layout.WindowSizeClass
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.navigation.NavGraph.ANIM_TRANSITION_DURATION
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.ListDisplayScreen
@@ -42,6 +47,7 @@ import kotlinx.serialization.modules.polymorphic
 @InternalCoroutinesApi
 @ExperimentalComposeUiApi
 @ExperimentalMaterial3Api
+@OptIn(ExperimentalMaterial3AdaptiveApi::class)
 @ExperimentalFoundationApi
 @Composable
 fun NavGraph(
@@ -62,6 +68,11 @@ fun NavGraph(
     val bottomSheetStrategy = remember {
         BottomSheetSceneStrategy<NavKey>()
     }
+    val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>()
+    val adaptiveSceneStrategy = listDetailStrategy then bottomSheetStrategy
+    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
+    val showSettingsDismissButton =
+        windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)
 
     // Navigate to MathScreen when deeplinkInfo changes (e.g., from notification tap)
     LaunchedEffect(deeplinkInfo) {
@@ -81,7 +92,7 @@ fun NavGraph(
                 backStack.removeLastOrNull()
             }
         },
-        sceneStrategy = bottomSheetStrategy,
+        sceneStrategy = adaptiveSceneStrategy,
         entryDecorators = listOf(
             rememberSaveableStateHolderNavEntryDecorator(),
             rememberViewModelStoreNavEntryDecorator()
@@ -111,7 +122,9 @@ fun NavGraph(
                         targetOffsetX = { it })
         },
         entryProvider = entryProvider {
-            entry<AlarmList> {
+            entry<AlarmList>(
+                metadata = ListDetailSceneStrategy.listPane(sceneKey = AlarmList)
+            ) {
                 ListDisplayScreen(
                     backstack = backStack,
                     darkTheme = preferences.shouldUseDarkColors(),
@@ -119,13 +132,15 @@ fun NavGraph(
             }
 
             entry<SettingsSheet>(
-                metadata = BottomSheetSceneStrategy.bottomSheet()
+                metadata = ListDetailSceneStrategy.detailPane(sceneKey = AlarmList) +
+                    BottomSheetSceneStrategy.bottomSheet()
             ) {
                 val alarmObject = Json.decodeFromString<AlarmEntity>(it.settingsAlarm)
                 AlarmBottomSheet(
                     backstack = backStack,
                     darkTheme = preferences.shouldUseDarkColors(),
-                    alarm = alarmObject
+                    alarm = alarmObject,
+                    showDismissButton = showSettingsDismissButton,
                 )
             }
 

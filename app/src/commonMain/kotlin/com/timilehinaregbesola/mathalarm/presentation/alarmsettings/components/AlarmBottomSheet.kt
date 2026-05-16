@@ -1,11 +1,9 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components
 
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.gestures.Orientation.Vertical
-import androidx.compose.foundation.gestures.scrollable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Arrangement.SpaceBetween
-import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -13,8 +11,11 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CornerSize
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults.buttonColors
 import androidx.compose.material3.Card
@@ -22,6 +23,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -34,6 +36,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment.Companion.CenterVertically
+import androidx.compose.ui.Alignment.Companion.TopCenter
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color.Companion.Black
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
@@ -78,6 +81,7 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.A
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.NO_ELEVATION
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.SAVE_BUTTON_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.SAVE_BUTTON_TOP_PADDING
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.SETTINGS_CONTENT_MAX_WIDTH
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TEST_BUTTON_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_CARD_CORNER_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_CARD_HEIGHT
@@ -85,6 +89,7 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.A
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_TEXT_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimaryLight
+import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Close
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.EmojiSymbols
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Notifications
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
@@ -107,6 +112,7 @@ fun AlarmBottomSheet(
     backstack: NavBackStack<NavKey>,
     darkTheme: Boolean,
     alarm: AlarmEntity,
+    showDismissButton: Boolean,
 ) {
     LaunchedEffect(Unit) {
         viewModel.setAlarm(AlarmMapper().mapToDomainModel(alarm))
@@ -117,6 +123,9 @@ fun AlarmBottomSheet(
     var showPermRequiredDialog by remember { mutableStateOf(false) }
 
     val toneText = remember { mutableStateOf<String?>(null) }
+    val closeSettings: () -> Unit = {
+        if (backstack.size > 1) backstack.removeLastOrNull()
+    }
 
     // Capture string values for use in non-composable callbacks
     val alertTitle = strings.alert
@@ -157,7 +166,7 @@ fun AlarmBottomSheet(
                     )
                 }
                 is AlarmSettingsViewModel.UiEvent.SaveAlarm -> {
-                    if (backstack.size > 1) backstack.removeLastOrNull()
+                    closeSettings()
                 }
                 is AlarmSettingsViewModel.UiEvent.TestAlarm -> {
                     launch(Dispatchers.Default) {
@@ -172,6 +181,8 @@ fun AlarmBottomSheet(
         }
     }
     AlarmBottomSheetContent(
+        onCloseClick = closeSettings,
+        showDismissButton = showDismissButton,
         topSection = {
             TopSection(
                 selectedDays = viewModel.dayChooser.value,
@@ -316,6 +327,8 @@ fun AlarmBottomSheet(
 
 @Composable
 private fun AlarmBottomSheetContent(
+    onCloseClick: () -> Unit,
+    showDismissButton: Boolean,
     topSection: @Composable () -> Unit,
     bottomSection: @Composable () -> Unit,
     buttonSection: @Composable () -> Unit,
@@ -323,13 +336,28 @@ private fun AlarmBottomSheetContent(
 ) {
     with(MaterialTheme) {
         Surface {
-            Box {
+            BoxWithConstraints(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = TopCenter,
+            ) {
+                val contentWidthModifier = if (maxWidth > SETTINGS_CONTENT_MAX_WIDTH) {
+                    Modifier.width(SETTINGS_CONTENT_MAX_WIDTH)
+                } else {
+                    Modifier.fillMaxWidth()
+                }
                 Column(
-                    Modifier
-                        .fillMaxWidth()
-                        .padding(spacing.extraMedium)
-                        .scrollable(rememberScrollState(), Vertical),
+                    contentWidthModifier
+                        .padding(
+                            start = spacing.extraMedium,
+                            end = spacing.extraMedium,
+                            bottom = spacing.extraMedium,
+                            top = spacing.medium
+                        )
+                        .verticalScroll(rememberScrollState()),
                 ) {
+                    if (showDismissButton) {
+                        SheetHeader(onCloseClick = onCloseClick)
+                    }
                     topSection()
                     HorizontalDivider(
                         modifier = Modifier.padding(
@@ -345,6 +373,28 @@ private fun AlarmBottomSheetContent(
                 }
                 dialogSection()
             }
+        }
+    }
+}
+
+@Composable
+private fun SheetHeader(
+    modifier: Modifier = Modifier,
+    onCloseClick: () -> Unit
+) {
+    Row(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(bottom = MaterialTheme.spacing.small),
+        horizontalArrangement = Arrangement.End,
+        verticalAlignment = CenterVertically,
+    ) {
+        IconButton(onClick = onCloseClick) {
+            Icon(
+                modifier = Modifier.size(32.dp),
+                imageVector = Close,
+                contentDescription = "Dismiss",
+            )
         }
     }
 }
@@ -510,6 +560,8 @@ private fun BottomSheetPreview() {
     MathAlarmTheme(darkTheme = true) {
         Surface {
             AlarmBottomSheetContent(
+                onCloseClick = {},
+                showDismissButton = true,
                 topSection = {
                     TopSection(
                         selectedDays = "TFFFFFF",
@@ -565,4 +617,5 @@ private object AlarmBottomSheet {
     val TEST_BUTTON_FONT_SIZE = 14.sp
     val SAVE_BUTTON_FONT_SIZE = 14.sp
     val SAVE_BUTTON_TOP_PADDING = 12.dp
+    val SETTINGS_CONTENT_MAX_WIDTH = 640.dp
 }

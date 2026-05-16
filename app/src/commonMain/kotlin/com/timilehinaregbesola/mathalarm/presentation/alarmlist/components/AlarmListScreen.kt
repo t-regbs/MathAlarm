@@ -2,12 +2,15 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.systemBarsPadding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -26,15 +29,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment.Companion.BottomEnd
 import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Alignment.Companion.CenterHorizontally
+import androidx.compose.ui.Alignment.Companion.TopCenter
 import androidx.compose.ui.Alignment.Companion.TopStart
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import cafe.adriel.lyricist.strings
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.platform.requestExactAlarmPermission
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnAddAlarmClick
@@ -44,7 +48,7 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.O
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnEditAlarmClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnUndoDeleteClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewModel
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.LIST_ALARM_BACKGROUND_ALPHA
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.LIST_CONTENT_MAX_WIDTH
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.LOADER_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.LOADING_SHIMMER_IMAGE_HEIGHT
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
@@ -94,6 +98,7 @@ fun ListDisplayScreen(
 
                 is Navigate -> {
                     val alarmJson = Json.encodeToString(AlarmMapper().mapFromDomainModel(event.alarm))
+                    backstack.removeAll { it is SettingsSheet }
                     backstack.add(SettingsSheet(alarmJson))
                     isLoading = false
                 }
@@ -133,82 +138,104 @@ fun ListDisplayScreen(
                 onClear = { viewModel.onEvent(OnClearAlarmsClick) },
                 onCloseDialog = { deleteAllAlarmsDialog = false },
             )
-            if (alarmList.isEmpty()) {
-                AlarmEmptyScreen(
-                    modifier = Modifier.systemBarsPadding(),
-                    onClickFab = {
-                        viewModel.onEvent(OnAddAlarmClick)
-                    },
-                    darkTheme = darkTheme,
-                )
-            } else {
-                Box(
+            Box(
+                modifier = Modifier
+                    .systemBarsPadding()
+                    .padding(horizontal = 16.dp)
+                    .fillMaxSize(),
+                contentAlignment = TopStart,
+            ) {
+                val alarmSetText = strings.alarmSet
+                BoxWithConstraints(
                     modifier = Modifier
-                        .systemBarsPadding()
-                        .padding(horizontal = 16.dp)
-                        .fillMaxSize()
-                        .background(
-                            color = LightGray.copy(alpha = LIST_ALARM_BACKGROUND_ALPHA),
-                        ),
-                    contentAlignment = TopStart,
+                        .align(TopCenter)
+                        .fillMaxSize(),
                 ) {
-                    val alarmSetText = strings.alarmSet
-                    AlarmListContent(
-                        alarmList = alarmList,
-                        darkTheme = darkTheme,
-                        onEditAlarm = {
-                            isLoading = true
-                            checkPermissionAndPerformAction(
-                                value = alarmPermission.hasExactAlarmPermission(),
-                                action = { viewModel.onEvent(OnEditAlarmClick(it)) },
-                                onPermissionAbsent = { showPermissionDialog = true },
+                    val listWidthModifier = if (maxWidth > LIST_CONTENT_MAX_WIDTH) {
+                        Modifier.width(LIST_CONTENT_MAX_WIDTH)
+                    } else {
+                        Modifier.fillMaxWidth()
+                    }
+
+                    Box(
+                        modifier = listWidthModifier
+                            .fillMaxHeight()
+                            .align(TopCenter),
+                    ) {
+                        if (alarmList.isEmpty()) {
+                            AlarmEmptyScreen(
+                                modifier = Modifier.fillMaxSize(),
+                                onClickFab = {
+                                    viewModel.onEvent(OnAddAlarmClick)
+                                },
+                                darkTheme = darkTheme,
                             )
-                        },
-                        onUpdateAlarm = {
-                            checkPermissionAndPerformAction(
-                                value = alarmPermission.hasExactAlarmPermission(),
-                                action = { viewModel.onUpdate(it) },
-                                onPermissionAbsent = { showPermissionDialog = true },
-                            )
-                        },
-                        onDeleteAlarm = {
-                            viewModel.onEvent(OnDeleteAlarmClick(it))
-                        },
-                        onCancelAlarm = viewModel::cancelAlarm,
-                        onScheduleAlarm = { curAlarm: Alarm, b: Boolean ->
-                            checkPermissionAndPerformAction(
-                                value = alarmPermission.hasExactAlarmPermission(),
-                                action = {
-                                    viewModel.scheduleAlarm(
-                                        alarm = curAlarm,
-                                        reschedule = b,
-                                        message = "$alarmSetText ${curAlarm.getTimeLeft()}",
+                        } else {
+                            AlarmListContent(
+                                modifier = Modifier.fillMaxSize(),
+                                alarmList = alarmList,
+                                darkTheme = darkTheme,
+                                onEditAlarm = {
+                                    isLoading = true
+                                    checkPermissionAndPerformAction(
+                                        value = alarmPermission.hasExactAlarmPermission(),
+                                        action = { viewModel.onEvent(OnEditAlarmClick(it)) },
+                                        onPermissionAbsent = { showPermissionDialog = true },
                                     )
                                 },
-                                onPermissionAbsent = { showPermissionDialog = true },
+                                onUpdateAlarm = {
+                                    checkPermissionAndPerformAction(
+                                        value = alarmPermission.hasExactAlarmPermission(),
+                                        action = { viewModel.onUpdate(it) },
+                                        onPermissionAbsent = { showPermissionDialog = true },
+                                    )
+                                },
+                                onDeleteAlarm = {
+                                    backstack.removeSettingsSheetFor(it)
+                                    viewModel.onEvent(OnDeleteAlarmClick(it))
+                                },
+                                onCancelAlarm = viewModel::cancelAlarm,
+                                onScheduleAlarm = { curAlarm: Alarm, b: Boolean ->
+                                    checkPermissionAndPerformAction(
+                                        value = alarmPermission.hasExactAlarmPermission(),
+                                        action = {
+                                            viewModel.scheduleAlarm(
+                                                alarm = curAlarm,
+                                                reschedule = b,
+                                                message = "$alarmSetText ${curAlarm.getTimeLeft()}",
+                                            )
+                                        },
+                                        onPermissionAbsent = { showPermissionDialog = true },
+                                    )
+                                }
+                            )
+                            val fabImage = painterResource(Res.drawable.fab_icon)
+                            AddAlarmFab(
+                                modifier = Modifier
+                                    .align(BottomEnd)
+                                    .padding(
+                                        end = 8.dp,
+                                        bottom = 16.dp,
+                                    ),
+                                fabImage = fabImage,
+                                onClick = {
+                                    isLoading = true
+                                    checkPermissionAndPerformAction(
+                                        value = alarmPermission.hasExactAlarmPermission(),
+                                        action = { viewModel.onEvent(OnAddAlarmClick) },
+                                        onPermissionAbsent = { showPermissionDialog = true },
+                                    )
+                                },
                             )
                         }
-                    )
-                    val fabImage = painterResource(Res.drawable.fab_icon)
-                    AddAlarmFab(
-                        modifier = Modifier.align(BottomEnd),
-                        fabImage = fabImage,
-                        onClick = {
-                            isLoading = true
-                            checkPermissionAndPerformAction(
-                                value = alarmPermission.hasExactAlarmPermission(),
-                                action = { viewModel.onEvent(OnAddAlarmClick) },
-                                onPermissionAbsent = { showPermissionDialog = true },
-                            )
-                        },
-                    )
-                    if (isLoading) {
-                        Loader(
-                            modifier = Modifier
-                                .size(LOADER_SIZE)
-                                .align(Center),
-                        )
                     }
+                }
+                if (isLoading) {
+                    Loader(
+                        modifier = Modifier
+                            .size(LOADER_SIZE)
+                            .align(Center),
+                    )
                 }
             }
         }
@@ -222,6 +249,7 @@ fun ListDisplayScreen(
 )
 @Composable
 private fun AlarmListContent(
+    modifier: Modifier = Modifier,
     alarmList: List<Alarm>,
     darkTheme: Boolean,
     onEditAlarm: (Alarm) -> Unit,
@@ -231,8 +259,7 @@ private fun AlarmListContent(
     onScheduleAlarm: (Alarm, Boolean) -> Unit,
 ) {
     Surface(
-        modifier = Modifier
-            .fillMaxSize(),
+        modifier = modifier,
     ) {
         LazyColumn(
             horizontalAlignment = CenterHorizontally,
@@ -263,6 +290,14 @@ private fun AlarmListContent(
                 )
             }
         }
+    }
+}
+
+private fun NavBackStack<NavKey>.removeSettingsSheetFor(alarm: Alarm) {
+    removeAll { destination ->
+        val settingsSheet = destination as? SettingsSheet ?: return@removeAll false
+        val settingsAlarm = Json.decodeFromString<AlarmEntity>(settingsSheet.settingsAlarm)
+        settingsAlarm.alarmId == alarm.alarmId
     }
 }
 
@@ -316,7 +351,7 @@ private fun AlarmListScreenPreview() {
 }
 
 private object AlarmListScreen {
-    const val LIST_ALARM_BACKGROUND_ALPHA = 0.1f
     val LOADING_SHIMMER_IMAGE_HEIGHT = 180.dp
     val LOADER_SIZE = 50.dp
+    val LIST_CONTENT_MAX_WIDTH = 720.dp
 }

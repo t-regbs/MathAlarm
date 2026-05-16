@@ -4,6 +4,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
@@ -52,6 +53,7 @@ import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.App
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.HELP_ICON_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.HELP_ITEM_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.SEND_TEXT
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.SETTINGS_CONTENT_MAX_WIDTH
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.SETTINGS_ICON_END_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.SETTINGS_WIDTH
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.SORT_SETTINGS_WIDTH
@@ -112,77 +114,89 @@ fun AppSettingsScreen(
                 )
             }
         ) { paddingVals ->
-            Column(Modifier.padding(paddingVals)) {
-                Column(modifier = Modifier.padding(horizontal = MaterialTheme.spacing.large)) {
-                    SegmentedSettingSection(
-                        title = strings.colorTheme,
-                        options = themeOptions,
-                        selectedOption = selectedThemeOption,
-                        isDark = isDark,
-                        optionWidth = SETTINGS_WIDTH,
-                        onOptionSelected = { onSelectionChange(it.third) }
-                    ) { option, isSelected ->
-                        Icon(
-                            modifier = Modifier.padding(end = SETTINGS_ICON_END_PADDING),
-                            imageVector = option.second,
-                            contentDescription = option.first
-                        )
-                        if (isSelected) {
+            BoxWithConstraints(
+                modifier = Modifier
+                    .padding(paddingVals)
+                    .fillMaxSize(),
+                contentAlignment = Alignment.TopCenter,
+            ) {
+                val contentWidthModifier = if (maxWidth > SETTINGS_CONTENT_MAX_WIDTH) {
+                    Modifier.width(SETTINGS_CONTENT_MAX_WIDTH)
+                } else {
+                    Modifier.fillMaxWidth()
+                }
+                Column(contentWidthModifier) {
+                    Column(modifier = Modifier.padding(horizontal = MaterialTheme.spacing.large)) {
+                        SegmentedSettingSection(
+                            title = strings.colorTheme,
+                            options = themeOptions,
+                            selectedOption = selectedThemeOption,
+                            isDark = isDark,
+                            optionWidth = SETTINGS_WIDTH,
+                            onOptionSelected = { onSelectionChange(it.third) }
+                        ) { option, isSelected ->
+                            Icon(
+                                modifier = Modifier.padding(end = SETTINGS_ICON_END_PADDING),
+                                imageVector = option.second,
+                                contentDescription = option.first
+                            )
+                            if (isSelected) {
+                                Text(
+                                    text = option.first,
+                                    style = typography.bodyLarge.merge(),
+                                    fontWeight = FontWeight.Bold
+                                )
+                            }
+                        }
+                        SegmentedSettingSection(
+                            title = strings.alarmOrder,
+                            supportingText = strings.alarmOrderDescription,
+                            options = sortOptions,
+                            selectedOption = selectedSortOption,
+                            isDark = isDark,
+                            optionWidth = SORT_SETTINGS_WIDTH,
+                            onOptionSelected = { pref.updateAlarmSortOrder(it.first) }
+                        ) { option, isSelected ->
                             Text(
-                                text = option.first,
+                                text = option.second,
                                 style = typography.bodyLarge.merge(),
-                                fontWeight = FontWeight.Bold
+                                fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
                             )
                         }
                     }
-                    SegmentedSettingSection(
-                        title = strings.alarmOrder,
-                        supportingText = strings.alarmOrderDescription,
-                        options = sortOptions,
-                        selectedOption = selectedSortOption,
-                        isDark = isDark,
-                        optionWidth = SORT_SETTINGS_WIDTH,
-                        onOptionSelected = { pref.updateAlarmSortOrder(it.first) }
-                    ) { option, isSelected ->
+                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
+                    HorizontalDivider(color = Color.LightGray)
+                    Column(modifier = Modifier.padding(horizontal = MaterialTheme.spacing.large)) {
+                        val emailChooserTitle = strings.emailChooserTitle
+                        val email = strings.supportEmail
+                        val shareTitle = strings.shareMathAlarm
                         Text(
-                            text = option.second,
-                            style = typography.bodyLarge.merge(),
-                            fontWeight = if (isSelected) FontWeight.Bold else FontWeight.Normal
+                            modifier = Modifier.padding(top = MaterialTheme.spacing.medium),
+                            text = strings.help,
+                            color = MaterialTheme.colorScheme.secondary
                         )
-                    }
-                }
-                Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
-                HorizontalDivider(color = Color.LightGray)
-                Column(modifier = Modifier.padding(horizontal = MaterialTheme.spacing.large)) {
-                    val emailChooserTitle = strings.emailChooserTitle
-                    val email = strings.supportEmail
-                    val shareTitle = strings.shareMathAlarm
-                    Text(
-                        modifier = Modifier.padding(top = MaterialTheme.spacing.medium),
-                        text = strings.help,
-                        color = MaterialTheme.colorScheme.secondary
-                    )
-                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
-                    HelpItem(
-                        image = Announcement,
-                        primaryText = strings.sendFeedback,
-                        detailText = strings.sendFeedbackMessage
-                    ) {
-                        sendEmail(
-                            chooserTitle = emailChooserTitle,
-                            email = email
-                        )
-                    }
-                    Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
-                    HelpItem(
-                        image = Share,
-                        primaryText = strings.share,
-                        detailText = strings.shareWithOthers
-                    ) {
-                        shareText(
-                            title = shareTitle,
-                            text = SEND_TEXT + getApplicationId()
-                        )
+                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+                        HelpItem(
+                            image = Announcement,
+                            primaryText = strings.sendFeedback,
+                            detailText = strings.sendFeedbackMessage
+                        ) {
+                            sendEmail(
+                                chooserTitle = emailChooserTitle,
+                                email = email
+                            )
+                        }
+                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
+                        HelpItem(
+                            image = Share,
+                            primaryText = strings.share,
+                            detailText = strings.shareWithOthers
+                        ) {
+                            shareText(
+                                title = shareTitle,
+                                text = SEND_TEXT + getApplicationId()
+                            )
+                        }
                     }
                 }
             }
@@ -322,4 +336,5 @@ private object AppSettingsScreen {
     val SETTINGS_ICON_END_PADDING = 2.dp
     val HELP_ITEM_FONT_SIZE = 18.sp
     val TOP_BAR_FONT_SIZE = 16.sp
+    val SETTINGS_CONTENT_MAX_WIDTH = 560.dp
 }

@@ -57,6 +57,7 @@ kotlinTest = "2.2.0"
 runner = "1.7.0"
 core = "1.7.0"
 compottie = "2.0.2"
+compose-material3-adaptive = "1.3.0-alpha02"
 ui = "1.10.0-rc02"
 uiToolingPreview = "1.10.0-rc02"
 
@@ -86,6 +87,7 @@ kermit = { module = "co.touchlab:kermit", version.ref = "kermit" }
 kermit-crashlytics = { module = "co.touchlab:kermit-crashlytics", version.ref = "kermit" }
 kotlinx-serialization = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx_serialization" }
 compottie-lite = { module = "io.github.alexzhirkevich:compottie-lite", version.ref = "compottie" }
+compose-material3-adaptive-navigation3 = { module = "org.jetbrains.compose.material3.adaptive:adaptive-navigation3", version.ref = "compose-material3-adaptive" }
 lyricist = { module = "cafe.adriel.lyricist:lyricist", version.ref = "lyricist" }
 lyricist-processor = { module = "cafe.adriel.lyricist:lyricist-processor", version.ref = "lyricist" }
 material3 = { module = "org.jetbrains.compose.material3:material3", version.ref = "material3" }

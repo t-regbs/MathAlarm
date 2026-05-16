@@ -96,6 +96,7 @@ kotlin {
 
                 implementation(libs.jetbrains.navigation3.ui)
                 implementation(libs.jetbrains.lifecycle.viewmodel.navigation3)
+                implementation(libs.compose.material3.adaptive.navigation3)
                 implementation(libs.kotlinx.datetime)
                 implementation(libs.multiplatform.settings.no.arg)
                 
@@ -130,8 +131,8 @@ android {
     namespace = "com.timilehinaregbesola.mathalarm"
     defaultConfig {
         applicationId = "com.timilehinaregbesola.mathalarm"
-        versionCode = 26
-        versionName = "2.4.3"
+        versionCode = 27
+        versionName = "2.5.0"
         minSdk = libs.versions.android.min.sdk.get().toInt()
         targetSdk = libs.versions.android.target.sdk.get().toInt()
         compileSdk = libs.versions.android.compile.sdk.get().toInt()
