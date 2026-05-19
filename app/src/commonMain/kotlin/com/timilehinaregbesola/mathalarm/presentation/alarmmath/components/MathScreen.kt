@@ -60,6 +60,8 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.platform.PlatformVibrator
+import com.timilehinaregbesola.mathalarm.platform.getDefaultAlarmTone
+import com.timilehinaregbesola.mathalarm.platform.shouldStartMathScreenAlarmAudio
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmSnack
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.AlarmMathViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathScreenEvent
@@ -161,13 +163,12 @@ fun MathScreen(
             vibrator = PlatformVibrator()
             vibrator?.startWaveform(DEFAULT_VIBRATION_PATTERN, REPEAT_INDEFINITELY)
         }
-        if (alarm.alarmTone.isNotEmpty()) {
-            if (fromSheet) {
-                try {
-                    viewModel.startAlarmWith(alarm.alarmTone)
-                    viewModel.startTimer()
-                } catch (_: Throwable) {
-                }
+        val alarmTone = alarm.alarmTone.ifEmpty { getDefaultAlarmTone() }
+        if (alarmTone.isNotEmpty() && shouldStartMathScreenAlarmAudio(fromSheet)) {
+            try {
+                viewModel.startAlarmWith(alarmTone)
+                viewModel.startTimer()
+            } catch (_: Throwable) {
             }
         } else {
             Logger.d("Tone not available")

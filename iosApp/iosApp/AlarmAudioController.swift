@@ -14,7 +14,7 @@ class AlarmAudioController: NSObject, AVAudioPlayerDelegate {
     private var isPlaying = false
     
     /// Default alarm sound name (bundled with app)
-    static let defaultSoundName = "alarm_default"
+    static let defaultSoundName = "alarm_classic"
     
     // System sound IDs that are known to work
     // See: https://github.com/TUNER88/iOSSystemSoundsLibrary

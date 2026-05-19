@@ -10,8 +10,19 @@
 		058557BB273AAA24004C7B11 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 058557BA273AAA24004C7B11 /* Assets.xcassets */; };
 		058557D9273AAEEB004C7B11 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 058557D8273AAEEB004C7B11 /* ContentView.swift */; };
 		2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2152FB032600AC8F00CF470E /* iOSApp.swift */; };
+		A1B2C3D4E5F60718293A4B51 /* alarm_classic.wav in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B41 /* alarm_classic.wav */; };
+		A1B2C3D4E5F60718293A4B52 /* alarm_gentle.wav in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B42 /* alarm_gentle.wav */; };
+		A1B2C3D4E5F60718293A4B53 /* alarm_digital.wav in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B43 /* alarm_digital.wav */; };
+		A1B2C3D4E5F60718293A4B54 /* alarm_nature.wav in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B44 /* alarm_nature.wav */; };
+		A1B2C3D4E5F60718293A4B55 /* alarm_urgent.wav in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B45 /* alarm_urgent.wav */; };
+		A1B2C3D4E5F60718293A4B61 /* alarm_classic.caf in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B56 /* alarm_classic.caf */; };
+		A1B2C3D4E5F60718293A4B62 /* alarm_gentle.caf in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B57 /* alarm_gentle.caf */; };
+		A1B2C3D4E5F60718293A4B63 /* alarm_digital.caf in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B58 /* alarm_digital.caf */; };
+		A1B2C3D4E5F60718293A4B64 /* alarm_nature.caf in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B59 /* alarm_nature.caf */; };
+		A1B2C3D4E5F60718293A4B65 /* alarm_urgent.caf in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5A /* alarm_urgent.caf */; };
 		ALARMKIT01273AAA24004C7B11 /* AlarmKitWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = ALARMKIT02273AAA24004C7B11 /* AlarmKitWrapper.swift */; };
 		ALARMAUDIO01273AAA24004C7B /* AlarmAudioController.swift in Sources */ = {isa = PBXBuildFile; fileRef = ALARMAUDIO02273AAA24004C7B /* AlarmAudioController.swift */; };
+		B4C0D1E2F3A4051627384950 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B4C0D1E2F3A405162738494F /* LaunchScreen.storyboard */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -20,8 +31,19 @@
 		2152FB032600AC8F00CF470E /* iOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
 		7555FF7B242A565900829871 /* MathAlarm.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MathAlarm.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7555FF8C242A565B00829871 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B41 /* alarm_classic.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = alarm_classic.wav; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B42 /* alarm_gentle.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = alarm_gentle.wav; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B43 /* alarm_digital.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = alarm_digital.wav; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B44 /* alarm_nature.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = alarm_nature.wav; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B45 /* alarm_urgent.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = alarm_urgent.wav; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B56 /* alarm_classic.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_classic.caf; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B57 /* alarm_gentle.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_gentle.caf; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B58 /* alarm_digital.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_digital.caf; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B59 /* alarm_nature.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_nature.caf; sourceTree = "<group>"; };
+		A1B2C3D4E5F60718293A4B5A /* alarm_urgent.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_urgent.caf; sourceTree = "<group>"; };
 		ALARMKIT02273AAA24004C7B11 /* AlarmKitWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmKitWrapper.swift; sourceTree = "<group>"; };
 		ALARMAUDIO02273AAA24004C7B /* AlarmAudioController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmAudioController.swift; sourceTree = "<group>"; };
+		B4C0D1E2F3A405162738494F /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -43,9 +65,28 @@
 				058557BA273AAA24004C7B11 /* Assets.xcassets */,
 				058557D8273AAEEB004C7B11 /* ContentView.swift */,
 				2152FB032600AC8F00CF470E /* iOSApp.swift */,
+				B4C0D1E2F3A405162738494F /* LaunchScreen.storyboard */,
 				7555FF8C242A565B00829871 /* Info.plist */,
+				A1B2C3D4E5F60718293A4B40 /* Sounds */,
 			);
 			path = iosApp;
+			sourceTree = "<group>";
+		};
+		A1B2C3D4E5F60718293A4B40 /* Sounds */ = {
+			isa = PBXGroup;
+			children = (
+				A1B2C3D4E5F60718293A4B41 /* alarm_classic.wav */,
+				A1B2C3D4E5F60718293A4B42 /* alarm_gentle.wav */,
+				A1B2C3D4E5F60718293A4B43 /* alarm_digital.wav */,
+				A1B2C3D4E5F60718293A4B44 /* alarm_nature.wav */,
+				A1B2C3D4E5F60718293A4B45 /* alarm_urgent.wav */,
+				A1B2C3D4E5F60718293A4B56 /* alarm_classic.caf */,
+				A1B2C3D4E5F60718293A4B57 /* alarm_gentle.caf */,
+				A1B2C3D4E5F60718293A4B58 /* alarm_digital.caf */,
+				A1B2C3D4E5F60718293A4B59 /* alarm_nature.caf */,
+				A1B2C3D4E5F60718293A4B5A /* alarm_urgent.caf */,
+			);
+			path = Sounds;
 			sourceTree = "<group>";
 		};
 		7555FF72242A565900829871 = {
@@ -132,6 +173,17 @@
 			buildActionMask = 2147483647;
 			files = (
 				058557BB273AAA24004C7B11 /* Assets.xcassets in Resources */,
+				A1B2C3D4E5F60718293A4B51 /* alarm_classic.wav in Resources */,
+				A1B2C3D4E5F60718293A4B52 /* alarm_gentle.wav in Resources */,
+				A1B2C3D4E5F60718293A4B53 /* alarm_digital.wav in Resources */,
+				A1B2C3D4E5F60718293A4B54 /* alarm_nature.wav in Resources */,
+				A1B2C3D4E5F60718293A4B55 /* alarm_urgent.wav in Resources */,
+				A1B2C3D4E5F60718293A4B61 /* alarm_classic.caf in Resources */,
+				A1B2C3D4E5F60718293A4B62 /* alarm_gentle.caf in Resources */,
+				A1B2C3D4E5F60718293A4B63 /* alarm_digital.caf in Resources */,
+				A1B2C3D4E5F60718293A4B64 /* alarm_nature.caf in Resources */,
+				A1B2C3D4E5F60718293A4B65 /* alarm_urgent.caf in Resources */,
+				B4C0D1E2F3A4051627384950 /* LaunchScreen.storyboard in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -154,7 +206,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd \"$SRCROOT/..\"\n./gradlew :app:embedAndSignAppleFrameworkForXcode\n";
+			shellScript = "cd \"$SRCROOT/..\"\n\nCOMPOSE_IOS_PLATFORM=\"$PLATFORM_NAME\"\nCOMPOSE_IOS_ARCHS=\"$CURRENT_ARCH\"\n\nif [ -z \"$COMPOSE_IOS_ARCHS\" ] || [ \"$COMPOSE_IOS_ARCHS\" = \"undefined_arch\" ]; then\n  case \"$SDK_NAME\" in\n    iphonesimulator*) COMPOSE_IOS_ARCHS=\"arm64\" ;;\n    iphoneos*) COMPOSE_IOS_ARCHS=\"arm64\" ;;\n    *) COMPOSE_IOS_ARCHS=\"$ARCHS\" ;;\n  esac\nfi\n\n./gradlew \\\n  -Pcompose.ios.resources.platform=\"$COMPOSE_IOS_PLATFORM\" \\\n  -Pcompose.ios.resources.archs=\"$COMPOSE_IOS_ARCHS\" \\\n  :app:embedAndSignAppleFrameworkForXcode\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -296,6 +348,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = AAM7WVDGCW;
 				ENABLE_PREVIEWS = YES;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)/../app/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
@@ -324,6 +377,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				DEVELOPMENT_TEAM = AAM7WVDGCW;
 				ENABLE_PREVIEWS = YES;
+				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
 					"$(SRCROOT)/../app/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",

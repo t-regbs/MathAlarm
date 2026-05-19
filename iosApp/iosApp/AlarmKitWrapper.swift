@@ -4,6 +4,11 @@ import app  // Kotlin framework (current interop)
 import AlarmKit
 import AppIntents
 
+@available(iOS 26, *)
+private extension Color {
+    static let mathAlarmGreen = Color(red: 0.11, green: 0.98, blue: 0.37)
+}
+
 // MARK: - Alarm Metadata
 
 /// Simple metadata for MathAlarm alarms
@@ -165,8 +170,28 @@ struct StopAlarmIntent: LiveActivityIntent {
 /// Create deeplink JSON from alarm data
 @available(iOS 26, *)
 private func createDeeplinkJson(from data: MathAlarmData) -> String {
-    let vibrateStr = data.vibrate ? "true" : "false"
-    return "{\"alarmId\":\(data.alarmId),\"hour\":\(data.hour),\"minute\":\(data.minute),\"repeat\":false,\"repeatDays\":\"FFFFFFF\",\"isOn\":true,\"difficulty\":\(data.difficulty),\"alarmTone\":\"\(data.alarmTone)\",\"vibrate\":\(vibrateStr),\"snooze\":\(data.snooze),\"title\":\"\(data.title)\",\"isSaved\":true}"
+    let payload: [String: Any] = [
+        "alarmId": data.alarmId,
+        "hour": data.hour,
+        "minute": data.minute,
+        "repeat": false,
+        "repeatDays": "FFFFFFF",
+        "isOn": true,
+        "difficulty": data.difficulty,
+        "alarmTone": data.alarmTone,
+        "vibrate": data.vibrate,
+        "snooze": data.snooze,
+        "title": data.title,
+        "isSaved": true
+    ]
+
+    do {
+        let jsonData = try JSONSerialization.data(withJSONObject: payload)
+        return String(data: jsonData, encoding: .utf8) ?? "{}"
+    } catch {
+        print("StopAlarmIntent: Failed to encode deeplink JSON: \(error)")
+        return "{}"
+    }
 }
 
 /// Intent to snooze an alarm
@@ -227,8 +252,8 @@ extension AlarmButton {
     
     static let repeatButton = AlarmButton(
         text: LocalizedStringResource("Snooze"),
-        textColor: .blue,
-        systemImageName: "arrow.clockwise"
+        textColor: .mathAlarmGreen,
+        systemImageName: "zzz"
     )
     
     static let pauseButton = AlarmButton(
@@ -315,6 +340,29 @@ class AlarmKitWrapperImpl: NSObject {
             isAuthorized = true
         @unknown default:
             throw AlarmKitError.unknownAuthState
+        }
+    }
+
+    @available(iOS 26, *)
+    private func hasAlarmKitAuthorization() -> Bool {
+        let manager = AlarmManager.shared
+
+        switch manager.authorizationState {
+        case .authorized:
+            isAuthorized = true
+            return true
+        case .notDetermined:
+            print("AlarmKitWrapper: Authorization not determined; using notification fallback")
+            isAuthorized = false
+            return false
+        case .denied:
+            print("AlarmKitWrapper: Authorization denied; using notification fallback")
+            isAuthorized = false
+            return false
+        @unknown default:
+            print("AlarmKitWrapper: Unknown authorization state; using notification fallback")
+            isAuthorized = false
+            return false
         }
     }
     
@@ -433,6 +481,10 @@ class AlarmKitWrapperImpl: NSObject {
         guard #available(iOS 26, *) else {
             return false
         }
+
+        guard hasAlarmKitAuthorization() else {
+            return false
+        }
         
         return scheduleWithAlarmKit(
             alarmId: alarmId,
@@ -504,8 +556,10 @@ class AlarmKitWrapperImpl: NSObject {
             do {
                 let manager = AlarmManager.shared
                 
-                // IMPORTANT: Ensure we have authorization before scheduling
-                try await self.ensureAuthorized()
+                guard self.hasAlarmKitAuthorization() else {
+                    print("AlarmKitWrapper: Authorization changed before scheduling")
+                    return
+                }
                 print("AlarmKitWrapper: Authorization confirmed")
                 
                 let alarmUUID = UUID()
@@ -533,10 +587,10 @@ class AlarmKitWrapperImpl: NSObject {
                 print("AlarmKitWrapper: Created schedule - recurrence: \(recurrence)")
                 
                 // Create alarm presentation with "Solve Math" as the stop button
-                let alertTitle = title.isEmpty ? "Math Alarm" : title
+                let alertTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
                 let solveButton = AlarmButton(
                     text: LocalizedStringResource("Solve Math"),
-                    textColor: .green,
+                    textColor: .mathAlarmGreen,
                     systemImageName: "function"
                 )
                 let alertContent = AlarmPresentation.Alert(
@@ -566,7 +620,7 @@ class AlarmKitWrapperImpl: NSObject {
                 let attributes = AlarmAttributes(
                     presentation: presentation,
                     metadata: metadata,
-                    tintColor: Color.blue
+                    tintColor: .mathAlarmGreen
                 )
                 
                 // Create countdown duration for snooze (postAlert is snooze time)
@@ -578,62 +632,34 @@ class AlarmKitWrapperImpl: NSObject {
                 let stopIntent = StopAlarmIntent(alarmUUID: alarmUUID)
                 let snoozeIntent: SnoozeAlarmIntent? = snoozeMinutes > 0 ? SnoozeAlarmIntent(alarmUUID: alarmUUID) : nil
                 
-                // Create alarm configuration
-                // Note on AlarmKit sounds (from https://levelup.gitconnected.com/swiftui-alarm-app-copycat-with-alarmkit-wwdc-2025-part-2-5c3cb2194c54):
-                // - .default does NOT play any sound (AlarmKit bug/quirk)
-                // - .named("") plays the default system alarm sound
-                // - .named("customSound") plays a custom sound from bundle
-                let hasCustomSound = !soundName.isEmpty && Bundle.main.url(forResource: soundName, withExtension: "caf") != nil
-                
+                // AlarmKit uses ActivityKit AlertSound. Use the bundled CAF files
+                // for system-level alarm playback and keep the source tone id in
+                // metadata for in-app looping playback.
+                let alertSoundName = self.alertSoundName(for: soundName)
                 let configuration: MathAlarmConfiguration
                 if countdownDuration == nil {
                     // Traditional alarm without countdown - use .alarm() factory
                     print("AlarmKitWrapper: Creating traditional alarm configuration")
-                    if hasCustomSound {
-                        print("AlarmKitWrapper: Using custom sound: \(soundName)")
-                        configuration = MathAlarmConfiguration.alarm(
-                            schedule: schedule,
-                            attributes: attributes,
-                            stopIntent: stopIntent,
-                            secondaryIntent: snoozeIntent,
-                            sound: .named(soundName)
-                        )
-                    } else {
-                        // Using .named("") to get default system alarm sound
-                        print("AlarmKitWrapper: Using default system alarm sound via .named(\"\")")
-                        configuration = MathAlarmConfiguration.alarm(
-                            schedule: schedule,
-                            attributes: attributes,
-                            stopIntent: stopIntent,
-                            secondaryIntent: snoozeIntent,
-                            sound: .named("")
-                        )
-                    }
+                    print("AlarmKitWrapper: Using custom alarm sound: \(alertSoundName)")
+                    configuration = MathAlarmConfiguration.alarm(
+                        schedule: schedule,
+                        attributes: attributes,
+                        stopIntent: stopIntent,
+                        secondaryIntent: snoozeIntent,
+                        sound: .named(alertSoundName)
+                    )
                 } else {
                     // Alarm with countdown/snooze - use generic initializer
                     print("AlarmKitWrapper: Creating alarm with countdown configuration")
-                    if hasCustomSound {
-                        print("AlarmKitWrapper: Using custom sound: \(soundName)")
-                        configuration = MathAlarmConfiguration(
-                            countdownDuration: countdownDuration,
-                            schedule: schedule,
-                            attributes: attributes,
-                            stopIntent: stopIntent,
-                            secondaryIntent: snoozeIntent,
-                            sound: .named(soundName)
-                        )
-                    } else {
-                        // Using .named("") to get default system alarm sound
-                        print("AlarmKitWrapper: Using default system alarm sound via .named(\"\")")
-                        configuration = MathAlarmConfiguration(
-                            countdownDuration: countdownDuration,
-                            schedule: schedule,
-                            attributes: attributes,
-                            stopIntent: stopIntent,
-                            secondaryIntent: snoozeIntent,
-                            sound: .named("")
-                        )
-                    }
+                    print("AlarmKitWrapper: Using custom alarm sound: \(alertSoundName)")
+                    configuration = MathAlarmConfiguration(
+                        countdownDuration: countdownDuration,
+                        schedule: schedule,
+                        attributes: attributes,
+                        stopIntent: stopIntent,
+                        secondaryIntent: snoozeIntent,
+                        sound: .named(alertSoundName)
+                    )
                 }
                 print("AlarmKitWrapper: Created configuration with intents, about to schedule...")
                 
@@ -663,7 +689,23 @@ class AlarmKitWrapperImpl: NSObject {
         
         return true
     }
-    
+
+    private func alertSoundName(for soundName: String) -> String {
+        let fallbackName = "alarm_classic"
+        let trimmedName = soundName.trimmingCharacters(in: .whitespacesAndNewlines)
+        let baseName = trimmedName.isEmpty
+            ? fallbackName
+            : (trimmedName as NSString).deletingPathExtension
+        let cafName = "\(baseName).caf"
+
+        if Bundle.main.url(forResource: baseName, withExtension: "caf") != nil {
+            return cafName
+        }
+
+        print("AlarmKitWrapper: Missing bundled CAF for \(baseName), falling back to \(fallbackName).caf")
+        return "\(fallbackName).caf"
+    }
+
     @available(iOS 26, *)
     private func cancelAlarmKitAlarm(alarmId: Int64) {
         guard let alarmUUID = scheduledAlarms[alarmId] else {

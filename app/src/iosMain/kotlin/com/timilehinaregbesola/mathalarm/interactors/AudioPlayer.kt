@@ -66,8 +66,7 @@ class IosAudioPlayer(
                     NSURL.URLWithString(dataSource)
                 }
                 else -> {
-                    // Try to load from bundle or use default alarm sound
-                    NSBundle.mainBundle.URLForResource(dataSource, withExtension = null)
+                    bundledSoundUrl(dataSource)
                 }
             }
             
@@ -104,5 +103,24 @@ class IosAudioPlayer(
     override fun setDataSourceFromString(alarmtone: String) {
         dataSource = alarmtone
         logger.d { "Data source set: $alarmtone" }
+    }
+
+    private fun bundledSoundUrl(soundName: String): NSURL? {
+        val resourceName = soundName.substringBeforeLast(".", soundName)
+        val resourceExtension = soundName.substringAfterLast(".", missingDelimiterValue = "")
+
+        if (resourceExtension.isNotEmpty()) {
+            NSBundle.mainBundle.URLForResource(resourceName, withExtension = resourceExtension)?.let {
+                return it
+            }
+        }
+
+        listOf("wav", "caf", "aiff", "mp3", "m4a", "aac").forEach { ext ->
+            NSBundle.mainBundle.URLForResource(resourceName, withExtension = ext)?.let {
+                return it
+            }
+        }
+
+        return NSBundle.mainBundle.URLForResource(resourceName, withExtension = null)
     }
 }

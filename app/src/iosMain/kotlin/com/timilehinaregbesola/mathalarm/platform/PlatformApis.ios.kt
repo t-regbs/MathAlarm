@@ -8,6 +8,11 @@ import platform.AudioToolbox.kSystemSoundID_Vibrate
 import platform.Foundation.NSBundle
 import platform.Foundation.NSURL
 import platform.UIKit.UIActivityViewController
+import platform.UIKit.UIAlertAction
+import platform.UIKit.UIAlertActionStyleCancel
+import platform.UIKit.UIAlertActionStyleDefault
+import platform.UIKit.UIAlertController
+import platform.UIKit.UIAlertControllerStyleAlert
 import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationOpenSettingsURLString
 import platform.UIKit.UIImpactFeedbackGenerator
@@ -17,6 +22,14 @@ import platform.UserNotifications.UNAuthorizationOptionBadge
 import platform.UserNotifications.UNAuthorizationOptionSound
 import platform.UserNotifications.UNAuthorizationStatusAuthorized
 import platform.UserNotifications.UNUserNotificationCenter
+
+private var cachedNotificationsEnabled = false
+
+private fun refreshNotificationStatus() {
+    UNUserNotificationCenter.currentNotificationCenter().getNotificationSettingsWithCompletionHandler { settings ->
+        cachedNotificationsEnabled = settings?.authorizationStatus == UNAuthorizationStatusAuthorized
+    }
+}
 
 @OptIn(ExperimentalForeignApi::class)
 actual class PlatformVibrator actual constructor() {
@@ -42,15 +55,23 @@ actual class PlatformVibrator actual constructor() {
 actual fun getRingtoneTitle(alarmTone: String): String {
     return when {
         alarmTone.isEmpty() -> "Default"
+        alarmTone == "alarm_classic" -> "Classic"
+        alarmTone == "alarm_digital" -> "Digital"
+        alarmTone == "alarm_gentle" -> "Gentle"
+        alarmTone == "alarm_nature" -> "Nature"
+        alarmTone == "alarm_urgent" -> "Urgent"
         alarmTone.contains("/") -> alarmTone.substringAfterLast("/").substringBeforeLast(".")
         else -> "Custom Sound"
     }
 }
 
 actual fun getDefaultAlarmTone(): String {
-    // Return a bundled default alarm sound or empty for system default
-    return ""
+    return "alarm_classic"
 }
+
+actual fun shouldStartMathScreenAlarmAudio(fromSheet: Boolean): Boolean = true
+
+actual fun isIosPlatform(): Boolean = true
 
 @OptIn(ExperimentalForeignApi::class)
 actual fun openNotificationSettings() {
@@ -67,18 +88,15 @@ actual fun requestExactAlarmPermission() {
     UNUserNotificationCenter.currentNotificationCenter().requestAuthorizationWithOptions(
         options = UNAuthorizationOptionAlert or UNAuthorizationOptionSound or UNAuthorizationOptionBadge
     ) { granted, _ ->
-        // Handled by callback
+        cachedNotificationsEnabled = granted
     }
 }
 
 actual fun toPlatformMediaSource(uriString: String): String = uriString
 
 actual fun areNotificationsEnabled(): Boolean {
-    var enabled = false
-    UNUserNotificationCenter.currentNotificationCenter().getNotificationSettingsWithCompletionHandler { settings ->
-        enabled = settings?.authorizationStatus == UNAuthorizationStatusAuthorized
-    }
-    return enabled
+    refreshNotificationStatus()
+    return cachedNotificationsEnabled
 }
 
 @OptIn(ExperimentalForeignApi::class)
@@ -111,17 +129,55 @@ actual fun getApplicationId(): String {
     return NSBundle.mainBundle.bundleIdentifier ?: "com.timilehinaregbesola.mathalarm"
 }
 
-actual class RingtonePickerLauncher {
+private val bundledAlarmTones = listOf(
+    "alarm_classic" to "Classic",
+    "alarm_digital" to "Digital",
+    "alarm_gentle" to "Gentle",
+    "alarm_nature" to "Nature",
+    "alarm_urgent" to "Urgent"
+)
+
+actual class RingtonePickerLauncher(
+    private val onResult: (String?) -> Unit
+) {
     actual fun launch(currentTone: String?) {
-        // iOS doesn't have a system ringtone picker like Android
-        // In a production app, you would implement a custom sound picker UI
-        // For now, this is a no-op - users can set sounds through app settings
+        val alert = UIAlertController.alertControllerWithTitle(
+            title = "Alarm Sound",
+            message = null,
+            preferredStyle = UIAlertControllerStyleAlert
+        )
+
+        bundledAlarmTones.forEach { (tone, title) ->
+            val actionTitle = if (tone == currentTone) "$title ✓" else title
+            alert.addAction(
+                UIAlertAction.actionWithTitle(
+                    title = actionTitle,
+                    style = UIAlertActionStyleDefault
+                ) { _ ->
+                    onResult(tone)
+                }
+            )
+        }
+
+        alert.addAction(
+            UIAlertAction.actionWithTitle(
+                title = "Cancel",
+                style = UIAlertActionStyleCancel,
+                handler = null
+            )
+        )
+
+        UIApplication.sharedApplication.keyWindow?.rootViewController?.presentViewController(
+            alert,
+            animated = true,
+            completion = null
+        )
     }
 }
 
 @Composable
 actual fun rememberRingtonePickerLauncher(onResult: (String?) -> Unit): RingtonePickerLauncher {
-    return remember { RingtonePickerLauncher() }
+    return remember(onResult) { RingtonePickerLauncher(onResult) }
 }
 
 @Composable
@@ -131,6 +187,7 @@ actual fun rememberNotificationPermissionHandler(onResult: (Boolean) -> Unit): (
             UNUserNotificationCenter.currentNotificationCenter().requestAuthorizationWithOptions(
                 options = UNAuthorizationOptionAlert or UNAuthorizationOptionSound or UNAuthorizationOptionBadge
             ) { granted, _ ->
+                cachedNotificationsEnabled = granted
                 onResult(granted)
             }
         }
@@ -144,6 +201,18 @@ actual fun checkRingtonePermissions(
 ) {
     // iOS doesn't need explicit permissions for bundled sounds
     // Media library access would need separate handling if using user's music
+}
+
+actual fun previewAlarmTone(alarmTone: String) {
+    com.timilehinaregbesola.mathalarm.interactors.IosAlarmAudioManager.startAlarm(
+        soundName = alarmTone,
+        vibrate = false,
+        volume = 0.75f,
+    )
+}
+
+actual fun stopAlarmTonePreview() {
+    com.timilehinaregbesola.mathalarm.interactors.IosAlarmAudioManager.stopAlarm()
 }
 
 actual fun stopPlatformAlarmAudio() {

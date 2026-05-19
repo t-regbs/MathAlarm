@@ -8,10 +8,13 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight.Companion.Normal
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.TextWithCheckbox.CHECKBOX_END_PADDING
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.TextWithCheckbox.DISABLED_ALPHA
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.TextWithCheckbox.ENABLED_ALPHA
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.TextWithCheckbox.TEXT_FONT_SIZE
 import androidx.compose.ui.tooling.preview.Preview
 
@@ -20,15 +23,17 @@ fun TextWithCheckbox(
     modifier: Modifier = Modifier,
     text: String,
     initialState: Boolean,
+    enabled: Boolean = true,
     onCheckChange: (Boolean) -> Unit,
 ) {
     Row(
-        modifier = modifier,
+        modifier = modifier.alpha(if (enabled) ENABLED_ALPHA else DISABLED_ALPHA),
         verticalAlignment = CenterVertically,
     ) {
         Checkbox(
             modifier = Modifier.padding(end = CHECKBOX_END_PADDING),
             checked = initialState,
+            enabled = enabled,
             onCheckedChange = { onCheckChange(it) },
         )
         Text(
@@ -50,4 +55,6 @@ private fun TextWithCheckboxPreview() {
 private object TextWithCheckbox {
     val CHECKBOX_END_PADDING = 14.dp
     val TEXT_FONT_SIZE = 16.sp
+    const val ENABLED_ALPHA = 1f
+    const val DISABLED_ALPHA = 0.6f
 }

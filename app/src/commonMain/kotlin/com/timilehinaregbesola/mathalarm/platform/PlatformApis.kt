@@ -16,6 +16,14 @@ expect fun getRingtoneTitle(alarmTone: String): String
 // Default alarm tone uri as String
 expect fun getDefaultAlarmTone(): String
 
+// Whether MathScreen should start its own alarm audio player.
+// Android keeps notification alarm audio in AlarmService; iOS starts audio from
+// the screen after notification tap because background notification audio is limited.
+expect fun shouldStartMathScreenAlarmAudio(fromSheet: Boolean): Boolean
+
+// True when running on iOS.
+expect fun isIosPlatform(): Boolean
+
 // Notification permission helpers
 expect fun openNotificationSettings()
 
@@ -74,6 +82,10 @@ expect fun checkRingtonePermissions(
     unplayableDialogTitle: String,
     unplayableDialogMessage: (String) -> String
 )
+
+expect fun previewAlarmTone(alarmTone: String)
+
+expect fun stopAlarmTonePreview()
 
 /**
  * Stop the platform alarm audio.

@@ -60,6 +60,10 @@ actual fun getRingtoneTitle(alarmTone: String): String {
 
 actual fun getDefaultAlarmTone(): String = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString()
 
+actual fun shouldStartMathScreenAlarmAudio(fromSheet: Boolean): Boolean = fromSheet
+
+actual fun isIosPlatform(): Boolean = false
+
 actual fun openNotificationSettings() {
     val context: Context = getKoinContext()
     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
@@ -243,6 +247,10 @@ actual fun checkRingtonePermissions(
         }
     }
 }
+
+actual fun previewAlarmTone(alarmTone: String) = Unit
+
+actual fun stopAlarmTonePreview() = Unit
 
 actual fun stopPlatformAlarmAudio() {
     // On Android, alarm audio is handled by the AlarmReceiver/service

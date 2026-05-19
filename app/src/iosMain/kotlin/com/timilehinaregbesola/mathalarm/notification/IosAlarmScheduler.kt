@@ -340,20 +340,16 @@ class IosAlarmScheduler(
      */
     private fun createNotificationContent(alarm: Alarm): UNMutableNotificationContent {
         return UNMutableNotificationContent().apply {
-            setTitle("Math Alarm")
-            setBody(alarm.title.ifEmpty { "Time to wake up! Solve the math problem to dismiss." })
-            
-            // Use default sound or custom sound if bundled
-            // The actual alarm sound is played by AlarmAudioController in Swift
-            // when the notification arrives (foreground) or is tapped (background)
-            val alarmSound = if (alarm.alarmTone.isNotEmpty()) {
-                // Try to use custom sound from bundle (must be .caf, .wav, .aiff, max 30 seconds)
-                UNNotificationSound.soundNamed(alarm.alarmTone)
-            } else {
-                // Use default notification sound - AlarmAudioController handles full alarm
-                UNNotificationSound.defaultSound
+            val alarmTitle = alarm.title.trim()
+            if (alarmTitle.isNotEmpty()) {
+                setTitle(alarmTitle)
             }
-            setSound(alarmSound)
+            setBody("Time to wake up! Solve the math problem to dismiss.")
+            
+            // iOS system alert sounds need a local filename with an extension.
+            // Use the bundled CAF versions for system delivery; the original tone
+            // id remains in userInfo for in-app looping playback.
+            setSound(UNNotificationSound.soundNamed(notificationSoundName(alarm.alarmTone)))
             
             // Set relevance score to maximum for alarm notifications
             setRelevanceScore(1.0)
@@ -382,7 +378,15 @@ class IosAlarmScheduler(
             setCategoryIdentifier(IosNotificationConstants.CATEGORY_IDENTIFIER_ALARM)
         }
     }
-    
+
+    private fun notificationSoundName(alarmTone: String): String {
+        val resourceName = alarmTone
+            .ifEmpty { "alarm_classic" }
+            .substringBeforeLast(".", alarmTone.ifEmpty { "alarm_classic" })
+
+        return "$resourceName.caf"
+    }
+
     /**
      * Cancel all notifications/alarms for an alarm
      * Cancels both AlarmKit alarms and notification-based alarms
