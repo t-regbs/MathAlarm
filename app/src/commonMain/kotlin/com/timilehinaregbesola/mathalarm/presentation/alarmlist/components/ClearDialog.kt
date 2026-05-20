@@ -7,6 +7,7 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import cafe.adriel.lyricist.strings
+import com.mohamedrejeb.calf.ui.dialog.uikit.AlertDialogIosActionStyle
 
 @Composable
 fun ClearDialog(
@@ -15,19 +16,19 @@ fun ClearDialog(
     onClear: () -> Unit,
     onCloseDialog: () -> Unit,
 ) {
-    val arguments = DialogArguments(
-        title = strings.clearAlarmDialogTitle,
-        text = strings.clearAlarmDialogText,
-        confirmText = strings.clearAlarmDialogConfirm,
-        dismissText = strings.clearAlarmDialogCancel,
-        onConfirmAction = {
-            onClear()
-            onCloseDialog()
-        },
-    )
     MathAlarmDialog(
         modifier = modifier,
-        arguments = arguments,
+        arguments = DialogArguments(
+            title = strings.clearAlarmDialogTitle,
+            text = strings.clearAlarmDialogText,
+            confirmText = strings.clearAlarmDialogConfirm,
+            dismissText = strings.clearAlarmDialogCancel,
+            onConfirmAction = {
+                onClear()
+                onCloseDialog()
+            },
+            iosConfirmButtonStyle = AlertDialogIosActionStyle.Destructive,
+        ),
         isDialogOpen = openDialog,
         onDismissRequest = onCloseDialog,
     )

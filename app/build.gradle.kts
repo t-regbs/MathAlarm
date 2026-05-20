@@ -40,6 +40,7 @@ kotlin {
         iosTarget.binaries.framework {
             baseName = "app"
             isStatic = true
+            export(libs.calf.ui)
         }
     }
     
@@ -78,6 +79,7 @@ kotlin {
                 implementation(libs.runtime)
                 implementation(libs.foundation)
                 implementation(libs.material3)
+                api(libs.calf.ui)
                 implementation(libs.ui)
                 implementation(libs.components.resources)
                 implementation(libs.ui.tooling.preview)

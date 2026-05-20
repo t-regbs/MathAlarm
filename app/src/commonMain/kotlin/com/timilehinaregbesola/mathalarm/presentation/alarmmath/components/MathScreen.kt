@@ -3,6 +3,7 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmmath.components
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement.Center
 import androidx.compose.foundation.layout.Arrangement.SpaceBetween
+import androidx.compose.foundation.layout.Arrangement.spacedBy
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.IntrinsicSize
@@ -18,7 +19,6 @@ import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
-import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
@@ -56,11 +56,13 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import cafe.adriel.lyricist.strings
 import co.touchlab.kermit.Logger
+import com.mohamedrejeb.calf.ui.button.AdaptiveButton as Button
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.platform.PlatformVibrator
 import com.timilehinaregbesola.mathalarm.platform.getDefaultAlarmTone
+import com.timilehinaregbesola.mathalarm.platform.isIosPlatform
 import com.timilehinaregbesola.mathalarm.platform.shouldStartMathScreenAlarmAudio
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmSnack
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.AlarmMathViewModel
@@ -81,6 +83,7 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathS
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.DEFAULT_VIBRATION_PATTERN
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ENTER_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.INITIAL_INDICATOR_PROGRESS
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.IOS_BUTTON_SPACING
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.MATH_CONTENT_MAX_WIDTH
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.MAX_ANSWER_CHARS
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.PROGRESS_INDICATOR_HEIGHT
@@ -340,6 +343,31 @@ private fun ButtonSection(
 ) {
     val snoozeEnabled = alarm.snooze != 0
 
+    if (isIosPlatform()) {
+        IosButtonSection(
+            snoozeEnabled = snoozeEnabled,
+            onClearClick = onClearClick,
+            onSnoozeClick = onSnoozeClick,
+            onEnterClick = onEnterClick,
+        )
+    } else {
+        AndroidButtonSection(
+            snoozeEnabled = snoozeEnabled,
+            onClearClick = onClearClick,
+            onSnoozeClick = onSnoozeClick,
+            onEnterClick = onEnterClick
+        )
+    }
+
+}
+
+@Composable
+private fun AndroidButtonSection(
+    snoozeEnabled: Boolean,
+    onClearClick: () -> Unit,
+    onSnoozeClick: () -> Unit,
+    onEnterClick: () -> Unit
+) {
     Row(
         modifier = Modifier
             .fillMaxWidth()
@@ -402,6 +430,85 @@ private fun ButtonSection(
     }
 }
 
+@Composable
+private fun IosButtonSection(
+    snoozeEnabled: Boolean,
+    onClearClick: () -> Unit,
+    onSnoozeClick: () -> Unit,
+    onEnterClick: () -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = BUTTON_SECTION_HORIZONTAL_PADDING),
+        verticalArrangement = spacedBy(IOS_BUTTON_SPACING),
+    ) {
+        if (snoozeEnabled) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = spacedBy(IOS_BUTTON_SPACING),
+            ) {
+                Button(
+                    modifier = Modifier.weight(1f),
+                    onClick = onClearClick,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = clearButtonColor,
+                        contentColor = White,
+                    ),
+                ) {
+                    Text(text = strings.clear.uppercase(), fontSize = CLEAR_FONT_SIZE)
+                }
+                Button(
+                    modifier = Modifier.weight(1f),
+                    onClick = onSnoozeClick,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = snoozeButtonColor,
+                        contentColor = White,
+                    ),
+                ) {
+                    Text(text = strings.snooze.uppercase(), fontSize = SNOOZE_FONT_SIZE)
+                }
+            }
+            Button(
+                modifier = Modifier.fillMaxWidth(),
+                onClick = onEnterClick,
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = enterButtonColor,
+                    contentColor = White,
+                ),
+            ) {
+                Text(text = strings.enter.uppercase(), fontSize = ENTER_FONT_SIZE)
+            }
+        } else {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = spacedBy(IOS_BUTTON_SPACING),
+            ) {
+                Button(
+                    modifier = Modifier.weight(1f),
+                    onClick = onClearClick,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = clearButtonColor,
+                        contentColor = White,
+                    ),
+                ) {
+                    Text(text = strings.clear.uppercase(), fontSize = CLEAR_FONT_SIZE)
+                }
+                Button(
+                    modifier = Modifier.weight(1f),
+                    onClick = onEnterClick,
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = enterButtonColor,
+                        contentColor = White,
+                    ),
+                ) {
+                    Text(text = strings.enter.uppercase(), fontSize = ENTER_FONT_SIZE)
+                }
+            }
+        }
+    }
+}
+
 @ExperimentalComposeUiApi
 @InternalCoroutinesApi
 @ExperimentalMaterial3Api
@@ -450,6 +557,7 @@ private object MathScreen {
     val ANSWER_FIELD_FONT_SIZE = 30.sp
     val BUTTON_SECTION_HORIZONTAL_PADDING = 56.dp
     val BUTTON_SECTION_HEIGHT = 120.dp
+    val IOS_BUTTON_SPACING = 8.dp
     val ENTER_FONT_SIZE = 19.sp
     val SNOOZE_FONT_SIZE = 19.sp
     val CLEAR_FONT_SIZE = 19.sp

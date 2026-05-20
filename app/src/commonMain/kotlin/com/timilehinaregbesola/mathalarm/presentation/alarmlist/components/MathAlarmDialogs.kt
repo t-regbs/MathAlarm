@@ -1,12 +1,17 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 
 import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import androidx.compose.ui.tooling.preview.Preview
+import com.mohamedrejeb.calf.ui.button.AdaptiveButton as Button
+import com.mohamedrejeb.calf.ui.ExperimentalCalfUiApi
+import com.mohamedrejeb.calf.ui.dialog.AdaptiveBasicAlertDialog
+import com.mohamedrejeb.calf.ui.dialog.uikit.AlertDialogIosAction
+import com.mohamedrejeb.calf.ui.dialog.uikit.AlertDialogIosActionStyle
+import com.mohamedrejeb.calf.ui.dialog.uikit.rememberAlertDialogIosProperties
 
 /**
  * Default dialog with confirm and dismiss button.
@@ -15,6 +20,7 @@ import androidx.compose.ui.tooling.preview.Preview
  * @param isDialogOpen flag to indicate if the dialog should be open
  * @param onDismissRequest function to be called user requests to dismiss the dialog
  */
+@OptIn(ExperimentalCalfUiApi::class)
 @Composable
 fun MathAlarmDialog(
     modifier: Modifier = Modifier,
@@ -24,27 +30,51 @@ fun MathAlarmDialog(
 ) {
     if (isDialogOpen) {
         with(arguments) {
-            AlertDialog(
+            AdaptiveBasicAlertDialog(
                 modifier = modifier,
                 onDismissRequest = onDismissRequest,
-                title = if (title != null) {
-                    { Text(text = title) }
-                } else {
-                    null
-                },
-                text = { Text(text = text) },
-                confirmButton = {
-                    Button(onClick = onConfirmAction) {
-                        Text(text = confirmText)
-                    }
-                },
-                dismissButton = if (dismissText != null) {
-                    {
-                        Button(onClick = onDismissRequest) {
-                            Text(text = dismissText)
+                iosProperties = rememberAlertDialogIosProperties(
+                    title = title.orEmpty(),
+                    text = text,
+                    actions = buildList {
+                        add(
+                            AlertDialogIosAction(
+                                title = confirmText,
+                                style = iosConfirmButtonStyle,
+                                onClick = onConfirmAction,
+                            )
+                        )
+                        dismissText?.let {
+                            add(
+                                AlertDialogIosAction(
+                                    title = it,
+                                    style = AlertDialogIosActionStyle.Cancel,
+                                    onClick = onDismissRequest,
+                                )
+                            )
                         }
-                    }
-                } else null,
+                    },
+                ),
+                materialContent = {
+                    AlertDialog(
+                        modifier = modifier,
+                        onDismissRequest = onDismissRequest,
+                        title = title?.let { { Text(text = it) } },
+                        text = { Text(text = text) },
+                        confirmButton = {
+                            Button(onClick = onConfirmAction) {
+                                Text(text = confirmText)
+                            }
+                        },
+                        dismissButton = dismissText?.let {
+                            {
+                                Button(onClick = onDismissRequest) {
+                                    Text(text = it)
+                                }
+                            }
+                        },
+                    )
+                }
             )
         }
     }
@@ -65,6 +95,7 @@ data class DialogArguments(
     val confirmText: String,
     val dismissText: String?,
     val onConfirmAction: () -> Unit,
+    val iosConfirmButtonStyle: AlertDialogIosActionStyle = AlertDialogIosActionStyle.Default,
 )
 
 @Suppress("UndocumentedPublicFunction")

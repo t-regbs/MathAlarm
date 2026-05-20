@@ -1,6 +1,5 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,6 +17,7 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.T
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.TextWithIcon.TEXT_WITH_ICON_HORIZONTAL_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.TextWithIcon.TEXT_WITH_ICON_TOP_PADDING
 import androidx.compose.ui.tooling.preview.Preview
+import com.mohamedrejeb.calf.ui.gesture.adaptiveClickable
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Notifications
 
 @Composable
@@ -42,7 +42,10 @@ fun TextWithIcon(
             contentDescription = null,
         )
         Text(
-            modifier = Modifier.clickable { onClick?.invoke() },
+            modifier = Modifier.adaptiveClickable(
+                enabled = onClick != null,
+                onClick = { onClick?.invoke() },
+            ),
             text = text,
             fontSize = TEXT_FONT_SIZE,
             fontWeight = Normal,

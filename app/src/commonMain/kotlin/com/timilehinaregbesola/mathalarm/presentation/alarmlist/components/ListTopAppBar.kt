@@ -5,29 +5,32 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.lyricist.strings
+import com.mohamedrejeb.calf.ui.button.AdaptiveIconButton
+import com.mohamedrejeb.calf.ui.ExperimentalCalfUiApi
+import com.mohamedrejeb.calf.ui.navigation.AdaptiveTopBar
+import com.mohamedrejeb.calf.ui.navigation.UIKitUIBarButtonItem
+import com.mohamedrejeb.calf.ui.uikit.UIKitImage
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.ListTopAppBar.APP_BAR_TITLE
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.ListTopAppBar.LIST_TITLE_FONT_SIZE
 import androidx.compose.ui.tooling.preview.Preview
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.DeleteSweep
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Settings
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalCalfUiApi::class)
 @Composable
 fun ListTopAppBar(
     modifier: Modifier = Modifier,
     openDialog: () -> Unit,
     onSettingsClick: () -> Unit,
 ) {
-    TopAppBar(
+    AdaptiveTopBar(
         modifier = Modifier
             .shadow(elevation = APP_BAR_TITLE)
             .then(modifier),
@@ -37,13 +40,24 @@ fun ListTopAppBar(
             }
         },
         actions = {
-            IconButton(onClick = { openDialog() }) {
+            AdaptiveIconButton(onClick = { openDialog() }) {
                 Icon(imageVector = DeleteSweep, contentDescription = null)
             }
-            IconButton(onClick = onSettingsClick) {
+            AdaptiveIconButton(onClick = onSettingsClick) {
                 Icon(imageVector = Settings, contentDescription = "Settings")
             }
         },
+        iosTitle = strings.alarms,
+        iosTrailingItems = listOf(
+            UIKitUIBarButtonItem(
+                image = UIKitImage.SystemName("xmark.bin"),
+                onClick = { openDialog() },
+            ),
+            UIKitUIBarButtonItem(
+                image = UIKitImage.SystemName("gearshape"),
+                onClick = onSettingsClick,
+            ),
+        ),
     )
 }
 

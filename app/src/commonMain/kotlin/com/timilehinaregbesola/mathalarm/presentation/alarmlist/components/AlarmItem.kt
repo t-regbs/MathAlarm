@@ -3,7 +3,6 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -18,7 +17,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -37,6 +35,8 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.lyricist.strings
+import com.mohamedrejeb.calf.ui.gesture.adaptiveClickable
+import com.mohamedrejeb.calf.ui.toggle.AdaptiveSwitch
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.ACTUAL_TIME_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.ALARM_INFO_FONT_SIZE
@@ -95,7 +95,7 @@ fun AlarmItem(
                             ALARM_ITEM_LIGHT_BACKGROUND_HEX
                         )
                     )
-                    .clickable(onClick = { expandItem = !expandItem }),
+                    .adaptiveClickable(onClick = { expandItem = !expandItem }),
             ) {
                 Column(modifier = Modifier) {
                     Row {
@@ -126,7 +126,7 @@ fun AlarmItem(
                                     .padding(bottom = small),
                             )
                         }
-                        Switch(
+                        AdaptiveSwitch(
                             modifier = Modifier
                                 .weight(EQUAL_WEIGHT)
                                 .padding(extraSmall)
@@ -188,7 +188,7 @@ fun AlarmItem(
                                 modifier = Modifier
                                     .weight(EQUAL_WEIGHT)
                                     .align(CenterVertically)
-                                    .clickable(
+                                    .adaptiveClickable(
                                         onClick = { expandItem = true },
                                     ),
                             )
@@ -234,16 +234,16 @@ private fun AlarmItemExpandableSection(
             ) {
                 Row(modifier = Modifier.weight(THREE_QUARTERS_WEIGHT)) {
                     Row(
-                        Modifier
+                        modifier = Modifier
                             .padding(end = extraMedium)
-                            .clickable(onClick = onDeleteAlarm),
+                            .adaptiveClickable(onClick = onDeleteAlarm),
                     ) {
                         Icon(
                             imageVector = Delete,
                             contentDescription = strings.delete,
                             modifier = Modifier
                                 .padding(end = extraSmall)
-                                .clickable(onClick = onDeleteAlarm),
+                                .adaptiveClickable(onClick = onDeleteAlarm),
                         )
                         Text(
                             text = strings.delete,
@@ -252,7 +252,7 @@ private fun AlarmItemExpandableSection(
                         )
                     }
                     Row(
-                        Modifier.clickable(onClick = onEditAlarm),
+                        modifier = Modifier.adaptiveClickable(onClick = onEditAlarm),
                     ) {
                         Icon(
                             imageVector = Edit,
@@ -273,7 +273,7 @@ private fun AlarmItemExpandableSection(
                     modifier = Modifier
                         .weight(EQUAL_WEIGHT)
                         .align(CenterVertically)
-                        .clickable(
+                        .adaptiveClickable(
                             onClick = onExpandClick,
                         ),
                 )

@@ -3,8 +3,6 @@ package com.timilehinaregbesola.mathalarm.navigation
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavEntry
@@ -12,9 +10,12 @@ import androidx.navigation3.scene.OverlayScene
 import androidx.navigation3.scene.Scene
 import androidx.navigation3.scene.SceneStrategy
 import androidx.navigation3.scene.SceneStrategyScope
+import com.mohamedrejeb.calf.ui.sheet.AdaptiveBottomSheet
+import com.mohamedrejeb.calf.ui.sheet.rememberAdaptiveSheetState
 import com.timilehinaregbesola.mathalarm.navigation.BottomSheetSceneStrategy.Companion.bottomSheet
+import com.timilehinaregbesola.mathalarm.platform.isIosPlatform
 
-/** An [OverlayScene] that renders an [entry] within a [ModalBottomSheet]. */
+/** An [OverlayScene] that renders an [entry] within an [AdaptiveBottomSheet]. */
 @OptIn(ExperimentalMaterial3Api::class)
 internal class BottomSheetScene<T : Any>(
     override val key: Any,
@@ -27,8 +28,8 @@ internal class BottomSheetScene<T : Any>(
     override val entries: List<NavEntry<T>> = listOf(bottomSheetEntry)
 
     override val content: @Composable (() -> Unit) = {
-        ModalBottomSheet(
-            sheetState = rememberModalBottomSheetState(
+        AdaptiveBottomSheet(
+            adaptiveSheetState = rememberAdaptiveSheetState(
                 skipPartiallyExpanded = true
             ),
             containerColor = MaterialTheme.colorScheme.background,
@@ -65,7 +66,7 @@ internal class BottomSheetScene<T : Any>(
 
 /**
  * A [SceneStrategy] that displays entries that have added [bottomSheet] to their [NavEntry.metadata]
- * within a [ModalBottomSheet] instance.
+ * within an [AdaptiveBottomSheet] instance.
  *
  * This strategy should always be added before any non-overlay scene strategies.
  */

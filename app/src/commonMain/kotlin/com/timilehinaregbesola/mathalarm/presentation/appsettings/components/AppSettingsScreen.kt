@@ -1,7 +1,6 @@
 package com.timilehinaregbesola.mathalarm.presentation.appsettings.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -18,13 +17,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,6 +34,12 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.lyricist.strings
+import com.mohamedrejeb.calf.ui.ExperimentalCalfUiApi
+import com.mohamedrejeb.calf.ui.button.AdaptiveIconButton
+import com.mohamedrejeb.calf.ui.gesture.adaptiveClickable
+import com.mohamedrejeb.calf.ui.navigation.AdaptiveTopBar
+import com.mohamedrejeb.calf.ui.navigation.UIKitUIBarButtonItem
+import com.mohamedrejeb.calf.ui.uikit.UIKitImage
 import com.timilehinaregbesola.mathalarm.platform.getApplicationId
 import com.timilehinaregbesola.mathalarm.platform.applyPlatformNightMode
 import com.timilehinaregbesola.mathalarm.platform.sendEmail
@@ -69,7 +72,7 @@ import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Smartphone
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.WbSunny
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalCalfUiApi::class)
 @Composable
 fun AppSettingsScreen(
     pref: AlarmPreferencesImpl,
@@ -94,7 +97,7 @@ fun AppSettingsScreen(
     Surface(modifier = Modifier.fillMaxSize()) {
         Scaffold(
             topBar = {
-                TopAppBar(
+                AdaptiveTopBar(
                     modifier = Modifier.shadow(APP_BAR_SHADOW),
                     title = {
                         Text(
@@ -103,7 +106,7 @@ fun AppSettingsScreen(
                         )
                     },
                     navigationIcon = {
-                        IconButton(
+                        AdaptiveIconButton(
                             modifier = Modifier.padding(start = MaterialTheme.spacing.medium),
                             onClick = onBackPress
                         ) {
@@ -112,7 +115,14 @@ fun AppSettingsScreen(
                                 contentDescription = strings.back
                             )
                         }
-                    }
+                    },
+                    iosTitle = strings.appSettings,
+                    iosLeadingItems = listOf(
+                        UIKitUIBarButtonItem(
+                            image = UIKitImage.SystemName("chevron.left"),
+                            onClick = onBackPress,
+                        ),
+                    ),
                 )
             }
         ) { paddingVals ->
@@ -251,7 +261,10 @@ private fun <T> SegmentedSettingSection(
                         modifier = Modifier
                             .width(optionWidth)
                             .clip(RoundedCornerShape(DEFAULT_SETTINGS_CORNER_SHAPE))
-                            .clickable { onOptionSelected(option) }
+                            .adaptiveClickable(
+                                shape = RoundedCornerShape(DEFAULT_SETTINGS_CORNER_SHAPE),
+                                onClick = { onOptionSelected(option) }
+                            )
                             .background(
                                 if (isSelected) {
                                     MaterialTheme.colorScheme.primary
@@ -288,7 +301,7 @@ fun HelpItem(
         modifier = modifier
             .fillMaxWidth()
             .padding(vertical = MaterialTheme.spacing.medium)
-            .clickable(onClick = onClick),
+            .adaptiveClickable(onClick = onClick),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Icon(

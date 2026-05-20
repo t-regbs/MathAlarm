@@ -1,6 +1,5 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -14,6 +13,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import cafe.adriel.lyricist.strings
 import androidx.compose.ui.tooling.preview.Preview
+import com.mohamedrejeb.calf.ui.gesture.adaptiveClickable
 
 @Composable
 fun DifficultyChooser(initialDiff: Int, onValueChange: (Int) -> Unit) {
@@ -23,7 +23,7 @@ fun DifficultyChooser(initialDiff: Int, onValueChange: (Int) -> Unit) {
         Text(
             items[initialDiff],
             modifier = Modifier
-                .clickable(onClick = { expanded = true }),
+                .adaptiveClickable(onClick = { expanded = true }),
         )
         DropdownMenu(
             expanded = expanded,
