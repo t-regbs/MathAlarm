@@ -56,7 +56,7 @@ crashlytics_plugin = "3.0.7"
 foundation = "1.11.1"
 google_services = "4.5.0"
 kotlin = "2.3.20"
-ksp = "2.3.10"
+ksp = "2.3.4"
 runtime = "1.11.1"
 composeMultiplatform = "1.11.1"
 kotlinStdlib = "2.3.20"
@@ -159,12 +159,13 @@ In `gradle/wrapper/gradle-wrapper.properties`, replace only `distributionUrl`:
 distributionUrl=https\://services.gradle.org/distributions/gradle-9.6.1-bin.zip
 ```
 
-- [ ] **Step 2: Upgrade AGP and remove the Kotlin Android plugin alias**
+- [ ] **Step 2: Upgrade AGP and KSP, then remove the Kotlin Android plugin alias**
 
 In `gradle/libs.versions.toml`, set:
 
 ```toml
 android_gradle_plugin = "9.3.1"
+ksp = "2.3.10"
 ```
 
 Delete this plugin alias entirely:
