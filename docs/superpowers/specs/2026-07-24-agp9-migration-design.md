@@ -50,7 +50,7 @@ In `shared` and `core`:
 
 - Retain Kotlin Multiplatform and `com.android.kotlin.multiplatform.library`.
 - Retain existing Android KMP source sets, tests, Compose resources, KSP, Room, and iOS targets.
-- Replace `withHostTestBuilder` with `withHostTest` in both KMP modules. Replace `withDeviceTestBuilder` with `withDeviceTest` in `core`, preserving its instrumentation runner and test source-set configuration.
+- Retain `withHostTestBuilder` in both KMP modules and `withDeviceTestBuilder` in `core`. AGP 9.3.1 still supports these APIs, and the device-test builder is required to preserve `sourceSetTreeName = "test"` before configuring the instrumentation runner.
 - Do not move source files or change Kotlin package declarations.
 
 ## Namespaces
