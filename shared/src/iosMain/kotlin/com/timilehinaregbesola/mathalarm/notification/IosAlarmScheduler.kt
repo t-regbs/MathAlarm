@@ -53,17 +53,15 @@ import kotlin.time.Instant
 class IosAlarmScheduler(
     private val logger: Logger
 ) {
-    private val notificationCenter = UNUserNotificationCenter.currentNotificationCenter()
-    
-    init {
-        registerNotificationCategories()
+    private val notificationCenter by lazy {
+        UNUserNotificationCenter.currentNotificationCenter().also(::registerNotificationCategories)
     }
     
     /**
      * Register notification categories with Snooze and Dismiss action buttons.
      * This enables interactive buttons on the alarm notification.
      */
-    private fun registerNotificationCategories() {
+    private fun registerNotificationCategories(notificationCenter: UNUserNotificationCenter) {
         logger.d { "Registering notification categories with actions" }
         
         val snoozeAction = UNNotificationAction.actionWithIdentifier(

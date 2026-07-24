@@ -13,7 +13,7 @@ The project has already completed the structural work required by AGP 9:
 - Android sources use `main`, `androidMain`, `androidHostTest`, and `androidDeviceTest` as appropriate.
 - The local JDK is 21 and CI uses JDK 17; both satisfy AGP 9's JDK 17 minimum.
 
-The current Gradle wrapper is 8.13 and must be upgraded. The current full `./gradlew build` first fails because `androidx.compose.ui:ui-test-junit4` has no version on the Android instrumented-test classpath. After that dependency is resolved, the build exposes a stale test expectation that predates the repository's descending alarm-order contract. The migration includes the BOM import and the one-line assertion correction required to make the full build green without changing runtime behavior.
+The current Gradle wrapper is 8.13 and must be upgraded. The current full `./gradlew build` first fails because `androidx.compose.ui:ui-test-junit4` has no version on the Android instrumented-test classpath. After that dependency is resolved, the build exposes a stale alarm-order assertion and an AlarmKit-only iOS test that eagerly initializes `UNUserNotificationCenter` outside an application bundle. The migration includes the BOM import, the one-line ordering correction, and lazy notification-center initialization required to make the full build green while preserving runtime notification behavior.
 
 ## Toolchain Versions
 
@@ -69,7 +69,7 @@ Add an AndroidX Compose BOM catalog entry at `2026.06.01` and import it on the `
 
 ## Behavior And Error Handling
 
-This is a build-system migration. It does not change alarm scheduling, notifications, persistence, UI behavior, application identity, version information, database schemas, package names, or iOS APIs.
+This is a build-system migration. It does not change alarm scheduling, notification outcomes, persistence, UI behavior, application identity, version information, database schemas, package names, or iOS APIs. The iOS scheduler delays notification-center acquisition and category registration until the first notification operation; AlarmKit-only pending checks no longer initialize an unused notification dependency.
 
 If migration reveals a removed AGP DSL or variant API in project build scripts, migrate it to the supported AGP 9 API. If a third-party Gradle plugin fails, use its stable AGP 9-compatible release. Do not add runtime wrappers or silently enable legacy AGP behavior. If no compatible stable plugin exists, stop and report the exact blocker rather than weakening the migration.
 

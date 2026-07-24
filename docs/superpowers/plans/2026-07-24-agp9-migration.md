@@ -29,6 +29,8 @@
 - Modify: `build.gradle.kts:1-14`
 - Modify: `androidApp/build.gradle.kts:108-116`
 - Modify: `core/src/commonTest/kotlin/com/timilehinaregbesola/mathalarm/usecases/GetSavedAlarmsTest.kt:46-49`
+- Modify: `shared/src/iosMain/kotlin/com/timilehinaregbesola/mathalarm/notification/IosAlarmScheduler.kt:53-90`
+- Modify: `shared/src/iosSimulatorArm64Test/kotlin/com/timilehinaregbesola/mathalarm/interactors/AlarmInteractorImplTest.kt:14-57`
 
 **Interfaces:**
 - Consumes: Existing AGP 8.11.1 build, version catalog aliases, and Android test dependency configuration.
@@ -143,7 +145,70 @@ Run:
 
 Expected: both commands PASS. The test now matches the descending alarm-ID contract; no production or fake repository code changes.
 
-- [ ] **Step 8: Inspect the Task 1 diff**
+- [ ] **Step 8: Reproduce the AlarmKit-only iOS test harness failure**
+
+Run:
+
+```bash
+./gradlew :shared:iosSimulatorArm64Test --tests "*AlarmInteractorImplTest*" --rerun-tasks
+```
+
+Expected before the fix: FAIL because constructing `IosAlarmScheduler` calls `UNUserNotificationCenter.currentNotificationCenter()` without an application bundle.
+
+- [ ] **Step 9: Lazily acquire the notification center**
+
+In `IosAlarmScheduler.kt`, replace the eager property and `init` block with:
+
+```kotlin
+private val notificationCenter by lazy {
+    UNUserNotificationCenter.currentNotificationCenter().also(::registerNotificationCategories)
+}
+```
+
+Change the category helper signature so the lazy initializer supplies the center explicitly:
+
+```kotlin
+private fun registerNotificationCategories(notificationCenter: UNUserNotificationCenter) {
+```
+
+Keep the existing helper body, including `notificationCenter.setNotificationCategories(...)`, unchanged. Every notification operation still acquires the center and registers categories before using it; AlarmKit-only pending checks avoid the unused dependency.
+
+- [ ] **Step 10: Keep the pending-occurrence test focused on its stated behavior**
+
+In `AlarmInteractorImplTest.kt`, replace:
+
+```kotlin
+interactor.schedule(alarm, 0L)
+```
+
+with:
+
+```kotlin
+nativeScheduler.markScheduled(alarm.alarmId)
+```
+
+Add this helper to `NativeAlarmSchedulerFake`:
+
+```kotlin
+fun markScheduled(alarmId: Long) {
+    scheduledAlarmIds.add(alarmId)
+}
+```
+
+Do not change the `NativeAlarmScheduler` implementation methods. The test now seeds its fake directly and exercises only `AlarmInteractorImpl.hasPendingOccurrence`, matching its name.
+
+- [ ] **Step 11: Verify the iOS test and full stable build**
+
+Run:
+
+```bash
+./gradlew :shared:iosSimulatorArm64Test --tests "*AlarmInteractorImplTest*" --rerun-tasks
+./gradlew build
+```
+
+Expected: both commands PASS. Existing non-fatal Kotlin hierarchy and source warnings may remain.
+
+- [ ] **Step 12: Inspect the Task 1 diff**
 
 Run:
 
@@ -151,7 +216,7 @@ Run:
 git diff --check
 ```
 
-Expected: `git diff --check` exits 0. The scoped diff contains only the version updates, BOM alias/import, root utility plugin updates, root KSP `apply false`, and corrected descending-order assertion described above.
+Expected: `git diff --check` exits 0. The scoped diff contains only the version updates, BOM alias/import, root utility plugin updates, root KSP `apply false`, corrected descending-order assertion, lazy iOS notification-center initialization, and focused AlarmKit test setup described above.
 
 ---
 
