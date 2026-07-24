@@ -28,6 +28,7 @@
 - Modify: `gradle/libs.versions.toml:1-64,65-118`
 - Modify: `build.gradle.kts:1-14`
 - Modify: `androidApp/build.gradle.kts:108-116`
+- Modify: `core/src/commonTest/kotlin/com/timilehinaregbesola/mathalarm/usecases/GetSavedAlarmsTest.kt:46-49`
 
 **Interfaces:**
 - Consumes: Existing AGP 8.11.1 build, version catalog aliases, and Android test dependency configuration.
@@ -123,9 +124,26 @@ Run:
 ./gradlew build
 ```
 
-Expected: PASS. In particular, `:androidApp:generateDebugAndroidTestLintModel` resolves `ui-test-junit4` through the BOM. Existing non-fatal Kotlin hierarchy and source warnings may remain.
+Expected: `:androidApp:generateDebugAndroidTestLintModel` resolves `ui-test-junit4` through the BOM. If the build then fails at `GetSavedAlarmsTest` with expected IDs `[2, 4]` and actual IDs `[4, 2]`, continue to Step 7; that assertion predates the descending order introduced in commit `091d4bb` and implemented by both the production Room query and repository fakes.
 
-- [ ] **Step 7: Inspect the Task 1 diff**
+- [ ] **Step 7: Correct the stale saved-alarm ordering expectation**
+
+In `GetSavedAlarmsTest.kt`, preserve the existing test setup and change only the final expected order:
+
+```kotlin
+assertEquals(listOf(alarm4, alarm2), alarms)
+```
+
+Run:
+
+```bash
+./gradlew :core:iosSimulatorArm64Test --tests "*GetSavedAlarmsTest*" --rerun-tasks
+./gradlew build
+```
+
+Expected: both commands PASS. The test now matches the descending alarm-ID contract; no production or fake repository code changes.
+
+- [ ] **Step 8: Inspect the Task 1 diff**
 
 Run:
 
@@ -133,7 +151,7 @@ Run:
 git diff --check
 ```
 
-Expected: `git diff --check` exits 0. The scoped diff contains only the version updates, BOM alias/import, root utility plugin updates, and root KSP `apply false` change described above.
+Expected: `git diff --check` exits 0. The scoped diff contains only the version updates, BOM alias/import, root utility plugin updates, root KSP `apply false`, and corrected descending-order assertion described above.
 
 ---
 

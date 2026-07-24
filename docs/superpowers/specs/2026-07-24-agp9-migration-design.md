@@ -13,7 +13,7 @@ The project has already completed the structural work required by AGP 9:
 - Android sources use `main`, `androidMain`, `androidHostTest`, and `androidDeviceTest` as appropriate.
 - The local JDK is 21 and CI uses JDK 17; both satisfy AGP 9's JDK 17 minimum.
 
-The current Gradle wrapper is 8.13 and must be upgraded. The current full `./gradlew build` also has one pre-existing dependency-resolution failure: `androidx.compose.ui:ui-test-junit4` has no version on the Android instrumented-test classpath. The migration includes the minimal dependency correction required to make the full build green.
+The current Gradle wrapper is 8.13 and must be upgraded. The current full `./gradlew build` first fails because `androidx.compose.ui:ui-test-junit4` has no version on the Android instrumented-test classpath. After that dependency is resolved, the build exposes a stale test expectation that predates the repository's descending alarm-order contract. The migration includes the BOM import and the one-line assertion correction required to make the full build green without changing runtime behavior.
 
 ## Toolchain Versions
 
