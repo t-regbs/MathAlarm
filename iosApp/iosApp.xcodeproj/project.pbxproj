@@ -206,7 +206,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd \"$SRCROOT/..\"\n\nCOMPOSE_IOS_PLATFORM=\"$PLATFORM_NAME\"\nCOMPOSE_IOS_ARCHS=\"$CURRENT_ARCH\"\n\nif [ -z \"$COMPOSE_IOS_ARCHS\" ] || [ \"$COMPOSE_IOS_ARCHS\" = \"undefined_arch\" ]; then\n  case \"$SDK_NAME\" in\n    iphonesimulator*) COMPOSE_IOS_ARCHS=\"arm64\" ;;\n    iphoneos*) COMPOSE_IOS_ARCHS=\"arm64\" ;;\n    *) COMPOSE_IOS_ARCHS=\"$ARCHS\" ;;\n  esac\nfi\n\n./gradlew \\\n  -Pcompose.ios.resources.platform=\"$COMPOSE_IOS_PLATFORM\" \\\n  -Pcompose.ios.resources.archs=\"$COMPOSE_IOS_ARCHS\" \\\n  :app:embedAndSignAppleFrameworkForXcode\n";
+			shellScript = "cd \"$SRCROOT/..\"\n\nCOMPOSE_IOS_PLATFORM=\"$PLATFORM_NAME\"\nCOMPOSE_IOS_ARCHS=\"$CURRENT_ARCH\"\n\nif [ -z \"$COMPOSE_IOS_ARCHS\" ] || [ \"$COMPOSE_IOS_ARCHS\" = \"undefined_arch\" ]; then\n  case \"$SDK_NAME\" in\n    iphonesimulator*) COMPOSE_IOS_ARCHS=\"arm64\" ;;\n    iphoneos*) COMPOSE_IOS_ARCHS=\"arm64\" ;;\n    *) COMPOSE_IOS_ARCHS=\"$ARCHS\" ;;\n  esac\nfi\n\n./gradlew \\\n  -Pcompose.ios.resources.platform=\"$COMPOSE_IOS_PLATFORM\" \\\n  -Pcompose.ios.resources.archs=\"$COMPOSE_IOS_ARCHS\" \\\n  :shared:embedAndSignAppleFrameworkForXcode\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -351,7 +351,7 @@
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(SRCROOT)/../app/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
+					"$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
 				);
 				INFOPLIST_FILE = iosApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -380,7 +380,7 @@
 				"EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64;
 				FRAMEWORK_SEARCH_PATHS = (
 					"$(inherited)",
-					"$(SRCROOT)/../app/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
+					"$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
 				);
 				INFOPLIST_FILE = iosApp/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (

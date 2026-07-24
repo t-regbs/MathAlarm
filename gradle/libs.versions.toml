@@ -65,8 +65,11 @@ calf = "0.11.0"
 [libraries]
 android-material = { module = "com.google.android.material:material", version.ref = "material" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx_activity_compose" }
+androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 androidx-compose-ui-test = { module = "androidx.compose.ui:ui-test-junit4" }
+androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx_ktx" }
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "splashscreen" }
+androidx-datastore-preferences = { module = "androidx.datastore:datastore-preferences", version.ref = "androidx_datastore" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "androidx_room" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "androidx_room" }
 androidx-sqlite-driver-android = { module = "androidx.sqlite:sqlite-framework", version = "2.6.2" }
@@ -101,6 +104,7 @@ multiplatform-settings-test = { module = "com.russhwolf:multiplatform-settings-t
 runtime = { module = "org.jetbrains.compose.runtime:runtime", version.ref = "runtime" }
 kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.ref = "datetime" }
 koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin-bom" }
+koin-android = { module = "io.insert-koin:koin-android" }
 koin-core = { module = "io.insert-koin:koin-core" }
 koin-compose = { module = "io.insert-koin:koin-compose" }
 koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel" }

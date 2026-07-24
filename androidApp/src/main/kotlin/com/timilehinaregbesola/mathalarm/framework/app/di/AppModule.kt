@@ -11,7 +11,6 @@ import co.touchlab.kermit.StaticConfig
 import co.touchlab.kermit.crashlytics.CrashlyticsLogWriter
 import co.touchlab.kermit.platformLogWriter
 import com.timilehinaregbesola.mathalarm.di.commonModule
-import com.timilehinaregbesola.mathalarm.di.getWith
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermission
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermissionImpl
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AndroidVersion
@@ -39,7 +38,6 @@ import org.koin.android.ext.koin.androidApplication
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.module.Module
 import org.koin.core.parameter.parametersOf
-import org.koin.core.scope.Scope
 import org.koin.dsl.module
 
 /**
@@ -66,10 +64,18 @@ val androidModule = module {
 
     single { PendingIntentIdGenerator() }
 
-    single { AlarmNotificationScheduler(androidContext(), getWith("AlarmNotificationScheduler"), get()) }
+    single {
+        AlarmNotificationScheduler(
+            androidContext(),
+            get { parametersOf("AlarmNotificationScheduler") },
+            get()
+        )
+    }
 
     // Android Alarm Interactor
-    single<AlarmInteractor> { AlarmInteractorImpl(get(), getWith("AlarmInteractorImpl")) }
+    single<AlarmInteractor> {
+        AlarmInteractorImpl(get(), get { parametersOf("AlarmInteractorImpl") })
+    }
 
     // Android Notification components
     @OptIn(ExperimentalMaterial3Api::class)
@@ -78,7 +84,7 @@ val androidModule = module {
             androidContext(),
             get(),
             get(),
-            getWith("MathAlarmNotification")
+            get { parametersOf("MathAlarmNotification") }
         )
     }
 
@@ -94,12 +100,14 @@ val androidModule = module {
     single<NotificationInteractor> {
         NotificationInteractorImpl(
             androidContext(),
-            getWith("NotificationInteractorImpl")
+            get { parametersOf("NotificationInteractorImpl") }
         )
     }
 
     // Android Audio Player
-    single<AudioPlayer> { PlayerWrapper(androidContext(), getWith("PlayerWrapper")) }
+    single<AudioPlayer> {
+        PlayerWrapper(androidContext(), get { parametersOf("PlayerWrapper") })
+    }
 
     // Permission abstractions
     single<AndroidVersion> { AndroidVersionImpl() }

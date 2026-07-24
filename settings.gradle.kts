@@ -25,6 +25,7 @@ dependencyResolutionManagement {
     }
 }
 
-include(":app")
-rootProject.name = "MathAlarm"
+include(":androidApp")
+include(":shared")
 include(":core")
+rootProject.name = "MathAlarm"

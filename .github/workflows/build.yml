@@ -30,16 +30,18 @@ jobs:
       - name: Run Core Module Tests
         run: ./gradlew :core:testAndroidHostTest
 
-      # Runs commonTest + Android unit tests for app module
-      - name: Run App Module Tests
-        run: ./gradlew :app:testDebugUnitTest
+      - name: Run Shared Module Tests
+        run: ./gradlew :shared:testAndroidHostTest
+
+      - name: Run Android App Tests
+        run: ./gradlew :androidApp:testDebugUnitTest
 
       - name: Build Debug APK
-        run: ./gradlew :app:assembleDebug
+        run: ./gradlew :androidApp:assembleDebug
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: debug-apk
-          path: app/build/outputs/apk/debug/*.apk
+          path: androidApp/build/outputs/apk/debug/*.apk
           retention-days: 7

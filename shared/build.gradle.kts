@@ -4,10 +4,8 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.swiftexport.ExperimentalSwiftExportDsl
 
 plugins {
-    alias(libs.plugins.android.gradle)
+    alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.serialization)
-    alias(libs.plugins.google.services)
-    alias(libs.plugins.crashlytics.gradle)
     alias(libs.plugins.ksp)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.composeMultiplatform)
@@ -24,12 +22,24 @@ room {
     schemaDirectory("$projectDir/schemas")
 }
 
+compose.resources {
+    packageOfResClass = "mathalarm.app.generated.resources"
+}
+
 kotlin {
-    androidTarget {
+    androidLibrary {
+        namespace = "com.timilehinaregbesola.mathalarm"
+        compileSdk = libs.versions.android.compile.sdk.get().toInt()
+        minSdk = libs.versions.android.min.sdk.get().toInt()
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
             allWarningsAsErrors = false
             freeCompilerArgs = listOf("-Xopt-in=kotlin.RequiresOptIn", "-Xopt-in=kotlin.Experimental")
+        }
+        androidResources {
+            enable = true
+        }
+        withHostTestBuilder {
         }
     }
 
@@ -63,13 +73,8 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
-            implementation(libs.androidx.sqlite.driver.android)
-            implementation(project.dependencies.platform(libs.firebase.bom))
-            implementation(libs.firebase.analytics)
-            implementation(libs.firebase.crashlytics)
-            implementation(libs.firebase.messaging)
-
-            implementation(libs.androidx.core.splashscreen)
+            implementation(libs.androidx.appcompat)
+            implementation(libs.androidx.core.ktx)
             implementation(libs.android.material)
         }
         commonMain {
@@ -129,78 +134,11 @@ kotlin {
     }
 }
 
-android {
-    namespace = "com.timilehinaregbesola.mathalarm"
-    defaultConfig {
-        applicationId = "com.timilehinaregbesola.mathalarm"
-        versionCode = 27
-        versionName = "2.5.0"
-        minSdk = libs.versions.android.min.sdk.get().toInt()
-        targetSdk = libs.versions.android.target.sdk.get().toInt()
-        compileSdk = libs.versions.android.compile.sdk.get().toInt()
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-    }
-    buildTypes {
-        getByName("release") {
-            isMinifyEnabled = false
-            proguardFiles("proguard-android-optimize.txt", "proguard-rules.pro")
-            signingConfig = signingConfigs.getByName("debug")
-        }
-
-        getByName("debug") {
-            applicationIdSuffix = ".debug"
-        }
-    }
-
-    compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_17
-        targetCompatibility = JavaVersion.VERSION_17
-    }
-
-    lint {
-        disable += setOf("LogNotTimber", "StringFormatInTimber", "ThrowableNotAtBeginning", "BinaryOperationInTimber", "TimberArgCount", "TimberArgTypes", "TimberTagLength", "TimberExceptionLogging")
-    }
-
-    buildFeatures {
-        compose = true
-        buildConfig = true
-    }
-
-    packagingOptions {
-        resources.excludes.apply {
-            add("META-INF/DEPENDENCIES")
-            add("META-INF/LICENSE")
-            add("META-INF/LICENSE.txt")
-            add("META-INF/license.txt")
-            add("META-INF/NOTICE")
-            add("META-INF/NOTICE.txt")
-            add("META-INF/notice.txt")
-            add("META-INF/AL2.0")
-        }
-    }
-
-    testOptions {
-        unitTests.isReturnDefaultValues = true
-        unitTests.isIncludeAndroidResources = true
-    }
-}
-
 dependencies {
-    implementation(fileTree(mapOf("dir" to "libs", "include" to listOf("*.jar"))))
-
-    testImplementation(libs.junit)
-    testImplementation(libs.coroutines.test)
-    testImplementation(libs.robolectric)
-    testImplementation(libs.androidx.core)
-    androidTestImplementation(libs.androidx.test.ext.junit)
-    androidTestImplementation(libs.androidx.test.espresso.core)
-    testImplementation(libs.mockk)
-
     // Room KMP - compiler for each platform
     add("kspAndroid", libs.androidx.room.compiler)
     add("kspIosArm64", libs.androidx.room.compiler)
     add("kspIosSimulatorArm64", libs.androidx.room.compiler)
-    androidTestImplementation(libs.androidx.compose.ui.test)
 
     add("kspCommonMainMetadata", libs.lyricist.processor)
 }

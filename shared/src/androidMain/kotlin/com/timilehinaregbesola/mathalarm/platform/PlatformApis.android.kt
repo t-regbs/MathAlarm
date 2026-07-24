@@ -24,7 +24,6 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import co.touchlab.kermit.Logger
-import com.timilehinaregbesola.mathalarm.BuildConfig
 import com.timilehinaregbesola.mathalarm.utils.PickRingtone
 import org.koin.core.context.GlobalContext
 
@@ -128,7 +127,7 @@ actual fun sendEmail(chooserTitle: String, email: String, subject: String, body:
     })
 }
 
-actual fun getApplicationId(): String = BuildConfig.APPLICATION_ID
+actual fun getApplicationId(): String = getKoinContext().packageName
 
 actual class RingtonePickerLauncher(
     private val launchPicker: (String?) -> Unit,

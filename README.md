@@ -11,8 +11,10 @@ A **Kotlin Multiplatform** alarm app for Android and iOS where you solve math pr
 
 The project follows **Clean Architecture** with the **MVVM** pattern:
 
-- **`:app`** - Main application module containing UI, navigation, and platform-specific implementations
+- **`:androidApp`** - Android application entry points, packaging, platform wiring, and Android resources
+- **`:shared`** - Shared Compose UI, data layer, and Android/iOS platform implementations
 - **`:core`** - Shared domain logic and business rules
+- **`iosApp/`** - Native iOS application consuming the framework produced by `:shared`
 
 ## Technologies Used
 
@@ -63,7 +65,7 @@ git clone https://github.com/t-regbs/MathAlarm.git
 ```
 
 ### Building for iOS
-The iOS app is located in the `iosApp/` directory. Open the Xcode project to build and run on iOS devices/simulators.
+The iOS app is located in the `iosApp/` directory and consumes the framework produced by `:shared`. Open the Xcode project to build and run on iOS devices/simulators.
 
 ## Contribution
 All contributions are welcome. Simply make a PR!
