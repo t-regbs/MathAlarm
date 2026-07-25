@@ -6,13 +6,14 @@
 
 **Architecture:** Preserve the existing `androidApp -> shared -> core` dependency graph. First update Gradle-facing plugins and resolve the existing Compose test dependency while AGP remains at 8.11.1; then update AGP, Gradle, and Android DSL configuration as one atomic build migration. No application source code or platform API changes are required.
 
-**Tech Stack:** AGP 9.3.1, Gradle 9.6.1, Kotlin 2.3.20, KSP 2.3.10, Compose Multiplatform 1.11.1, AndroidX Compose BOM 2026.06.01, Gradle Kotlin DSL, Kotlin Multiplatform, Room KMP, Firebase Gradle plugins.
+**Tech Stack:** AGP 9.3.1, Gradle 9.6.1, Kotlin 2.3.20, KSP 2.3.10, Compose Multiplatform 1.10.3, AndroidX Compose BOM 2026.06.01, Gradle Kotlin DSL, Kotlin Multiplatform, Room KMP, Firebase Gradle plugins.
 
 ## Global Constraints
 
 - Keep the module graph `androidApp -> shared -> core` and the existing iOS framework integration.
 - Keep Android application ID `com.timilehinaregbesola.mathalarm`, version code `27`, version name `2.5.0`, minimum SDK `26`, target/compile SDK `36`, and JVM target `17`.
-- Use AGP `9.3.1`, Gradle `9.6.1`, Kotlin `2.3.20`, KSP `2.3.10`, and Compose Multiplatform `1.11.1`.
+- Use AGP `9.3.1`, Gradle `9.6.1`, Kotlin `2.3.20`, KSP `2.3.10`, and Compose Multiplatform `1.10.3`.
+- Keep the Compose plugin/resources/runtime/UI/foundation/tooling set aligned at `1.10.3` for Calf and Compottie binary compatibility; do not upgrade Calf or Compottie in this migration.
 - Use AGP 9 built-in Kotlin in `androidApp`; do not add `android.builtInKotlin=false` or `android.newDsl=false`.
 - Keep KMP plus `com.android.kotlin.multiplatform.library` in `shared` and `core`.
 - Keep existing KMP test builders because AGP 9.3.1 supports them and `core` needs `sourceSetTreeName = "test"`.
@@ -517,3 +518,77 @@ git diff --check
 ```
 
 Expected: `git diff --check` exits 0. Status includes only the intended Gradle/version-catalog changes plus pre-existing unrelated worktree changes; no unrelated file has been reverted, staged, or overwritten.
+
+---
+
+### Task 4: Remove iOS Partial-Linkage Stubs
+
+**Files:**
+- Modify: `gradle/libs.versions.toml:13-16,32-34,60-63`
+- Modify: `docs/superpowers/specs/2026-07-24-agp9-migration-design.md`
+- Modify: `docs/superpowers/plans/2026-07-24-agp9-migration.md`
+
+**Interfaces:**
+- Consumes: The successful AGP 9 build from Tasks 1-3 and its incompatible CMP 1.11.1 resolution.
+- Produces: Debug/release iOS frameworks without partial-linkage stubs from Calf or Compottie using an aligned CMP 1.10.3 plugin and artifact set.
+
+- [ ] **Step 1: Remove failed experimental iOS constraints and reproduce the partial-linkage diagnostics**
+
+If `shared/build.gradle.kts` contains uncommitted strict Compose dependencies under `iosMain`, remove those four experimental entries first. Confirm `git diff -- shared/build.gradle.kts` is empty; Task 4 must start from the committed shared build configuration.
+
+Run:
+
+```bash
+set -o pipefail; ./gradlew :shared:linkDebugFrameworkIosSimulatorArm64 :shared:linkReleaseFrameworkIosSimulatorArm64 :shared:linkReleaseFrameworkIosArm64 --rerun-tasks --console=plain 2>&1 | tee /tmp/mathalarm-ios-link-before.log
+rg -n "No (function|property accessor) found for symbol|can not be called" /tmp/mathalarm-ios-link-before.log
+```
+
+Expected before the fix: the link exits 0, while `rg` finds Calf `ShaderBrush` and Compottie `Paint.shader` partial-linkage messages for release device and simulator frameworks.
+
+- [ ] **Step 2: Align the Compose plugin and artifacts at 1.10.3**
+
+In `gradle/libs.versions.toml`, set these exact values:
+
+```toml
+componentsResources = "1.10.3"
+foundation = "1.10.3"
+runtime = "1.10.3"
+composeMultiplatform = "1.10.3"
+ui = "1.10.3"
+uiToolingPreview = "1.10.3"
+```
+
+Keep Calf `0.11.0` and Compottie `2.0.2` unchanged.
+
+- [ ] **Step 3: Verify the iOS links have no partial-linkage stubs**
+
+Run:
+
+```bash
+set -o pipefail; ./gradlew :shared:linkDebugFrameworkIosSimulatorArm64 :shared:linkReleaseFrameworkIosSimulatorArm64 :shared:linkReleaseFrameworkIosArm64 --rerun-tasks --console=plain 2>&1 | tee /tmp/mathalarm-ios-link-after.log
+! rg -n "No (function|property accessor) found for symbol|can not be called" /tmp/mathalarm-ios-link-after.log
+```
+
+Expected: both pipeline checks exit 0, all three framework link tasks complete with `BUILD SUCCESSFUL`, generated `Res` references compile, and the negative `rg` emits no output.
+
+- [ ] **Step 4: Re-run the complete build**
+
+Run:
+
+```bash
+set -o pipefail; ./gradlew build --console=plain 2>&1 | tee /tmp/mathalarm-full-build.log
+! rg -n "No (function|property accessor) found for symbol|can not be called" /tmp/mathalarm-full-build.log
+```
+
+Expected: PASS. Existing hierarchy, expect/actual, bundle-ID, native stripping, and Gradle 10 deprecation warnings may remain, but no Calf/Compottie partial-linkage diagnostics may appear.
+
+- [ ] **Step 5: Inspect and commit the compatibility correction**
+
+Run:
+
+```bash
+git diff --check
+git diff -- gradle/libs.versions.toml docs/superpowers/specs/2026-07-24-agp9-migration-design.md docs/superpowers/plans/2026-07-24-agp9-migration.md
+```
+
+Expected: the scoped diff contains only the six Compose version changes to `1.10.3` and matching design/plan documentation. Stage only those three files and create a scoped compatibility commit.

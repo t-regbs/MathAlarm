@@ -23,14 +23,14 @@ Use this stable build-tool set:
 - Gradle wrapper: `9.6.1`
 - Kotlin Gradle Plugin and Kotlin-managed coordinates: `2.3.20`
 - Kotlin Symbol Processing: `2.3.10`
-- Compose Multiplatform plugin and directly versioned Compose core artifacts: `1.11.1`
+- Compose Multiplatform Gradle plugin and directly versioned Compose artifacts: `1.10.3`
 - AndroidX Compose BOM: `2026.06.01`
 - Google Services plugin: `4.5.0`
 - Firebase Crashlytics Gradle plugin: `3.0.7`
 - Ben Manes Versions plugin: `0.54.0`
 - Version Catalog Update plugin: `1.1.0`
 
-Other runtime library versions remain unchanged. Compose artifacts with independent release trains, including Material 3, are not forced to the Compose Multiplatform plugin version.
+Calf `0.11.0` and Compottie `2.0.2` are compiled against older Compose core APIs and emit Kotlin/Native partial-linkage stubs when the project resolves Compose `1.11.1`. Keep the Compose Multiplatform Gradle plugin, resources, runtime, UI, foundation, and tooling preview aligned at `1.10.3`. Other runtime library versions remain unchanged. Compose artifacts with independent release trains, including Material 3, are not forced to the Compose Multiplatform plugin version.
 
 ## Plugin And DSL Migration
 
@@ -84,7 +84,8 @@ Use existing tests and build artifacts rather than adding product tests for buil
 3. Run `./gradlew :core:testAndroidHostTest :shared:testAndroidHostTest :androidApp:testDebugUnitTest`.
 4. Run `./gradlew :androidApp:assembleDebug :androidApp:assembleRelease` to exercise manifests, resources, Google Services, Crashlytics, BuildConfig, packaging, and AGP 9 defaults.
 5. Run `./gradlew :shared:linkDebugFrameworkIosSimulatorArm64` to verify that shared iOS framework production still works.
-6. Search build configuration to confirm there is no `org.jetbrains.kotlin.android`, `org.jetbrains.kotlin.kapt`, `android.builtInKotlin=false`, `android.newDsl=false`, removed variant API, or duplicate Android namespace.
-7. Run `git diff --check` and inspect status to confirm only intended build configuration and documentation changed.
+6. Re-run debug/release iOS simulator links and the release iOS device link with plain output, and confirm they contain no partial-linkage messages such as `No function found for symbol` or `No property accessor found for symbol`.
+7. Search build configuration to confirm there is no `org.jetbrains.kotlin.android`, `org.jetbrains.kotlin.kapt`, `android.builtInKotlin=false`, `android.newDsl=false`, removed variant API, or duplicate Android namespace.
+8. Run `git diff --check` and inspect status to confirm only intended build configuration and documentation changed.
 
 An Xcode application build is not required for this migration. CI remains on JDK 17 and continues using the checked-in Gradle wrapper and existing Android test/build tasks.
