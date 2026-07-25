@@ -1,7 +1,4 @@
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
-    alias(libs.plugins.kotlin.gradle)
     alias(libs.plugins.android.gradle)
     alias(libs.plugins.google.services)
     alias(libs.plugins.crashlytics.gradle)
@@ -9,21 +6,16 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
 }
 
-kotlin {
-    compilerOptions {
-        jvmTarget.set(JvmTarget.JVM_17)
-    }
-}
-
 android {
     namespace = "com.timilehinaregbesola.mathalarm"
+    compileSdk = libs.versions.android.compile.sdk.get().toInt()
+
     defaultConfig {
         applicationId = "com.timilehinaregbesola.mathalarm"
         versionCode = 27
         versionName = "2.5.0"
         minSdk = libs.versions.android.min.sdk.get().toInt()
         targetSdk = libs.versions.android.target.sdk.get().toInt()
-        compileSdk = libs.versions.android.compile.sdk.get().toInt()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
     buildTypes {
@@ -52,16 +44,16 @@ android {
         buildConfig = true
     }
 
-    packagingOptions {
-        resources.excludes.apply {
-            add("META-INF/DEPENDENCIES")
-            add("META-INF/LICENSE")
-            add("META-INF/LICENSE.txt")
-            add("META-INF/license.txt")
-            add("META-INF/NOTICE")
-            add("META-INF/NOTICE.txt")
-            add("META-INF/notice.txt")
-            add("META-INF/AL2.0")
+    packaging {
+        resources {
+            excludes.add("META-INF/DEPENDENCIES")
+            excludes.add("META-INF/LICENSE")
+            excludes.add("META-INF/LICENSE.txt")
+            excludes.add("META-INF/license.txt")
+            excludes.add("META-INF/NOTICE")
+            excludes.add("META-INF/NOTICE.txt")
+            excludes.add("META-INF/notice.txt")
+            excludes.add("META-INF/AL2.0")
         }
     }
 

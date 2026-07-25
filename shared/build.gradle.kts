@@ -6,10 +6,10 @@ import org.jetbrains.kotlin.gradle.swiftexport.ExperimentalSwiftExportDsl
 plugins {
     alias(libs.plugins.android.kotlin.multiplatform.library)
     alias(libs.plugins.serialization)
-    alias(libs.plugins.ksp)
     alias(libs.plugins.compose.compiler)
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.kotlinMultiplatform)
+    alias(libs.plugins.ksp)
     alias(libs.plugins.androidx.room)
 }
 
@@ -28,7 +28,7 @@ compose.resources {
 
 kotlin {
     androidLibrary {
-        namespace = "com.timilehinaregbesola.mathalarm"
+        namespace = "com.timilehinaregbesola.mathalarm.shared"
         compileSdk = libs.versions.android.compile.sdk.get().toInt()
         minSdk = libs.versions.android.min.sdk.get().toInt()
         compilerOptions {

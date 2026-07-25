@@ -4,7 +4,6 @@ plugins {
     alias(libs.plugins.ksp) apply false
     alias(libs.plugins.compose.compiler) apply false
     alias(libs.plugins.android.gradle) apply false
-    alias(libs.plugins.kotlin.gradle) apply false
     alias(libs.plugins.google.services) apply false
     alias(libs.plugins.crashlytics.gradle) apply false
     alias(libs.plugins.composeMultiplatform) apply false
