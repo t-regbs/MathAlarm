@@ -372,7 +372,7 @@ class IosAlarmScheduler(
                 IosNotificationConstants.USER_INFO_IS_ON to alarm.isOn
             ))
             
-            // Set category for action buttons (registered in init)
+            // Set category for action buttons; registration occurs on first notification-center use.
             setCategoryIdentifier(IosNotificationConstants.CATEGORY_IDENTIFIER_ALARM)
         }
     }
