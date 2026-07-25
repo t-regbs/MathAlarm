@@ -46,7 +46,7 @@ import kotlin.time.Instant
  * falls back to UNUserNotificationCenter on iOS 15-25.
  * 
  * Following Alkaa's patterns:
- * - Registers notification categories with action buttons on init
+ * - Registers notification categories when the notification center is first used
  * - Uses NSDate for cleaner time conversion
  * - Separates notification display concerns to IosAlarmNotification
  */

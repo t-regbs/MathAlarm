@@ -418,6 +418,7 @@ Expected: `git diff --check` exits 0. No application source, manifest, resource,
 ### Task 3: Verify The Complete AGP 9 Migration
 
 **Files:**
+- Modify: `shared/src/iosMain/kotlin/com/timilehinaregbesola/mathalarm/notification/IosAlarmScheduler.kt:48-50`
 - Verify unchanged: `gradle.properties`
 - Verify unchanged: `.github/workflows/build.yml`
 - Verify unchanged: Android/iOS application sources and resources
@@ -482,7 +483,23 @@ com.timilehinaregbesola.mathalarm.shared
 com.timilehinaregbesola.mathalarm.core
 ```
 
-- [ ] **Step 6: Confirm CI remains compatible and inspect final changes**
+- [ ] **Step 6: Align the scheduler documentation with lazy initialization**
+
+In `IosAlarmScheduler.kt`, replace the stale KDoc bullet:
+
+```kotlin
+* - Registers notification categories with action buttons on init
+```
+
+with:
+
+```kotlin
+* - Registers notification categories when the notification center is first used
+```
+
+Do not change scheduler behavior in this step.
+
+- [ ] **Step 7: Confirm CI remains compatible and inspect final changes**
 
 Read `.github/workflows/build.yml` and verify it still uses JDK 17, the checked-in wrapper, and these tasks:
 
