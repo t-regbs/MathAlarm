@@ -46,24 +46,22 @@ import kotlin.time.Instant
  * falls back to UNUserNotificationCenter on iOS 15-25.
  * 
  * Following Alkaa's patterns:
- * - Registers notification categories with action buttons on init
+ * - Registers notification categories when the notification center is first used
  * - Uses NSDate for cleaner time conversion
  * - Separates notification display concerns to IosAlarmNotification
  */
 class IosAlarmScheduler(
     private val logger: Logger
 ) {
-    private val notificationCenter = UNUserNotificationCenter.currentNotificationCenter()
-    
-    init {
-        registerNotificationCategories()
+    private val notificationCenter by lazy {
+        UNUserNotificationCenter.currentNotificationCenter().also(::registerNotificationCategories)
     }
     
     /**
      * Register notification categories with Snooze and Dismiss action buttons.
      * This enables interactive buttons on the alarm notification.
      */
-    private fun registerNotificationCategories() {
+    private fun registerNotificationCategories(notificationCenter: UNUserNotificationCenter) {
         logger.d { "Registering notification categories with actions" }
         
         val snoozeAction = UNNotificationAction.actionWithIdentifier(
@@ -374,7 +372,7 @@ class IosAlarmScheduler(
                 IosNotificationConstants.USER_INFO_IS_ON to alarm.isOn
             ))
             
-            // Set category for action buttons (registered in init)
+            // Set category for action buttons; registration occurs on first notification-center use.
             setCategoryIdentifier(IosNotificationConstants.CATEGORY_IDENTIFIER_ALARM)
         }
     }

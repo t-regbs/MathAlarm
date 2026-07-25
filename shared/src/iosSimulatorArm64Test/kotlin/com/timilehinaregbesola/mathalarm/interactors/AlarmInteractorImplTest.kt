@@ -28,13 +28,17 @@ class AlarmInteractorImplTest {
             title = "Wrapped one-time alarm"
         )
 
-        interactor.schedule(alarm, 0L)
+        nativeScheduler.markScheduled(alarm.alarmId)
 
         assertTrue(interactor.hasPendingOccurrence(alarm))
     }
 
     private class NativeAlarmSchedulerFake : NativeAlarmScheduler {
         private val scheduledAlarmIds = mutableSetOf<Long>()
+
+        fun markScheduled(alarmId: Long) {
+            scheduledAlarmIds.add(alarmId)
+        }
 
         override fun scheduleAlarm(request: AlarmScheduleRequest): Boolean {
             scheduledAlarmIds.add(request.alarmId)

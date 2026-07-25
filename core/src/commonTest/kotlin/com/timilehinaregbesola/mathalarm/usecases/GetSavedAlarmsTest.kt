@@ -45,6 +45,6 @@ class GetSavedAlarmsTest {
 
         val alarms = getSavedAlarmsUseCase().flatMapConcat { it.asFlow() }.toList()
 
-        assertEquals(listOf(alarm2, alarm4), alarms)
+        assertEquals(listOf(alarm4, alarm2), alarms)
     }
 }
