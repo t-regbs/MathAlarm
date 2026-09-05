@@ -2,7 +2,6 @@ package com.timilehinaregbesola.mathalarm.fake
 
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.provider.AlarmTimeCalculator
-import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
 
 /**
@@ -11,7 +10,7 @@ import kotlin.time.ExperimentalTime
 @OptIn(ExperimentalTime::class)
 class AlarmTimeCalculatorFake : AlarmTimeCalculator {
     
-    private var currentTimeMillis: Long = Clock.System.now().toEpochMilliseconds()
+    private var currentTimeMillis: Long = 1_893_909_600_000L // 2030-01-06T06:00:00Z
     
     /**
      * Set a custom current time for testing.

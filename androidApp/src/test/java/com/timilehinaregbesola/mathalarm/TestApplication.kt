@@ -43,6 +43,8 @@ class TestApplication : Application() {
     }
     
     override fun onTerminate() {
+        org.koin.core.context.GlobalContext.get().get<com.timilehinaregbesola.mathalarm.coroutines.AppCoroutineScope>().cancel()
+        org.koin.core.context.GlobalContext.get().get<com.timilehinaregbesola.mathalarm.framework.database.AlarmDatabase>().close()
         stopKoin()
         super.onTerminate()
     }

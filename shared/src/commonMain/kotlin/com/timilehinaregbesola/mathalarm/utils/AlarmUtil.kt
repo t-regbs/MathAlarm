@@ -63,9 +63,12 @@ fun DayOfWeek.toIndex(): Int = when (this) {
  * Like getTodayDateTimeInSystemZone(), but enforces second=0.
  */
 @OptIn(ExperimentalTime::class)
-fun Alarm.initLocalDateTimeInSystemZone(): LocalDateTime {
-    val nowInstant = Clock.System.now()
-    val tz = TimeZone.currentSystemDefault()
+fun Alarm.initLocalDateTimeInSystemZone(
+    clock: Clock = Clock.System,
+    timeZone: TimeZone = TimeZone.currentSystemDefault()
+): LocalDateTime {
+    val nowInstant = clock.now()
+    val tz = timeZone
     val today = nowInstant.toLocalDateTime(tz).date
     return LocalDateTime(
         date = today,
@@ -81,8 +84,8 @@ fun Alarm.initLocalDateTimeInSystemZone(): LocalDateTime {
  * @return The next time the alarm will go off as an Instant, or null if the alarm has no repeat days set
  */
 @OptIn(ExperimentalTime::class)
-fun calculateNextAlarmTime(alarm: Alarm, timeZone: TimeZone = TimeZone.currentSystemDefault()): Instant? {
-    val nowInstant = Clock.System.now()
+fun calculateNextAlarmTime(alarm: Alarm, timeZone: TimeZone = TimeZone.currentSystemDefault(), clock: Clock = Clock.System): Instant? {
+    val nowInstant = clock.now()
     val localNow = nowInstant.toLocalDateTime(timeZone)
     val todayDate = localNow.date
 

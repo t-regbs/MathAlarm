@@ -10,7 +10,10 @@ import kotlin.time.ExperimentalTime
 /**
  * Provide the date and time to be used on the alarm use cases, respecting the Inversion of Control.
  */
-class DateTimeProviderImpl : DateTimeProvider {
+class DateTimeProviderImpl(
+    private val clock: Clock = Clock.System,
+    private val timeZone: () -> TimeZone = { TimeZone.currentSystemDefault() }
+) : DateTimeProvider {
 
     /**
      * Gets the current [LocalDateTime] in the system default time zone.
@@ -19,5 +22,5 @@ class DateTimeProviderImpl : DateTimeProvider {
      */
     @OptIn(ExperimentalTime::class)
     override fun getCurrentDateTime(): LocalDateTime =
-        Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
+        clock.now().toLocalDateTime(timeZone())
 }

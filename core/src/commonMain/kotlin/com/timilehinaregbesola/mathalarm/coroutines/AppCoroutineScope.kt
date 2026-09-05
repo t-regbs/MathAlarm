@@ -15,12 +15,14 @@ import kotlin.coroutines.CoroutineContext
  * - Can be properly cancelled if needed during app shutdown
  * 
  */
-class AppCoroutineScope : CoroutineScope {
+class AppCoroutineScope(
+    private val dispatcher: kotlinx.coroutines.CoroutineDispatcher = Dispatchers.Default
+) : CoroutineScope {
     
     private val job = SupervisorJob()
     
     override val coroutineContext: CoroutineContext
-        get() = Dispatchers.Default + job
+        get() = dispatcher + job
 
     /**
      * Launch a coroutine in the application scope.

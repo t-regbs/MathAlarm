@@ -11,7 +11,11 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.fake.DateTimeProviderFake
 import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.provider.DateTimeProvider
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.runTest
+import kotlinx.coroutines.test.TestCoroutineScheduler
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toLocalDateTime
+import kotlinx.datetime.toInstant
 import kotlinx.datetime.LocalDateTime
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -32,7 +36,9 @@ import java.util.concurrent.TimeUnit
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [Build.VERSION_CODES.R], application = TestApplication::class)
-class AlarmSystemEndToEndTest {
+@OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
+class AlarmSystemIntegrationTest {
+    private val testScheduler: TestCoroutineScheduler get() = GlobalContext.get().get()
 
     private lateinit var usecases: Usecases
     private lateinit var alarmRepository: AlarmRepository
@@ -56,6 +62,8 @@ class AlarmSystemEndToEndTest {
             alarmRepository = GlobalContext.get().get()
             dateTimeProvider = GlobalContext.get().get<DateTimeProvider>() as DateTimeProviderFake
             dateTimeProvider.clearFixedDateTime()
+            android.os.SystemClock.setCurrentTimeMillis(dateTimeProvider.getCurrentDateTime()
+                .toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds())
         } catch (e: Exception) {
             // If Koin is not initialized, skip these tests
             // In a production setup, ensure TestApplication properly initializes Koin
@@ -64,8 +72,10 @@ class AlarmSystemEndToEndTest {
     }
 
     @Test
-    fun `end-to-end multi-day alarm without repeat - Monday and Wednesday should both ring then stop`() = runBlocking {
+    fun `integration multi-day alarm without repeat - Monday and Wednesday should both ring then stop`() = runTest(testScheduler) {
         dateTimeProvider.setFixedDateTime(LocalDateTime(2026, 4, 19, 6, 0))
+        android.os.SystemClock.setCurrentTimeMillis(dateTimeProvider.getCurrentDateTime()
+            .toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds())
 
         // Create alarm for Monday (index 1) and Wednesday (index 3) at 7:00 AM
         val alarm = Alarm(
@@ -138,7 +148,7 @@ class AlarmSystemEndToEndTest {
     }
     
     @Test
-    fun `end-to-end weekly repeating alarm - schedule, let it ring, verify next week scheduled`() = runBlocking {
+    fun `integration weekly repeating alarm - schedule, let it ring, verify next week scheduled`() = runTest(testScheduler) {
         // Create alarm for only Tuesday with repeat flag (weekly repeat)
         val alarm = Alarm(
             alarmId = 0L,
@@ -178,7 +188,7 @@ class AlarmSystemEndToEndTest {
     }
 
     @Test
-    fun `end-to-end one-time alarm - let it ring, complete, verify turned off`() = runBlocking {
+    fun `integration one-time alarm - let it ring, complete, verify turned off`() = runTest(testScheduler) {
         // Create one-time alarm for tomorrow
         val alarm = Alarm(
             alarmId = 0L,
@@ -228,7 +238,7 @@ class AlarmSystemEndToEndTest {
     }
 
     @Test
-    fun `end-to-end one-time alarm - complete after ring should turn off even before pendingintent cleanup`() = runBlocking {
+    fun `integration one-time alarm - complete after ring should turn off even before pendingintent cleanup`() = runTest(testScheduler) {
         val alarm = Alarm(
             alarmId = 0L,
             hour = 9,
@@ -267,7 +277,7 @@ class AlarmSystemEndToEndTest {
     }
     
     @Test
-    fun `end-to-end weekday alarm - let Monday fire, verify stays on for remaining days`() = runBlocking {
+    fun `integration weekday alarm - let Monday fire, verify stays on for remaining days`() = runTest(testScheduler) {
         // Create weekday alarm (Mon-Fri)
         val alarm = Alarm(
             alarmId = 0L,
@@ -314,7 +324,7 @@ class AlarmSystemEndToEndTest {
     }
     
     @Test
-    fun `end-to-end multiple alarms - let first fire, verify second remains independent`() = runBlocking {
+    fun `integration multiple alarms - let first fire, verify second remains independent`() = runTest(testScheduler) {
         // Create two independent alarms
         val alarm1 = Alarm(
             alarmId = 0L,
@@ -382,7 +392,7 @@ class AlarmSystemEndToEndTest {
     }
     
     @Test
-    fun `end-to-end multi-day weekly repeating alarm - verify multiple weeks continue ringing`() = runBlocking {
+    fun `integration multi-day weekly repeating alarm - verify multiple weeks continue ringing`() = runTest(testScheduler) {
         // Create alarm for Tuesday and Friday with weekly repeat
         val alarm = Alarm(
             alarmId = 0L,
@@ -476,7 +486,7 @@ class AlarmSystemEndToEndTest {
     }
     
     @Test
-    fun `end-to-end boot receiver - system reschedules alarms automatically after reboot`() = runBlocking {
+    fun `integration boot receiver - system reschedules alarms automatically after reboot`() = runTest(testScheduler) {
         // Create and schedule alarm before "reboot"
         val alarm = Alarm(
             alarmId = 0L,
@@ -517,28 +527,18 @@ class AlarmSystemEndToEndTest {
      * This simulates the Android system triggering the alarm at its scheduled time.
      */
     private fun fireNextScheduledAlarm() {
-        val nextAlarm = shadowAlarmManager.nextScheduledAlarm
-        if (nextAlarm != null) {
-            val timeUntilAlarm = nextAlarm.triggerAtTime - ShadowSystemClock.currentTimeMillis()
-            if (timeUntilAlarm > 0) {
-                ShadowSystemClock.advanceBy(timeUntilAlarm, TimeUnit.MILLISECONDS)
-            }
-            val pendingIntent = nextAlarm.operation ?: return
-            val intent = shadowOf(pendingIntent).savedIntent
-            alarmManager.cancel(pendingIntent)
-            pendingIntent.cancel()
-            
-            // Deliver the intent to the broadcast receiver (simulates system behavior)
-            alarmReceiver.onReceive(context, intent)
-        }
+        fireScheduledAlarm(checkNotNull(shadowAlarmManager.nextScheduledAlarm) {
+            "Expected a scheduled occurrence to deliver"
+        })
     }
 
     private fun fireScheduledAlarm(scheduledAlarm: ShadowAlarmManager.ScheduledAlarm) {
+        dateTimeProvider.setFixedDateTime(kotlin.time.Instant.fromEpochMilliseconds(scheduledAlarm.triggerAtTime).toLocalDateTime(TimeZone.currentSystemDefault()))
         val timeUntilAlarm = scheduledAlarm.triggerAtTime - ShadowSystemClock.currentTimeMillis()
         if (timeUntilAlarm > 0) {
             ShadowSystemClock.advanceBy(timeUntilAlarm, TimeUnit.MILLISECONDS)
         }
-        val pendingIntent = scheduledAlarm.operation ?: return
+        val pendingIntent = checkNotNull(scheduledAlarm.operation)
         val intent = shadowOf(pendingIntent).savedIntent
         alarmManager.cancel(pendingIntent)
         pendingIntent.cancel()
@@ -546,11 +546,12 @@ class AlarmSystemEndToEndTest {
     }
 
     private fun fireScheduledAlarmWithoutConsuming(scheduledAlarm: ShadowAlarmManager.ScheduledAlarm) {
+        dateTimeProvider.setFixedDateTime(kotlin.time.Instant.fromEpochMilliseconds(scheduledAlarm.triggerAtTime).toLocalDateTime(TimeZone.currentSystemDefault()))
         val timeUntilAlarm = scheduledAlarm.triggerAtTime - ShadowSystemClock.currentTimeMillis()
         if (timeUntilAlarm > 0) {
             ShadowSystemClock.advanceBy(timeUntilAlarm, TimeUnit.MILLISECONDS)
         }
-        val pendingIntent = scheduledAlarm.operation ?: return
+        val pendingIntent = checkNotNull(scheduledAlarm.operation)
         val intent = shadowOf(pendingIntent).savedIntent
         alarmReceiver.onReceive(context, intent)
     }
@@ -560,7 +561,7 @@ class AlarmSystemEndToEndTest {
      */
     private fun processAsyncOperations() {
         ShadowLooper.idleMainLooper()
-        Thread.sleep(100) // Give coroutines time to complete
+        testScheduler.advanceUntilIdle()
         ShadowLooper.idleMainLooper() // Process any resulting work
     }
 }
