@@ -43,6 +43,9 @@ class ScheduleAlarmTest {
         val result = findAlarmUseCase(newAlarm.alarmId)
         val assertAlarm = newAlarm.copy(isOn = true)
 
-        assertEquals(assertAlarm, result)
+        assertEquals(true, result?.isOn)
+        assertEquals(true, result?.scheduleInitialized)
+        assertEquals(alarmTimeCalculator.calculateAlarmTimes(newAlarm).sorted(), result?.pendingTimes)
+        assertEquals(null, result?.scheduleError)
     }
 }

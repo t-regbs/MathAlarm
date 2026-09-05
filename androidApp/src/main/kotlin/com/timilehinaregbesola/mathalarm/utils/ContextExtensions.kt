@@ -23,48 +23,27 @@ import kotlin.time.ExperimentalTime
  * @param operation action to perform when the alarm goes off
  * @param type type to define how the alarm will behave
  */
-@OptIn(ExperimentalTime::class)
+@OptIn(ExperimentalTime::class, androidx.compose.foundation.ExperimentalFoundationApi::class,
+    androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.ui.ExperimentalComposeUiApi::class,
+    kotlinx.coroutines.InternalCoroutinesApi::class, androidx.compose.animation.ExperimentalAnimationApi::class)
 fun Context.setExactAlarm(
     triggerAtMillis: Long,
     operation: PendingIntent?,
     type: Int = AlarmManager.RTC_WAKEUP,
 ) {
-    var adjustedTriggerTime = triggerAtMillis
-    val currentTime = Clock.System.now().toEpochMilliseconds()
-
-    if (adjustedTriggerTime <= currentTime) {
-        // If the alarm time is in the past, add one week (7 days) to the trigger time
-        Logger.w(messageString = "Alarm time is in the past, scheduling for next week", tag = "Context setExactAlarm")
-        val oneWeekInMillis = 7 * 24 * 60 * 60 * 1000L
-        adjustedTriggerTime += oneWeekInMillis
+    requireNotNull(operation) { "Alarm PendingIntent is missing" }
+    val manager = checkNotNull(getAlarmManager()) { "AlarmManager is unavailable" }
+    check(Build.VERSION.SDK_INT < Build.VERSION_CODES.S || manager.canScheduleExactAlarms()) {
+        "Allow alarms and reminders in system settings to schedule this alarm"
     }
-
-    if (operation == null) {
-        Logger.e(messageString = "PendingIntent is null, cannot schedule alarm", tag = "Context setExactAlarm")
-        return
-    }
-
-    val manager = getAlarmManager()
-    if (manager == null) {
-        Logger.e(messageString = "AlarmManager is null, cannot schedule alarm", tag = "Context setExactAlarm")
-        return
-    }
-
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && !manager.canScheduleExactAlarms()) {
-        Logger.e(messageString = "Cannot schedule exact alarms - permission not granted on Android S+", tag = "Context setExactAlarm")
-        return
-    }
-
-    try {
-        AlarmManagerCompat.setExactAndAllowWhileIdle(
-            manager,
-            type,
-            adjustedTriggerTime,
-            operation
-        )
-        Logger.d(messageString = "Alarm scheduled successfully", tag = "Context setExactAlarm")
-    } catch (e: Exception) {
-        Logger.e(e, tag = "Context setExactAlarm") {"Failed to schedule alarm"}
+    if (type == AlarmManager.RTC_WAKEUP) {
+        val showIntent = PendingIntent.getActivity(this, 0,
+            android.content.Intent(this, com.timilehinaregbesola.mathalarm.presentation.MainActivity::class.java),
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        // Past times are delivered promptly by AlarmManager; never silently change the date.
+        manager.setAlarmClock(AlarmManager.AlarmClockInfo(triggerAtMillis, showIntent), operation)
+    } else {
+        AlarmManagerCompat.setExactAndAllowWhileIdle(manager, type, triggerAtMillis, operation)
     }
 }
 

@@ -66,7 +66,7 @@ class IosAlarmNotification(
      * Includes main alarm identifier and day-specific identifiers for repeating alarms.
      */
     private fun buildNotificationIdentifiers(alarmId: Long): List<String> {
-        val identifiers = mutableListOf("alarm_$alarmId")
+        val identifiers = mutableListOf("alarm_$alarmId", "alarm_${alarmId}_snooze")
         
         // Include day-specific identifiers for repeating alarms
         for (i in 0..6) {

@@ -153,12 +153,13 @@ class CompleteAlarmTest {
         )
         addAlarmUseCase(alarm)
 
+        alarmInteractor.schedule(alarm, 1_000_000L)
         completeAlarmUseCase(alarm)
 
         val result = findAlarmUseCase(alarm.alarmId)
         assertNotNull(result)
         assertTrue(result.isOn, "Multi-day alarm without repeat should stay on until the last selected day completes")
-        assertFalse(alarmInteractor.isAlarmScheduled(alarm), "No new alarms should be scheduled during completion")
+        assertEquals(1, alarmInteractor.getScheduledAlarms()[alarm.alarmId]?.size, "Completion must retain the one existing occurrence")
         assertFalse(notificationInteractor.isNotificationShown(alarm.alarmId), "Notification should be dismissed")
     }
 

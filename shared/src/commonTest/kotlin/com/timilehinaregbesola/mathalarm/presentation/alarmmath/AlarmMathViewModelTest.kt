@@ -76,7 +76,7 @@ class AlarmMathViewModelTest {
             cancelAlarm = CancelAlarm(alarmInteractor),
             clearAlarms = ClearAlarms(repository, alarmInteractor),
             scheduleNextAlarm = scheduleNextAlarm,
-            rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor, alarmTimeCalculator, scheduleNextAlarm),
+            rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor, alarmTimeCalculator),
             snoozeAlarm = SnoozeAlarm(dateTimeProvider, notificationInteractor, alarmInteractor, repository)
         )
         
@@ -112,14 +112,12 @@ class AlarmMathViewModelTest {
             viewModel.onEvent(MathScreenEvent.EnteredAnswer("30"))
             viewModel.onEvent(MathScreenEvent.OnEnterClick(problem))
 
-            awaitItem() shouldBe AlarmMathViewModel.UiEvent.StopVibrateAndHideKeyboard
-
             val lastEvent = awaitItem()
             lastEvent shouldBe AlarmMathViewModel.UiEvent.CompleteAndClose
             
             viewModel.answerText.value shouldBe ""
             
-            audioPlayer.isStopped shouldBe true
+            // Audio is stopped only after the completion command succeeds.
         }
     }
 
@@ -176,7 +174,7 @@ class AlarmMathViewModelTest {
 
     @Test
     fun `onEvent OnSnoozeClick should snooze alarm and stop audio`() = runTest {
-        val alarm = Alarm(alarmId = 123L, hour = 8, minute = 0, isSaved = true)
+        val alarm = Alarm(alarmId = 123L, hour = 8, minute = 0, isSaved = true, isOn = true)
         usecases.addAlarm(alarm)
         advanceUntilIdle()
         
@@ -189,6 +187,7 @@ class AlarmMathViewModelTest {
             
             val event = awaitItem()
             event shouldBe AlarmMathViewModel.UiEvent.StopVibrateAndHideKeyboard
+            awaitItem() shouldBe AlarmMathViewModel.UiEvent.Close
         }
     }
 
@@ -242,9 +241,6 @@ class AlarmMathViewModelTest {
             viewModel.onEvent(MathScreenEvent.EnteredAnswer("  30  ")) // With whitespace
             viewModel.onEvent(MathScreenEvent.OnEnterClick(problem))
             
-            val event = awaitItem()
-            event shouldBe AlarmMathViewModel.UiEvent.StopVibrateAndHideKeyboard
-
             val nextEvent = awaitItem()
             nextEvent shouldBe AlarmMathViewModel.UiEvent.CompleteAndClose
         }
@@ -270,8 +266,28 @@ class AlarmMathViewModelTest {
             
             viewModel.onEvent(MathScreenEvent.EnteredAnswer("30"))
             viewModel.onEvent(MathScreenEvent.OnEnterClick(problem))
-            awaitItem() shouldBe AlarmMathViewModel.UiEvent.StopVibrateAndHideKeyboard
             awaitItem() shouldBe AlarmMathViewModel.UiEvent.CompleteAndClose
         }
     }
+    @Test fun `preview completion never mutates the saved alarm`() = runTest {
+        val alarm = Alarm(alarmId = 778, isOn = true, isSaved = true)
+        usecases.addAlarm(alarm)
+        viewModel.eventFlow.test {
+            viewModel.completeAlarm(alarm, preview = true)
+            awaitItem() shouldBe AlarmMathViewModel.UiEvent.StopVibrateAndHideKeyboard
+            awaitItem() shouldBe AlarmMathViewModel.UiEvent.Close
+        }
+        usecases.findAlarm(778)?.isOn shouldBe true
+    }
+    @Test fun `preview snooze never schedules a live occurrence`() = runTest {
+        val alarm = Alarm(alarmId = 779, isOn = true, isSaved = true)
+        usecases.addAlarm(alarm)
+        viewModel.eventFlow.test {
+            viewModel.onEvent(MathScreenEvent.OnSnoozeClick(779, preview = true))
+            awaitItem() shouldBe AlarmMathViewModel.UiEvent.StopVibrateAndHideKeyboard
+            awaitItem() shouldBe AlarmMathViewModel.UiEvent.Close
+        }
+        usecases.findAlarm(779)?.snoozedUntil shouldBe null
+    }
+
 }

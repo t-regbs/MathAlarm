@@ -10,8 +10,6 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
 import co.touchlab.kermit.Logger
-import com.timilehinaregbesola.mathalarm.notification.ActiveAlarmManager
-import com.timilehinaregbesola.mathalarm.notification.AlarmService
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -96,14 +94,11 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onStop() {
-        super.onStop()
-        // If user closes the app while alarm is active, refresh the notification
-        // This will trigger the full-screen intent to pop up again
-        if (ActiveAlarmManager.hasActiveAlarm()) {
-            logger.d("App stopped with active alarm - refreshing notification")
-            AlarmService.refreshNotification(this)
-        }
+    override fun onResume() {
+        super.onResume()
+        val scope: com.timilehinaregbesola.mathalarm.coroutines.AppCoroutineScope by inject()
+        val usecases: com.timilehinaregbesola.mathalarm.framework.Usecases by inject()
+        scope.launch { usecases.command { rescheduleFutureAlarms() } }
     }
 
     private fun Intent.extractAlarmJson(): String? {

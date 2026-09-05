@@ -8,7 +8,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.execSQL
 
-@Database(entities = [AlarmEntity::class], version = 4, exportSchema = true)
+@Database(entities = [AlarmEntity::class], version = 5, exportSchema = true)
 @ConstructedBy(AlarmDatabaseConstructor::class)
 abstract class AlarmDatabase : RoomDatabase() {
     abstract val alarmDatabaseDao: AlarmDao
@@ -86,5 +86,17 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
         )
         connection.execSQL("DROP TABLE alarms")
         connection.execSQL("ALTER TABLE new_alarms RENAME TO alarms")
+    }
+}
+
+/** Preserve existing alarms while adding durable occurrence state. */
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN pendingTimes TEXT NOT NULL DEFAULT ''")
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN scheduleInitialized INTEGER NOT NULL DEFAULT 0")
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN snoozedUntil INTEGER")
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN activeAt INTEGER")
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN scheduleError TEXT")
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN scheduleTimeZone TEXT")
     }
 }

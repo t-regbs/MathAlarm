@@ -100,7 +100,7 @@ class AlarmNotificationSchedulerTest {
         val scheduledAlarms = shadowAlarmManager.scheduledAlarms
         // Note: Robolectric may keep both or only the latest depending on version
         // The important thing is that when the alarm fires, it uses the latest time
-        assertTrue("Should have at least one scheduled alarm", scheduledAlarms.isNotEmpty())
+        assertEquals("Exactly one occurrence should remain", 1, scheduledAlarms.size)
     }
 
 
@@ -156,7 +156,7 @@ class AlarmNotificationSchedulerTest {
     }
 
     @Test
-    fun `different alarms should have different PendingIntent request codes`() {
+    fun `different alarms have different PendingIntent identities`() {
         val alarm1 = createAlarm(id = 1L)
         val alarm2 = createAlarm(id = 2L)
         val triggerTime = System.currentTimeMillis() + 60_000L
@@ -170,7 +170,7 @@ class AlarmNotificationSchedulerTest {
         val requestCode1 = shadowOf(scheduledAlarms[0].operation).requestCode
         val requestCode2 = shadowOf(scheduledAlarms[1].operation).requestCode
         
-        assertTrue("Request codes should be different", requestCode1 != requestCode2)
+        assertTrue("Alarm identities must differ", scheduledAlarms[0].operation != scheduledAlarms[1].operation)
     }
 
     // ==================== Edge Case Tests ====================

@@ -4,36 +4,21 @@ import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.notification.IosAlarmScheduler
 
-/**
- * iOS implementation of AlarmInteractor using IosAlarmScheduler
- */
-class AlarmInteractorImpl(
-    private val logger: Logger
-) : AlarmInteractor {
-
+class AlarmInteractorImpl(private val logger: Logger) : AlarmInteractor {
     private val scheduler = IosAlarmScheduler(logger)
-
-    override fun schedule(alarm: Alarm, timeInMillis: Long) {
-        logger.d { "AlarmInteractorImpl.schedule: alarmId=${alarm.alarmId}, timeInMillis=$timeInMillis" }
-        // iOS scheduler handles time internally via UNCalendarNotificationTrigger
-        // We pass the alarm and it schedules based on alarm's hour/minute
-        scheduler.scheduleAlarm(alarm, reschedule = false)
+    override suspend fun schedule(alarm: Alarm, timeInMillis: Long) = scheduler.scheduleOccurrence(alarm, timeInMillis)
+    override suspend fun scheduleRepeating(alarm: Alarm, times: List<Long>) {
+        times.forEach { scheduler.scheduleOccurrence(alarm, it, repeating = true) }
     }
-
-    override fun cancel(alarm: Alarm) {
-        logger.d { "AlarmInteractorImpl.cancel: alarmId=${alarm.alarmId}" }
-        scheduler.cancelAlarm(alarm)
+    override suspend fun scheduleSnooze(alarm: Alarm, timeInMillis: Long) =
+        scheduler.scheduleOccurrence(alarm, timeInMillis, snooze = true)
+    override fun cancel(alarm: Alarm) = scheduler.cancelAlarm(alarm)
+    override fun cancelSnooze(alarm: Alarm) = scheduler.cancelSnooze(alarm)
+    override suspend fun update(alarm: Alarm) {
+        // Replacing an identifier updates metadata without changing concrete one-time dates.
+        if (alarm.repeat) scheduleRepeating(alarm, alarm.pendingTimes)
+        else alarm.pendingTimes.filter { it > kotlin.time.Clock.System.now().toEpochMilliseconds() }.forEach { schedule(alarm, it) }
+        alarm.snoozedUntil?.takeIf { it > kotlin.time.Clock.System.now().toEpochMilliseconds() }?.let { scheduleSnooze(alarm, it) }
     }
-
-    override fun update(alarm: Alarm) {
-        logger.d { "AlarmInteractorImpl.update: alarmId=${alarm.alarmId}" }
-        // On iOS, we need to cancel and reschedule to update
-        scheduler.cancelAlarm(alarm)
-        scheduler.scheduleAlarm(alarm, reschedule = true)
-    }
-
-    override suspend fun hasPendingOccurrence(alarm: Alarm): Boolean {
-        logger.d { "AlarmInteractorImpl.hasPendingOccurrence: alarmId=${alarm.alarmId}" }
-        return scheduler.hasPendingOccurrence(alarm)
-    }
+    override suspend fun hasPendingOccurrence(alarm: Alarm): Boolean = scheduler.hasPendingOccurrence(alarm)
 }

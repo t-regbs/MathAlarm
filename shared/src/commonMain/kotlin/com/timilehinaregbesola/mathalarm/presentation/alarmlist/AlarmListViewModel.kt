@@ -15,7 +15,7 @@ import com.timilehinaregbesola.mathalarm.utils.UiEvent.ShowSnackbar
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
-import kotlinx.coroutines.flow.takeWhile
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 
 class AlarmListViewModel(
@@ -38,64 +38,50 @@ class AlarmListViewModel(
     val uiEvent = _uiEvent.receiveAsFlow()
 
     private var recentlyDeletedAlarm: Alarm? = null
-    private var clearAlarmsSelected = false
+    private fun launchCommand(block: suspend Usecases.() -> Unit) {
+        viewModelScope.launch {
+            try {
+                usecases.command(block)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logger.e(e) { "Alarm command failed" }
+                sendUiEvent(ShowSnackbar(e.message ?: "Unable to update alarm"))
+            }
+        }
+    }
 
     fun onEvent(event: AlarmListEvent) {
         when (event) {
-            is AlarmListEvent.OnEditAlarmClick -> {
-                // Navigate to bottom sheet
-                sendUiEvent(Navigate(event.alarm))
+            is AlarmListEvent.OnEditAlarmClick -> sendUiEvent(Navigate(event.alarm))
+            is AlarmListEvent.OnAddAlarmClick -> sendUiEvent(Navigate(Alarm()))
+            is AlarmListEvent.OnAlarmOnChange -> setEnabled(event.alarm, event.isOn)
+            is AlarmListEvent.OnUndoDeleteClick -> launchCommand {
+                val restored = recentlyDeletedAlarm ?: return@launchCommand
+                addAlarm(restored)
+                if (restored.isOn) scheduleAlarm(restored, true)
+                recentlyDeletedAlarm = null
             }
-            is AlarmListEvent.OnAlarmOnChange -> {
-                logger.d("OnAlarmOnChange event received: alarmId=${event.alarm.alarmId}, isOn=${event.isOn}")
-                viewModelScope.launch {
-                    logger.d("Updating alarm in database: alarmId=${event.alarm.alarmId}, setting isOn=${event.isOn}")
-                    usecases.addAlarm(event.alarm.copy(isOn = event.isOn))
-                    if (event.isOn) {
-                        logger.d("Alarm is being turned ON, scheduling: alarmId=${event.alarm.alarmId}")
-                        usecases.scheduleAlarm(event.alarm, false)
-                    } else {
-                        logger.d("Alarm is being turned OFF: alarmId=${event.alarm.alarmId}")
-                        // Cancel
-                    }
-                }
+            is AlarmListEvent.OnDeleteAlarmClick -> launchCommand {
+                val latest = findAlarm(event.alarm.alarmId) ?: return@launchCommand
+                deleteAlarm(latest)
+                recentlyDeletedAlarm = latest
+                sendUiEvent(ShowSnackbar("Alarm Deleted", "Undo"))
             }
-            is AlarmListEvent.OnAddAlarmClick -> {
-                // Navigate to bottom sheet
-                sendUiEvent(Navigate(Alarm()))
-            }
-            is AlarmListEvent.OnUndoDeleteClick -> {
-                viewModelScope.launch {
-                    usecases.addAlarm(recentlyDeletedAlarm ?: return@launch)
-                    recentlyDeletedAlarm = null
-                }
-            }
-            is AlarmListEvent.OnDeleteAlarmClick -> {
-                viewModelScope.launch {
-                    usecases.deleteAlarm(event.alarm)
-                    recentlyDeletedAlarm = event.alarm
-                    sendUiEvent(ShowSnackbar(message = "Alarm Deleted", action = "Undo"))
-                }
-            }
-            is AlarmListEvent.DeleteTestAlarm -> {
-                viewModelScope.launch {
-                    usecases.deleteAlarm(event.alarmId)
-                }
-            }
-            is AlarmListEvent.OnClearAlarmsClick -> {
-                clearAlarmsSelected = true
-                viewModelScope.launch {
-                    alarms.takeWhile { clearAlarmsSelected }.collect { list ->
-                        logger.d("öooo")
-                        usecases.clearAlarms(list)
-                        clearAlarmsSelected = false
-                    }
-                }
-            }
+            is AlarmListEvent.DeleteTestAlarm -> launchCommand { deleteAlarm(event.alarmId) }
+            is AlarmListEvent.OnClearAlarmsClick -> launchCommand { clearAlarms(getSavedAlarms().first()) }
+            AlarmListEvent.OnClearEmptyAlarmsClick -> sendUiEvent(ShowSnackbar("There are no alarms to clear"))
+        }
+    }
 
-            AlarmListEvent.OnClearEmptyAlarmsClick -> {
-                sendUiEvent(ShowSnackbar(message = "There are no alarms to clear"))
-            }
+    fun setEnabled(alarm: Alarm, enabled: Boolean) = launchCommand {
+        val latest = findAlarm(alarm.alarmId) ?: return@launchCommand
+        if (enabled) {
+            scheduleAlarm(latest, true)
+        } else {
+            cancelAlarm(latest)
+            updateAlarm(latest.copy(isOn = false, pendingTimes = emptyList(), snoozedUntil = null,
+                activeAt = null, scheduleError = null))
         }
     }
 
@@ -105,28 +91,12 @@ class AlarmListViewModel(
         }
     }
 
-    fun onUpdate(alarm: Alarm) {
-        viewModelScope.launch {
-            usecases.updateAlarm(alarm)
-        }
+    fun onUpdate(alarm: Alarm) = launchCommand { updateAlarm(alarm) }
+
+    fun scheduleAlarm(alarm: Alarm, reschedule: Boolean, message: String) = launchCommand {
+        scheduleAlarm(alarm, reschedule)
+        sendUiEvent(ShowSnackbar(message))
     }
 
-    fun scheduleAlarm(alarm: Alarm, reschedule: Boolean, message: String) {
-        logger.d("scheduleAlarm called: alarmId=${alarm.alarmId}, time=${alarm.hour}:${alarm.minute}, repeat=${alarm.repeat}, repeatDays=${alarm.repeatDays}, reschedule=$reschedule")
-        viewModelScope.launch {
-            logger.d("Calling usecases.scheduleAlarm for alarmId=${alarm.alarmId}")
-            usecases.scheduleAlarm(alarm, reschedule)
-            logger.d("scheduleAlarm completed for alarmId=${alarm.alarmId}, showing snackbar message: $message")
-            sendUiEvent(ShowSnackbar(message = message))
-        }
-    }
-
-    fun cancelAlarm(alarm: Alarm) {
-        logger.d("cancelAlarm called: alarmId=${alarm.alarmId}, time=${alarm.hour}:${alarm.minute}, repeat=${alarm.repeat}, repeatDays=${alarm.repeatDays}")
-        viewModelScope.launch {
-            logger.d("Calling usecases.cancelAlarm for alarmId=${alarm.alarmId}")
-            usecases.cancelAlarm(alarm)
-            logger.d("cancelAlarm completed for alarmId=${alarm.alarmId}")
-        }
-    }
+    fun cancelAlarm(alarm: Alarm) = setEnabled(alarm, false)
 }

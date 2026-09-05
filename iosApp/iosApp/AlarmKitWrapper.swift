@@ -1,3 +1,4 @@
+import CryptoKit
 import Foundation
 import SwiftUI
 import app  // Kotlin framework (current interop)
@@ -278,7 +279,6 @@ class AlarmKitWrapperImpl: NSObject {
     static let shared = AlarmKitWrapperImpl()
     
     /// Store alarm IDs for cancellation
-    private var scheduledAlarms: [Int64: UUID] = [:]
     
     /// Track authorization status
     private var isAuthorized: Bool = false
@@ -466,40 +466,29 @@ class AlarmKitWrapperImpl: NSObject {
     
     /// Schedule an alarm using AlarmKit
     /// - Returns: true if successfully scheduled, false otherwise
-    func scheduleAlarm(
-        alarmId: Int64,
-        hour: Int32,
-        minute: Int32,
-        title: String,
-        soundName: String,
-        repeatDays: String,
-        snoozeMinutes: Int32,
-        vibrate: Bool,
-        difficulty: Int32,
-        repeats: Bool  // true = repeating alarm, false = one-time alarm
-    ) -> Bool {
+    func scheduleAlarm(request: AlarmScheduleRequest, completion: AlarmScheduleCompletion) {
         guard #available(iOS 26, *) else {
-            return false
+            completion.complete(success: false, error: "AlarmKit is unavailable")
+            return
         }
-
-        guard hasAlarmKitAuthorization() else {
-            return false
-        }
-        
-        return scheduleWithAlarmKit(
-            alarmId: alarmId,
-            hour: hour,
-            minute: minute,
-            title: title,
-            soundName: soundName,
-            repeatDays: repeatDays,
-            snoozeMinutes: snoozeMinutes,
-            vibrate: vibrate,
-            difficulty: difficulty,
-            repeats: repeats
-        )
+        scheduleWithAlarmKit(request: request, completion: completion)
     }
-    
+
+    private func occurrenceUUID(alarmId: Int64, key: String) -> UUID {
+        let bytes = Array(SHA256.hash(data: Data("mathalarm/\(alarmId)/\(key)".utf8)))
+        return UUID(uuid: (bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
+                           bytes[8], bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]))
+    }
+
+    func cancelOccurrence(alarmId: Int64, occurrenceKey: String) {
+        guard #available(iOS 26, *) else { return }
+        let id = occurrenceUUID(alarmId: alarmId, key: occurrenceKey)
+        do {
+            let manager = AlarmManager.shared
+            if try manager.alarms.contains(where: { $0.id == id }) { try manager.cancel(id: id) }
+        } catch { print("Failed to cancel occurrence: \(error)") }
+    }
+
     /// Cancel an alarm scheduled with AlarmKit
     func cancelAlarm(alarmId: Int64) {
         guard #available(iOS 26, *) else {
@@ -534,20 +523,17 @@ class AlarmKitWrapperImpl: NSObject {
     typealias MathAlarmConfiguration = AlarmManager.AlarmConfiguration<MathAlarmData>
     
     @available(iOS 26, *)
-    private func scheduleWithAlarmKit(
-        alarmId: Int64,
-        hour: Int32,
-        minute: Int32,
-        title: String,
-        soundName: String,
-        repeatDays: String,
-        snoozeMinutes: Int32,
-        vibrate: Bool,
-        difficulty: Int32,
-        repeats: Bool
-    ) -> Bool {
-        print("AlarmKitWrapper: Scheduling alarm \(alarmId) at \(hour):\(minute), repeats=\(repeats)")
-        
+    private func scheduleWithAlarmKit(request: AlarmScheduleRequest, completion: AlarmScheduleCompletion) {
+        let alarmId = request.alarmId
+        let hour = request.hour
+        let minute = request.minute
+        let title = request.title
+        let soundName = request.soundName
+        let repeatDays = request.repeatDays
+        let snoozeMinutes = request.snoozeMinutes
+        let vibrate = request.vibrate
+        let difficulty = request.difficulty
+        let repeats = request.repeats
         // Parse repeat days to weekdays (only used if repeats == true)
         let weekdays = parseRepeatDays(repeatDays)
         
@@ -557,35 +543,24 @@ class AlarmKitWrapperImpl: NSObject {
                 let manager = AlarmManager.shared
                 
                 guard self.hasAlarmKitAuthorization() else {
-                    print("AlarmKitWrapper: Authorization changed before scheduling")
+                    completion.complete(success: false, error: "Allow Math Alarm to schedule alarms in Settings")
                     return
                 }
                 print("AlarmKitWrapper: Authorization confirmed")
                 
-                let alarmUUID = UUID()
+                let alarmUUID = self.occurrenceUUID(alarmId: alarmId, key: request.occurrenceKey)
                 
                 // Create the time for the schedule
                 let time = Alarm.Schedule.Relative.Time(hour: Int(hour), minute: Int(minute))
                 print("AlarmKitWrapper: Created time - hour: \(hour), minute: \(minute)")
                 
-                // Create schedule based on the repeats flag (NOT weekdays.isEmpty)
-                // For one-time alarms (repeats=false): use .never - fires at next occurrence of this time
-                // For repeating alarms (repeats=true): use .weekly with the specified days
-                let recurrence: Alarm.Schedule.Relative.Recurrence
+                let schedule: Alarm.Schedule
                 if repeats && !weekdays.isEmpty {
-                    recurrence = .weekly(Array(weekdays))
-                    print("AlarmKitWrapper: Creating REPEATING alarm for weekdays: \(weekdays)")
+                    schedule = .relative(.init(time: time, repeats: .weekly(Array(weekdays))))
                 } else {
-                    recurrence = .never
-                    print("AlarmKitWrapper: Creating ONE-TIME alarm (will fire at next \(hour):\(minute))")
+                    schedule = .fixed(Date(timeIntervalSince1970: Double(request.timeInMillis) / 1000.0))
                 }
-                
-                let schedule: Alarm.Schedule = .relative(.init(
-                    time: time,
-                    repeats: recurrence
-                ))
-                print("AlarmKitWrapper: Created schedule - recurrence: \(recurrence)")
-                
+
                 // Create alarm presentation with "Solve Math" as the stop button
                 let alertTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
                 let solveButton = AlarmButton(
@@ -666,7 +641,7 @@ class AlarmKitWrapperImpl: NSObject {
                 // Schedule the alarm with id and configuration
                 let alarm = try await manager.schedule(id: alarmUUID, configuration: configuration)
                 
-                self.scheduledAlarms[alarmId] = alarm.id
+                completion.complete(success: true, error: nil)
                 print("AlarmKitWrapper: ✅ Alarm scheduled successfully!")
                 print("  - AlarmKit ID: \(alarm.id)")
                 print("  - App Alarm ID: \(alarmId)")
@@ -674,20 +649,18 @@ class AlarmKitWrapperImpl: NSObject {
                 print("  - Schedule: \(String(describing: alarm.schedule))")
                 
                 // Verify by listing all alarms
-                let allAlarms = try manager.alarms
-                print("AlarmKitWrapper: Total alarms in system: \(allAlarms.count)")
+
                 
             } catch AlarmKitError.notAuthorized {
-                print("AlarmKitWrapper: ❌ Failed - Not authorized for alarms")
+                completion.complete(success: false, error: "Not authorized for alarms")
             } catch AlarmKitError.unknownAuthState {
-                print("AlarmKitWrapper: ❌ Failed - Unknown authorization state")
+                completion.complete(success: false, error: "Unknown alarm authorization state")
             } catch {
-                print("AlarmKitWrapper: ❌ Failed to schedule alarm - \(error)")
+                completion.complete(success: false, error: error.localizedDescription)
                 print("AlarmKitWrapper: Error details - \(String(describing: error))")
             }
         }
         
-        return true
     }
 
     private func alertSoundName(for soundName: String) -> String {
@@ -708,21 +681,19 @@ class AlarmKitWrapperImpl: NSObject {
 
     @available(iOS 26, *)
     private func cancelAlarmKitAlarm(alarmId: Int64) {
-        guard let alarmUUID = scheduledAlarms[alarmId] else {
-            print("AlarmKitWrapper: No AlarmKit alarm found for ID \(alarmId)")
-            return
-        }
-        
         do {
             let manager = AlarmManager.shared
-            try manager.cancel(id: alarmUUID)
-            scheduledAlarms.removeValue(forKey: alarmId)
-            print("AlarmKitWrapper: Cancelled alarm \(alarmId)")
-        } catch {
-            print("AlarmKitWrapper: Failed to cancel alarm - \(error.localizedDescription)")
-        }
+            // Query OS alarms and persisted metadata so cancellation also works after relaunch.
+            let keys = (0...6).map { "day_\($0)" } + ["snooze"]
+            let ids = Set(keys.map { occurrenceUUID(alarmId: alarmId, key: $0) })
+            for alarm in try manager.alarms {
+                if ids.contains(alarm.id) || AlarmDataStore.shared.retrieve(alarmUUID: alarm.id.uuidString)?.alarmId == alarmId {
+                    try manager.cancel(id: alarm.id)
+                }
+            }
+        } catch { print("Failed to cancel alarm: \(error)") }
     }
-    
+
     @available(iOS 26, *)
     private func cancelAllAlarmKitAlarms() {
         do {
@@ -733,7 +704,6 @@ class AlarmKitWrapperImpl: NSObject {
                 try manager.cancel(id: alarm.id)
             }
             
-            scheduledAlarms.removeAll()
             print("AlarmKitWrapper: Cancelled all alarms")
         } catch {
             print("AlarmKitWrapper: Failed to cancel all alarms - \(error.localizedDescription)")
@@ -750,12 +720,12 @@ class AlarmKitWrapperImpl: NSObject {
     }
     
     /// Convert repeat days string to array of Locale.Weekday
-    /// Input: "TFFFTFF" where T=true, F=false, index 0=Monday
+    /// Input: "TFFFTFF" where T=true, F=false, index 0=Sunday
     /// Output: Set<Locale.Weekday>
     @available(iOS 26, *)
     private func parseRepeatDays(_ repeatDays: String) -> Set<Locale.Weekday> {
         var days: Set<Locale.Weekday> = []
-        let mapping: [Locale.Weekday] = [.monday, .tuesday, .wednesday, .thursday, .friday, .saturday, .sunday]
+        let mapping: [Locale.Weekday] = [.sunday, .monday, .tuesday, .wednesday, .thursday, .friday, .saturday]
         
         for (index, char) in repeatDays.enumerated() {
             if char == "T" && index < mapping.count {
@@ -790,21 +760,14 @@ class AlarmKitKotlinBridge: NSObject, NativeAlarmScheduler {
         return wrapper.hasPendingOccurrence(alarmId: alarmId)
     }
     
-    func scheduleAlarm(request: AlarmScheduleRequest) -> Bool {
-        return wrapper.scheduleAlarm(
-            alarmId: request.alarmId,
-            hour: request.hour,
-            minute: request.minute,
-            title: request.title,
-            soundName: request.soundName,
-            repeatDays: request.repeatDays,
-            snoozeMinutes: request.snoozeMinutes,
-            vibrate: request.vibrate,
-            difficulty: request.difficulty,
-            repeats: request.repeats  // Pass the repeats flag in from Kotlin
-        )
+    func scheduleAlarm(request: AlarmScheduleRequest, completion: AlarmScheduleCompletion) {
+        wrapper.scheduleAlarm(request: request, completion: completion)
     }
-    
+
+    func cancelOccurrence(alarmId: Int64, occurrenceKey: String) {
+        wrapper.cancelOccurrence(alarmId: alarmId, occurrenceKey: occurrenceKey)
+    }
+
     func cancelAlarm(alarmId: Int64) {
         wrapper.cancelAlarm(alarmId: alarmId)
     }

@@ -29,7 +29,6 @@ class BootPersistenceTest {
     private lateinit var alarmInteractor: AlarmInteractorFake
     private lateinit var dateTimeProvider: DateTimeProviderFake
     private lateinit var alarmTimeCalculator: AlarmTimeCalculatorImpl
-    private lateinit var scheduleNextAlarm: ScheduleNextAlarm
     private lateinit var rescheduleFutureAlarms: RescheduleFutureAlarms
     private lateinit var addAlarm: AddAlarm
 
@@ -40,12 +39,10 @@ class BootPersistenceTest {
         alarmInteractor = AlarmInteractorFake()
         dateTimeProvider = DateTimeProviderFake()
         alarmTimeCalculator = AlarmTimeCalculatorImpl(dateTimeProvider)
-        scheduleNextAlarm = ScheduleNextAlarm(alarmInteractor, alarmTimeCalculator)
         rescheduleFutureAlarms = RescheduleFutureAlarms(
             alarmRepository,
             alarmInteractor,
-            alarmTimeCalculator,
-            scheduleNextAlarm
+            alarmTimeCalculator
         )
         addAlarm = AddAlarm(alarmRepository)
         

@@ -116,7 +116,7 @@ fun MathScreen(
     darkTheme: Boolean,
     fromSheet: Boolean = false
 ) {
-    var vibrator: PlatformVibrator? = null
+    val vibrator = remember(alarm.alarmId, alarm.vibrate) { if (alarm.vibrate) PlatformVibrator() else null }
     val problem = remember { generateMathProblem(alarm.difficulty) }
     val question = remember { mutableStateOf(buildQuestionString(problem)) }
     val snackbarHostState = remember {
@@ -149,12 +149,13 @@ fun MathScreen(
                     )
                 }
                 is AlarmMathViewModel.UiEvent.CompleteAndClose -> {
-                    viewModel.completeAlarm(AlarmMapper().mapToDomainModel(alarm))
+                    viewModel.completeAlarm(AlarmMapper().mapToDomainModel(alarm), preview = fromSheet)
+                }
+                is AlarmMathViewModel.UiEvent.Close -> {
                     if (backStack.size > 1) backStack.removeLastOrNull()
                 }
                 is AlarmMathViewModel.UiEvent.StopVibrateAndHideKeyboard -> {
                     vibrator?.cancel()
-                    vibrator = null
                     keyboardController?.hide()
                 }
             }
@@ -163,7 +164,6 @@ fun MathScreen(
 
     DisposableEffect(true) {
         if (alarm.vibrate) {
-            vibrator = PlatformVibrator()
             vibrator?.startWaveform(DEFAULT_VIBRATION_PATTERN, REPEAT_INDEFINITELY)
         }
         val alarmTone = alarm.alarmTone.ifEmpty { getDefaultAlarmTone() }
@@ -173,13 +173,13 @@ fun MathScreen(
                 viewModel.startTimer()
             } catch (_: Throwable) {
             }
-        } else {
+        } else if (alarmTone.isEmpty()) {
             Logger.d("Tone not available")
             viewModel.onEvent(MathScreenEvent.OnToneError("Tone not available"))
         }
         onDispose {
             vibrator?.cancel()
-            vibrator = null
+            if (fromSheet) viewModel.stopPreview()
         }
     }
 
@@ -213,8 +213,7 @@ fun MathScreen(
                     viewModel.onEvent(OnClearClick)
                 },
                 onSnoozeClick = {
-                    viewModel.onEvent(OnSnoozeClick(alarm.alarmId))
-                    if (backStack.size > 1) backStack.removeLastOrNull()
+                    viewModel.onEvent(OnSnoozeClick(alarm.alarmId, preview = fromSheet))
                 }
             )
         }

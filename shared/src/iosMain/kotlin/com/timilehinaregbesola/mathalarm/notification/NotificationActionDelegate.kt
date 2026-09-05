@@ -60,7 +60,7 @@ class NotificationActionDelegate(
         logger.d { "NotificationActionDelegate - snoozing alarm $alarmId" }
         appCoroutineScope.launch {
             try {
-                usecases.snoozeAlarm(alarmId)
+                usecases.command { snoozeAlarm(alarmId) }
                 logger.d { "NotificationActionDelegate - alarm $alarmId snoozed successfully" }
             } catch (e: Exception) {
                 logger.e { "NotificationActionDelegate - failed to snooze alarm: ${e.message}" }
@@ -73,7 +73,7 @@ class NotificationActionDelegate(
         logger.d { "NotificationActionDelegate - dismissing alarm $alarmId" }
         appCoroutineScope.launch {
             try {
-                usecases.completeAlarm(alarmId)
+                usecases.command { completeAlarm(alarmId) }
                 logger.d { "NotificationActionDelegate - alarm $alarmId dismissed successfully" }
             } catch (e: Exception) {
                 logger.e { "NotificationActionDelegate - failed to dismiss alarm: ${e.message}" }

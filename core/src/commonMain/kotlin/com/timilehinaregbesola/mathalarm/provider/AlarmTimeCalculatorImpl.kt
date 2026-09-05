@@ -102,7 +102,7 @@ class AlarmTimeCalculatorImpl(
             time = LocalTime(alarmHour, alarmMinute, 0)
         )
         val alarmInstantToday = alarmTimeToday.toInstant(tz)
-        val isPastToday = alarmInstantToday < nowInstant
+        val isPastToday = alarmInstantToday <= nowInstant
 
         val daysUntilAlarm = if (currentDayIndex > targetDayIndex || (currentDayIndex == targetDayIndex && isPastToday)) {
             // Schedule for next week

@@ -53,7 +53,7 @@ class AlarmSettingsViewModelTest {
             cancelAlarm = CancelAlarm(alarmInteractor),
             clearAlarms = ClearAlarms(repository, alarmInteractor),
             scheduleNextAlarm = scheduleNextAlarm,
-            rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor, alarmTimeCalculator, scheduleNextAlarm),
+            rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor, alarmTimeCalculator),
             snoozeAlarm = SnoozeAlarm(dateTimeProvider, notificationInteractor, alarmInteractor, repository)
         )
         
@@ -205,12 +205,12 @@ class AlarmSettingsViewModelTest {
 
     @Test
     fun `setAlarm with new alarm should initialize with default day`() {
-        val newAlarm = Alarm(alarmId = 789, hour = 6, minute = 45, repeatDays = "FFFFFFF", alarmTone = "test_tone")
+        val newAlarm = Alarm(alarmId = 0, hour = 6, minute = 45, repeatDays = "FFFFFFF", alarmTone = "test_tone")
         
         viewModel.setAlarm(newAlarm)
 
         with(viewModel) {
-            currentAlarmId shouldBe 789
+            currentAlarmId shouldBe 0
             alarmTime.value.hour shouldBe 6
             alarmTime.value.minute shouldBe 45
             dayChooser.value.count { it == 'T' } shouldBe 1
@@ -383,7 +383,7 @@ class AlarmSettingsViewModelTest {
     }
 
     @Test
-    fun `saving existing off alarm after changing only days should reschedule and turn it on`() = runTest {
+    fun `saving existing off alarm after changing only days must stay off`() = runTest {
         val existingAlarm = Alarm(
             alarmId = 444,
             hour = 7,
@@ -405,8 +405,8 @@ class AlarmSettingsViewModelTest {
 
             val savedAlarm = usecases.findAlarm(existingAlarm.alarmId)
             savedAlarm?.repeatDays shouldBe "FFTFFFF"
-            savedAlarm?.isOn shouldBe true
-            alarmInteractor.isAlarmScheduled(savedAlarm!!) shouldBe true
+            savedAlarm?.isOn shouldBe false
+            alarmInteractor.isAlarmScheduled(savedAlarm!!) shouldBe false
         }
     }
 

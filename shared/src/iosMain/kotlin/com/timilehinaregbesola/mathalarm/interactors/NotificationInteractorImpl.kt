@@ -22,9 +22,6 @@ class NotificationInteractorImpl(
 
     override fun dismiss(notificationId: Long) {
         logger.d { "NotificationInteractorImpl.dismiss - alarmId = $notificationId" }
-        // Remove delivered notification
-        notificationCenter.removeDeliveredNotificationsWithIdentifiers(
-            listOf("alarm_$notificationId")
-        )
+        com.timilehinaregbesola.mathalarm.notification.IosAlarmNotification(logger).dismiss(notificationId)
     }
 }

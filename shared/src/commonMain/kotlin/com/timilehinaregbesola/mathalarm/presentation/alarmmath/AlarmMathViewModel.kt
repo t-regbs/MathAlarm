@@ -42,13 +42,11 @@ class AlarmMathViewModel(
                 _answerText.value = ""
             }
             is MathScreenEvent.OnSnoozeClick -> {
-                snoozeAlarm(event.alarm)
-                stopAudioAndHideKeyboard()
+                finishAlarm(event.alarm, preview = event.preview, snooze = true)
             }
             is MathScreenEvent.OnEnterClick -> {
-                if (_answerText.value.isNotBlank() && event.problem.answer == _answerText.value.trim().toInt()) {
+                if (_answerText.value.isNotBlank() && event.problem.answer == _answerText.value.trim().toIntOrNull()) {
                     _answerText.value = ""
-                    stopAudioAndHideKeyboard()
                     viewModelScope.launch {
                         _eventFlow.emit(UiEvent.CompleteAndClose)
                     }
@@ -69,10 +67,31 @@ class AlarmMathViewModel(
         }
     }
 
-    private fun snoozeAlarm(alarmId: Long) {
+    private var finishing = false
+
+    private fun finishAlarm(alarmId: Long, preview: Boolean, snooze: Boolean) {
+        if (finishing) return
+        finishing = true
         viewModelScope.launch {
-            usecases.snoozeAlarm(alarmId)
+            try {
+                if (!preview) usecases.command {
+                    if (snooze) snoozeAlarm(alarmId) else completeAlarm(alarmId)
+                }
+                stopAudioAndHideKeyboard(preview)
+                _eventFlow.emit(UiEvent.Close)
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _eventFlow.emit(UiEvent.ShowSnackbar(e.message ?: "Unable to dismiss alarm"))
+            } finally {
+                finishing = false
+            }
         }
+    }
+
+    fun stopPreview() {
+        audioPlayer.stop()
+        stopTimer()
     }
 
     @InternalCoroutinesApi
@@ -110,14 +129,12 @@ class AlarmMathViewModel(
         _state.value = ToneState.Stopped(0)
     }
 
-    private fun stopAudioAndHideKeyboard() {
+    private suspend fun stopAudioAndHideKeyboard(preview: Boolean) {
         audioPlayer.stop()
         // Also stop platform-specific alarm audio (iOS alarm manager)
-        stopPlatformAlarmAudio()
+        if (!preview) stopPlatformAlarmAudio()
         stopTimer()
-        viewModelScope.launch {
-            _eventFlow.emit(UiEvent.StopVibrateAndHideKeyboard)
-        }
+        _eventFlow.emit(UiEvent.StopVibrateAndHideKeyboard)
     }
 
     private fun timer(seconds: Int): Flow<Int> = flow {
@@ -130,11 +147,8 @@ class AlarmMathViewModel(
         }
     }
 
-    fun completeAlarm(alarm: Alarm) {
-        viewModelScope.launch {
-            usecases.completeAlarm(alarm)
-        }
-    }
+    fun completeAlarm(alarm: Alarm, preview: Boolean = false) =
+        finishAlarm(alarm.alarmId, preview, snooze = false)
 
     sealed class UiEvent {
         data class ShowSnackbar(val message: String) : UiEvent()
@@ -142,5 +156,7 @@ class AlarmMathViewModel(
         object StopVibrateAndHideKeyboard : UiEvent()
 
         object CompleteAndClose : UiEvent()
+
+        object Close : UiEvent()
     }
 }

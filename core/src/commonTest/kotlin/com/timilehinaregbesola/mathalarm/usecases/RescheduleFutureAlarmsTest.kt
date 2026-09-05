@@ -25,13 +25,10 @@ class RescheduleFutureAlarmsTest {
 
     private val addAlarmUseCase = AddAlarm(alarmRepository)
     
-    private val scheduleNextAlarmUseCase = ScheduleNextAlarm(alarmInteractor, alarmTimeCalculator)
-
     private val rescheduleFutureAlarmUseCase = RescheduleFutureAlarms(
         alarmRepository, 
         alarmInteractor, 
-        alarmTimeCalculator,
-        scheduleNextAlarmUseCase
+        alarmTimeCalculator
     )
 
     @BeforeTest

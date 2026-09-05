@@ -13,7 +13,16 @@ interface AlarmInteractor {
      * @param alarm the alarm
      * @param timeInMillis the time to schedule the alarm in milliseconds
      */
-    fun schedule(alarm: Alarm, timeInMillis: Long)
+    suspend fun schedule(alarm: Alarm, timeInMillis: Long)
+
+    /** All scheduling methods return only after OS acceptance and throw on failure. */
+    suspend fun scheduleRepeating(alarm: Alarm, times: List<Long>) {
+        times.forEach { schedule(alarm, it) }
+    }
+
+    suspend fun scheduleSnooze(alarm: Alarm, timeInMillis: Long) = schedule(alarm, timeInMillis)
+
+    fun cancelSnooze(alarm: Alarm) = Unit
 
     /**
      * Cancels an alarm.
@@ -29,11 +38,17 @@ interface AlarmInteractor {
      *
      * @param alarm the alarm to be updated
      */
-    fun update(alarm: Alarm)
+    suspend fun update(alarm: Alarm)
 
     /**
      * Returns true when the platform still has a future occurrence pending for this alarm.
      * Implementations that can't determine this can fall back to false.
      */
     suspend fun hasPendingOccurrence(alarm: Alarm): Boolean = false
+}
+
+/** Install the normal occurrences without changing a separate snooze. */
+suspend fun AlarmInteractor.scheduleOccurrences(alarm: Alarm, times: List<Long>) {
+    if (alarm.repeat) scheduleRepeating(alarm, times)
+    else times.forEach { schedule(alarm, it) }
 }

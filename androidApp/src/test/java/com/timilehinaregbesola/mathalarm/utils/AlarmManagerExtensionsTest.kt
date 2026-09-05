@@ -70,7 +70,7 @@ class AlarmManagerExtensionsTest {
     }
 
     @Test
-    fun `setExactAlarm with past time should add one week to trigger time`() {
+    fun `setExactAlarm with past time remains due instead of skipping a week`() {
         val pastTime = System.currentTimeMillis() - 60_000L // 1 minute in the past
         val pendingIntent = createTestPendingIntent(1)
         val oneWeekInMillis = 7 * 24 * 60 * 60 * 1000L
@@ -81,11 +81,11 @@ class AlarmManagerExtensionsTest {
         assertEquals("Should have one scheduled alarm", 1, scheduledAlarms.size)
         
         // The alarm should be scheduled for pastTime + 1 week
-        val expectedTime = pastTime + oneWeekInMillis
-        assertEquals("Trigger time should be past time + 1 week", expectedTime, scheduledAlarms[0].triggerAtTime)
+        val expectedTime = pastTime
+        assertEquals("Trigger time must retain its original date", expectedTime, scheduledAlarms[0].triggerAtTime)
     }
 
-    @Test
+    @Test(expected = IllegalArgumentException::class)
     fun `setExactAlarm with null PendingIntent should not schedule alarm`() {
         val futureTime = System.currentTimeMillis() + 60_000L
 

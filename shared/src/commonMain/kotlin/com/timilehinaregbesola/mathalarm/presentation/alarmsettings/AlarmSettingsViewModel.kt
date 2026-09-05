@@ -16,7 +16,7 @@ import com.timilehinaregbesola.mathalarm.utils.toIndex
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.CancellationException
 import kotlinx.datetime.LocalDateTime
 
 class AlarmSettingsViewModel(
@@ -66,14 +66,33 @@ class AlarmSettingsViewModel(
     fun onEvent(event: AddEditAlarmEvent) {
         when (event) {
             is AddEditAlarmEvent.OnSaveTodoClick -> {
-                val alarm = createAlarm()
-                alarm.isSaved = true
-                runBlocking { usecases.addAlarm(alarm) }
+                val edited = createAlarm().copy(isSaved = true)
                 viewModelScope.launch {
-                    if (isNewAlarm == true || isRescheduled == true) {
-                        usecases.scheduleAlarm(alarm, isRescheduled == true)
+                    try {
+                        usecases.command {
+                            val old = findAlarm(edited.alarmId)
+                            val alarm = edited.copy(
+                                pendingTimes = old?.pendingTimes.orEmpty(),
+                                scheduleInitialized = old?.scheduleInitialized ?: false,
+                                snoozedUntil = old?.snoozedUntil, activeAt = old?.activeAt,
+                                scheduleError = old?.scheduleError, scheduleTimeZone = old?.scheduleTimeZone)
+                            // Cancel using the old snapshot as well, for pre-migration identities.
+                            if (old != null && isRescheduled == true) cancelAlarm(old)
+                            val id = addAlarm(alarm)
+                            val saved = alarm.copy(alarmId = if (alarm.alarmId == 0L) id else alarm.alarmId)
+                            currentAlarmId = saved.alarmId
+                            if (saved.isOn && (isNewAlarm == true || isRescheduled == true)) {
+                                scheduleAlarm(saved, true)
+                            } else if (saved.isOn) {
+                                updateAlarm(saved)
+                            }
+                        }
+                        _eventFlow.emit(UiEvent.SaveAlarm)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        _eventFlow.emit(UiEvent.ShowSnackbar(e.message ?: "Unable to save alarm"))
                     }
-                    _eventFlow.emit(UiEvent.SaveAlarm)
                 }
             }
             is AddEditAlarmEvent.OnTestClick -> {
@@ -155,7 +174,7 @@ class AlarmSettingsViewModel(
                     minute = alarm.minute,
                     formattedTime = alarm.getFormatTime().toString(),
                 )
-                if (alarm.repeatDays == "FFFFFFF") {
+                if (alarm.alarmId == 0L) {
                     isNewAlarm = true
                     val sb = StringBuilder("FFFFFFF")
                     val dateTime = initDateTime(alarm)
