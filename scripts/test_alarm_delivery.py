@@ -19,6 +19,17 @@ RECEIVER = "com.timilehinaregbesola.mathalarm.AlarmReceiver"
 ALARM_ID = 900001
 
 
+def run_cleanup(steps):
+    """Attempt every restoration step, preserving all failures for the run report."""
+    errors = {}
+    for name, operation in steps:
+        try:
+            operation()
+        except Exception as error:
+            errors[name] = str(error)
+    return errors
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--serial", required=True)
@@ -80,7 +91,8 @@ def main():
         if 31 <= api <= 32:
             adb("shell", "appops", "set", PACKAGE, "SCHEDULE_EXACT_ALARM", "allow")
         seeded = True
-        instrument("seedColdStartAlarm", 300 if args.scenario == "reboot" else 45)
+        lead_seconds = {"reboot": 300, "doze": 180}.get(args.scenario, 45)
+        instrument("seedColdStartAlarm", lead_seconds)
         print(f"{args.scenario}: alarm registered", flush=True)
         initial = next(e for e in events() if e["event"] == "scheduled")
         trigger = initial["triggerAt"]
@@ -92,19 +104,22 @@ def main():
         print(f"{args.scenario}: app process exited", flush=True)
         if args.scenario == "doze":
             # Android normally avoids Doze for an alarm-clock event within one hour.
-            # Shorten only this test timing guard, then restore its original value.
+            # Use a 30-second initial idle window with the alarm three minutes away,
+            # outside AlarmManager's two-minute early-wake margin. Restore both settings.
             idle_constants = adb("shell", "settings", "get", "global", "device_idle_constants").strip()
             constants = [] if idle_constants in ("", "null") else idle_constants.split(",")
-            constants = [c for c in constants if not c.startswith("min_time_to_alarm=")]
+            constants = [c for c in constants if not c.startswith(("min_time_to_alarm=", "idle_to="))]
             adb("shell", "settings", "put", "global", "device_idle_constants",
-                ",".join(constants + ["min_time_to_alarm=0"]))
+                ",".join(constants + ["min_time_to_alarm=0", "idle_to=30000"]))
             wait_for("test idle threshold applied", lambda: "min_time_to_alarm=0" in
                      adb("shell", "dumpsys", "deviceidle"), 10)
             adb("shell", "dumpsys", "battery", "unplug")
             idle_output = adb("shell", "dumpsys", "deviceidle", "force-idle", "deep")
-            state = adb("shell", "dumpsys", "deviceidle", "get", "deep").strip()
-            (args.output / "idle-entry.txt").write_text(idle_output + "\nstate=" + state)
-            assert state == "IDLE", f"Could not enter deep idle: {idle_output}; state={state}"
+            def is_deep_idle():
+                state = adb("shell", "dumpsys", "deviceidle", "get", "deep").strip()
+                (args.output / "idle-entry.txt").write_text(idle_output + "\nstate=" + state)
+                return state == "IDLE"
+            wait_for("confirmed deep idle after any maintenance window", is_deep_idle, 15)
         if args.scenario == "reboot":
             old_boot = adb("shell", "cat", "/proc/sys/kernel/random/boot_id").strip()
             adb("reboot")
@@ -117,7 +132,7 @@ def main():
             adb("shell", "input", "keyevent", "KEYCODE_WAKEUP")
             adb("shell", "wm", "dismiss-keyguard")
             adb("shell", "input", "keyevent", "KEYCODE_SLEEP")
-        wait_for("OS receiver, service and player start", lambda: delivered(1), 330 if args.scenario == "reboot" else 90)
+        wait_for("OS receiver, service and player start", lambda: delivered(1), lead_seconds + 45)
         print(f"{args.scenario}: receiver, service and player observed", flush=True)
         log = events()
         received = next(e for e in log if e["event"] == "received")
@@ -156,19 +171,21 @@ def main():
             (args.output / "events.json").write_text(json.dumps(events(), indent=2))
         except Exception:
             pass
-        try:
-            if args.scenario == "doze":
-                adb("shell", "dumpsys", "deviceidle", "unforce")
-                adb("shell", "dumpsys", "battery", "reset")
-                if idle_constants is not None:
-                    if idle_constants in ("", "null"):
-                        adb("shell", "settings", "delete", "global", "device_idle_constants")
-                    else:
-                        adb("shell", "settings", "put", "global", "device_idle_constants", idle_constants)
-            if seeded:
-                instrument("cleanup")
-        except Exception as error:
-            result.update(status="failed", cleanup_error=str(error))
+        cleanup_steps = []
+        if args.scenario == "doze":
+            cleanup_steps.extend([
+                ("exit idle", lambda: adb("shell", "dumpsys", "deviceidle", "unforce")),
+                ("reset battery", lambda: adb("shell", "dumpsys", "battery", "reset")),
+            ])
+            if idle_constants is not None:
+                restore = ("delete", "global", "device_idle_constants") if idle_constants in ("", "null") else (
+                    "put", "global", "device_idle_constants", idle_constants)
+                cleanup_steps.append(("restore idle settings", lambda: adb("shell", "settings", *restore)))
+        if seeded:
+            cleanup_steps.append(("remove test alarm", lambda: instrument("cleanup")))
+        cleanup_errors = run_cleanup(cleanup_steps)
+        if cleanup_errors:
+            result.update(status="failed", cleanup_errors=cleanup_errors)
         (args.output / "result.json").write_text(json.dumps(result, indent=2))
         print(json.dumps(result, indent=2))
     if result["status"] != "passed":

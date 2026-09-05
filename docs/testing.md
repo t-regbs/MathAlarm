@@ -4,6 +4,7 @@
 
 ```sh
 ./gradlew :core:testAndroidHostTest :shared:testAndroidHostTest :androidApp:testDebugUnitTest --continue
+python3 -B -m unittest discover -s scripts -p '*_test.py'
 ```
 
 The domain and ViewModel suites cover recurrence, persisted occurrences, editing,
@@ -60,8 +61,9 @@ the app again and is a different product scenario.
 The fixture uses alarm ID 900001, a missing custom sound URI to exercise fallback,
 and a one-minute snooze. It cleans up that alarm after each run. It resets the test
 app's delivery log and grants required permissions on the disposable emulator.
-The Doze fixture temporarily sets `min_time_to_alarm=0` to allow a near-future
-alarm into deep idle, then restores the original setting. Android normally avoids
+The Doze fixture schedules three minutes ahead and temporarily sets
+`min_time_to_alarm=0,idle_to=30000`. This permits a confirmed 30-second initial idle
+window outside Android’s early-wake margin, then restores the original settings. Android normally avoids
 deep idle shortly before alarm-clock events. This accelerated fixture complements
 the overnight physical-device check.
 Do not use an emulator containing alarms you need to preserve. A failed run is

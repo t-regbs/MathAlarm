@@ -260,7 +260,7 @@ class AlarmSystemIntegrationTest {
         val nextAlarm = shadowAlarmManager.nextScheduledAlarm!!
         val baseIntent = shadowOf(nextAlarm.operation).savedIntent
 
-        fireScheduledAlarmWithoutConsuming(nextAlarm)
+        fireScheduledAlarm(nextAlarm, consume = false)
         processAsyncOperations()
 
         val completeIntent = Intent(baseIntent).apply {
@@ -532,27 +532,24 @@ class AlarmSystemIntegrationTest {
         })
     }
 
-    private fun fireScheduledAlarm(scheduledAlarm: ShadowAlarmManager.ScheduledAlarm) {
-        dateTimeProvider.setFixedDateTime(kotlin.time.Instant.fromEpochMilliseconds(scheduledAlarm.triggerAtTime).toLocalDateTime(TimeZone.currentSystemDefault()))
+    private fun fireScheduledAlarm(
+        scheduledAlarm: ShadowAlarmManager.ScheduledAlarm,
+        consume: Boolean = true,
+    ) {
+        dateTimeProvider.setFixedDateTime(
+            kotlin.time.Instant.fromEpochMilliseconds(scheduledAlarm.triggerAtTime)
+                .toLocalDateTime(TimeZone.currentSystemDefault())
+        )
         val timeUntilAlarm = scheduledAlarm.triggerAtTime - ShadowSystemClock.currentTimeMillis()
         if (timeUntilAlarm > 0) {
             ShadowSystemClock.advanceBy(timeUntilAlarm, TimeUnit.MILLISECONDS)
         }
         val pendingIntent = checkNotNull(scheduledAlarm.operation)
         val intent = shadowOf(pendingIntent).savedIntent
-        alarmManager.cancel(pendingIntent)
-        pendingIntent.cancel()
-        alarmReceiver.onReceive(context, intent)
-    }
-
-    private fun fireScheduledAlarmWithoutConsuming(scheduledAlarm: ShadowAlarmManager.ScheduledAlarm) {
-        dateTimeProvider.setFixedDateTime(kotlin.time.Instant.fromEpochMilliseconds(scheduledAlarm.triggerAtTime).toLocalDateTime(TimeZone.currentSystemDefault()))
-        val timeUntilAlarm = scheduledAlarm.triggerAtTime - ShadowSystemClock.currentTimeMillis()
-        if (timeUntilAlarm > 0) {
-            ShadowSystemClock.advanceBy(timeUntilAlarm, TimeUnit.MILLISECONDS)
+        if (consume) {
+            alarmManager.cancel(pendingIntent)
+            pendingIntent.cancel()
         }
-        val pendingIntent = checkNotNull(scheduledAlarm.operation)
-        val intent = shadowOf(pendingIntent).savedIntent
         alarmReceiver.onReceive(context, intent)
     }
 

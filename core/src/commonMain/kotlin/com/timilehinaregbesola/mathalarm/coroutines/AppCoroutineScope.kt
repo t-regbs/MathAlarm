@@ -1,5 +1,6 @@
 package com.timilehinaregbesola.mathalarm.coroutines
 
+import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -16,7 +17,7 @@ import kotlin.coroutines.CoroutineContext
  * 
  */
 class AppCoroutineScope(
-    private val dispatcher: kotlinx.coroutines.CoroutineDispatcher = Dispatchers.Default
+    private val dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : CoroutineScope {
     
     private val job = SupervisorJob()

@@ -6,6 +6,7 @@ import com.timilehinaregbesola.mathalarm.fake.DateTimeProviderFake
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmDatabase
 import com.timilehinaregbesola.mathalarm.provider.DateTimeProvider
 import kotlinx.coroutines.test.StandardTestDispatcher
+import kotlinx.coroutines.test.TestDispatcher
 import kotlinx.coroutines.test.TestCoroutineScheduler
 import org.koin.android.ext.koin.androidContext
 import org.koin.dsl.module
@@ -13,11 +14,11 @@ import org.koin.dsl.module
 val testModule = module {
     single { TestCoroutineScheduler() }
     single { StandardTestDispatcher(get<TestCoroutineScheduler>()) }
-    single { AppCoroutineScope(get<kotlinx.coroutines.test.TestDispatcher>()) }
+    single { AppCoroutineScope(get<TestDispatcher>()) }
     single<DateTimeProvider> { DateTimeProviderFake() }
     single<AlarmDatabase> {
         Room.inMemoryDatabaseBuilder(androidContext(), AlarmDatabase::class.java)
-            .setQueryCoroutineContext(get<kotlinx.coroutines.test.TestDispatcher>())
+            .setQueryCoroutineContext(get<TestDispatcher>())
             .build()
     }
 }
