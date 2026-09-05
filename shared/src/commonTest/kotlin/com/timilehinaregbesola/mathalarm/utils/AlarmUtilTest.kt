@@ -11,6 +11,9 @@ import kotlinx.datetime.toLocalDateTime
 import kotlin.test.Test
 
 class AlarmUtilTest {
+    private val clock = object : kotlin.time.Clock {
+        override fun now() = kotlin.time.Instant.parse("2030-01-06T23:59:59Z")
+    }
 
     @Test
     fun `getFormatTime should format midnight correctly`() {
@@ -75,7 +78,7 @@ class AlarmUtilTest {
     fun `initLocalDateTimeInSystemZone should create LocalDateTime with alarm time`() {
         val alarm = Alarm(hour = 10, minute = 30)
         
-        val dateTime = alarm.initLocalDateTimeInSystemZone()
+        val dateTime = alarm.initLocalDateTimeInSystemZone(clock, TimeZone.UTC)
         dateTime.hour shouldBe 10
         dateTime.minute shouldBe 30
         dateTime.second shouldBe 0
@@ -89,7 +92,7 @@ class AlarmUtilTest {
             repeatDays = "FFFFFFF" // No repeat days
         )
         
-        val nextTime = calculateNextAlarmTime(alarm)
+        val nextTime = calculateNextAlarmTime(alarm, TimeZone.UTC, clock)
         nextTime shouldNotBe null
     }
 
@@ -101,7 +104,7 @@ class AlarmUtilTest {
             repeatDays = "TTTTTTT"
         )
         
-        val nextTime = calculateNextAlarmTime(alarm)
+        val nextTime = calculateNextAlarmTime(alarm, TimeZone.UTC, clock)
         nextTime shouldNotBe null
     }
 
@@ -113,7 +116,7 @@ class AlarmUtilTest {
             repeatDays = "FTFTFTT"
         )
         
-        val nextTime = calculateNextAlarmTime(alarm)
+        val nextTime = calculateNextAlarmTime(alarm, TimeZone.UTC, clock)
         nextTime shouldNotBe null
     }
 
@@ -220,9 +223,9 @@ class AlarmUtilTest {
             minute = 0,
             repeatDays = "TTTTTTT"
         )
-        val timeZone = TimeZone.currentSystemDefault()
+        val timeZone = TimeZone.UTC
         
-        val nextTime = calculateNextAlarmTime(alarm, timeZone)
+        val nextTime = calculateNextAlarmTime(alarm, timeZone, clock)
         nextTime shouldNotBe null
     }
 
@@ -230,9 +233,9 @@ class AlarmUtilTest {
     fun `initLocalDateTimeInSystemZone should use current date`() {
         val alarm = Alarm(hour = 14, minute = 30)
         
-        val dateTime = alarm.initLocalDateTimeInSystemZone()
-        val now = kotlin.time.Clock.System.now()
-            .toLocalDateTime(TimeZone.currentSystemDefault())
+        val dateTime = alarm.initLocalDateTimeInSystemZone(clock, TimeZone.UTC)
+        val now = clock.now()
+            .toLocalDateTime(TimeZone.UTC)
         
         dateTime.date shouldBe now.date
         dateTime.hour shouldBe 14

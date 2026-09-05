@@ -1,74 +1,28 @@
 package com.timilehinaregbesola.mathalarm.provider
 
-import io.kotest.matchers.shouldBe
-import io.kotest.matchers.shouldNotBe
+import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
+import kotlin.time.Instant
 
 class DateTimeProviderTest {
+    private var instant = Instant.parse("2030-12-31T23:59:59Z")
+    private val clock = object : Clock { override fun now() = instant }
 
-    @OptIn(ExperimentalTime::class)
-    @Test
-    fun `getCurrentDateTime should return current time`() {
-        val provider = DateTimeProviderImpl()
-        val beforeCall = Clock.System.now()
-        
-        val dateTime = provider.getCurrentDateTime()
-        dateTime shouldNotBe null
-        
-        val beforeLocal = beforeCall.toLocalDateTime(TimeZone.currentSystemDefault())
-
-        // Year, month, day should match
-        dateTime.year shouldBe beforeLocal.year
-        @Suppress("DEPRECATION")
-        (dateTime.monthNumber == beforeLocal.monthNumber) shouldBe true
-        dateTime.dayOfMonth shouldBe beforeLocal.dayOfMonth
+    @Test fun dateRollsOverAtMidnight() {
+        val provider = DateTimeProviderImpl(clock) { TimeZone.UTC }
+        assertEquals(LocalDateTime(2030, 12, 31, 23, 59, 59), provider.getCurrentDateTime())
+        instant = Instant.parse("2031-01-01T00:00:00Z")
+        assertEquals(LocalDateTime(2031, 1, 1, 0, 0), provider.getCurrentDateTime())
     }
 
-    @OptIn(ExperimentalTime::class)
-    @Test
-    fun `getCurrentDateTime should use system default timezone`() {
-        val provider = DateTimeProviderImpl()
-        
-        val dateTime = provider.getCurrentDateTime()
-        val now = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-        
-        dateTime.hour shouldBe now.hour
-        dateTime.minute shouldBe now.minute
-    }
-
-    @OptIn(ExperimentalTime::class)
-    @Test
-    fun `multiple calls should return increasing time`() {
-        val provider = DateTimeProviderImpl()
-        
-        val time1 = provider.getCurrentDateTime()
-        val time2 = provider.getCurrentDateTime()
-        
-        @Suppress("DEPRECATION")
-        val isSameOrLater = time2.year >= time1.year &&
-                           time2.monthNumber >= time1.monthNumber &&
-                           time2.dayOfMonth >= time1.dayOfMonth
-        isSameOrLater shouldBe true
-    }
-
-    @Test
-    fun `getCurrentDateTime should return valid LocalDateTime`() {
-        val provider = DateTimeProviderImpl()
-        
-        val dateTime = provider.getCurrentDateTime()
-
-        with(dateTime) {
-            (year in 2024..2100) shouldBe true // Reasonable range
-            @Suppress("DEPRECATION")
-            (monthNumber in 1..12) shouldBe true
-            (dayOfMonth in 1..31) shouldBe true
-            (hour in 0..23) shouldBe true
-            (minute in 0..59) shouldBe true
-            (second in 0..59) shouldBe true
-        }
+    @Test fun readsTheCurrentZoneOnEveryCall() {
+        var zone: TimeZone = TimeZone.UTC
+        val provider = DateTimeProviderImpl(clock) { zone }
+        assertEquals(LocalDateTime(2030, 12, 31, 23, 59, 59), provider.getCurrentDateTime())
+        zone = TimeZone.of("Asia/Tokyo")
+        assertEquals(LocalDateTime(2031, 1, 1, 8, 59, 59), provider.getCurrentDateTime())
     }
 }

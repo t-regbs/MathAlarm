@@ -48,6 +48,8 @@ The project follows **Clean Architecture** with the **MVVM** pattern:
 * [Lyricist](https://github.com/adrielcafe/lyricist) - Type-safe string localization for Compose
 
 ### Testing
+
+See [the testing guide](docs/testing.md) for host suites, real-device lifecycle checks, CI, and physical-device release validation.
 * [Kotlin Test](https://kotlinlang.org/api/latest/kotlin.test/) - Multiplatform testing
 * [Turbine](https://github.com/cashapp/turbine) - Flow testing
 * [Kotest](https://kotest.io/) - Assertions library

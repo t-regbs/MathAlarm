@@ -5,15 +5,18 @@ import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.ui.ExperimentalComposeUiApi
 import co.touchlab.kermit.Logger
+import com.timilehinaregbesola.mathalarm.coroutines.AppCoroutineScope
 import com.timilehinaregbesola.mathalarm.framework.app.di.appModule
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmDatabase
 import kotlinx.coroutines.InternalCoroutinesApi
 import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.GlobalContext
 import org.koin.core.context.startKoin
 import org.koin.core.context.stopKoin
 
 /**
  * Test Application class that initializes Koin for Robolectric tests.
- * This allows end-to-end tests to use the real dependency injection setup.
+ * This allows integration tests to use the real dependency injection setup.
  */
 class TestApplication : Application() {
     @OptIn(
@@ -43,6 +46,9 @@ class TestApplication : Application() {
     }
     
     override fun onTerminate() {
+        val koin = GlobalContext.get()
+        koin.get<AppCoroutineScope>().cancel()
+        koin.get<AlarmDatabase>().close()
         stopKoin()
         super.onTerminate()
     }

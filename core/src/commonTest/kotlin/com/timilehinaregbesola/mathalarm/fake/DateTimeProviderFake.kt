@@ -2,18 +2,12 @@ package com.timilehinaregbesola.mathalarm.fake
 
 import com.timilehinaregbesola.mathalarm.provider.DateTimeProvider
 import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.TimeZone
-import kotlinx.datetime.toLocalDateTime
-import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
 
 class DateTimeProviderFake : DateTimeProvider {
-    private var fixedDateTime: LocalDateTime? = null
+    private val baseline = LocalDateTime(2030, 1, 6, 6, 0)
+    private var fixedDateTime = baseline
 
-    @OptIn(ExperimentalTime::class)
-    override fun getCurrentDateTime(): LocalDateTime {
-        return fixedDateTime ?: Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())
-    }
+    override fun getCurrentDateTime(): LocalDateTime = fixedDateTime
 
     /**
      * Set a fixed date/time for deterministic testing.
@@ -37,9 +31,9 @@ class DateTimeProviderFake : DateTimeProvider {
     }
 
     /**
-     * Clear the fixed time and return to using the real clock.
+     * Reset to the deterministic Sunday baseline.
      */
     fun clearFixedDateTime() {
-        fixedDateTime = null
+        fixedDateTime = baseline
     }
 }

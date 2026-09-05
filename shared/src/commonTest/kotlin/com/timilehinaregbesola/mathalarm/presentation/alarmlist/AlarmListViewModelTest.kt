@@ -85,6 +85,32 @@ class AlarmListViewModelTest {
     }
 
     @Test
+    fun `undo preserves disabled status and does not schedule`() = runTest {
+        val alarm = Alarm(alarmId = 800, hour = 7, minute = 0, isSaved = true, isOn = false)
+        usecases.addAlarm(alarm)
+        viewModel.onEvent(AlarmListEvent.OnDeleteAlarmClick(alarm))
+        advanceUntilIdle()
+        viewModel.onEvent(AlarmListEvent.OnUndoDeleteClick)
+        advanceUntilIdle()
+        usecases.findAlarm(800)!!.isOn shouldBe false
+        alarmInteractor.isAlarmScheduled(alarm) shouldBe false
+    }
+
+    @Test
+    fun `rapid enable disable enable leaves one current schedule`() = runTest {
+        val alarm = Alarm(alarmId = 801, hour = 7, minute = 0, isSaved = true)
+        usecases.addAlarm(alarm)
+        viewModel.onEvent(AlarmListEvent.OnAlarmOnChange(alarm, true))
+        viewModel.onEvent(AlarmListEvent.OnAlarmOnChange(alarm, false))
+        viewModel.onEvent(AlarmListEvent.OnAlarmOnChange(alarm, true))
+        advanceUntilIdle()
+        val stored = usecases.findAlarm(801)!!
+        stored.isOn shouldBe true
+        stored.scheduleError shouldBe null
+        listOf(alarmInteractor.getScheduledAlarms()[801]!!.timeInMillis) shouldBe stored.pendingTimes
+    }
+
+    @Test
     fun `initial state should have empty alarm list`() = runTest {
         val alarms = viewModel.alarms.first()
         alarms shouldBe emptyList()

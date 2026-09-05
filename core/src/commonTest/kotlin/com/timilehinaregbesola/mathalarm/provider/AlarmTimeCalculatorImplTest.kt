@@ -21,7 +21,7 @@ class AlarmTimeCalculatorImplTest {
     @BeforeTest
     fun setup() {
         dateTimeProvider = DateTimeProviderFake()
-        calculator = AlarmTimeCalculatorImpl(dateTimeProvider)
+        calculator = AlarmTimeCalculatorImpl(dateTimeProvider) { TimeZone.UTC }
     }
 
     @Test
@@ -217,7 +217,7 @@ class AlarmTimeCalculatorImplTest {
         dateTimeProvider.setFixedDateTime(2025, 1, 8, 10, 0)
         
         val futureTime = LocalDateTime(2025, 1, 8, 11, 0)
-            .toInstant(TimeZone.currentSystemDefault())
+            .toInstant(TimeZone.UTC)
             .toEpochMilliseconds()
         
         calculator.isInFuture(futureTime) shouldBe true
@@ -228,7 +228,7 @@ class AlarmTimeCalculatorImplTest {
         dateTimeProvider.setFixedDateTime(2025, 1, 8, 10, 0)
         
         val pastTime = LocalDateTime(2025, 1, 8, 9, 0)
-            .toInstant(TimeZone.currentSystemDefault())
+            .toInstant(TimeZone.UTC)
             .toEpochMilliseconds()
         
         calculator.isInFuture(pastTime) shouldBe false
@@ -282,6 +282,6 @@ class AlarmTimeCalculatorImplTest {
 
     private fun instantToLocalDateTime(epochMillis: Long): LocalDateTime {
         return Instant.fromEpochMilliseconds(epochMillis)
-            .toLocalDateTime(TimeZone.currentSystemDefault())
+            .toLocalDateTime(TimeZone.UTC)
     }
 }

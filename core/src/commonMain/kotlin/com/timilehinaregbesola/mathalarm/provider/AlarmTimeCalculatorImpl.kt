@@ -12,7 +12,8 @@ import kotlin.time.ExperimentalTime
 
 @OptIn(ExperimentalTime::class)
 class AlarmTimeCalculatorImpl(
-    private val dateTimeProvider: DateTimeProvider = DateTimeProviderImpl()
+    private val dateTimeProvider: DateTimeProvider = DateTimeProviderImpl(),
+    private val timeZone: () -> TimeZone = { TimeZone.currentSystemDefault() }
 ) : AlarmTimeCalculator {
 
     companion object {
@@ -21,7 +22,7 @@ class AlarmTimeCalculatorImpl(
     }
 
     override fun calculateAlarmTimes(alarm: Alarm): List<Long> {
-        val tz = TimeZone.currentSystemDefault()
+        val tz = timeZone()
         val localNow = dateTimeProvider.getCurrentDateTime()
         val nowInstant = localNow.toInstant(tz)
         val todayDate = localNow.date
@@ -83,7 +84,7 @@ class AlarmTimeCalculatorImpl(
 
     @OptIn(ExperimentalTime::class)
     override fun isInFuture(timeInMillis: Long): Boolean {
-        val tz = TimeZone.currentSystemDefault()
+        val tz = timeZone()
         val currentTime = dateTimeProvider.getCurrentDateTime().toInstant(tz).toEpochMilliseconds()
         return timeInMillis > currentTime
     }
