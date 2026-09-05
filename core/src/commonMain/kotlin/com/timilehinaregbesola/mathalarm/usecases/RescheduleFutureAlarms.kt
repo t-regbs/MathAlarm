@@ -1,69 +1,52 @@
 package com.timilehinaregbesola.mathalarm.usecases
 
 import com.timilehinaregbesola.mathalarm.data.AlarmRepository
-import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
+import com.timilehinaregbesola.mathalarm.interactors.scheduleOccurrences
 import com.timilehinaregbesola.mathalarm.provider.AlarmTimeCalculator
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
+import kotlin.time.Instant
 
-/**
- * Use case to reschedule tasks scheduled in the future or missing repeating.
- */
 class RescheduleFutureAlarms(
     private val alarmRepository: AlarmRepository,
     private val alarmInteractor: AlarmInteractor,
-    private val alarmTimeCalculator: AlarmTimeCalculator,
-    private val scheduleNextAlarm: ScheduleNextAlarm
+    private val alarmTimeCalculator: AlarmTimeCalculator
 ) {
-
-    /**
-     * Reschedule scheduled and missed repeating alarms.
-     * 
-     * This separates handling into two categories:
-     * 1. Future alarms - alarms with next trigger time in the future
-     * 2. Missed repeating alarms - repeating alarms whose time has passed
-     */
-    suspend operator fun invoke() {
-        val activeAlarms = alarmRepository.getSavedAlarms().first().filter { it.isOn }
-        
-        val futureAlarms = activeAlarms.filter { isFutureAlarm(it) }
-        val missedRepeating = activeAlarms.filter { isMissedRepeating(it) }
-
-        futureAlarms.forEach { rescheduleFutureAlarm(it) }
-        missedRepeating.forEach { rescheduleRepeatingAlarm(it) }
-    }
-
-    /**
-     * Checks if the alarm's next trigger time is in the future.
-     */
-    private fun isFutureAlarm(alarm: Alarm): Boolean {
-        val nextTime = alarmTimeCalculator.calculateNextAlarmTime(alarm) ?: return false
-        return alarmTimeCalculator.isInFuture(nextTime)
-    }
-
-    /**
-     * Checks if this is a repeating alarm whose time has already passed.
-     */
-    private fun isMissedRepeating(alarm: Alarm): Boolean {
-        if (!alarm.repeat) return false
-        val nextTime = alarmTimeCalculator.calculateNextAlarmTime(alarm) ?: return false
-        return !alarmTimeCalculator.isInFuture(nextTime)
-    }
-
-    /**
-     * Reschedule a future alarm by calculating its times and scheduling each.
-     */
-    private fun rescheduleFutureAlarm(alarm: Alarm) {
-        val alarmTimes = alarmTimeCalculator.calculateAlarmTimes(alarm)
-        alarmTimes.forEach { timeInMillis ->
-            alarmInteractor.schedule(alarm, timeInMillis)
+    suspend operator fun invoke(clearActive: Boolean = false) {
+        val zone = TimeZone.currentSystemDefault()
+        for (alarm in alarmRepository.getSavedAlarms().first().filter { it.isOn }) {
+            try {
+                val times = if (alarm.repeat || !alarm.scheduleInitialized) {
+                    alarmTimeCalculator.calculateAlarmTimes(alarm)
+                } else {
+                    // Keep the original local dates of one-time occurrences across zone changes.
+                    alarm.pendingTimes.map { time ->
+                        val previousZone = alarm.scheduleTimeZone?.let(TimeZone::of) ?: zone
+                        Instant.fromEpochMilliseconds(time).toLocalDateTime(previousZone)
+                            .toInstant(zone).toEpochMilliseconds()
+                    }.filter(alarmTimeCalculator::isInFuture)
+                }
+                val snooze = alarm.snoozedUntil?.takeIf(alarmTimeCalculator::isInFuture)
+                val planned = alarm.copy(pendingTimes = times.sorted(), snoozedUntil = snooze,
+                    activeAt = if (clearActive) null else alarm.activeAt,
+                    scheduleInitialized = true, scheduleTimeZone = zone.id, scheduleError = "Scheduling has not completed",
+                    isOn = alarm.repeat || times.isNotEmpty() || snooze != null || (alarm.activeAt != null && !clearActive))
+                alarmRepository.updateAlarm(planned)
+                // Also remove old-zone weekday identities before installing the new schedule.
+                alarmInteractor.cancel(alarm)
+                alarmInteractor.scheduleOccurrences(planned, times)
+                if (snooze != null) alarmInteractor.scheduleSnooze(planned, snooze)
+                alarmRepository.updateAlarm(planned.copy(scheduleError = null))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                val latest = alarmRepository.findAlarm(alarm.alarmId) ?: continue
+                alarmRepository.updateAlarm(latest.copy(scheduleError = e.message ?: "Unable to restore alarm"))
+            }
         }
-    }
-
-    /**
-     * Reschedule a missed repeating alarm by advancing to its next occurrence.
-     */
-    private fun rescheduleRepeatingAlarm(alarm: Alarm) {
-        scheduleNextAlarm(alarm)
     }
 }

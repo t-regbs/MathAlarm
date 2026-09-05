@@ -27,6 +27,6 @@ internal class NotificationInteractorImpl(
 
     override fun dismiss(notificationId: Long) {
         logger.d("dismiss - alarmId = $notificationId, stopping AlarmService")
-        AlarmService.stopAlarm(context)
+        AlarmService.stopAlarm(context, notificationId)
     }
 }

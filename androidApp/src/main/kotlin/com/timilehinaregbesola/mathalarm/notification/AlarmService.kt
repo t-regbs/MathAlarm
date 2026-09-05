@@ -33,11 +33,19 @@ import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.serialization.json.Json
 import org.koin.android.ext.android.inject
 import java.io.InputStream
+import android.os.VibrationEffect
+import android.os.Vibrator
 import android.util.Base64
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.cancel
+import com.timilehinaregbesola.mathalarm.framework.Usecases
 
 /**
  * Foreground service that handles alarm playback independently of the app lifecycle.
- * This ensures the alarm keeps ringing even if the user force-closes the app.
+ * Playback survives activity teardown; a system force-stop still stops the application.
  */
 @ExperimentalAnimationApi
 @InternalCoroutinesApi
@@ -52,6 +60,11 @@ class AlarmService : Service() {
     private var mediaPlayer: MediaPlayer? = null
     private var wakeLock: PowerManager.WakeLock? = null
     private var currentAlarm: Alarm? = null
+    private val queuedAlarms = linkedMapOf<Long, Alarm>()
+    private var alarmVibrator: Vibrator? = null
+    private val usecases: Usecases by inject()
+    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
+    private val playbackState by lazy { getSharedPreferences("active_alarm_playback", MODE_PRIVATE) }
     private val timeoutHandler = Handler(Looper.getMainLooper())
     
     // Timing controller for ring/pause/restart cycle
@@ -88,7 +101,11 @@ class AlarmService : Service() {
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         logger.d("onStartCommand: action=${intent?.action}")
         
-        when (intent?.action) {
+        if (intent == null) {
+            restorePlayback()
+            return START_STICKY
+        }
+        when (intent.action) {
             ACTION_START_ALARM -> {
                 val alarmJson = intent.getStringExtra(EXTRA_ALARM_JSON)
                 if (alarmJson != null) {
@@ -106,14 +123,22 @@ class AlarmService : Service() {
                 }
             }
             ACTION_STOP_ALARM -> {
-                logger.d("Stopping alarm service")
-                stopSelf()
-            }
-            ACTION_REFRESH_NOTIFICATION -> {
-                // Refresh notification to trigger full-screen intent again
-                currentAlarm?.let { alarm ->
-                    logger.d("Refreshing notification for alarm: ${alarm.title}")
-                    refreshNotificationForAlarm(alarm)
+                val id = intent.getLongExtra(EXTRA_ALARM_ID, -1)
+                queuedAlarms.remove(id)
+                persistPlayback()
+                if (currentAlarm?.alarmId == id) {
+                    timingController?.stop()
+                    stopAudioPlayback()
+                    val next = queuedAlarms.values.firstOrNull()
+                    if (next == null) {
+                        currentAlarm = null
+                        persistPlayback()
+                        stopSelf()
+                    } else {
+                        queuedAlarms.remove(next.alarmId)
+                        currentAlarm = null
+                        startAlarm(next)
+                    }
                 }
             }
             else -> {
@@ -121,13 +146,30 @@ class AlarmService : Service() {
             }
         }
         
-        return START_NOT_STICKY
+        return if (currentAlarm == null) START_NOT_STICKY else START_STICKY
     }
 
     private fun startAlarm(alarm: Alarm) {
         logger.d("Starting alarm: ${alarm.title}")
+        val current = currentAlarm
+        if (current?.alarmId == alarm.alarmId) {
+            currentAlarm = alarm
+            persistPlayback()
+            refreshNotificationForAlarm(alarm)
+            return
+        }
+        if (current != null) {
+            queuedAlarms[alarm.alarmId] = alarm
+            persistPlayback()
+            AlarmDeliveryLog.record(this, "queued", alarm.alarmId, alarm.activeAt)
+            return
+        }
+        timingController?.stop()
+        stopAudioPlayback()
         currentAlarm = alarm
-        
+        persistPlayback()
+        AlarmDeliveryLog.record(this, "service_started", alarm.alarmId, alarm.activeAt)
+
         ActiveAlarmManager.setActiveAlarm(alarm.alarmId)
         
         // Initialize timing controller with callbacks
@@ -146,6 +188,36 @@ class AlarmService : Service() {
         timingController?.start()
     }
     
+    private fun persistPlayback() {
+        val alarms = listOfNotNull(currentAlarm) + queuedAlarms.values
+        playbackState.edit().putString("alarms", Json.encodeToString(alarms.map { AlarmMapper().mapFromDomainModel(it) })).commit()
+    }
+
+    private fun restorePlayback() {
+        val saved = runCatching {
+            Json.decodeFromString<List<AlarmEntity>>(playbackState.getString("alarms", "[]") ?: "[]")
+        }.getOrDefault(emptyList())
+        if (saved.isEmpty()) { stopSelf(); return }
+        // Enter the foreground promptly, then validate against Room before restarting audio.
+        showForegroundNotification(AlarmMapper().mapToDomainModel(saved.first()), isPaused = true)
+        serviceScope.launch {
+            try {
+                val valid = usecases.command {
+                    saved.mapNotNull { snapshot ->
+                        findAlarm(snapshot.alarmId)?.takeIf { it.isOn && it.activeAt != null && it.activeAt == snapshot.activeAt }
+                    }
+                }
+                valid.forEach { startAlarm(it) }
+                if (currentAlarm == null) { persistPlayback(); stopSelf() }
+            } catch (e: kotlinx.coroutines.CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                logger.e(e) { "Unable to restore active alarm playback" }
+                stopSelf()
+            }
+        }
+    }
+
     private fun onStartRinging(alarm: Alarm) {
         logger.d("Starting/Restarting alarm audio")
         showForegroundNotification(alarm, isPaused = false)
@@ -185,52 +257,60 @@ class AlarmService : Service() {
     }
 
     private fun startAudioPlayback(alarm: Alarm) {
+        stopAudioPlayback()
+        if (alarm.vibrate) {
+            alarmVibrator = (getSystemService(Context.VIBRATOR_SERVICE) as Vibrator).also {
+                it.vibrate(VibrationEffect.createWaveform(longArrayOf(0, 500, 500), 0))
+            }
+        }
+        val candidates = listOfNotNull(
+            alarm.alarmTone.takeIf { it.isNotBlank() },
+            RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)?.toString(),
+            "android.resource://$packageName/${R.raw.alarm_fallback}"
+        ).distinct()
+        playCandidate(alarm, candidates, 0)
+    }
+
+    private fun playCandidate(alarm: Alarm, candidates: List<String>, index: Int) {
+        if (index >= candidates.size) {
+            AlarmDeliveryLog.record(this, "audio_failed", alarm.alarmId, alarm.activeAt, "All audio sources failed")
+            return
+        }
+        val player = MediaPlayer()
+        mediaPlayer = player
         try {
-            stopAudioPlayback()
-            
-            val toneUri = alarm.alarmTone.toUri()
-            var uriExists = false
-            
-            try {
-                val inputStream: InputStream? = contentResolver.openInputStream(toneUri)
-                inputStream?.close()
-                uriExists = true
-            } catch (_: Exception) {
-                logger.w("Alarm tone URI does not exist: $toneUri")
-            }
-            
-            val toneString = if (uriExists) {
-                alarm.alarmTone
-            } else {
-                RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString()
-            }
-            
-            mediaPlayer = MediaPlayer().apply {
-                setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                        .setUsage(AudioAttributes.USAGE_ALARM)
-                        .build()
-                )
-                setDataSource(this@AlarmService, toneString.toUri())
-                isLooping = true
-                setOnErrorListener { mp, _, _ ->
-                    logger.e("MediaPlayer error")
-                    mp.release()
-                    mediaPlayer = null
-                    true
+            player.setAudioAttributes(AudioAttributes.Builder()
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).setUsage(AudioAttributes.USAGE_ALARM).build())
+            player.setWakeMode(this, PowerManager.PARTIAL_WAKE_LOCK)
+            player.isLooping = true
+            player.setOnPreparedListener {
+                if (mediaPlayer === it && currentAlarm?.alarmId == alarm.alarmId) {
+                    it.start()
+                    AlarmDeliveryLog.record(this, "audio_started", alarm.alarmId, alarm.activeAt)
                 }
-                prepare()
-                start()
             }
-            
-            logger.d("Audio playback started")
+            player.setOnErrorListener { failed, what, extra ->
+                if (mediaPlayer === failed) {
+                    mediaPlayer = null
+                    failed.release()
+                    AlarmDeliveryLog.record(this, "audio_source_failed", alarm.alarmId, alarm.activeAt, "$what/$extra")
+                    playCandidate(alarm, candidates, index + 1)
+                }
+                true
+            }
+            player.setDataSource(this, candidates[index].toUri())
+            player.prepareAsync()
         } catch (e: Exception) {
-            logger.e("Failed to start audio playback", e)
+            player.release()
+            mediaPlayer = null
+            AlarmDeliveryLog.record(this, "audio_source_failed", alarm.alarmId, alarm.activeAt, e.message)
+            playCandidate(alarm, candidates, index + 1)
         }
     }
 
     private fun stopAudioPlayback() {
+        alarmVibrator?.cancel()
+        alarmVibrator = null
         try {
             mediaPlayer?.run {
                 if (isPlaying) stop()
@@ -245,7 +325,7 @@ class AlarmService : Service() {
 
     private fun buildNotification(alarm: Alarm, isPaused: Boolean = false): NotificationCompat.Builder {
         val alarmImage = BitmapFactory.decodeResource(resources, R.drawable.icon)
-        val vibratePattern = if (isPaused) null else longArrayOf(0, 100, 200, 300)
+        val vibratePattern = if (isPaused || !alarm.vibrate) null else longArrayOf(0, 100, 200, 300)
         val bigPicStyle = NotificationCompat.BigPictureStyle()
             .bigPicture(alarmImage)
         
@@ -320,6 +400,7 @@ class AlarmService : Service() {
     ): PendingIntent {
         val receiverIntent = Intent(this, AlarmReceiver::class.java).apply {
             action = intentAction
+            data = "mathalarm://action/${alarm.alarmId}/${alarm.activeAt}/$intentAction".toUri()
             putExtra(AlarmReceiver.EXTRA_TASK, alarm.alarmId)
         }
 
@@ -333,6 +414,7 @@ class AlarmService : Service() {
 
     override fun onDestroy() {
         logger.d("AlarmService destroyed")
+        serviceScope.cancel()
         
         ActiveAlarmManager.clearActiveAlarm()
         
@@ -357,7 +439,7 @@ class AlarmService : Service() {
     companion object {
         const val ACTION_START_ALARM = "com.timilehinaregbesola.mathalarm.START_ALARM"
         const val ACTION_STOP_ALARM = "com.timilehinaregbesola.mathalarm.STOP_ALARM"
-        const val ACTION_REFRESH_NOTIFICATION = "com.timilehinaregbesola.mathalarm.REFRESH_NOTIFICATION"
+        const val EXTRA_ALARM_ID = "alarm_id"
         const val EXTRA_ALARM_JSON = "extra_alarm_json"
         
         private const val REQUEST_CODE_OPEN_TASK = 1_121_111
@@ -391,23 +473,14 @@ class AlarmService : Service() {
         /**
          * Stop the alarm service.
          */
-        fun stopAlarm(context: Context) {
+        fun stopAlarm(context: Context, alarmId: Long) {
             val intent = Intent(context, AlarmService::class.java).apply {
                 action = ACTION_STOP_ALARM
+                putExtra(EXTRA_ALARM_ID, alarmId)
             }
-            context.stopService(intent)
+            if (ActiveAlarmManager.hasActiveAlarm()) context.startService(intent)
+            AlarmDeliveryLog.record(context, "dismissed", alarmId)
         }
         
-        /**
-         * Refresh the notification to trigger full-screen intent again.
-         * Call this when the user closes the app while alarm is active.
-         */
-        fun refreshNotification(context: Context) {
-            val intent = Intent(context, AlarmService::class.java).apply {
-                action = ACTION_REFRESH_NOTIFICATION
-            }
-
-            context.startForegroundService(intent)
-        }
     }
 }

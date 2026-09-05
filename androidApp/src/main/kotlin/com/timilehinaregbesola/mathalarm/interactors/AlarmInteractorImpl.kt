@@ -9,17 +9,23 @@ class AlarmInteractorImpl(
     private val logger: Logger
 ) : AlarmInteractor {
 
-    override fun schedule(alarm: Alarm, timeInMillis: Long) {
+    override suspend fun schedule(alarm: Alarm, timeInMillis: Long) {
         logger.d("AlarmInteractorImpl.schedule: alarmId=${alarm.alarmId}, timeInMillis=$timeInMillis")
         alarmManager.scheduleAlarm(alarm, timeInMillis)
     }
+
+    override suspend fun scheduleSnooze(alarm: Alarm, timeInMillis: Long) {
+        alarmManager.scheduleSnooze(alarm, timeInMillis)
+    }
+
+    override fun cancelSnooze(alarm: Alarm) = alarmManager.cancelSnooze(alarm)
 
     override fun cancel(alarm: Alarm) {
         logger.d("AlarmInteractorImpl.cancel: alarmId=${alarm.alarmId}")
         alarmManager.cancelAlarm(alarm)
     }
 
-    override fun update(alarm: Alarm) {
+    override suspend fun update(alarm: Alarm) {
         logger.d("AlarmInteractorImpl.update: alarmId=${alarm.alarmId}")
         alarmManager.updateAlarm(alarm)
     }

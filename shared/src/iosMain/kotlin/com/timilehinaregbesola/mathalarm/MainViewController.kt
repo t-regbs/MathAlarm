@@ -21,6 +21,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.first
 import org.koin.core.component.KoinComponent
 import platform.UIKit.UIViewController
 
@@ -37,6 +38,30 @@ fun doInitKoin() {
  */
 fun prewarmDatabaseInBackground() {
     prewarmDatabase()
+}
+
+/** Replace legacy weekday mappings and random native IDs after upgrading. */
+fun migrateAlarmSchedules() {
+    CoroutineScope(Dispatchers.Main).launch {
+        val settings = com.russhwolf.settings.Settings()
+        if (settings.getBoolean("alarm_occurrences_v5", false)) return@launch
+        try {
+            val usecases = (object : KoinComponent {}).getKoin().get<com.timilehinaregbesola.mathalarm.framework.Usecases>()
+            usecases.command {
+                if (settings.getBoolean("alarm_occurrences_v5", false)) return@command
+                com.timilehinaregbesola.mathalarm.alarm.AlarmSchedulerBridge.cancelAllAlarms()
+                rescheduleFutureAlarms()
+                val alarms = getSavedAlarms().first()
+                if (alarms.none { it.isOn && it.scheduleError != null }) {
+                    settings.putBoolean("alarm_occurrences_v5", true)
+                }
+            }
+        } catch (e: kotlinx.coroutines.CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            co.touchlab.kermit.Logger.e(e) { "Alarm migration failed" }
+        }
+    }
 }
 
 /**

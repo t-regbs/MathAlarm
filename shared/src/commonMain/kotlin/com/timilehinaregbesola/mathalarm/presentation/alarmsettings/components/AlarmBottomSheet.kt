@@ -599,6 +599,8 @@ private fun BottomSettingsSection(
             }
         }
     }
+    Text(strings.repeatExplanation, style = MaterialTheme.typography.bodySmall,
+        modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium))
     Row(
         modifier = Modifier
             .padding(
@@ -662,6 +664,8 @@ private fun SheetActionButtons(
             text = strings.testAlarm.uppercase(),
         )
     }
+    Text(strings.testExplanation, style = MaterialTheme.typography.bodySmall,
+        modifier = Modifier.padding(top = MaterialTheme.spacing.small))
     if (showSaveButton) {
         AdaptiveButton(
             modifier = Modifier

@@ -43,4 +43,10 @@ data class AlarmEntity(
 
     @ColumnInfo(name = "isSaved")
     val isSaved: Boolean,
+    @ColumnInfo(defaultValue = "''") val pendingTimes: String = "",
+    @ColumnInfo(defaultValue = "0") val scheduleInitialized: Boolean = false,
+    val snoozedUntil: Long? = null,
+    val activeAt: Long? = null,
+    val scheduleError: String? = null,
+    val scheduleTimeZone: String? = null,
 )

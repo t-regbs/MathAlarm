@@ -3,127 +3,90 @@ package com.timilehinaregbesola.mathalarm.notification
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import androidx.core.net.toUri
 import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.AlarmReceiver
-import com.timilehinaregbesola.mathalarm.AlarmReceiver.Companion.ALARM_ACTION
-import com.timilehinaregbesola.mathalarm.AlarmReceiver.Companion.EXTRA_TASK
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.utils.cancelAlarm
-import com.timilehinaregbesola.mathalarm.utils.fullDays
 import com.timilehinaregbesola.mathalarm.utils.setExactAlarm
 import com.timilehinaregbesola.mathalarm.utils.toIndex
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
-/**
- * Alarm manager to schedule an event based on the time from a Alarm.
- */
+/** Stable, URI-based identities; mutable time and integer hashes are not alarm identities. */
 class AlarmNotificationScheduler(
     private val context: Context,
     private val logger: Logger,
     private val idGenerator: PendingIntentIdGenerator = PendingIntentIdGenerator()
 ) {
+    private val occurrences = context.getSharedPreferences("scheduled_alarm_occurrences", Context.MODE_PRIVATE)
 
-    /**
-     * Schedules a single alarm notification at the specified time.
-     *
-     * @param alarm the alarm to schedule
-     * @param timeInMillis the exact time to trigger the alarm
-     */
-    fun scheduleAlarm(alarm: Alarm, timeInMillis: Long) {
-        logger.d("Scheduling alarm: id=${alarm.alarmId}, time=$timeInMillis")
+    fun scheduleAlarm(alarm: Alarm, timeInMillis: Long) = schedule(alarm, timeInMillis, false)
+    fun scheduleSnooze(alarm: Alarm, timeInMillis: Long) = schedule(alarm, timeInMillis, true)
 
-        val tz = TimeZone.currentSystemDefault()
-        val alarmDateTime = Instant.fromEpochMilliseconds(timeInMillis)
-            .toLocalDateTime(tz)
-        val dayIndex = alarmDateTime.dayOfWeek.toIndex()
-
-        val intentId = idGenerator.generateId(alarm, dayIndex)
-        val alarmIntent = createAlarmIntent(alarm, intentId)
-        
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            intentId,
-            alarmIntent,
-            PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
-
-        context.setExactAlarm(timeInMillis, pendingIntent)
-        logger.d("Alarm scheduled successfully: id=${alarm.alarmId} at $timeInMillis (day=${fullDays[dayIndex]}, intentId=$intentId)")
+    private fun schedule(alarm: Alarm, timeInMillis: Long, snooze: Boolean) {
+        val day = Instant.fromEpochMilliseconds(timeInMillis).toLocalDateTime(TimeZone.currentSystemDefault()).dayOfWeek.toIndex()
+        val intent = occurrenceIntent(alarm.alarmId, if (snooze) "snooze" else "day/$day").apply {
+            putExtra(AlarmReceiver.EXTRA_TRIGGER_AT, timeInMillis)
+            putExtra(AlarmReceiver.EXTRA_SNOOZED, snooze)
+        }
+        val pending = PendingIntent.getBroadcast(context, 0, intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        try {
+            context.setExactAlarm(timeInMillis, pending)
+            check(occurrences.edit().putLong(intent.dataString, timeInMillis).commit()) { "Cannot persist scheduled occurrence" }
+            AlarmDeliveryLog.record(context, "scheduled", alarm.alarmId, timeInMillis)
+        } catch (e: Exception) {
+            context.cancelAlarm(pending)
+            pending.cancel()
+            occurrences.edit().remove(intent.dataString).commit()
+            AlarmDeliveryLog.record(context, "schedule_failed", alarm.alarmId, timeInMillis, e.message)
+            throw e
+        }
     }
 
-    /**
-     * Updates an existing alarm notification.
-     *
-     * @param alarm the alarm to update
-     */
     fun updateAlarm(alarm: Alarm) {
-        logger.d("Update alarm called for id=${alarm.alarmId} - no action needed on Android")
-        // On Android, the notification will trigger a BroadcastReceiver which will always get the
-        // most recent Alarm data from the database, so no action needed here.
+        logger.d("Alarm ${alarm.alarmId} reads its current metadata when delivered")
     }
 
     fun hasPendingOccurrence(alarm: Alarm): Boolean {
-        val receiverIntent = createAlarmIntent(alarm)
-        val flags = PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE
-
-        if (PendingIntent.getBroadcast(context, idGenerator.generateSimpleId(alarm.alarmId), receiverIntent, flags) != null) {
-            return true
-        }
-
-        return (0..6).any { dayIndex ->
-            PendingIntent.getBroadcast(
-                context,
-                idGenerator.generateId(alarm, dayIndex),
-                receiverIntent,
-                flags,
-            ) != null
-        }
+        val prefix = "mathalarm://alarm/${alarm.alarmId}/"
+        return occurrences.all.any { (key, value) -> key.startsWith(prefix) && (value as? Long ?: 0) > System.currentTimeMillis() }
     }
 
-    /**
-     * Cancels all scheduled notifications for an alarm.
-     *
-     * @param alarm alarm to be canceled
-     */
+    fun cancelSnooze(alarm: Alarm) = cancel(occurrenceIntent(alarm.alarmId, "snooze"))
+
     fun cancelAlarm(alarm: Alarm) {
-        logger.d("Canceling alarm: id=${alarm.alarmId}")
-
-        val receiverIntent = createAlarmIntent(alarm)
-
-        // Cancel the base alarm (for backward compatibility with old alarms)
-        cancelAlarmWithId(receiverIntent, idGenerator.generateSimpleId(alarm.alarmId))
-
-        // Cancel day-specific alarms for all days (0-6)
-        // We cancel all days, not just those marked 'T', because an alarm may have been
-        // edited and we need to ensure all previously scheduled instances are removed
-        for (i in 0..6) {
-            val intentId = idGenerator.generateId(alarm, i)
-            cancelAlarmWithId(receiverIntent, intentId)
-            logger.d("Canceled alarm for day $i (${fullDays[i]})")
-        }
-
-        logger.d("Alarm canceled: id=${alarm.alarmId}")
+        for (day in 0..6) cancel(occurrenceIntent(alarm.alarmId, "day/$day"))
+        cancelSnooze(alarm)
+        // Cancel identities from earlier releases for the saved time. Orphan legacy broadcasts
+        // from older edits are also rejected by the receiver after occurrence-state migration.
+        val legacy = Intent(context, AlarmReceiver::class.java).setAction(AlarmReceiver.ALARM_ACTION)
+        cancel(legacy, idGenerator.generateSimpleId(alarm.alarmId))
+        for (day in 0..6) cancel(legacy, idGenerator.generateId(alarm, day))
+        AlarmDeliveryLog.record(context, "canceled", alarm.alarmId)
     }
 
-    private fun createAlarmIntent(alarm: Alarm, pendingIntentId: Int? = null): Intent {
-        return Intent(context, AlarmReceiver::class.java).apply {
-            action = ALARM_ACTION
-            putExtra(EXTRA_TASK, alarm.alarmId)
-            pendingIntentId?.let { putExtra(AlarmReceiver.EXTRA_PENDING_INTENT_ID, it) }
-        }
+    fun consume(intent: Intent) {
+        val key = intent.dataString ?: return
+        val trigger = intent.getLongExtra(AlarmReceiver.EXTRA_TRIGGER_AT, Long.MIN_VALUE)
+        // A delayed/duplicate delivery must not cancel a newer occurrence using the same identity.
+        if (occurrences.getLong(key, Long.MIN_VALUE) == trigger) cancel(intent)
     }
 
-    private fun cancelAlarmWithId(intent: Intent, intentId: Int) {
-        val pendingIntent = PendingIntent.getBroadcast(
-            context,
-            intentId,
-            intent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE,
-        )
+    private fun occurrenceIntent(id: Long, slot: String) = Intent(context, AlarmReceiver::class.java).apply {
+        action = AlarmReceiver.ALARM_ACTION
+        data = "mathalarm://alarm/$id/$slot".toUri()
+        putExtra(AlarmReceiver.EXTRA_TASK, id)
+    }
 
-        context.cancelAlarm(pendingIntent)
-        pendingIntent.cancel()
+    private fun cancel(intent: Intent, requestCode: Int = 0) {
+        PendingIntent.getBroadcast(context, requestCode, intent,
+            PendingIntent.FLAG_NO_CREATE or PendingIntent.FLAG_IMMUTABLE)?.let {
+            context.cancelAlarm(it)
+            it.cancel()
+        }
+        intent.dataString?.let { occurrences.edit().remove(it).commit() }
     }
 }

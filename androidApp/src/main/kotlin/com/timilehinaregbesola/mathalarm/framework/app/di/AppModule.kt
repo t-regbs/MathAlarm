@@ -22,6 +22,7 @@ import com.timilehinaregbesola.mathalarm.framework.app.permission.ScreenNavigato
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmDatabase
 import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_2_3
 import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_3_4
+import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_4_5
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractorImpl
 import com.timilehinaregbesola.mathalarm.interactors.AudioPlayer
@@ -29,7 +30,6 @@ import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractor
 import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractorImpl
 import com.timilehinaregbesola.mathalarm.interactors.PlayerWrapper
 import com.timilehinaregbesola.mathalarm.notification.AlarmNotificationScheduler
-import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotification
 import com.timilehinaregbesola.mathalarm.notification.MathAlarmNotificationChannel
 import com.timilehinaregbesola.mathalarm.notification.PendingIntentIdGenerator
 import com.timilehinaregbesola.mathalarm.utils.getAlarmManager
@@ -57,7 +57,7 @@ val androidModule = module {
             androidApplication(),
             AlarmDatabase::class.java,
             "alarm_history_database"
-        ).addMigrations(MIGRATION_2_3, MIGRATION_3_4).build()
+        ).addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5).build()
     }
 
     single { get<AlarmDatabase>().alarmDatabaseDao }
@@ -79,15 +79,6 @@ val androidModule = module {
 
     // Android Notification components
     @OptIn(ExperimentalMaterial3Api::class)
-    single {
-        MathAlarmNotification(
-            androidContext(),
-            get(),
-            get(),
-            get { parametersOf("MathAlarmNotification") }
-        )
-    }
-
     single { MathAlarmNotificationChannel(androidContext()) }
 
     @OptIn(

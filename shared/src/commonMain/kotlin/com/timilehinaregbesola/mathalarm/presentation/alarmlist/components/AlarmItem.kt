@@ -133,14 +133,8 @@ fun AlarmItem(
                                 .align(CenterVertically),
                             checked = alarm.isOn,
                             onCheckedChange = {
-                                alarm.isOn = it
-                                if (alarm.isOn) {
-                                    onUpdateAlarm(alarm)
-                                    onScheduleAlarm(alarm, false)
-                                } else {
-                                    onUpdateAlarm(alarm)
-                                    onCancelAlarm(alarm)
-                                }
+                                if (it) onScheduleAlarm(alarm.copy(isOn = true), true)
+                                else onCancelAlarm(alarm.copy(isOn = false))
                             },
                         )
                     }
@@ -149,6 +143,10 @@ fun AlarmItem(
                         text = alarm.title,
                         fontSize = ALARM_TITLE_FONT_SIZE,
                     )
+                    alarm.scheduleError?.let { error ->
+                        Text("Alarm needs attention: $error", color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(horizontal = extraMedium))
+                    }
                     Row(
                         modifier = Modifier
                             .padding(

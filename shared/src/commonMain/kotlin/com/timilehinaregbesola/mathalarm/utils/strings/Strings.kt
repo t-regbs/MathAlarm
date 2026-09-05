@@ -71,7 +71,9 @@ data class Strings(
     val notification: String,
     val alert: String,
     val grantPermission: String,
-    val permissionsExternalStorageText: (tone: String) -> String
+    val permissionsExternalStorageText: (tone: String) -> String,
+    val repeatExplanation: String = "Repeat weekly keeps ringing on the selected days every week. When off, each selected day rings once.",
+    val testExplanation: String = "Preview sound and math only. This does not test a scheduled alarm while your phone is locked."
 )
 
 object Locales {

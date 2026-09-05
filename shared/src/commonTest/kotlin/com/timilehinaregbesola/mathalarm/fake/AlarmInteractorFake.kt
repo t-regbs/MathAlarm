@@ -10,7 +10,7 @@ import kotlin.time.Instant
 class AlarmInteractorFake : AlarmInteractor {
     private val alarmMap: MutableMap<Long, FakeData> = mutableMapOf()
     
-    override fun schedule(alarm: Alarm, timeInMillis: Long) {
+    override suspend fun schedule(alarm: Alarm, timeInMillis: Long) {
         val instant = Instant.fromEpochMilliseconds(timeInMillis)
         val dateTime = instant.toLocalDateTime(TimeZone.currentSystemDefault())
         alarmMap[alarm.alarmId] = FakeData(timeInMillis, dateTime)
@@ -20,7 +20,7 @@ class AlarmInteractorFake : AlarmInteractor {
         alarmMap.remove(alarm.alarmId)
     }
 
-    override fun update(alarm: Alarm) {
+    override suspend fun update(alarm: Alarm) {
         val existing = alarmMap[alarm.alarmId]
         if (existing != null) {
             alarmMap[alarm.alarmId] = existing.copy(updated = true)

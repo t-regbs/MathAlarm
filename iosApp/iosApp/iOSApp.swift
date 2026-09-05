@@ -31,6 +31,7 @@ struct iOSApp: App {
             if newPhase == .active {
                 // Check for pending AlarmKit deeplinks when app becomes active
                 AppDelegate.checkPendingAlarmKitDeeplink()
+                MainViewControllerKt.migrateAlarmSchedules()
             }
         }
     }

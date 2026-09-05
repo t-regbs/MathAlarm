@@ -1,0 +1,89 @@
+{
+  "cold_start": {
+    "events": [
+      {
+        "at": 1788629631941,
+        "event": "received",
+        "alarmId": 900001,
+        "triggerAt": 1788629631041
+      },
+      {
+        "at": 1788629631983,
+        "event": "service_started",
+        "alarmId": 900001,
+        "triggerAt": 1788629631041
+      },
+      {
+        "at": 1788629632041,
+        "event": "audio_source_failed",
+        "alarmId": 900001,
+        "triggerAt": 1788629631041,
+        "detail": "setDataSource failed.: status=0x80000000"
+      },
+      {
+        "at": 1788629632141,
+        "event": "audio_started",
+        "alarmId": 900001,
+        "triggerAt": 1788629631041
+      },
+      {
+        "at": 1788629632781,
+        "event": "canceled",
+        "alarmId": 900001
+      }
+    ]
+  },
+  "service_restart": {
+    "events": [
+      {
+        "at": 1788629631941,
+        "event": "received",
+        "alarmId": 900001,
+        "triggerAt": 1788629631041
+      },
+      {
+        "at": 1788629631983,
+        "event": "service_started",
+        "alarmId": 900001,
+        "triggerAt": 1788629631041
+      },
+      {
+        "at": 1788629632041,
+        "event": "audio_source_failed",
+        "alarmId": 900001,
+        "triggerAt": 1788629631041,
+        "detail": "setDataSource failed.: status=0x80000000"
+      },
+      {
+        "at": 1788629632141,
+        "event": "audio_started",
+        "alarmId": 900001,
+        "triggerAt": 1788629631041
+      },
+      {
+        "at": 1788629632781,
+        "event": "canceled",
+        "alarmId": 900001
+      },
+      {
+        "at": 1788629665342,
+        "event": "service_started",
+        "alarmId": 900001,
+        "triggerAt": 1788629631041
+      },
+      {
+        "at": 1788629665698,
+        "event": "audio_source_failed",
+        "alarmId": 900001,
+        "triggerAt": 1788629631041,
+        "detail": "setDataSource failed.: status=0x80000000"
+      },
+      {
+        "at": 1788629666190,
+        "event": "audio_started",
+        "alarmId": 900001,
+        "triggerAt": 1788629631041
+      }
+    ]
+  }
+}

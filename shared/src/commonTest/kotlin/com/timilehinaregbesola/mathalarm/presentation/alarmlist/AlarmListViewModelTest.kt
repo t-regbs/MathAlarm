@@ -67,7 +67,7 @@ class AlarmListViewModelTest {
             cancelAlarm = CancelAlarm(alarmInteractor),
             clearAlarms = ClearAlarms(repository, alarmInteractor),
             scheduleNextAlarm = scheduleNextAlarm,
-            rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor, alarmTimeCalculator, scheduleNextAlarm),
+            rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor, alarmTimeCalculator),
             snoozeAlarm = SnoozeAlarm(dateTimeProvider, notificationInteractor, alarmInteractor, repository)
         )
         
@@ -138,7 +138,7 @@ class AlarmListViewModelTest {
 
     @Test
     fun `onEvent OnUndoDeleteClick should restore deleted alarm`() = runTest {
-        val testAlarm = Alarm(alarmId = 789, hour = 10, minute = 30, isSaved = true)
+        val testAlarm = Alarm(alarmId = 789, hour = 10, minute = 30, isSaved = true, isOn = true)
         usecases.addAlarm(testAlarm)
         advanceUntilIdle()
         
@@ -153,6 +153,7 @@ class AlarmListViewModelTest {
         
         val alarmsAfterUndo = usecases.getSavedAlarms().first()
         alarmsAfterUndo.any { it.alarmId == testAlarm.alarmId } shouldBe true
+        alarmInteractor.isAlarmScheduled(testAlarm) shouldBe true
     }
 
     @Test

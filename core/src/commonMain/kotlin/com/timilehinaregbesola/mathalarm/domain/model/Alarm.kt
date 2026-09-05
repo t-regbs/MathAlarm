@@ -35,5 +35,13 @@ data class Alarm @OptIn(ExperimentalTime::class) constructor(
 
     var title: String = "",
 
-    var isSaved: Boolean = false
+    var isSaved: Boolean = false,
+
+    // Concrete occurrences survive process death and reboot. Empty is meaningful once initialized.
+    val pendingTimes: List<Long> = emptyList(),
+    val scheduleInitialized: Boolean = false,
+    val snoozedUntil: Long? = null,
+    val activeAt: Long? = null,
+    val scheduleError: String? = null,
+    val scheduleTimeZone: String? = null
 )
