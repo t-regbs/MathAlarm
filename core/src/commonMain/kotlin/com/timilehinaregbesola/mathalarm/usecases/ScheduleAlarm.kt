@@ -14,13 +14,21 @@ class ScheduleAlarm(
     private val alarmTimeCalculator: AlarmTimeCalculator
 ) {
     suspend operator fun invoke(alarm: Alarm, reschedule: Boolean) {
-        val saved = if (alarm.alarmId == 0L) alarmRepository.getLatestAlarm()
-            else alarmRepository.findAlarm(alarm.alarmId)
-        saved ?: return
+        val saved = if (alarm.alarmId == 0L) {
+            alarmRepository.getLatestAlarm()
+        } else {
+            alarmRepository.findAlarm(alarm.alarmId)
+        } ?: return
         val times = alarmTimeCalculator.calculateAlarmTimes(saved).sorted()
-        val planned = saved.copy(isOn = times.isNotEmpty(), pendingTimes = times,
-            scheduleInitialized = true, snoozedUntil = null, activeAt = null,
-            scheduleError = "Scheduling has not completed", scheduleTimeZone = TimeZone.currentSystemDefault().id)
+        val planned = saved.copy(
+            isOn = times.isNotEmpty(),
+            pendingTimes = times,
+            scheduleInitialized = true,
+            snoozedUntil = null,
+            activeAt = null,
+            scheduleError = Alarm.SCHEDULING_IN_PROGRESS,
+            scheduleTimeZone = TimeZone.currentSystemDefault().id
+        )
         // Persist the desired occurrences first so interrupted scheduling can be recovered.
         alarmRepository.updateAlarm(planned)
         try {

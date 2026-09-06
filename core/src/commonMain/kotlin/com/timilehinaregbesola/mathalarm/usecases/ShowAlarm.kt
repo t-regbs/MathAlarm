@@ -18,9 +18,11 @@ class ShowAlarm(
             if (!expected && saved.activeAt != triggerAt) return // obsolete or canceled broadcast
         }
         val active = triggerAt ?: saved.activeAt ?: Clock.System.now().toEpochMilliseconds()
-        val alarm = saved.copy(activeAt = active,
+        val alarm = saved.copy(
+            activeAt = active,
             pendingTimes = if (triggerAt == null) saved.pendingTimes else saved.pendingTimes - triggerAt,
-            snoozedUntil = if (snoozed) null else saved.snoozedUntil)
+            snoozedUntil = if (snoozed) null else saved.snoozedUntil
+        )
         alarmRepository.updateAlarm(alarm)
         // Start playback before doing next-week scheduling; rearming failure must not silence today.
         try {

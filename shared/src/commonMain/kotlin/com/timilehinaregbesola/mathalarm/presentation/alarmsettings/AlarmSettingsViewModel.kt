@@ -1,5 +1,7 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmsettings
 
+import co.touchlab.kermit.Logger
+import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
 import com.timilehinaregbesola.mathalarm.platform.getDefaultAlarmTone
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
@@ -74,12 +76,17 @@ class AlarmSettingsViewModel(
                             val alarm = edited.copy(
                                 pendingTimes = old?.pendingTimes.orEmpty(),
                                 scheduleInitialized = old?.scheduleInitialized ?: false,
-                                snoozedUntil = old?.snoozedUntil, activeAt = old?.activeAt,
-                                scheduleError = old?.scheduleError, scheduleTimeZone = old?.scheduleTimeZone)
+                                snoozedUntil = old?.snoozedUntil,
+                                activeAt = old?.activeAt,
+                                scheduleError = old?.scheduleError,
+                                scheduleTimeZone = old?.scheduleTimeZone
+                            )
                             // Cancel using the old snapshot as well, for pre-migration identities.
                             if (old != null && isRescheduled == true) cancelAlarm(old)
                             val id = addAlarm(alarm)
-                            val saved = alarm.copy(alarmId = if (alarm.alarmId == 0L) id else alarm.alarmId)
+                            val saved = alarm.copy(
+                                alarmId = if (alarm.alarmId == 0L) id else alarm.alarmId
+                            )
                             currentAlarmId = saved.alarmId
                             if (saved.isOn && (isNewAlarm == true || isRescheduled == true)) {
                                 scheduleAlarm(saved, true)
@@ -91,7 +98,8 @@ class AlarmSettingsViewModel(
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
-                        _eventFlow.emit(UiEvent.ShowSnackbar(e.message ?: "Unable to save alarm"))
+                        Logger.e(e) { "Unable to save alarm" }
+                        _eventFlow.emit(UiEvent.ShowError(AlarmErrorMessage.SAVE))
                     }
                 }
             }
@@ -132,7 +140,7 @@ class AlarmSettingsViewModel(
             }
             is AddEditAlarmEvent.OnToneError -> {
                 viewModelScope.launch {
-                    _eventFlow.emit(UiEvent.ShowSnackbar(event.message))
+                    _eventFlow.emit(UiEvent.ShowError(AlarmErrorMessage.TONE))
                 }
             }
         }
@@ -203,7 +211,7 @@ class AlarmSettingsViewModel(
     }
 
     sealed class UiEvent {
-        data class ShowSnackbar(val message: String) : UiEvent()
+        data class ShowError(val error: AlarmErrorMessage) : UiEvent()
         object SaveAlarm : UiEvent()
         data class TestAlarm(val alarm: Alarm) : UiEvent()
     }

@@ -11,6 +11,7 @@ import com.timilehinaregbesola.mathalarm.fake.AudioPlayerFake
 import com.timilehinaregbesola.mathalarm.fake.DateTimeProviderFake
 import com.timilehinaregbesola.mathalarm.fake.NotificationInteractorFake
 import com.timilehinaregbesola.mathalarm.framework.Usecases
+import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
 import com.timilehinaregbesola.mathalarm.usecases.AddAlarm
 import com.timilehinaregbesola.mathalarm.usecases.CancelAlarm
 import com.timilehinaregbesola.mathalarm.usecases.ClearAlarms
@@ -24,8 +25,12 @@ import com.timilehinaregbesola.mathalarm.usecases.ScheduleNextAlarm
 import com.timilehinaregbesola.mathalarm.usecases.ShowAlarm
 import com.timilehinaregbesola.mathalarm.usecases.SnoozeAlarm
 import com.timilehinaregbesola.mathalarm.usecases.UpdateAlarm
+import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.StandardTestDispatcher
@@ -33,9 +38,6 @@ import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AlarmMathViewModelTest {
@@ -93,6 +95,27 @@ class AlarmMathViewModelTest {
     }
 
     @Test
+    fun `failed snooze emits a localizable error and keeps the screen open`() = runTest {
+        val backend = object : AlarmInteractor by alarmInteractor {
+            override suspend fun scheduleSnooze(alarm: Alarm, timeInMillis: Long) {
+                error("Internal OS scheduling details")
+            }
+        }
+        val commands = usecases.copy(
+            snoozeAlarm = SnoozeAlarm(dateTimeProvider, notificationInteractor, backend, repository)
+        )
+        viewModel = AlarmMathViewModel(commands, audioPlayer, Logger.withTag("ErrorTest"))
+        commands.addAlarm(Alarm(alarmId = 804, isOn = true, snooze = 5))
+        viewModel.eventFlow.test {
+            viewModel.onEvent(MathScreenEvent.OnSnoozeClick(804))
+            awaitItem() shouldBe AlarmMathViewModel.UiEvent.ShowError(AlarmErrorMessage.SNOOZE)
+            advanceUntilIdle()
+            expectNoEvents()
+        }
+        commands.findAlarm(804)!!.snoozedUntil shouldBe null
+    }
+
+    @Test
     fun `initial state should be stopped with empty answer`() {
         viewModel.answerText.value shouldBe ""
         viewModel.state.value.shouldBeInstanceOf<ToneState.Stopped>()
@@ -135,7 +158,7 @@ class AlarmMathViewModelTest {
             viewModel.onEvent(MathScreenEvent.OnEnterClick(problem))
             
             val event = awaitItem()
-            event shouldBe AlarmMathViewModel.UiEvent.ShowSnackbar("Incorrect")
+            event shouldBe AlarmMathViewModel.UiEvent.ShowError(AlarmErrorMessage.INCORRECT_ANSWER)
         }
     }
 
@@ -192,14 +215,14 @@ class AlarmMathViewModelTest {
     }
 
     @Test
-    fun `onEvent OnToneError should emit ShowSnackbar event`() = runTest {
+    fun `onEvent OnToneError should emit a localizable error`() = runTest {
         val errorMessage = "Failed to load tone"
         
         viewModel.eventFlow.test {
             viewModel.onEvent(MathScreenEvent.OnToneError(errorMessage))
             
             val event = awaitItem()
-            event shouldBe AlarmMathViewModel.UiEvent.ShowSnackbar(errorMessage)
+            event shouldBe AlarmMathViewModel.UiEvent.ShowError(AlarmErrorMessage.TONE)
         }
     }
 
@@ -258,11 +281,11 @@ class AlarmMathViewModelTest {
         viewModel.eventFlow.test {
             viewModel.onEvent(MathScreenEvent.EnteredAnswer("25"))
             viewModel.onEvent(MathScreenEvent.OnEnterClick(problem))
-            awaitItem() shouldBe AlarmMathViewModel.UiEvent.ShowSnackbar("Incorrect")
+            awaitItem() shouldBe AlarmMathViewModel.UiEvent.ShowError(AlarmErrorMessage.INCORRECT_ANSWER)
             
             viewModel.onEvent(MathScreenEvent.EnteredAnswer("28"))
             viewModel.onEvent(MathScreenEvent.OnEnterClick(problem))
-            awaitItem() shouldBe AlarmMathViewModel.UiEvent.ShowSnackbar("Incorrect")
+            awaitItem() shouldBe AlarmMathViewModel.UiEvent.ShowError(AlarmErrorMessage.INCORRECT_ANSWER)
             
             viewModel.onEvent(MathScreenEvent.EnteredAnswer("30"))
             viewModel.onEvent(MathScreenEvent.OnEnterClick(problem))

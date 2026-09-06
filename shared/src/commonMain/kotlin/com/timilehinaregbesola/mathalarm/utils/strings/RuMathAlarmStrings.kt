@@ -4,6 +4,12 @@ import cafe.adriel.lyricist.LyricistStrings
 
 @LyricistStrings(languageTag = Locales.RU)
 val RuMathAlarmStrings = Strings(
+    alarmScheduleFailed = "Не удалось установить будильник. Сохраните его ещё раз.",
+    alarmSaveFailed = "Не удалось сохранить будильник. Повторите попытку.",
+    alarmUpdateFailed = "Не удалось обновить будильник. Повторите попытку.",
+    alarmDismissFailed = "Не удалось остановить будильник. Повторите попытку.",
+    alarmSnoozeFailed = "Не удалось отложить будильник. Повторите попытку.",
+    incorrectAnswer = "Неверный ответ. Попробуйте ещё раз.",
     multipleDays = "Несколько дней",
     greeting = { hour ->
         when {

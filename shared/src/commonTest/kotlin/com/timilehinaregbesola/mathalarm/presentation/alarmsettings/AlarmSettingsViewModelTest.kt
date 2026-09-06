@@ -6,15 +6,17 @@ import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.fake.*
 import com.timilehinaregbesola.mathalarm.framework.Usecases
+import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
 import com.timilehinaregbesola.mathalarm.usecases.*
+import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.*
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.test.*
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AlarmSettingsViewModelTest {
@@ -63,6 +65,25 @@ class AlarmSettingsViewModelTest {
     @AfterTest
     fun tearDown() {
         Dispatchers.resetMain()
+    }
+
+    @Test
+    fun `failed save emits a localizable error and keeps the editor open`() = runTest {
+        val backend = object : AlarmInteractor by alarmInteractor {
+            override suspend fun schedule(alarm: Alarm, timeInMillis: Long) {
+                error("Internal OS scheduling details")
+            }
+        }
+        val commands = usecases.copy(scheduleAlarm = ScheduleAlarm(repository, backend, AlarmTimeCalculatorFake()))
+        viewModel = AlarmSettingsViewModel(commands)
+        viewModel.setAlarm(Alarm(isOn = true, alarmTone = "test_tone"))
+        advanceUntilIdle()
+        viewModel.eventFlow.test {
+            viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+            awaitItem() shouldBe AlarmSettingsViewModel.UiEvent.ShowError(AlarmErrorMessage.SAVE)
+            advanceUntilIdle()
+            expectNoEvents()
+        }
     }
 
     @Test
@@ -153,15 +174,15 @@ class AlarmSettingsViewModelTest {
     }
 
     @Test
-    fun `onEvent OnToneError should emit ShowSnackbar event`() = runTest {
+    fun `onEvent OnToneError should emit a localizable error`() = runTest {
         val errorMessage = "Failed to load tone"
         
         viewModel.eventFlow.test {
             viewModel.onEvent(AddEditAlarmEvent.OnToneError(errorMessage))
             
             val event = awaitItem()
-            event.shouldBeInstanceOf<AlarmSettingsViewModel.UiEvent.ShowSnackbar>()
-            event.message shouldBe errorMessage
+            event.shouldBeInstanceOf<AlarmSettingsViewModel.UiEvent.ShowError>()
+            event.error shouldBe AlarmErrorMessage.TONE
         }
     }
 

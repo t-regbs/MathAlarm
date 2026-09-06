@@ -55,6 +55,7 @@ import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.utils.Destinations.AppSettings
 import com.timilehinaregbesola.mathalarm.utils.Destinations.SettingsSheet
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.Navigate
+import com.timilehinaregbesola.mathalarm.utils.UiEvent.ShowError
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.ShowSnackbar
 import com.timilehinaregbesola.mathalarm.utils.getTimeLeft
 import kotlinx.serialization.json.Json
@@ -81,9 +82,13 @@ fun ListDisplayScreen(
     var showPermissionDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
 
-    LaunchedEffect(key1 = true) {
+    val errorStrings = strings
+    LaunchedEffect(errorStrings) {
         viewModel.uiEvent.collect { event ->
             when (event) {
+                is ShowError -> {
+                    snackbarHoststate.showSnackbar(message = event.error.resolve(errorStrings))
+                }
                 is ShowSnackbar -> {
                     val result = snackbarHoststate.showSnackbar(
                         message = event.message,
@@ -183,13 +188,6 @@ fun ListDisplayScreen(
                                         onPermissionAbsent = { showPermissionDialog = true },
                                     )
                                 },
-                                onUpdateAlarm = {
-                                    checkPermissionAndPerformAction(
-                                        value = alarmPermission.hasExactAlarmPermission(),
-                                        action = { viewModel.onUpdate(it) },
-                                        onPermissionAbsent = { showPermissionDialog = true },
-                                    )
-                                },
                                 onDeleteAlarm = {
                                     backstack.removeSettingsSheetFor(it)
                                     viewModel.onEvent(OnDeleteAlarmClick(it))
@@ -253,7 +251,6 @@ private fun AlarmListContent(
     alarmList: List<Alarm>,
     darkTheme: Boolean,
     onEditAlarm: (Alarm) -> Unit,
-    onUpdateAlarm: (Alarm) -> Unit,
     onDeleteAlarm: (Alarm) -> Unit,
     onCancelAlarm: (Alarm) -> Unit,
     onScheduleAlarm: (Alarm, Boolean) -> Unit,
@@ -282,7 +279,6 @@ private fun AlarmListContent(
                     onEditAlarm = {
                         onEditAlarm(alarm)
                     },
-                    onUpdateAlarm = onUpdateAlarm,
                     onDeleteAlarm = onDeleteAlarm,
                     onCancelAlarm = onCancelAlarm,
                     onScheduleAlarm = onScheduleAlarm,
@@ -343,7 +339,6 @@ private fun AlarmListScreenPreview() {
             alarmList = listOf(Alarm(), Alarm(alarmId = 1L)),
             darkTheme = false,
             onEditAlarm = {},
-            onUpdateAlarm = {},
             onDeleteAlarm = {},
             onCancelAlarm = {}
         ) { _, _ -> }

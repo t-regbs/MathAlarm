@@ -190,7 +190,9 @@ class AlarmService : Service() {
     
     private fun persistPlayback() {
         val alarms = listOfNotNull(currentAlarm) + queuedAlarms.values
-        playbackState.edit().putString("alarms", Json.encodeToString(alarms.map { AlarmMapper().mapFromDomainModel(it) })).commit()
+        val mapper = AlarmMapper()
+        val snapshots = alarms.map(mapper::mapFromDomainModel)
+        playbackState.edit().putString("alarms", Json.encodeToString(snapshots)).commit()
     }
 
     private fun restorePlayback() {

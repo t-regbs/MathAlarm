@@ -17,13 +17,22 @@ class CompleteAlarm(
 ) {
     suspend operator fun invoke(alarmId: Long) {
         val alarm = alarmRepository.findAlarm(alarmId) ?: return
-        val now = dateTimeProvider.getCurrentDateTime().toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        val now = dateTimeProvider.getCurrentDateTime()
+            .toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         val pending = alarm.pendingTimes.filter { it > now }
-        val hasRemaining = if (alarm.scheduleInitialized) pending.isNotEmpty()
-            else alarmInteractor.hasPendingOccurrence(alarm)
-        val updated = alarm.copy(isOn = alarm.isOn && (alarm.repeat || hasRemaining),
-            pendingTimes = pending, activeAt = null, snoozedUntil = null,
-            scheduleError = if (alarm.repeat || hasRemaining) alarm.scheduleError else null)
+        val hasRemaining = if (alarm.scheduleInitialized) {
+            pending.isNotEmpty()
+        } else {
+            alarmInteractor.hasPendingOccurrence(alarm)
+        }
+        val remainsEnabled = alarm.isOn && (alarm.repeat || hasRemaining)
+        val updated = alarm.copy(
+            isOn = remainsEnabled,
+            pendingTimes = pending,
+            activeAt = null,
+            snoozedUntil = null,
+            scheduleError = if (alarm.repeat || hasRemaining) alarm.scheduleError else null
+        )
         alarmInteractor.cancelSnooze(alarm)
         if (!updated.isOn) alarmInteractor.cancel(alarm)
         alarmRepository.updateAlarm(updated)

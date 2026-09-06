@@ -71,7 +71,6 @@ fun AlarmItem(
     modifier: Modifier = Modifier,
     alarm: Alarm,
     onEditAlarm: () -> Unit,
-    onUpdateAlarm: (Alarm) -> Unit,
     onDeleteAlarm: (Alarm) -> Unit,
     onCancelAlarm: (Alarm) -> Unit,
     onScheduleAlarm: (Alarm, Boolean) -> Unit,
@@ -143,9 +142,12 @@ fun AlarmItem(
                         text = alarm.title,
                         fontSize = ALARM_TITLE_FONT_SIZE,
                     )
-                    alarm.scheduleError?.let { error ->
-                        Text("Alarm needs attention: $error", color = MaterialTheme.colorScheme.error,
-                            modifier = Modifier.padding(horizontal = extraMedium))
+                    if (alarm.scheduleError != null && alarm.scheduleError != Alarm.SCHEDULING_IN_PROGRESS) {
+                        Text(
+                            text = strings.alarmScheduleFailed,
+                            color = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.padding(horizontal = extraMedium)
+                        )
                     }
                     Row(
                         modifier = Modifier
@@ -290,7 +292,6 @@ fun ItemPreview() {
             AlarmItem(
                 alarm = Alarm(title = "Testing testing"),
                 onEditAlarm = {},
-                onUpdateAlarm = {},
                 onDeleteAlarm = {},
                 onCancelAlarm = {},
                 onScheduleAlarm = { _: Alarm, _: Boolean -> },

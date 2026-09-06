@@ -4,6 +4,12 @@ import cafe.adriel.lyricist.LyricistStrings
 
 @LyricistStrings(languageTag = Locales.DE, default = false)
 val DeMathAlarmStrings = Strings(
+    alarmScheduleFailed = "Wecker konnte nicht gestellt werden. Erneut speichern.",
+    alarmSaveFailed = "Wecker konnte nicht gespeichert werden. Erneut versuchen.",
+    alarmUpdateFailed = "Wecker konnte nicht aktualisiert werden. Erneut versuchen.",
+    alarmDismissFailed = "Wecker konnte nicht beendet werden. Erneut versuchen.",
+    alarmSnoozeFailed = "Wecker konnte nicht verschoben werden. Erneut versuchen.",
+    incorrectAnswer = "Falsche Antwort. Erneut versuchen.",
     multipleDays = "Mehrere Tage",
     greeting = { hour ->
         when {

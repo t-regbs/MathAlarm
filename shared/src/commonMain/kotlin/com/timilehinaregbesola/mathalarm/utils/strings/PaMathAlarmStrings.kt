@@ -4,6 +4,12 @@ import cafe.adriel.lyricist.LyricistStrings
 
 @LyricistStrings(languageTag = Locales.PA)
 val PaMathAlarmStrings = Strings(
+    alarmScheduleFailed = "ਅਲਾਰਮ ਸੈੱਟ ਨਹੀਂ ਹੋਇਆ। ਦੁਬਾਰਾ ਸੇਵ ਕਰੋ।",
+    alarmSaveFailed = "ਅਲਾਰਮ ਸੇਵ ਨਹੀਂ ਹੋਇਆ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
+    alarmUpdateFailed = "ਅਲਾਰਮ ਅੱਪਡੇਟ ਨਹੀਂ ਹੋਇਆ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
+    alarmDismissFailed = "ਅਲਾਰਮ ਬੰਦ ਨਹੀਂ ਹੋਇਆ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
+    alarmSnoozeFailed = "ਅਲਾਰਮ ਸਨੂਜ਼ ਨਹੀਂ ਹੋਇਆ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
+    incorrectAnswer = "ਗਲਤ ਜਵਾਬ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
     multipleDays = "ਕਈ ਦਿਨ",
     greeting = { hour ->
         when {

@@ -4,6 +4,12 @@ import cafe.adriel.lyricist.LyricistStrings
 
 @LyricistStrings(languageTag = Locales.ZH)
 val ZhMathAlarmStrings = Strings(
+    alarmScheduleFailed = "无法设置闹钟，请重新保存。",
+    alarmSaveFailed = "无法保存闹钟，请重试。",
+    alarmUpdateFailed = "无法更新闹钟，请重试。",
+    alarmDismissFailed = "无法关闭闹钟，请重试。",
+    alarmSnoozeFailed = "无法稍后提醒，请重试。",
+    incorrectAnswer = "答案错误，请重试。",
     multipleDays = "多天",
     greeting = { hour ->
         when {

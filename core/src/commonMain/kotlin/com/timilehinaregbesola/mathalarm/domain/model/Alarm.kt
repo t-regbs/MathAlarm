@@ -44,4 +44,9 @@ data class Alarm @OptIn(ExperimentalTime::class) constructor(
     val activeAt: Long? = null,
     val scheduleError: String? = null,
     val scheduleTimeZone: String? = null
-)
+) {
+    companion object {
+        // Retain the persisted value for alarms saved by schema version 5.
+        const val SCHEDULING_IN_PROGRESS = "Scheduling has not completed"
+    }
+}

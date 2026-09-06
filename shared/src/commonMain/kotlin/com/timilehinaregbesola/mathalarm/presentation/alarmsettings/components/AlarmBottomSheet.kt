@@ -1,6 +1,5 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Arrangement.SpaceBetween
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -97,14 +96,14 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.A
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_CARD_HEIGHT
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_TEXT_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_TEXT_PADDING
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_MAX_HEIGHT
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_ROW_HEIGHT
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_DIALOG_ELEVATION
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_DIALOG_MAX_WIDTH
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_DIALOG_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_DIVIDER_ALPHA
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_DIVIDER_START_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_HEADER_HEIGHT
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_MAX_HEIGHT
+import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_ROW_HEIGHT
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_SEPARATOR_THICKNESS
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimaryLight
@@ -180,13 +179,12 @@ fun AlarmBottomSheet(
         }
     }
 
-    LaunchedEffect(true) {
+    val errorStrings = strings
+    LaunchedEffect(errorStrings) {
         viewModel.eventFlow.collectLatest { event ->
             when (event) {
-                is AlarmSettingsViewModel.UiEvent.ShowSnackbar -> {
-                    scaffoldState.snackbarHostState.showSnackbar(
-                        message = event.message,
-                    )
+                is AlarmSettingsViewModel.UiEvent.ShowError -> {
+                    scaffoldState.snackbarHostState.showSnackbar(message = event.error.resolve(errorStrings))
                 }
                 is AlarmSettingsViewModel.UiEvent.SaveAlarm -> {
                     closeSettings()
@@ -599,8 +597,6 @@ private fun BottomSettingsSection(
             }
         }
     }
-    Text(strings.repeatExplanation, style = MaterialTheme.typography.bodySmall,
-        modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium))
     Row(
         modifier = Modifier
             .padding(
@@ -664,8 +660,6 @@ private fun SheetActionButtons(
             text = strings.testAlarm.uppercase(),
         )
     }
-    Text(strings.testExplanation, style = MaterialTheme.typography.bodySmall,
-        modifier = Modifier.padding(top = MaterialTheme.spacing.small))
     if (showSaveButton) {
         AdaptiveButton(
             modifier = Modifier

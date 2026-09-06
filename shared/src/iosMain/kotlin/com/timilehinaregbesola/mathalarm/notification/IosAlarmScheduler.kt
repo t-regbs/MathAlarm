@@ -110,17 +110,32 @@ class IosAlarmScheduler(
     }
     
     /** Schedule exactly this occurrence. Snoozes have their own stable identity. */
-    suspend fun scheduleOccurrence(alarm: Alarm, timeInMillis: Long, repeating: Boolean = false, snooze: Boolean = false) {
+    suspend fun scheduleOccurrence(
+        alarm: Alarm,
+        timeInMillis: Long,
+        repeating: Boolean = false,
+        snooze: Boolean = false
+    ) {
         val local = Instant.fromEpochMilliseconds(timeInMillis).toLocalDateTime(TimeZone.currentSystemDefault())
         val day = local.dayOfWeek.ordinal.let { (it + 1) % 7 } // shared Sunday-first convention
         val key = if (snooze) "snooze" else "day_$day"
         val days = "FFFFFFF".toCharArray().apply { this[day] = 'T' }.concatToString()
         if (AlarmSchedulerBridge.isAlarmKitAvailable()) {
-            val result = AlarmSchedulerBridge.scheduleWithAlarmKit(AlarmScheduleRequest(
-                alarmId = alarm.alarmId, hour = alarm.hour, minute = alarm.minute,
-                title = alarm.title, soundName = alarm.alarmTone, repeatDays = days,
-                snoozeMinutes = alarm.snooze, vibrate = alarm.vibrate, difficulty = alarm.difficulty,
-                repeats = repeating, timeInMillis = timeInMillis, occurrenceKey = key))
+            val request = AlarmScheduleRequest(
+                alarmId = alarm.alarmId,
+                hour = alarm.hour,
+                minute = alarm.minute,
+                title = alarm.title,
+                soundName = alarm.alarmTone,
+                repeatDays = days,
+                snoozeMinutes = alarm.snooze,
+                vibrate = alarm.vibrate,
+                difficulty = alarm.difficulty,
+                repeats = repeating,
+                timeInMillis = timeInMillis,
+                occurrenceKey = key
+            )
+            val result = AlarmSchedulerBridge.scheduleWithAlarmKit(request)
             check(result.success) { result.errorMessage ?: "Unable to schedule alarm with AlarmKit" }
             return
         }

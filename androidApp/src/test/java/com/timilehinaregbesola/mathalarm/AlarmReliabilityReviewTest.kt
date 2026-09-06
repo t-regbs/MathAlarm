@@ -30,7 +30,9 @@ class AlarmReliabilityReviewTest {
 
     @Test fun cancellingAlarmMustRemoveItsSnooze() {
         val original = Alarm(alarmId = 18, hour = 7, minute = 0, isOn = true)
-        scheduler.scheduleAlarm(original.copy(minute = 5), System.currentTimeMillis() + 300_000)
+        scheduler.scheduleAlarm(original, System.currentTimeMillis() + 60_000)
+        scheduler.scheduleSnooze(original, System.currentTimeMillis() + 300_000)
+        org.junit.Assert.assertEquals(2, shadowOf(manager).scheduledAlarms.size)
         scheduler.cancelAlarm(original)
         assertTrue("Cancellation must remove the 07:05 snooze", shadowOf(manager).scheduledAlarms.isEmpty())
     }
