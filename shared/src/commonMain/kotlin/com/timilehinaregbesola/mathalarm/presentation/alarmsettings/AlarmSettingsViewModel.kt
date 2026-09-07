@@ -90,7 +90,7 @@ class AlarmSettingsViewModel(
                             currentAlarmId = saved.alarmId
                             if (saved.isOn && (isNewAlarm == true || isRescheduled == true)) {
                                 scheduleAlarm(saved, true)
-                            } else if (saved.isOn) {
+                            } else {
                                 updateAlarm(saved)
                             }
                         }
@@ -123,9 +123,6 @@ class AlarmSettingsViewModel(
                 _vibrate.value = event.value
             }
             is AddEditAlarmEvent.ToggleSnooze -> {
-                if (isNewAlarm == false && _isOn.value) {
-                    isRescheduled = true
-                }
                 _snoozeEnabled.value = event.value
             }
             is AddEditAlarmEvent.ToggleDayChooser -> {

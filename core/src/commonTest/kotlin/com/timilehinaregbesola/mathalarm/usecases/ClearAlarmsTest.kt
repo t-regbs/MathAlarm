@@ -2,6 +2,7 @@ package com.timilehinaregbesola.mathalarm.usecases
 
 import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.fake.NotificationInteractorFake
 import com.timilehinaregbesola.mathalarm.fake.AlarmInteractorFake
 import com.timilehinaregbesola.mathalarm.fake.AlarmRepositoryFake
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -22,10 +23,11 @@ class ClearAlarmsTest {
     private val alarmRepository = AlarmRepository(dataSource)
 
     private val alarmInteractor = AlarmInteractorFake()
+    private val notifications = NotificationInteractorFake()
 
     private val addAlarmUseCase = AddAlarm(alarmRepository)
 
-    private val clearAlarmsUseCase = ClearAlarms(alarmRepository, alarmInteractor)
+    private val clearAlarmsUseCase = ClearAlarms(alarmRepository, DeleteAlarm(alarmRepository, alarmInteractor, notifications))
 
     @AfterTest
     fun tearDown() = runTest {

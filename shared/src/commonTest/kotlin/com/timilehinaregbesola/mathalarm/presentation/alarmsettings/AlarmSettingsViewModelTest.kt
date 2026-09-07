@@ -1,5 +1,9 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmsettings
 
+import com.timilehinaregbesola.mathalarm.provider.AlarmTimeCalculatorImpl
+import kotlinx.datetime.toInstant
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.LocalDateTime
 import androidx.compose.ui.text.input.TextFieldValue
 import app.cash.turbine.test
 import com.timilehinaregbesola.mathalarm.data.AlarmRepository
@@ -46,14 +50,14 @@ class AlarmSettingsViewModelTest {
         usecases = Usecases(
             addAlarm = AddAlarm(repository),
             findAlarm = FindAlarm(repository),
-            deleteAlarm = DeleteAlarm(repository, alarmInteractor),
+            deleteAlarm = DeleteAlarm(repository, alarmInteractor, notificationInteractor),
             getSavedAlarms = GetSavedAlarms(repository),
             scheduleAlarm = ScheduleAlarm(repository, alarmInteractor, alarmTimeCalculator),
             showAlarm = ShowAlarm(repository, notificationInteractor, scheduleNextAlarm),
             completeAlarm = CompleteAlarm(repository, alarmInteractor, notificationInteractor, dateTimeProvider),
-            updateAlarm = UpdateAlarm(repository),
+            updateAlarm = UpdateAlarm(repository, alarmInteractor),
             cancelAlarm = CancelAlarm(alarmInteractor),
-            clearAlarms = ClearAlarms(repository, alarmInteractor),
+            clearAlarms = ClearAlarms(repository, DeleteAlarm(repository, alarmInteractor, notificationInteractor)),
             scheduleNextAlarm = scheduleNextAlarm,
             rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor, alarmTimeCalculator),
             snoozeAlarm = SnoozeAlarm(dateTimeProvider, notificationInteractor, alarmInteractor, repository)
@@ -84,6 +88,58 @@ class AlarmSettingsViewModelTest {
             advanceUntilIdle()
             expectNoEvents()
         }
+    }
+
+    @Test
+    fun `changing snooze preserves remaining one time dates`() = runTest {
+        dateTimeProvider.setFixedDateTime(LocalDateTime(2030, 1, 8, 6, 0))
+        val calculator = AlarmTimeCalculatorImpl(dateTimeProvider)
+        val commands = usecases.copy(scheduleAlarm = ScheduleAlarm(repository, alarmInteractor, calculator))
+        viewModel = AlarmSettingsViewModel(commands)
+        val remaining = LocalDateTime(2030, 1, 9, 7, 0)
+            .toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        val alarm = Alarm(
+            alarmId = 881, hour = 7, minute = 0, isOn = true, isSaved = true,
+            alarmTone = "test_tone", repeatDays = "FTFTFFF", scheduleInitialized = true,
+            pendingTimes = listOf(remaining), snooze = 5
+        )
+        commands.addAlarm(alarm)
+        viewModel.setAlarm(alarm)
+        for (enabled in listOf(false, true)) {
+            viewModel.onEvent(AddEditAlarmEvent.ToggleSnooze(enabled))
+            viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+            advanceUntilIdle()
+            commands.findAlarm(881)!!.pendingTimes shouldBe listOf(remaining)
+        }
+    }
+
+    @Test
+    fun `disabling snooze cancels pending snooze without changing normal occurrences`() = runTest {
+        var canceledSnoozeId: Long? = null
+        var platformUpdate: Alarm? = null
+        val backend = object : AlarmInteractor by alarmInteractor {
+            override fun cancelSnooze(alarm: Alarm) { canceledSnoozeId = alarm.alarmId }
+            override suspend fun update(alarm: Alarm) { platformUpdate = alarm }
+        }
+        val commands = usecases.copy(updateAlarm = UpdateAlarm(repository, backend))
+        viewModel = AlarmSettingsViewModel(commands)
+        val alarm = Alarm(
+            alarmId = 882, isOn = true, isSaved = true, alarmTone = "test_tone",
+            pendingTimes = listOf(2_000_000_000_000), snoozedUntil = 1_999_999_000_000,
+            scheduleInitialized = true, snooze = 5
+        )
+        commands.addAlarm(alarm)
+        viewModel.setAlarm(alarm)
+        viewModel.onEvent(AddEditAlarmEvent.ToggleSnooze(false))
+        viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+        advanceUntilIdle()
+        val updated = commands.findAlarm(882)!!
+        canceledSnoozeId shouldBe 882L
+        updated.snoozedUntil shouldBe null
+        updated.pendingTimes shouldBe alarm.pendingTimes
+        platformUpdate?.snooze shouldBe 0
+        platformUpdate?.snoozedUntil shouldBe null
+        platformUpdate?.pendingTimes shouldBe alarm.pendingTimes
     }
 
     @Test
@@ -352,7 +408,7 @@ class AlarmSettingsViewModelTest {
     }
 
     @Test
-    fun `saving existing on alarm after disabling snooze should reschedule with snooze disabled`() = runTest {
+    fun `saving existing on alarm after disabling snooze should retain its schedule with snooze disabled`() = runTest {
         val existingAlarm = Alarm(
             alarmId = 225,
             hour = 7,
@@ -362,6 +418,9 @@ class AlarmSettingsViewModelTest {
             isSaved = true,
             alarmTone = "test_tone",
         )
+        usecases.addAlarm(existingAlarm)
+        val trigger = 2_000_000_000_000L
+        alarmInteractor.schedule(existingAlarm, trigger)
         viewModel.setAlarm(existingAlarm)
         viewModel.onEvent(AddEditAlarmEvent.ToggleSnooze(false))
 
@@ -373,7 +432,8 @@ class AlarmSettingsViewModelTest {
 
             val savedAlarm = usecases.findAlarm(existingAlarm.alarmId)
             savedAlarm?.snooze shouldBe 0
-            alarmInteractor.isAlarmScheduled(savedAlarm!!) shouldBe true
+            alarmInteractor.getAlarmTimeMillis(existingAlarm.alarmId) shouldBe trigger
+            alarmInteractor.getScheduledAlarms()[existingAlarm.alarmId]?.updated shouldBe true
         }
     }
 

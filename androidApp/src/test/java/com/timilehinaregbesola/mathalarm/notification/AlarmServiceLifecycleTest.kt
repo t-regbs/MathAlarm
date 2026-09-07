@@ -46,6 +46,18 @@ class AlarmServiceLifecycleTest {
         assertEquals(2L, ActiveAlarmManager.activeAlarmId)
     }
 
+    @Test fun metadataUpdateRemovesSnoozeActionWithoutStartingAnotherAlarm() {
+        start(1)
+        val updated = Alarm(alarmId = 1, isOn = true, activeAt = 123, snooze = 0)
+        service.onStartCommand(Intent(service, AlarmService::class.java).apply {
+            action = AlarmService.ACTION_UPDATE_ALARM
+            putExtra(AlarmService.EXTRA_ALARM_JSON, Json.encodeToString(AlarmMapper().mapFromDomainModel(updated)))
+        }, 0, 2)
+        val notification = org.robolectric.Shadows.shadowOf(service).lastForegroundNotification
+        assertTrue(notification.actions.isNullOrEmpty())
+        assertEquals(1L, ActiveAlarmManager.activeAlarmId)
+    }
+
     @Test fun duplicateDeliveryDoesNotCreateAnotherTimingController() {
         start(1)
         val field = AlarmService::class.java.getDeclaredField("timingController").apply { isAccessible = true }

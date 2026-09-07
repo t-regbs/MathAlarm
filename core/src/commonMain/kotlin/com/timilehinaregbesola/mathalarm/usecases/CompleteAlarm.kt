@@ -16,7 +16,11 @@ class CompleteAlarm(
     private val dateTimeProvider: DateTimeProvider = DateTimeProviderImpl(),
 ) {
     suspend operator fun invoke(alarmId: Long) {
-        val alarm = alarmRepository.findAlarm(alarmId) ?: return
+        val alarm = alarmRepository.findAlarm(alarmId)
+        if (alarm == null) {
+            notificationInteractor.dismiss(alarmId)
+            return
+        }
         val now = dateTimeProvider.getCurrentDateTime()
             .toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         val pending = alarm.pendingTimes.filter { it > now }

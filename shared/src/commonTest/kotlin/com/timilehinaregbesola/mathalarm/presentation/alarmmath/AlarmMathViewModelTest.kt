@@ -69,14 +69,14 @@ class AlarmMathViewModelTest {
         usecases = Usecases(
             addAlarm = AddAlarm(repository),
             findAlarm = FindAlarm(repository),
-            deleteAlarm = DeleteAlarm(repository, alarmInteractor),
+            deleteAlarm = DeleteAlarm(repository, alarmInteractor, notificationInteractor),
             getSavedAlarms = GetSavedAlarms(repository),
             scheduleAlarm = ScheduleAlarm(repository, alarmInteractor, alarmTimeCalculator),
             showAlarm = ShowAlarm(repository, notificationInteractor, scheduleNextAlarm),
             completeAlarm = CompleteAlarm(repository, alarmInteractor, notificationInteractor, dateTimeProvider),
-            updateAlarm = UpdateAlarm(repository),
+            updateAlarm = UpdateAlarm(repository, alarmInteractor),
             cancelAlarm = CancelAlarm(alarmInteractor),
-            clearAlarms = ClearAlarms(repository, alarmInteractor),
+            clearAlarms = ClearAlarms(repository, DeleteAlarm(repository, alarmInteractor, notificationInteractor)),
             scheduleNextAlarm = scheduleNextAlarm,
             rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor, alarmTimeCalculator),
             snoozeAlarm = SnoozeAlarm(dateTimeProvider, notificationInteractor, alarmInteractor, repository)

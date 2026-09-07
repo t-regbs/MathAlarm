@@ -122,6 +122,18 @@ class AlarmService : Service() {
                     stopSelf()
                 }
             }
+            ACTION_UPDATE_ALARM -> {
+                val json = intent.getStringExtra(EXTRA_ALARM_JSON) ?: return START_STICKY
+                val alarm = AlarmMapper().mapToDomainModel(Json.decodeFromString<AlarmEntity>(json))
+                if (currentAlarm?.alarmId == alarm.alarmId) {
+                    currentAlarm = alarm
+                    persistPlayback()
+                    refreshNotificationForAlarm(alarm)
+                } else if (queuedAlarms.containsKey(alarm.alarmId)) {
+                    queuedAlarms[alarm.alarmId] = alarm
+                    persistPlayback()
+                }
+            }
             ACTION_STOP_ALARM -> {
                 val id = intent.getLongExtra(EXTRA_ALARM_ID, -1)
                 queuedAlarms.remove(id)
@@ -176,8 +188,8 @@ class AlarmService : Service() {
         timingController = AlarmTimingController(
             ringDurationMillis = RING_DURATION_MILLIS,
             silencePeriodMillis = SILENCE_PERIOD_MILLIS,
-            onStartRinging = { onStartRinging(alarm) },
-            onPauseRinging = { onPauseRinging(alarm) },
+            onStartRinging = { currentAlarm?.let(::onStartRinging) },
+            onPauseRinging = { currentAlarm?.let(::onPauseRinging) },
             scheduler = handlerScheduler
         )
         
@@ -440,6 +452,7 @@ class AlarmService : Service() {
 
     companion object {
         const val ACTION_START_ALARM = "com.timilehinaregbesola.mathalarm.START_ALARM"
+        const val ACTION_UPDATE_ALARM = "com.timilehinaregbesola.mathalarm.UPDATE_ALARM"
         const val ACTION_STOP_ALARM = "com.timilehinaregbesola.mathalarm.STOP_ALARM"
         const val EXTRA_ALARM_ID = "alarm_id"
         const val EXTRA_ALARM_JSON = "extra_alarm_json"
@@ -472,6 +485,16 @@ class AlarmService : Service() {
             context.startForegroundService(intent)
         }
         
+        /** Refresh existing playback metadata without starting an inactive alarm. */
+        fun updateAlarm(context: Context, alarm: Alarm) {
+            if (!ActiveAlarmManager.hasActiveAlarm()) return
+            val alarmJson = Json.encodeToString(AlarmMapper().mapFromDomainModel(alarm))
+            context.startService(Intent(context, AlarmService::class.java).apply {
+                action = ACTION_UPDATE_ALARM
+                putExtra(EXTRA_ALARM_JSON, alarmJson)
+            })
+        }
+
         /**
          * Stop the alarm service.
          */

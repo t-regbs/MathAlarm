@@ -23,6 +23,33 @@ class AlarmOccurrenceLifecycleTest {
     private fun time(day: Int, hour: Int = 7) = LocalDateTime(2030, 1, day, hour, 0)
         .toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
 
+    @Test fun deletingRingingAlarmStopsPlayback() = runTest {
+        repository.addAlarm(alarm.copy(activeAt = time(7)))
+        notifications.show(alarm)
+        DeleteAlarm(repository, backend, notifications)(alarm.alarmId)
+        assertFalse(notifications.isNotificationShown(alarm.alarmId))
+        assertNull(repository.findAlarm(alarm.alarmId))
+    }
+
+    @Test fun completionStopsPlaybackWhenTheRowIsMissing() = runTest {
+        notifications.show(alarm)
+        CompleteAlarm(repository, backend, notifications, clock)(alarm.alarmId)
+        assertFalse(notifications.isNotificationShown(alarm.alarmId))
+    }
+
+    @Test fun clearingAlarmsStopsEveryPlayback() = runTest {
+        val alarms = listOf(alarm, alarm.copy(alarmId = 13))
+        for (item in alarms) {
+            repository.addAlarm(item)
+            notifications.show(item)
+        }
+        ClearAlarms(repository, DeleteAlarm(repository, backend, notifications))(alarms)
+        for (item in alarms) {
+            assertFalse(notifications.isNotificationShown(item.alarmId))
+            assertNull(repository.findAlarm(item.alarmId))
+        }
+    }
+
     @Test fun resumeDoesNotDiscardAnOccurrenceWaitingForDelivery() = runTest {
         val trigger = time(7, 6) - 1_000
         repository.addAlarm(alarm.copy(
