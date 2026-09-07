@@ -12,8 +12,8 @@ android {
 
     defaultConfig {
         applicationId = "com.timilehinaregbesola.mathalarm"
-        versionCode = 27
-        versionName = "2.5.0"
+        versionCode = 28
+        versionName = "2.6.0"
         minSdk = libs.versions.android.min.sdk.get().toInt()
         targetSdk = libs.versions.android.target.sdk.get().toInt()
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
