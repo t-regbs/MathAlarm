@@ -161,7 +161,7 @@ def main():
             "alarm.txt": ("shell", "dumpsys", "alarm"),
             "audio.txt": ("shell", "dumpsys", "audio"),
             "deviceidle.txt": ("shell", "dumpsys", "deviceidle"),
-            "logcat.txt": ("logcat", "-d", "-t", "2000"),
+            "logcat.txt": ("logcat", "-d"),
         }.items():
             try:
                 (args.output / name).write_text(adb(*command_args, check=False))
