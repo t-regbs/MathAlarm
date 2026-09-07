@@ -4,6 +4,12 @@ import cafe.adriel.lyricist.LyricistStrings
 
 @LyricistStrings(languageTag = Locales.HI)
 val HiMathAlarmStrings = Strings(
+    alarmScheduleFailed = "अलार्म सेट नहीं हुआ। फिर से सेव करें।",
+    alarmSaveFailed = "अलार्म सेव नहीं हुआ। फिर कोशिश करें।",
+    alarmUpdateFailed = "अलार्म अपडेट नहीं हुआ। फिर कोशिश करें।",
+    alarmDismissFailed = "अलार्म बंद नहीं हुआ। फिर कोशिश करें।",
+    alarmSnoozeFailed = "अलार्म स्नूज़ नहीं हुआ। फिर कोशिश करें।",
+    incorrectAnswer = "गलत जवाब। फिर कोशिश करें।",
     multipleDays = "कई दिन",
     greeting = { hour ->
         when {

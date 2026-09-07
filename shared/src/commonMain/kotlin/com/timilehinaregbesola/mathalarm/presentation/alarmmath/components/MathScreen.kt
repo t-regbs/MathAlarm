@@ -139,14 +139,12 @@ fun MathScreen(
         animationSpec = ProgressAnimationSpec,
         label = PROGRESS_LABEL
     )
-
-    LaunchedEffect(key1 = true) {
+    val errorStrings = strings
+    LaunchedEffect(errorStrings) {
         viewModel.eventFlow.collectLatest { event ->
             when (event) {
-                is AlarmMathViewModel.UiEvent.ShowSnackbar -> {
-                    snackbarHostState.showSnackbar(
-                        message = event.message,
-                    )
+                is AlarmMathViewModel.UiEvent.ShowError -> {
+                    snackbarHostState.showSnackbar(message = event.error.resolve(errorStrings))
                 }
                 is AlarmMathViewModel.UiEvent.CompleteAndClose -> {
                     viewModel.completeAlarm(AlarmMapper().mapToDomainModel(alarm), preview = fromSheet)

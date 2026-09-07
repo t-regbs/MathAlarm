@@ -1,5 +1,7 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmmath
 
+import kotlinx.coroutines.CancellationException
+import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -52,7 +54,7 @@ class AlarmMathViewModel(
                     }
                 } else {
                     viewModelScope.launch {
-                        _eventFlow.emit(UiEvent.ShowSnackbar("Incorrect"))
+                        _eventFlow.emit(UiEvent.ShowError(AlarmErrorMessage.INCORRECT_ANSWER))
                     }
                 }
             }
@@ -61,7 +63,7 @@ class AlarmMathViewModel(
             }
             is MathScreenEvent.OnToneError -> {
                 viewModelScope.launch {
-                    _eventFlow.emit(UiEvent.ShowSnackbar(event.message))
+                    _eventFlow.emit(UiEvent.ShowError(AlarmErrorMessage.TONE))
                 }
             }
         }
@@ -79,10 +81,12 @@ class AlarmMathViewModel(
                 }
                 stopAudioAndHideKeyboard(preview)
                 _eventFlow.emit(UiEvent.Close)
-            } catch (e: kotlinx.coroutines.CancellationException) {
+            } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                _eventFlow.emit(UiEvent.ShowSnackbar(e.message ?: "Unable to dismiss alarm"))
+                logger.e(e) { "Unable to finish alarm" }
+                val error = if (snooze) AlarmErrorMessage.SNOOZE else AlarmErrorMessage.DISMISS
+                _eventFlow.emit(UiEvent.ShowError(error))
             } finally {
                 finishing = false
             }
@@ -151,7 +155,7 @@ class AlarmMathViewModel(
         finishAlarm(alarm.alarmId, preview, snooze = false)
 
     sealed class UiEvent {
-        data class ShowSnackbar(val message: String) : UiEvent()
+        data class ShowError(val error: AlarmErrorMessage) : UiEvent()
 
         object StopVibrateAndHideKeyboard : UiEvent()
 

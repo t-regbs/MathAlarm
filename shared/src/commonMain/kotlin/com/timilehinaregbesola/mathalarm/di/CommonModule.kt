@@ -67,10 +67,11 @@ val commonModule = module {
     
     // Usecases
     single {
+        val deleteAlarm = DeleteAlarm(get(), get(), get())
         Usecases(
             addAlarm = AddAlarm(get()),
-            clearAlarms = ClearAlarms(get(), get()),
-            deleteAlarm = DeleteAlarm(get(), get()),
+            clearAlarms = ClearAlarms(get(), deleteAlarm),
+            deleteAlarm = deleteAlarm,
             findAlarm = FindAlarm(get()),
             getSavedAlarms = GetSavedAlarms(get()),
             updateAlarm = UpdateAlarm(get(), get()),

@@ -1,5 +1,6 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist
 
+import kotlinx.coroutines.CancellationException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.compose.runtime.snapshotFlow
@@ -9,6 +10,7 @@ import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermission
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
+import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
 import com.timilehinaregbesola.mathalarm.utils.UiEvent
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.Navigate
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.ShowSnackbar
@@ -42,11 +44,11 @@ class AlarmListViewModel(
         viewModelScope.launch {
             try {
                 usecases.command(block)
-            } catch (e: kotlinx.coroutines.CancellationException) {
+            } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
                 logger.e(e) { "Alarm command failed" }
-                sendUiEvent(ShowSnackbar(e.message ?: "Unable to update alarm"))
+                sendUiEvent(UiEvent.ShowError(AlarmErrorMessage.UPDATE))
             }
         }
     }
@@ -59,7 +61,7 @@ class AlarmListViewModel(
             is AlarmListEvent.OnUndoDeleteClick -> launchCommand {
                 val restored = recentlyDeletedAlarm ?: return@launchCommand
                 addAlarm(restored)
-                if (restored.isOn) scheduleAlarm(restored, true)
+                if (restored.isOn) rescheduleFutureAlarms.restoreAlarm(restored, clearActive = true)
                 recentlyDeletedAlarm = null
             }
             is AlarmListEvent.OnDeleteAlarmClick -> launchCommand {
@@ -80,8 +82,13 @@ class AlarmListViewModel(
             scheduleAlarm(latest, true)
         } else {
             cancelAlarm(latest)
-            updateAlarm(latest.copy(isOn = false, pendingTimes = emptyList(), snoozedUntil = null,
-                activeAt = null, scheduleError = null))
+            updateAlarm(latest.copy(
+                isOn = false,
+                pendingTimes = emptyList(),
+                snoozedUntil = null,
+                activeAt = null,
+                scheduleError = null
+            ))
         }
     }
 
@@ -90,8 +97,6 @@ class AlarmListViewModel(
             _uiEvent.send(event)
         }
     }
-
-    fun onUpdate(alarm: Alarm) = launchCommand { updateAlarm(alarm) }
 
     fun scheduleAlarm(alarm: Alarm, reschedule: Boolean, message: String) = launchCommand {
         scheduleAlarm(alarm, reschedule)

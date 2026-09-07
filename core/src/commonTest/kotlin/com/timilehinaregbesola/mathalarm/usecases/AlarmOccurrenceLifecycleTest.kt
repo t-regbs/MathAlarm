@@ -23,6 +23,81 @@ class AlarmOccurrenceLifecycleTest {
     private fun time(day: Int, hour: Int = 7) = LocalDateTime(2030, 1, day, hour, 0)
         .toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
 
+    @Test fun deletingRingingAlarmStopsPlayback() = runTest {
+        repository.addAlarm(alarm.copy(activeAt = time(7)))
+        notifications.show(alarm)
+        DeleteAlarm(repository, backend, notifications)(alarm.alarmId)
+        assertFalse(notifications.isNotificationShown(alarm.alarmId))
+        assertNull(repository.findAlarm(alarm.alarmId))
+    }
+
+    @Test fun completionStopsPlaybackWhenTheRowIsMissing() = runTest {
+        notifications.show(alarm)
+        CompleteAlarm(repository, backend, notifications, clock)(alarm.alarmId)
+        assertFalse(notifications.isNotificationShown(alarm.alarmId))
+    }
+
+    @Test fun clearingAlarmsStopsEveryPlayback() = runTest {
+        val alarms = listOf(alarm, alarm.copy(alarmId = 13))
+        for (item in alarms) {
+            repository.addAlarm(item)
+            notifications.show(item)
+        }
+        ClearAlarms(repository, DeleteAlarm(repository, backend, notifications))(alarms)
+        for (item in alarms) {
+            assertFalse(notifications.isNotificationShown(item.alarmId))
+            assertNull(repository.findAlarm(item.alarmId))
+        }
+    }
+
+    @Test fun resumeDoesNotDiscardAnOccurrenceWaitingForDelivery() = runTest {
+        val trigger = time(7, 6) - 1_000
+        repository.addAlarm(alarm.copy(
+            scheduleInitialized = true,
+            scheduleTimeZone = TimeZone.currentSystemDefault().id,
+            pendingTimes = listOf(trigger)
+        ))
+        backend.schedule(alarm, trigger)
+        RescheduleFutureAlarms(repository, backend, calculator).onAppResume()
+        ShowAlarm(repository, notifications, next)(12, trigger)
+        assertTrue(notifications.isNotificationShown(12))
+    }
+
+    @Test fun resumeExpiresAnOldUndeliveredOneTimeAlarm() = runTest {
+        repository.addAlarm(alarm.copy(
+            scheduleInitialized = true,
+            scheduleTimeZone = TimeZone.currentSystemDefault().id,
+            pendingTimes = listOf(time(6))
+        ))
+        RescheduleFutureAlarms(repository, backend, calculator).onAppResume()
+        assertFalse(repository.findAlarm(12)!!.isOn)
+        assertTrue(repository.findAlarm(12)!!.pendingTimes.isEmpty())
+    }
+
+    @Test fun resumeReregistersFutureSchedulesAfterOsRemoval() = runTest {
+        repository.addAlarm(alarm.copy(
+            scheduleInitialized = true,
+            scheduleTimeZone = TimeZone.currentSystemDefault().id,
+            pendingTimes = listOf(time(7))
+        ))
+        // The persisted plan can survive an OS cancellation, such as a force-stop.
+        RescheduleFutureAlarms(repository, backend, calculator).onAppResume()
+        assertTrue(backend.isAlarmScheduled(alarm))
+        assertEquals(listOf(time(7)), repository.findAlarm(12)!!.pendingTimes)
+    }
+
+    @Test fun resumeRetriesAnIncompleteSchedule() = runTest {
+        repository.addAlarm(alarm.copy(
+            scheduleInitialized = true,
+            scheduleTimeZone = TimeZone.currentSystemDefault().id,
+            scheduleError = Alarm.SCHEDULING_IN_PROGRESS,
+            pendingTimes = listOf(time(7))
+        ))
+        RescheduleFutureAlarms(repository, backend, calculator).onAppResume()
+        assertTrue(backend.isAlarmScheduled(alarm))
+        assertNull(repository.findAlarm(12)!!.scheduleError)
+    }
+
     @Test fun schedulingFailurePreservesRecoveryPlanAndError() = runTest {
         val failing = object : AlarmInteractor by backend {
             override suspend fun schedule(alarm: Alarm, timeInMillis: Long) { error("permission denied") }

@@ -5,11 +5,11 @@ import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.Bundle
+import android.util.Base64
 import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.appcompat.app.AppCompatActivity
-import co.touchlab.kermit.Logger
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -22,6 +22,9 @@ import androidx.core.view.WindowInsetsControllerCompat
 import cafe.adriel.lyricist.Lyricist
 import cafe.adriel.lyricist.ProvideStrings
 import cafe.adriel.lyricist.rememberStrings
+import co.touchlab.kermit.Logger
+import com.timilehinaregbesola.mathalarm.coroutines.AppCoroutineScope
+import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.navigation.NavGraph
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
@@ -29,7 +32,6 @@ import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.utils.strings.Strings
 import kotlinx.coroutines.InternalCoroutinesApi
 import org.koin.android.ext.android.inject
-import android.util.Base64
 
 @ExperimentalFoundationApi
 @ExperimentalMaterial3Api
@@ -96,9 +98,9 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        val scope: com.timilehinaregbesola.mathalarm.coroutines.AppCoroutineScope by inject()
-        val usecases: com.timilehinaregbesola.mathalarm.framework.Usecases by inject()
-        scope.launch { usecases.command { rescheduleFutureAlarms() } }
+        val scope: AppCoroutineScope by inject()
+        val usecases: Usecases by inject()
+        scope.launch { usecases.command { rescheduleFutureAlarms.onAppResume() } }
     }
 
     private fun Intent.extractAlarmJson(): String? {

@@ -2,16 +2,13 @@ package com.timilehinaregbesola.mathalarm.usecases
 
 import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
-import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
 
 class ClearAlarms(
     private val alarmRepository: AlarmRepository,
-    private val alarmInteractor: AlarmInteractor
+    private val deleteAlarm: DeleteAlarm
 ) {
     suspend operator fun invoke(alarms: List<Alarm>) {
-        for (alarm in alarms) {
-            alarmInteractor.cancel(alarm)
-        }
+        for (alarm in alarms) deleteAlarm(alarm.alarmId)
         alarmRepository.clear()
     }
 }

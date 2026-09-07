@@ -4,6 +4,12 @@ import cafe.adriel.lyricist.LyricistStrings
 
 @LyricistStrings(languageTag = Locales.PT)
 val PtMathAlarmStrings = Strings(
+    alarmScheduleFailed = "Não foi possível agendar o alarme. Salve novamente.",
+    alarmSaveFailed = "Não foi possível salvar o alarme. Tente novamente.",
+    alarmUpdateFailed = "Não foi possível atualizar o alarme. Tente novamente.",
+    alarmDismissFailed = "Não foi possível parar o alarme. Tente novamente.",
+    alarmSnoozeFailed = "Não foi possível adiar o alarme. Tente novamente.",
+    incorrectAnswer = "Resposta incorreta. Tente novamente.",
     multipleDays = "Múltiplos dias",
     greeting = { hour ->
         when {

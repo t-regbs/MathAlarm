@@ -4,13 +4,25 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
 data class AlarmScheduleRequest(
-    val alarmId: Long, val hour: Int, val minute: Int, val title: String,
-    val soundName: String, val repeatDays: String, val snoozeMinutes: Int,
-    val vibrate: Boolean, val difficulty: Int, val repeats: Boolean,
-    val timeInMillis: Long, val occurrenceKey: String
+    val alarmId: Long,
+    val hour: Int,
+    val minute: Int,
+    val title: String,
+    val soundName: String,
+    val repeatDays: String,
+    val snoozeMinutes: Int,
+    val vibrate: Boolean,
+    val difficulty: Int,
+    val repeats: Boolean,
+    val timeInMillis: Long,
+    val occurrenceKey: String
 )
 
-data class AlarmScheduleResult(val success: Boolean, val usedAlarmKit: Boolean, val errorMessage: String? = null)
+data class AlarmScheduleResult(
+    val success: Boolean,
+    val usedAlarmKit: Boolean,
+    val errorMessage: String? = null
+)
 
 /** Completion is called only after AlarmKit has accepted or rejected the schedule. */
 interface AlarmScheduleCompletion {

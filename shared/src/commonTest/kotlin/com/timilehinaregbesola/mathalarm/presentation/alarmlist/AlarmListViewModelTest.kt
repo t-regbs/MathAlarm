@@ -7,20 +7,26 @@ import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.fake.*
 import com.timilehinaregbesola.mathalarm.framework.Usecases
+import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AppThemeOptionsMapper
+import com.timilehinaregbesola.mathalarm.provider.AlarmTimeCalculatorImpl
 import com.timilehinaregbesola.mathalarm.usecases.*
+import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
 import com.timilehinaregbesola.mathalarm.utils.UiEvent
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
+import kotlin.test.AfterTest
+import kotlin.test.BeforeTest
+import kotlin.test.Test
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.*
-import kotlin.test.AfterTest
-import kotlin.test.BeforeTest
-import kotlin.test.Test
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AlarmListViewModelTest {
@@ -58,14 +64,14 @@ class AlarmListViewModelTest {
         usecases = Usecases(
             addAlarm = AddAlarm(repository),
             findAlarm = FindAlarm(repository),
-            deleteAlarm = DeleteAlarm(repository, alarmInteractor),
+            deleteAlarm = DeleteAlarm(repository, alarmInteractor, notificationInteractor),
             getSavedAlarms = GetSavedAlarms(repository),
             scheduleAlarm = ScheduleAlarm(repository, alarmInteractor, alarmTimeCalculator),
             showAlarm = ShowAlarm(repository, notificationInteractor, scheduleNextAlarm),
             completeAlarm = CompleteAlarm(repository, alarmInteractor, notificationInteractor, dateTimeProvider),
-            updateAlarm = UpdateAlarm(repository),
+            updateAlarm = UpdateAlarm(repository, alarmInteractor),
             cancelAlarm = CancelAlarm(alarmInteractor),
-            clearAlarms = ClearAlarms(repository, alarmInteractor),
+            clearAlarms = ClearAlarms(repository, DeleteAlarm(repository, alarmInteractor, notificationInteractor)),
             scheduleNextAlarm = scheduleNextAlarm,
             rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor, alarmTimeCalculator),
             snoozeAlarm = SnoozeAlarm(dateTimeProvider, notificationInteractor, alarmInteractor, repository)
@@ -82,6 +88,51 @@ class AlarmListViewModelTest {
     @AfterTest
     fun tearDown() {
         Dispatchers.resetMain()
+    }
+
+    @Test
+    fun `scheduling exception emits a localizable error instead of its details`() = runTest {
+        val backend = object : AlarmInteractor by alarmInteractor {
+            override suspend fun schedule(alarm: Alarm, timeInMillis: Long) {
+                error("Internal database path and OS error details")
+            }
+        }
+        val commands = usecases.copy(scheduleAlarm = ScheduleAlarm(repository, backend, AlarmTimeCalculatorFake()))
+        viewModel = AlarmListViewModel(commands, permission, preferences, Logger.withTag("ErrorTest"))
+        val alarm = Alarm(alarmId = 803, isSaved = true)
+        commands.addAlarm(alarm)
+        viewModel.uiEvent.test {
+            viewModel.onEvent(AlarmListEvent.OnAlarmOnChange(alarm, true))
+            awaitItem() shouldBe UiEvent.ShowError(AlarmErrorMessage.UPDATE)
+        }
+    }
+
+    @Test
+    fun `undo restores remaining one time dates and snooze`() = runTest {
+        dateTimeProvider.setFixedDateTime(LocalDateTime(2030, 1, 8, 6, 0))
+        val calculator = AlarmTimeCalculatorImpl(dateTimeProvider)
+        val commands = usecases.copy(
+            scheduleAlarm = ScheduleAlarm(repository, alarmInteractor, calculator),
+            rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor, calculator)
+        )
+        viewModel = AlarmListViewModel(commands, permission, preferences, Logger.withTag("UndoTest"))
+        val remaining = LocalDateTime(2030, 1, 9, 7, 0)
+            .toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        val snooze = remaining - 60_000
+        val alarm = Alarm(
+            alarmId = 802, hour = 7, minute = 0, isSaved = true, isOn = true,
+            repeatDays = "FTFTFFF", scheduleInitialized = true,
+            pendingTimes = listOf(remaining), snoozedUntil = snooze,
+            scheduleTimeZone = TimeZone.currentSystemDefault().id
+        )
+        commands.addAlarm(alarm)
+        viewModel.onEvent(AlarmListEvent.OnDeleteAlarmClick(alarm))
+        advanceUntilIdle()
+        viewModel.onEvent(AlarmListEvent.OnUndoDeleteClick)
+        advanceUntilIdle()
+        val restored = commands.findAlarm(802)!!
+        restored.pendingTimes shouldBe listOf(remaining)
+        restored.snoozedUntil shouldBe snooze
     }
 
     @Test
@@ -244,20 +295,6 @@ class AlarmListViewModelTest {
             event.shouldBeInstanceOf<UiEvent.ShowSnackbar>()
             event.message shouldBe "There are no alarms to clear"
         }
-    }
-
-    @Test
-    fun `onUpdate should update alarm in repository`() = runTest {
-        val originalAlarm = Alarm(alarmId = 555, hour = 10, minute = 0, title = "Original", isSaved = true)
-        usecases.addAlarm(originalAlarm)
-        advanceUntilIdle()
-        
-        val updatedAlarm = originalAlarm.copy(title = "Updated")
-        viewModel.onUpdate(updatedAlarm)
-        advanceUntilIdle()
-        
-        val alarm = usecases.findAlarm(originalAlarm.alarmId)
-        alarm?.title shouldBe "Updated"
     }
 
     @Test

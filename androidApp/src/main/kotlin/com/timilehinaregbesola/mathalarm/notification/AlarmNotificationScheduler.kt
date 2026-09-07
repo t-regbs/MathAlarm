@@ -46,8 +46,16 @@ class AlarmNotificationScheduler(
         }
     }
 
+    @OptIn(
+        androidx.compose.animation.ExperimentalAnimationApi::class,
+        androidx.compose.foundation.ExperimentalFoundationApi::class,
+        androidx.compose.material3.ExperimentalMaterial3Api::class,
+        androidx.compose.ui.ExperimentalComposeUiApi::class,
+        kotlinx.coroutines.InternalCoroutinesApi::class
+    )
     fun updateAlarm(alarm: Alarm) {
-        logger.d("Alarm ${alarm.alarmId} reads its current metadata when delivered")
+        AlarmService.updateAlarm(context, alarm)
+        logger.d("Updated playback metadata for alarm ${alarm.alarmId}")
     }
 
     fun hasPendingOccurrence(alarm: Alarm): Boolean {
