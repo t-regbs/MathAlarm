@@ -15,8 +15,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color.Companion.Black
-import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -26,8 +24,6 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.R
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.RingDayChip.RING_DAY_CHIP_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.RingDayChip.RING_DAY_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
-import com.timilehinaregbesola.mathalarm.presentation.ui.teall
-import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
 import com.timilehinaregbesola.mathalarm.utils.days
 import androidx.compose.ui.tooling.preview.Preview
 
@@ -79,7 +75,7 @@ fun RingDayChip(
             ),
         shadowElevation = NO_ELEVATION,
         shape = CircleShape,
-        color = if (selected) teall else unSelectedDay,
+        color = if (selected) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.surfaceContainerHigh,
     ) {
         Box(
             contentAlignment = Center,
@@ -88,7 +84,7 @@ fun RingDayChip(
                 text = day,
                 fontWeight = Bold,
                 fontSize = RING_DAY_FONT_SIZE,
-                color = if (selected) White else Black,
+                color = if (selected) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSurface,
             )
         }
     }

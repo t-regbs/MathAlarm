@@ -26,6 +26,11 @@ data class Alarm @OptIn(ExperimentalTime::class) constructor(
     var isOn: Boolean = false,
 
     var difficulty: Int = 0,
+    val questionCount: Int = 1,
+    val challengeOperations: String = "+−×÷",
+    val additionRange: Int = 0,
+    val factorRange: Int = 0,
+    val difficultyMix: String = "",
 
     var alarmTone: String = "",
 

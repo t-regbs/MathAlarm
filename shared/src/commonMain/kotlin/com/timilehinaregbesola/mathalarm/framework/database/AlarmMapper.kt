@@ -1,10 +1,15 @@
 package com.timilehinaregbesola.mathalarm.framework.database
 
+import com.timilehinaregbesola.mathalarm.domain.model.MathChallenge
+import com.timilehinaregbesola.mathalarm.domain.model.mathChallenge
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.domain.util.DomainMapper
 
 class AlarmMapper : DomainMapper<AlarmEntity, Alarm> {
     override fun mapToDomainModel(model: AlarmEntity): Alarm {
+        val challenge = MathChallenge(
+            model.difficulty, model.questionCount, model.challengeOperations, model.additionRange, model.factorRange, model.difficultyMix,
+        ).normalized()
         return Alarm(
             alarmId = model.alarmId,
             hour = model.hour,
@@ -12,7 +17,12 @@ class AlarmMapper : DomainMapper<AlarmEntity, Alarm> {
             repeat = model.repeat,
             repeatDays = model.repeatDays,
             isOn = model.isOn,
-            difficulty = model.difficulty,
+            difficulty = challenge.difficulty,
+            questionCount = challenge.questionCount,
+            challengeOperations = challenge.operations,
+            additionRange = challenge.additionRange,
+            factorRange = challenge.factorRange,
+            difficultyMix = challenge.difficultyMix,
             alarmTone = model.alarmTone,
             vibrate = model.vibrate,
             snooze = model.snooze,
@@ -28,6 +38,7 @@ class AlarmMapper : DomainMapper<AlarmEntity, Alarm> {
     }
 
     override fun mapFromDomainModel(domainModel: Alarm): AlarmEntity {
+        val challenge = domainModel.mathChallenge
         return AlarmEntity(
             alarmId = domainModel.alarmId,
             hour = domainModel.hour,
@@ -35,7 +46,12 @@ class AlarmMapper : DomainMapper<AlarmEntity, Alarm> {
             repeat = domainModel.repeat,
             repeatDays = domainModel.repeatDays,
             isOn = domainModel.isOn,
-            difficulty = domainModel.difficulty,
+            difficulty = challenge.difficulty,
+            questionCount = challenge.questionCount,
+            challengeOperations = challenge.operations,
+            additionRange = challenge.additionRange,
+            factorRange = challenge.factorRange,
+            difficultyMix = challenge.difficultyMix,
             alarmTone = domainModel.alarmTone,
             vibrate = domainModel.vibrate,
             snooze = domainModel.snooze,

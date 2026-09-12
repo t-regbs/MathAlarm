@@ -89,6 +89,56 @@ class AlarmMathViewModelTest {
         )
     }
 
+    @Test
+    fun `challenge advances only on correct answers and keeps audio playing until final completion`() = runTest {
+        val alarm = Alarm(alarmId = 90, difficulty = 3, questionCount = 3, challengeOperations = "+")
+        viewModel.initializeChallenge(alarm, preview = true)
+        audioPlayer.startAlarmAudio()
+        viewModel.eventFlow.test {
+            val first = viewModel.currentProblem!!
+            viewModel.onEvent(MathScreenEvent.EnteredAnswer("-1"))
+            viewModel.onEvent(MathScreenEvent.OnEnterClick(first))
+            awaitItem() shouldBe AlarmMathViewModel.UiEvent.ShowError(AlarmErrorMessage.INCORRECT_ANSWER)
+            viewModel.questionIndex.value shouldBe 0
+            repeat(3) { index ->
+                val problem = viewModel.currentProblem!!
+                viewModel.onEvent(MathScreenEvent.EnteredAnswer(problem.answer.toString()))
+                viewModel.onEvent(MathScreenEvent.OnEnterClick(problem))
+                if (index < 2) {
+                    expectNoEvents()
+                    viewModel.questionIndex.value shouldBe index + 1
+                    audioPlayer.isPlaying shouldBe true
+                    // Rotation/recomposition must not restart an in-progress challenge.
+                    viewModel.initializeChallenge(alarm, preview = true)
+                    viewModel.questionIndex.value shouldBe index + 1
+                } else {
+                    awaitItem() shouldBe AlarmMathViewModel.UiEvent.CompleteAndClose
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `scheduled alarms recover saved challenge while test alarm uses draft`() = runTest {
+        val saved = Alarm(alarmId = 91, difficulty = 3, questionCount = 7, challengeOperations = "÷", factorRange = 2)
+        usecases.addAlarm(saved)
+        viewModel.initializeChallenge(Alarm(alarmId = 91), preview = false)
+        viewModel.questionCount shouldBe 7
+        viewModel.currentProblem!!.operator shouldBe MathProblemOperator.Divide
+        viewModel.initializeChallenge(saved.copy(questionCount = 2, challengeOperations = "+"), preview = true)
+        viewModel.questionCount shouldBe 2
+        viewModel.currentProblem!!.operator shouldBe MathProblemOperator.Add
+    }
+
+    @Test
+    fun `scheduled alarm uses saved mix and preview uses its own mix`() = runTest {
+        usecases.addAlarm(Alarm(alarmId = 92, difficultyMix = "00112", questionCount = 5))
+        viewModel.initializeChallenge(Alarm(alarmId = 92), preview = false)
+        viewModel.questionCount shouldBe 5
+        viewModel.initializeChallenge(Alarm(alarmId = 92, difficultyMix = "12", questionCount = 2), preview = true)
+        viewModel.questionCount shouldBe 2
+    }
+
     @AfterTest
     fun tearDown() {
         Dispatchers.resetMain()

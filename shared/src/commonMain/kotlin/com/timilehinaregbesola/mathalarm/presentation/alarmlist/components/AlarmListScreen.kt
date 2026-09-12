@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -73,7 +72,7 @@ fun ListDisplayScreen(
     backstack: NavBackStack<NavKey>,
     darkTheme: Boolean,
 ) {
-    val alarms by viewModel.alarms.collectAsState(null)
+    val alarms by viewModel.alarms.collectAsState()
     val alarmPermission = viewModel.permission
     var deleteAllAlarmsDialog by remember { mutableStateOf(false) }
     val snackbarHoststate = remember {
@@ -145,7 +144,7 @@ fun ListDisplayScreen(
             )
             Box(
                 modifier = Modifier
-                    .systemBarsPadding()
+                    .padding(padding)
                     .padding(horizontal = 16.dp)
                     .fillMaxSize(),
                 contentAlignment = TopStart,
@@ -267,7 +266,6 @@ private fun AlarmListContent(
                 ListHeader(
                     enabled = alarmList.any { it.isOn },
                     alarmList = alarmList,
-                    isDark = darkTheme
                 )
             }
             items(

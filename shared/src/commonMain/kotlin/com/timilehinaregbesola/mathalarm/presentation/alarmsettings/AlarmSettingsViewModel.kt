@@ -1,11 +1,12 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmsettings
 
+import com.timilehinaregbesola.mathalarm.domain.model.MathChallenge
+import com.timilehinaregbesola.mathalarm.domain.model.mathChallenge
 import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
 import com.timilehinaregbesola.mathalarm.platform.getDefaultAlarmTone
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.lifecycle.ViewModel
@@ -48,8 +49,8 @@ class AlarmSettingsViewModel(
     private val _snoozeEnabled = mutableStateOf(true)
     val snoozeEnabled: State<Boolean> = _snoozeEnabled
 
-    private val _difficulty = mutableIntStateOf(0)
-    val difficulty: State<Int> = _difficulty
+    private val _challenge = mutableStateOf(MathChallenge())
+    val challenge: State<MathChallenge> = _challenge
 
     private val _tone = mutableStateOf("")
     val tone: State<String> = _tone
@@ -129,8 +130,8 @@ class AlarmSettingsViewModel(
                 markExistingAlarmForReschedule()
                 _dayChooser.value = event.value
             }
-            is AddEditAlarmEvent.OnDifficultyChange -> {
-                _difficulty.intValue = event.value
+            is AddEditAlarmEvent.OnChallengeChange -> {
+                _challenge.value = event.value.normalized()
             }
             is AddEditAlarmEvent.OnToneChange -> {
                 _tone.value = event.value
@@ -154,7 +155,12 @@ class AlarmSettingsViewModel(
         } ?: false,
         vibrate = _vibrate.value,
         title = _alarmTitle.value.text,
-        difficulty = _difficulty.value,
+        difficulty = _challenge.value.difficulty,
+        questionCount = _challenge.value.questionCount,
+        challengeOperations = _challenge.value.operations,
+        additionRange = _challenge.value.additionRange,
+        factorRange = _challenge.value.factorRange,
+        difficultyMix = _challenge.value.difficultyMix,
         alarmTone = _tone.value,
         isSaved = _isSaved.value,
         snooze = if (_snoozeEnabled.value) DEFAULT_SNOOZE_MINUTES else 0,
@@ -177,7 +183,7 @@ class AlarmSettingsViewModel(
                 _alarmTime.value = TimeState(
                     hour = alarm.hour,
                     minute = alarm.minute,
-                    formattedTime = alarm.getFormatTime().toString(),
+                    formattedTime = alarm.getFormatTime(),
                 )
                 if (alarm.alarmId == 0L) {
                     isNewAlarm = true
@@ -193,7 +199,7 @@ class AlarmSettingsViewModel(
                 _repeatWeekly.value = alarm.repeat
                 _vibrate.value = alarm.vibrate
                 _snoozeEnabled.value = alarm.snooze != 0
-                _difficulty.intValue = alarm.difficulty
+                _challenge.value = alarm.mathChallenge
                 if (alarm.alarmTone == "") {
                     _tone.value = getDefaultAlarmTone()
                 } else {

@@ -1,6 +1,5 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
@@ -11,16 +10,11 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.lyricist.strings
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.LIST_HEADER_ELEVATION
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.LIST_HEADER_FONT_SIZE
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.ListHeaderAlpha
-import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimaryLight
-import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.utils.calculateNextAlarmTime
 import com.timilehinaregbesola.mathalarm.utils.getTimeLeft
 import kotlinx.datetime.TimeZone
@@ -35,7 +29,6 @@ fun ListHeader(
     enabled: Boolean,
     timeZone: TimeZone = TimeZone.currentSystemDefault(),
     alarmList: List<Alarm>,
-    isDark: Boolean
 ) {
     val (nearestTime, nearestIndex) = buildNearestTime(
         alarmList = alarmList,
@@ -49,31 +42,20 @@ fun ListHeader(
         }
     }
     Surface(
-        modifier = Modifier
-            .padding(top = MaterialTheme.spacing.small)
-            .fillMaxWidth()
-            .background(
-                color = if (isDark) darkPrimaryLight else LightGray.copy(alpha = ListHeaderAlpha),
-            )
-            .then(modifier),
-        tonalElevation = LIST_HEADER_ELEVATION,
+        modifier = modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp),
+        shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerLow,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
     ) {
-        with(MaterialTheme.spacing) {
-            Text(
-                text = if (enabled && nearestAlarmMessage != null) {
-                    "${strings.nextAlarmText} $nearestAlarmMessage"
-                } else {
-                    strings.noUpcomingAlarms
-                },
-                modifier = Modifier
-                    .padding(
-                        start = extraMedium,
-                        top = extraLarge,
-                        bottom = small,
-                    ),
-                fontSize = LIST_HEADER_FONT_SIZE,
-            )
-        }
+        Text(
+            text = if (enabled && nearestAlarmMessage != null) {
+                "${strings.nextAlarmText} $nearestAlarmMessage"
+            } else {
+                strings.noUpcomingAlarms
+            },
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            fontSize = LIST_HEADER_FONT_SIZE,
+        )
     }
 }
 
@@ -109,14 +91,10 @@ private fun ListHeaderPreview() {
         ListHeader(
             enabled = false,
             alarmList = emptyList(),
-            isDark = true
         )
     }
 }
 
 private object AlarmListHeader {
-    const val ListHeaderAlpha = 0.1f
-    const val ONE_WEEK_IN_MILLISECONDS = 7 * 24 * 60 * 60 * 1000
-    val LIST_HEADER_ELEVATION = 4.dp
     val LIST_HEADER_FONT_SIZE = 16.sp
 }

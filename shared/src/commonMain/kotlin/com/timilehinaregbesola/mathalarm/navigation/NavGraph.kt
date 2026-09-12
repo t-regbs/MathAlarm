@@ -1,5 +1,11 @@
 package com.timilehinaregbesola.mathalarm.navigation
 
+import androidx.compose.animation.ContentTransform
+import androidx.compose.animation.EnterTransition
+import androidx.compose.animation.ExitTransition
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.navigation3.scene.Scene
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.slideInHorizontally
@@ -100,28 +106,28 @@ fun NavGraph(
             rememberViewModelStoreNavEntryDecorator()
         ),
         transitionSpec = {
-            slideInHorizontally(
+            sheetTransition(initialState, targetState) ?: (slideInHorizontally(
                 animationSpec = tween(ANIM_TRANSITION_DURATION),
                 initialOffsetX = { -it }) togetherWith
                     slideOutHorizontally(
                         animationSpec = tween(ANIM_TRANSITION_DURATION),
-                        targetOffsetX = { -it })
+                        targetOffsetX = { -it }))
         },
         popTransitionSpec = {
-            slideInHorizontally(
+            sheetTransition(initialState, targetState) ?: (slideInHorizontally(
                 animationSpec = tween(ANIM_TRANSITION_DURATION),
                 initialOffsetX = { it }) togetherWith
                     slideOutHorizontally(
                         animationSpec = tween(ANIM_TRANSITION_DURATION),
-                        targetOffsetX = { it })
+                        targetOffsetX = { it }))
         },
         predictivePopTransitionSpec = {
-            slideInHorizontally(
+            sheetTransition(initialState, targetState) ?: (slideInHorizontally(
                 animationSpec = tween(ANIM_TRANSITION_DURATION),
                 initialOffsetX = { it }) togetherWith
                     slideOutHorizontally(
                         animationSpec = tween(ANIM_TRANSITION_DURATION),
-                        targetOffsetX = { it })
+                        targetOffsetX = { it }))
         },
         entryProvider = entryProvider {
             entry<AlarmList>(
@@ -146,14 +152,18 @@ fun NavGraph(
                 )
             }
 
-            entry<AlarmMath> {
-                val alarmObject = Json.decodeFromString<AlarmEntity>(it.alarmJson)
-                MathScreen(
-                    backStack = backStack,
-                    alarm = alarmObject,
-                    darkTheme = preferences.shouldUseDarkColors(),
-                    fromSheet = it.fromSheet
-                )
+            backStack.filterIsInstance<AlarmMath>().distinct().forEach { destination ->
+                entry(
+                    destination,
+                    metadata = mapOf("mathScreen" to true, "mathPreview" to destination.fromSheet),
+                ) {
+                    val alarmObject = Json.decodeFromString<AlarmEntity>(it.alarmJson)
+                    MathScreen(
+                        backStack = backStack,
+                        alarm = alarmObject,
+                        fromSheet = it.fromSheet,
+                    )
+                }
             }
 
             entry<AppSettings> {
@@ -169,4 +179,16 @@ fun NavGraph(
 
 private object NavGraph {
     val ANIM_TRANSITION_DURATION = 700
+}
+
+// Modal sheets own their vertical motion; a page slide would move their backdrop too.
+private fun sheetTransition(initialState: Scene<*>, targetState: Scene<*>): ContentTransform? {
+    val entries = initialState.entries + targetState.entries
+    return when {
+        entries.any { it.metadata["mathScreen"] == true } ->
+            fadeIn(tween(180)) togetherWith fadeOut(tween(180))
+        initialState is BottomSheetScene<*> || targetState is BottomSheetScene<*> ->
+            EnterTransition.None togetherWith ExitTransition.None
+        else -> null
+    }
 }

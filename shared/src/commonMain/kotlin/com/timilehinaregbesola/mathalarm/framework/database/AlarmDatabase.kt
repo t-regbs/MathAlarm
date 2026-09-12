@@ -8,7 +8,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.execSQL
 
-@Database(entities = [AlarmEntity::class], version = 5, exportSchema = true)
+@Database(entities = [AlarmEntity::class], version = 7, exportSchema = true)
 @ConstructedBy(AlarmDatabaseConstructor::class)
 abstract class AlarmDatabase : RoomDatabase() {
     abstract val alarmDatabaseDao: AlarmDao
@@ -98,5 +98,22 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
         connection.execSQL("ALTER TABLE alarms ADD COLUMN activeAt INTEGER")
         connection.execSQL("ALTER TABLE alarms ADD COLUMN scheduleError TEXT")
         connection.execSQL("ALTER TABLE alarms ADD COLUMN scheduleTimeZone TEXT")
+    }
+}
+
+/** Existing alarms remain single-question presets. */
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN questionCount INTEGER NOT NULL DEFAULT 1")
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN challengeOperations TEXT NOT NULL DEFAULT '+−×÷'")
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN additionRange INTEGER NOT NULL DEFAULT 0")
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN factorRange INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
+/** Preserve existing single-difficulty challenges. */
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN difficultyMix TEXT NOT NULL DEFAULT ''")
     }
 }

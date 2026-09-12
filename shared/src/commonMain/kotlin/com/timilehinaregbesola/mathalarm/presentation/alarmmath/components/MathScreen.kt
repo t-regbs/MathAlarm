@@ -2,23 +2,26 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmmath.components
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement.Center
-import androidx.compose.foundation.layout.Arrangement.SpaceBetween
 import androidx.compose.foundation.layout.Arrangement.spacedBy
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.IntrinsicSize
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CornerSize
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicText
+import androidx.compose.foundation.text.TextAutoSize
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.FilledTonalButton
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
@@ -30,20 +33,15 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color.Companion.DarkGray
 import androidx.compose.ui.graphics.Color.Companion.Transparent
-import androidx.compose.ui.graphics.Color.Companion.White
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
@@ -62,7 +60,6 @@ import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.platform.PlatformVibrator
 import com.timilehinaregbesola.mathalarm.platform.getDefaultAlarmTone
-import com.timilehinaregbesola.mathalarm.platform.isIosPlatform
 import com.timilehinaregbesola.mathalarm.platform.shouldStartMathScreenAlarmAudio
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmSnack
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.AlarmMathViewModel
@@ -71,35 +68,24 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathScreenEvent.
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathScreenEvent.OnClearClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathScreenEvent.OnEnterClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathScreenEvent.OnSnoozeClick
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.ToneState.Countdown
+import com.timilehinaregbesola.mathalarm.platform.ChallengeBackHandler
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.buildQuestionString
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ANSWER_FIELD_CORNER_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ANSWER_FIELD_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ANSWER_FIELD_HEIGHT
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ANSWER_FIELD_HORIZONTAL_PADDING
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.BUTTON_SECTION_HEIGHT
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.BUTTON_SECTION_HORIZONTAL_PADDING
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.CLEAR_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.DEFAULT_VIBRATION_PATTERN
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ENTER_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.INITIAL_INDICATOR_PROGRESS
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.IOS_BUTTON_SPACING
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.MATH_CONTENT_MAX_WIDTH
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.MAX_ANSWER_CHARS
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.PROGRESS_INDICATOR_HEIGHT
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.PROGRESS_LABEL
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.QUESTION_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.REPEAT_INDEFINITELY
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.SNOOZE_FONT_SIZE
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.generateMathProblem
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
-import com.timilehinaregbesola.mathalarm.presentation.ui.clearButtonColor
-import com.timilehinaregbesola.mathalarm.presentation.ui.enterButtonColor
-import com.timilehinaregbesola.mathalarm.presentation.ui.indicatorColor
 import com.timilehinaregbesola.mathalarm.presentation.ui.shapes
-import com.timilehinaregbesola.mathalarm.presentation.ui.snoozeButtonColor
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
-import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.ui.tooling.preview.Preview
@@ -113,27 +99,20 @@ fun MathScreen(
     backStack: NavBackStack<NavKey>,
     alarm: AlarmEntity,
     viewModel: AlarmMathViewModel = koinViewModel(),
-    darkTheme: Boolean,
     fromSheet: Boolean = false
 ) {
+    // Consume Back before Navigation 3 can animate a predictive pop. Rejecting only
+    // its completion callback is too late to keep the challenge visibly in place.
+    ChallengeBackHandler(enabled = true) { }
     val vibrator = remember(alarm.alarmId, alarm.vibrate) { if (alarm.vibrate) PlatformVibrator() else null }
-    val problem = remember { generateMathProblem(alarm.difficulty) }
-    val question = remember { mutableStateOf(buildQuestionString(problem)) }
+    LaunchedEffect(alarm.alarmId, alarm.activeAt, fromSheet) {
+        viewModel.initializeChallenge(AlarmMapper().mapToDomainModel(alarm), preview = fromSheet)
+    }
     val snackbarHostState = remember {
         SnackbarHostState()
     }
     val keyboardController = LocalSoftwareKeyboardController.current
-    val toneState by viewModel.state.collectAsState()
-    val progress by remember(viewModel.currentPosition) {
-        mutableFloatStateOf(
-            if (toneState is Countdown) {
-                val state = toneState as Countdown
-                state.seconds / state.total.toFloat()
-            } else {
-                INITIAL_INDICATOR_PROGRESS
-            }
-        )
-    }
+    val progress = viewModel.questionIndex.value.toFloat() / viewModel.questionCount
     val animatedProgress by animateFloatAsState(
         targetValue = progress,
         animationSpec = ProgressAnimationSpec,
@@ -168,7 +147,6 @@ fun MathScreen(
         if (alarmTone.isNotEmpty() && shouldStartMathScreenAlarmAudio(fromSheet)) {
             try {
                 viewModel.startAlarmWith(alarmTone)
-                viewModel.startTimer()
             } catch (_: Throwable) {
             }
         } else if (alarmTone.isEmpty()) {
@@ -181,14 +159,17 @@ fun MathScreen(
         }
     }
 
+    val problem = viewModel.currentProblem ?: return
     MathScreenContent(
         snackbarHostState = snackbarHostState,
-        question = question.value,
+        question = buildQuestionString(problem),
+        questionProgress = if (viewModel.questionCount > 1) {
+            "Question ${viewModel.questionIndex.value + 1} of ${viewModel.questionCount}"
+        } else null,
         animatedProgress = animatedProgress,
         inputField = {
             MathInputField(
                 value = viewModel.answerText.value,
-                darkTheme = darkTheme,
                 onDonePressed = {
                     viewModel.onEvent(OnEnterClick(problem))
                 },
@@ -223,6 +204,7 @@ fun MathScreen(
 private fun MathScreenContent(
     snackbarHostState: SnackbarHostState,
     question: String,
+    questionProgress: String? = null,
     animatedProgress: Float,
     inputField: @Composable () -> Unit,
     buttonSection: @Composable () -> Unit
@@ -238,35 +220,56 @@ private fun MathScreenContent(
                     .padding(vertical = spacing.extraMedium),
             ) {
                 BoxWithConstraints(
-                    modifier = Modifier.fillMaxWidth(),
-                    contentAlignment = androidx.compose.ui.Alignment.TopCenter,
+                    modifier = Modifier.fillMaxSize(),
                 ) {
+                    val centerContent = minOf(maxWidth, maxHeight) >= 600.dp
                     val contentWidthModifier = if (maxWidth > MATH_CONTENT_MAX_WIDTH) {
                         Modifier.width(MATH_CONTENT_MAX_WIDTH)
                     } else {
                         Modifier.fillMaxWidth()
                     }
                     Column(
-                        modifier = contentWidthModifier,
+                        modifier = contentWidthModifier
+                            .align(if (centerContent) androidx.compose.ui.Alignment.Center else androidx.compose.ui.Alignment.TopCenter)
+                            .verticalScroll(rememberScrollState()),
                     ) {
                         Spacer(modifier = Modifier.height(spacing.extraMedium))
-                        LinearProgressIndicator(
-                            progress = { animatedProgress },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(PROGRESS_INDICATOR_HEIGHT)
-                                .padding(horizontal = spacing.extraMedium),
-                            color = indicatorColor,
-                        )
-                        Spacer(modifier = Modifier.height(spacing.large))
+                        if (questionProgress != null) {
+                            LinearProgressIndicator(
+                                progress = { animatedProgress },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(PROGRESS_INDICATOR_HEIGHT)
+                                    .padding(horizontal = spacing.extraMedium),
+                                color = colorScheme.primary,
+                                trackColor = colorScheme.surfaceVariant,
+                                drawStopIndicator = {},
+                            )
+                            Spacer(modifier = Modifier.height(spacing.large))
+                            Text(
+                                questionProgress,
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center,
+                                style = typography.titleMedium,
+                            )
+                            Spacer(modifier = Modifier.height(spacing.medium))
+                        } else if (!centerContent) {
+                            Spacer(modifier = Modifier.height(80.dp))
+                        }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Center,
                         ) {
-                            Text(
+                            BasicText(
                                 text = question,
-                                fontSize = QUESTION_FONT_SIZE,
-                                fontWeight = Bold,
+                                modifier = Modifier.fillMaxWidth().padding(horizontal = spacing.extraMedium),
+                                maxLines = 1,
+                                style = typography.headlineLarge.copy(
+                                    color = colorScheme.onSurface,
+                                    fontWeight = Bold,
+                                    textAlign = TextAlign.Center,
+                                ),
+                                autoSize = TextAutoSize.StepBased(minFontSize = 24.sp, maxFontSize = QUESTION_FONT_SIZE),
                             )
                         }
                         Spacer(modifier = Modifier.height(spacing.medium))
@@ -284,7 +287,6 @@ private fun MathScreenContent(
 @Composable
 private fun MathInputField(
     value: String,
-    darkTheme: Boolean,
     onDonePressed: () -> Unit,
     onValueChange: (String) -> Unit,
 ) {
@@ -320,8 +322,8 @@ private fun MathInputField(
             textAlign = TextAlign.Center,
         ),
         colors = TextFieldDefaults.colors(
-            unfocusedContainerColor = if (darkTheme) DarkGray else unSelectedDay,
-            focusedContainerColor = if (darkTheme) DarkGray else unSelectedDay,
+            unfocusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            focusedContainerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
             focusedIndicatorColor = Transparent,
             unfocusedIndicatorColor = Transparent,
             disabledIndicatorColor = Transparent,
@@ -340,175 +342,34 @@ private fun ButtonSection(
 ) {
     val snoozeEnabled = alarm.snooze != 0
 
-    if (isIosPlatform()) {
-        IosButtonSection(
-            snoozeEnabled = snoozeEnabled,
-            onClearClick = onClearClick,
-            onSnoozeClick = onSnoozeClick,
-            onEnterClick = onEnterClick,
-        )
-    } else {
-        AndroidButtonSection(
-            snoozeEnabled = snoozeEnabled,
-            onClearClick = onClearClick,
-            onSnoozeClick = onSnoozeClick,
-            onEnterClick = onEnterClick
-        )
-    }
-
-}
-
-@Composable
-private fun AndroidButtonSection(
-    snoozeEnabled: Boolean,
-    onClearClick: () -> Unit,
-    onSnoozeClick: () -> Unit,
-    onEnterClick: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(IntrinsicSize.Max)
-            .padding(horizontal = BUTTON_SECTION_HORIZONTAL_PADDING),
-        horizontalArrangement = SpaceBetween,
-    ) {
-        Column(
-            modifier = Modifier
-                .padding(end = 8.dp)
-                .weight(1f)
-                .height(BUTTON_SECTION_HEIGHT),
-            verticalArrangement = SpaceBetween,
-        ) {
-            Button(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .then(if (snoozeEnabled) Modifier else Modifier.fillMaxHeight()),
-                onClick = {
-                    onClearClick()
-                },
-                shape = if (snoozeEnabled) ButtonDefaults.shape else RoundedCornerShape(8.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = clearButtonColor,
-                    contentColor = White,
-                ),
-            ) {
-                Text(text = strings.clear.uppercase(), fontSize = CLEAR_FONT_SIZE)
-            }
-            if (snoozeEnabled) {
-                Button(
-                    modifier = Modifier.fillMaxWidth(),
-                    onClick = {
-                        onSnoozeClick()
-                    },
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = snoozeButtonColor,
-                        contentColor = White,
-                    ),
-                ) {
-                    Text(text = strings.snooze.uppercase(), fontSize = SNOOZE_FONT_SIZE)
-                }
-            }
-        }
-        Button(
-            modifier = Modifier
-                .weight(1f)
-                .fillMaxHeight(),
-            onClick = {
-                onEnterClick()
-            },
-            shape = RoundedCornerShape(8.dp),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = enterButtonColor,
-                contentColor = White,
-            ),
-        ) {
-            Text(text = strings.enter.uppercase(), fontSize = ENTER_FONT_SIZE)
-        }
-    }
-}
-
-@Composable
-private fun IosButtonSection(
-    snoozeEnabled: Boolean,
-    onClearClick: () -> Unit,
-    onSnoozeClick: () -> Unit,
-    onEnterClick: () -> Unit,
-) {
     Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = BUTTON_SECTION_HORIZONTAL_PADDING),
-        verticalArrangement = spacedBy(IOS_BUTTON_SPACING),
+        Modifier.fillMaxWidth().padding(horizontal = BUTTON_SECTION_HORIZONTAL_PADDING),
+        verticalArrangement = spacedBy(12.dp),
     ) {
-        if (snoozeEnabled) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = spacedBy(IOS_BUTTON_SPACING),
-            ) {
-                Button(
-                    modifier = Modifier.weight(1f),
-                    onClick = onClearClick,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = clearButtonColor,
-                        contentColor = White,
-                    ),
-                ) {
-                    Text(text = strings.clear.uppercase(), fontSize = CLEAR_FONT_SIZE)
-                }
-                Button(
-                    modifier = Modifier.weight(1f),
+        Button(
+            onClick = onEnterClick,
+            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+            ),
+        ) { Text("Check answer", style = MaterialTheme.typography.titleMedium) }
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = spacedBy(12.dp)) {
+            TextButton(
+                onClick = onClearClick,
+                modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+            ) { Text(strings.clear, style = MaterialTheme.typography.titleMedium) }
+            if (snoozeEnabled) {
+                FilledTonalButton(
                     onClick = onSnoozeClick,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = snoozeButtonColor,
-                        contentColor = White,
-                    ),
-                ) {
-                    Text(text = strings.snooze.uppercase(), fontSize = SNOOZE_FONT_SIZE)
-                }
-            }
-            Button(
-                modifier = Modifier.fillMaxWidth(),
-                onClick = onEnterClick,
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = enterButtonColor,
-                    contentColor = White,
-                ),
-            ) {
-                Text(text = strings.enter.uppercase(), fontSize = ENTER_FONT_SIZE)
-            }
-        } else {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = spacedBy(IOS_BUTTON_SPACING),
-            ) {
-                Button(
-                    modifier = Modifier.weight(1f),
-                    onClick = onClearClick,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = clearButtonColor,
-                        contentColor = White,
-                    ),
-                ) {
-                    Text(text = strings.clear.uppercase(), fontSize = CLEAR_FONT_SIZE)
-                }
-                Button(
-                    modifier = Modifier.weight(1f),
-                    onClick = onEnterClick,
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = enterButtonColor,
-                        contentColor = White,
-                    ),
-                ) {
-                    Text(text = strings.enter.uppercase(), fontSize = ENTER_FONT_SIZE)
-                }
+                    modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                ) { Text(strings.snooze, style = MaterialTheme.typography.titleMedium) }
             }
         }
     }
 }
 
-@ExperimentalComposeUiApi
-@InternalCoroutinesApi
-@ExperimentalMaterial3Api
+@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 fun MathPreview() {
@@ -520,7 +381,6 @@ fun MathPreview() {
             inputField = {
                 MathInputField(
                     value = "",
-                    darkTheme = true,
                     onDonePressed = { },
                     onValueChange = { }
                 )
@@ -539,9 +399,6 @@ fun MathPreview() {
 
 private object MathScreen {
     val DEFAULT_VIBRATION_PATTERN = longArrayOf(0, 1000, 3000)
-    const val SETTINGS_ID = 1143682591
-    const val TEST_ALARM_KEY = "testAlarm"
-    const val FROM_SHEET_KEY = "fromSheet"
     const val INITIAL_INDICATOR_PROGRESS = 0.1f
     const val MAX_ANSWER_CHARS = 8
     const val PROGRESS_LABEL = "ProgressBar"
@@ -553,10 +410,5 @@ private object MathScreen {
     val ANSWER_FIELD_CORNER_SIZE = 24.dp
     val ANSWER_FIELD_FONT_SIZE = 30.sp
     val BUTTON_SECTION_HORIZONTAL_PADDING = 56.dp
-    val BUTTON_SECTION_HEIGHT = 120.dp
-    val IOS_BUTTON_SPACING = 8.dp
-    val ENTER_FONT_SIZE = 19.sp
-    val SNOOZE_FONT_SIZE = 19.sp
-    val CLEAR_FONT_SIZE = 19.sp
     val MATH_CONTENT_MAX_WIDTH = 520.dp
 }

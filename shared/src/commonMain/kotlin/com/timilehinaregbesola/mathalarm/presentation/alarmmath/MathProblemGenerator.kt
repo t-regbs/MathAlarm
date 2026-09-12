@@ -1,30 +1,17 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmmath
 
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.EASY_ADD_SUB_LIMIT_ONE
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.EASY_ADD_SUB_LIMIT_TWO
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.EASY_MULTI_DIV_LIMIT_ONE
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.EASY_MULTI_DIV_LIMIT_TWO
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.HARD_ADD_SUB_LIMIT_ONE
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.HARD_ADD_SUB_LIMIT_TWO
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.HARD_MULTI_DIV_LIMIT_ONE
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.HARD_MULTI_DIV_LIMIT_TWO
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.NORMAL_ADD_SUB_LIMIT_ONE
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.NORMAL_ADD_SUB_LIMIT_TWO
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.NORMAL_MULTI_DIV_LIMIT_ONE
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemGenerator.NORMAL_MULTI_DIV_LIMIT_TWO
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemOperator.Add
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemOperator.Divide
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemOperator.Subtract
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemOperator.Times
-import com.timilehinaregbesola.mathalarm.utils.EASY
-import com.timilehinaregbesola.mathalarm.utils.HARD
 import kotlin.random.Random
+import com.timilehinaregbesola.mathalarm.domain.model.MathChallenge
 
 data class MathProblem(
-    var operator: MathProblemOperator = Add,
-    var numOne: Int = 0,
-    var numTwo: Int = 0,
-    var answer: Int = 0,
+    val operator: MathProblemOperator = Add,
+    val numOne: Int = 0,
+    val numTwo: Int = 0,
+    val answer: Int = 0,
 )
 
 enum class MathProblemOperator {
@@ -40,79 +27,57 @@ fun buildQuestionString(problem: MathProblem): String {
     }
 }
 
-// Creates the math problem based on the user-set difficulty
-fun generateMathProblem(difficulty: Int): MathProblem {
-    val problem = MathProblem()
-    val random = Random
-    problem.operator = MathProblemOperator.values().random()
-    val add1: Int
-    val add2: Int
-    val mult1: Int
-    val mult2: Int
-    when (difficulty) {
-        EASY -> {
-            add1 = EASY_ADD_SUB_LIMIT_ONE
-            add2 = EASY_ADD_SUB_LIMIT_TWO
-            mult1 = EASY_MULTI_DIV_LIMIT_ONE
-            mult2 = EASY_MULTI_DIV_LIMIT_TWO
-        }
-        HARD -> {
-            add1 = HARD_ADD_SUB_LIMIT_ONE
-            add2 = HARD_ADD_SUB_LIMIT_TWO
-            mult1 = HARD_MULTI_DIV_LIMIT_ONE
-            mult2 = HARD_MULTI_DIV_LIMIT_TWO
-        }
-        else -> {
-            add1 = NORMAL_ADD_SUB_LIMIT_ONE
-            add2 = NORMAL_ADD_SUB_LIMIT_TWO
-            mult1 = NORMAL_MULTI_DIV_LIMIT_ONE
-            mult2 = NORMAL_MULTI_DIV_LIMIT_TWO
+/** One shared generator for the editor example, Test Alarm, and scheduled alarms. */
+fun generateChallengeProblems(
+    challenge: MathChallenge,
+    random: Random = Random.Default,
+): List<MathProblem> {
+    val config = challenge.normalized()
+    val problems = mutableListOf<MathProblem>()
+    if (config.difficultyMix.isEmpty()) {
+        appendProblems(config, random, problems)
+    } else {
+        config.mixedDifficulties.groupingBy { it }.eachCount().forEach { (level, count) ->
+            appendProblems(config.copy(difficulty = level, questionCount = count), random, problems)
         }
     }
-    when (problem.operator) {
-        Add -> {
-            problem.numOne = random.nextInt(add1) + add2
-            problem.numTwo = random.nextInt(add1) + add2
-            problem.answer = problem.numOne + problem.numTwo
-        }
-        Subtract -> {
-            problem.numOne = random.nextInt(add1) + add2
-            problem.numTwo = random.nextInt(add1) + add2
-            if (problem.numOne < problem.numTwo) {
-                val temp: Int = problem.numOne
-                problem.numOne = problem.numTwo
-                problem.numTwo = temp
-            }
-            problem.answer = problem.numOne - problem.numTwo
-        }
-        Times -> {
-            problem.numOne = random.nextInt(mult1) + mult2
-            problem.numTwo = random.nextInt(mult1) + mult2
-            problem.answer = problem.numOne * problem.numTwo
-        }
-        Divide -> {
-            problem.numOne = random.nextInt(mult1) + mult2
-            problem.numTwo = random.nextInt(mult1) + mult2
-            problem.answer = problem.numOne * problem.numTwo
-            val tmp: Int = problem.answer
-            problem.answer = problem.numOne
-            problem.numOne = tmp
-        }
-    }
-    return problem
+    return problems
 }
 
-private object MathProblemGenerator {
-    const val EASY_ADD_SUB_LIMIT_ONE = 90
-    const val EASY_ADD_SUB_LIMIT_TWO = 10
-    const val EASY_MULTI_DIV_LIMIT_ONE = 10
-    const val EASY_MULTI_DIV_LIMIT_TWO = 3
-    const val HARD_ADD_SUB_LIMIT_ONE = 9000
-    const val HARD_ADD_SUB_LIMIT_TWO = 1000
-    const val HARD_MULTI_DIV_LIMIT_ONE = 14
-    const val HARD_MULTI_DIV_LIMIT_TWO = 12
-    const val NORMAL_ADD_SUB_LIMIT_ONE = 900
-    const val NORMAL_ADD_SUB_LIMIT_TWO = 100
-    const val NORMAL_MULTI_DIV_LIMIT_ONE = 13
-    const val NORMAL_MULTI_DIV_LIMIT_TWO = 3
+private fun appendProblems(
+    config: MathChallenge,
+    random: Random,
+    problems: MutableList<MathProblem>,
+) {
+    val custom = config.difficulty == MathChallenge.CUSTOM
+    val addition = MathChallenge.ADDITION_RANGES[if (custom) config.additionRange else config.difficulty]
+    val factors = MathChallenge.FACTOR_RANGES[if (custom) config.factorRange else config.difficulty]
+    val operators = (if (custom) config.operations else MathChallenge.ALL_OPERATIONS).map {
+        when (it) {
+            '+' -> Add
+            '−' -> Subtract
+            '×' -> Times
+            else -> Divide
+        }
+    }
+    val cycle = mutableListOf<MathProblemOperator>()
+    repeat(config.questionCount) {
+        if (cycle.isEmpty()) cycle.addAll(operators.shuffled(random))
+        val operator = cycle.removeAt(0)
+        val range = if (operator == Add || operator == Subtract) addition else factors
+        var problem = generateProblem(operator, range, random)
+        while (problem in problems) problem = generateProblem(operator, range, random)
+        problems.add(problem)
+    }
+}
+
+private fun generateProblem(operator: MathProblemOperator, range: IntRange, random: Random): MathProblem {
+    val a = random.nextInt(range.first, range.last + 1)
+    val b = random.nextInt(range.first, range.last + 1)
+    return when (operator) {
+        Add -> MathProblem(operator, a, b, a + b)
+        Subtract -> MathProblem(operator, maxOf(a, b), minOf(a, b), kotlin.math.abs(a - b))
+        Times -> MathProblem(operator, a, b, a * b)
+        Divide -> MathProblem(operator, a * b, b, a)
+    }
 }

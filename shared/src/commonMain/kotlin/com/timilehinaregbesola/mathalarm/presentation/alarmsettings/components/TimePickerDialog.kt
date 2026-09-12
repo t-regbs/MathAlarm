@@ -65,13 +65,13 @@ fun TimePickerDialog(
             TextButton(onClick = onCancel) {
                 Text(
                     text = strings.cancel,
-                    color = MaterialTheme.colorScheme.onPrimary
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
             TextButton(onClick = ::onConfirmClicked) {
                 Text(
                     text = strings.ok,
-                    color = MaterialTheme.colorScheme.onPrimary
+                    color = MaterialTheme.colorScheme.primary
                 )
             }
         },

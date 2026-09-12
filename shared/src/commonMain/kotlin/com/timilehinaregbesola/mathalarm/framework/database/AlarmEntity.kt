@@ -28,6 +28,11 @@ data class AlarmEntity(
 
     @ColumnInfo(name = "difficulty")
     val difficulty: Int,
+    @ColumnInfo(defaultValue = "1") val questionCount: Int = 1,
+    @ColumnInfo(defaultValue = "'+−×÷'") val challengeOperations: String = "+−×÷",
+    @ColumnInfo(defaultValue = "0") val additionRange: Int = 0,
+    @ColumnInfo(defaultValue = "0") val factorRange: Int = 0,
+    @ColumnInfo(defaultValue = "''") val difficultyMix: String = "",
 
     @ColumnInfo(name = "tone")
     val alarmTone: String,

@@ -44,7 +44,6 @@ import com.timilehinaregbesola.mathalarm.platform.getApplicationId
 import com.timilehinaregbesola.mathalarm.platform.applyPlatformNightMode
 import com.timilehinaregbesola.mathalarm.platform.sendEmail
 import com.timilehinaregbesola.mathalarm.platform.shareText
-import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.AlarmSortOrder.CREATION
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.AlarmSortOrder.TIME
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.Theme
@@ -246,7 +245,7 @@ private fun <T> SegmentedSettingSection(
             modifier = Modifier
                 .background(
                     color = if (isDark) {
-                        MaterialTheme.colorScheme.primaryContainer
+                        MaterialTheme.colorScheme.surfaceContainerHigh
                     } else {
                         Color.LightGray
                     },
@@ -267,10 +266,10 @@ private fun <T> SegmentedSettingSection(
                             )
                             .background(
                                 if (isSelected) {
-                                    MaterialTheme.colorScheme.primary
+                                    MaterialTheme.colorScheme.secondaryContainer
                                 } else {
                                     if (isDark) {
-                                        MaterialTheme.colorScheme.primaryContainer
+                                        MaterialTheme.colorScheme.surfaceContainerHigh
                                     } else {
                                         Color.LightGray
                                     }

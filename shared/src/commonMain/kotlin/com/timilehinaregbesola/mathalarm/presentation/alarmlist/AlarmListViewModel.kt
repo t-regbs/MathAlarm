@@ -15,6 +15,8 @@ import com.timilehinaregbesola.mathalarm.utils.UiEvent
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.Navigate
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.ShowSnackbar
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.first
@@ -26,7 +28,7 @@ class AlarmListViewModel(
     private val preferences: AlarmPreferencesImpl,
     private val logger: Logger
 ) : ViewModel() {
-    var alarms = usecases.getSavedAlarms()
+    val alarms = usecases.getSavedAlarms()
         .combine(snapshotFlow { preferences.alarmSortOrderState.value }) { alarms, sortOrder ->
             if (sortOrder == AlarmPreferences.AlarmSortOrder.TIME) {
                 alarms.sortedWith(compareBy<Alarm> { it.hour }.thenBy { it.minute }
@@ -34,7 +36,7 @@ class AlarmListViewModel(
             } else {
                 alarms
             }
-        }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     private val _uiEvent = Channel<UiEvent>()
     val uiEvent = _uiEvent.receiveAsFlow()

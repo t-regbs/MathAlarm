@@ -1,7 +1,10 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmmath
 
+import com.timilehinaregbesola.mathalarm.domain.model.mathChallenge
 import kotlinx.coroutines.CancellationException
 import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -38,6 +41,29 @@ class AlarmMathViewModel(
     val eventFlow = _eventFlow.asSharedFlow()
     private var currentTimer: Job? = null
 
+    private var challengeKey: String? = null
+    private var problems by mutableStateOf<List<MathProblem>>(emptyList())
+    private val _questionIndex = mutableStateOf(0)
+    val questionIndex: State<Int> = _questionIndex
+    val questionCount: Int get() = problems.size.coerceAtLeast(1)
+    val currentProblem: MathProblem? get() = problems.getOrNull(_questionIndex.value)
+
+    suspend fun initializeChallenge(alarm: Alarm, preview: Boolean) {
+        val key = "${alarm.alarmId}:${alarm.activeAt}:$preview"
+        if (challengeKey == key) return
+        // Notifications (including older iOS payloads) identify the alarm; its saved settings
+        // are authoritative. Test Alarm deliberately uses the unsaved editor draft instead.
+        val saved = if (!preview && alarm.alarmId != 0L) {
+            try { usecases.findAlarm(alarm.alarmId) }
+            catch (e: CancellationException) { throw e }
+            catch (e: Exception) { logger.e(e) { "Unable to load challenge settings" }; null }
+        } else null
+        problems = generateChallengeProblems((saved ?: alarm).mathChallenge)
+        _answerText.value = ""
+        _questionIndex.value = 0
+        challengeKey = key
+    }
+
     fun onEvent(event: MathScreenEvent) {
         when (event) {
             is MathScreenEvent.OnClearClick -> {
@@ -47,10 +73,14 @@ class AlarmMathViewModel(
                 finishAlarm(event.alarm, preview = event.preview, snooze = true)
             }
             is MathScreenEvent.OnEnterClick -> {
+                // Ignore a queued Enter from the previous question after advancing.
+                if (currentProblem != null && event.problem != currentProblem) return
                 if (_answerText.value.isNotBlank() && event.problem.answer == _answerText.value.trim().toIntOrNull()) {
                     _answerText.value = ""
-                    viewModelScope.launch {
-                        _eventFlow.emit(UiEvent.CompleteAndClose)
+                    if (_questionIndex.value < problems.lastIndex) {
+                        _questionIndex.value += 1
+                    } else {
+                        viewModelScope.launch { _eventFlow.emit(UiEvent.CompleteAndClose) }
                     }
                 } else {
                     viewModelScope.launch {
