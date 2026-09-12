@@ -4,6 +4,42 @@ import cafe.adriel.lyricist.LyricistStrings
 
 @LyricistStrings(languageTag = Locales.EN, default = true)
 val EnMathAlarmStrings = Strings(
+    mathDifficultyNames = listOf("Easy", "Medium", "Hard", "Custom"),
+    mathChallengeTitle = "Math challenge",
+    mixedDifficulty = "Mixed difficulty",
+    mixDifficulties = "Mix difficulties",
+    mathDifficulty = "Difficulty",
+    mathOperations = "Operations",
+    addition = "Addition",
+    subtraction = "Subtraction",
+    multiplication = "Multiplication",
+    division = "Division",
+    additionAndSubtraction = "Addition & subtraction",
+    multiplicationAndDivision = "Multiplication & division",
+    mathExample = "Example",
+    refreshExample = "Refresh",
+    applyChallenge = "Apply challenge",
+    easiestFirst = "Easiest first",
+    questions = "Questions",
+    chooseRange = "Choose range",
+    checkAnswer = "Check answer",
+    whatsNew = "What’s new",
+    latestFeatures = "Explore the latest features",
+    gotIt = "Got it",
+    tryFeature = "Try it",
+    challengeAnnouncementTitle = "More ways to wake up",
+    challengeAnnouncementInstructions = "Add or edit an alarm, then tap Edit next to Math challenge.",
+    exampleChallenge = "Example challenge",
+    questionCount = ::questionCountEn,
+    challengeSummary = { difficulty, count -> "$difficulty · ${questionCountEn(count)}" },
+    mixedQuestionTotal = { count, maximum -> "${questionCountEn(count)} total · Maximum $maximum" },
+    questionProgress = { current, total -> "Question $current of $total" },
+    questionCountHint = { maximum -> "Choose 1–$maximum. Tap the number to type." },
+    difficultyQuestionLabel = { difficulty -> "Questions: $difficulty" },
+    decreaseQuestionCount = { label -> "Decrease count: $label" },
+    increaseQuestionCount = { label -> "Increase count: $label" },
+    exampleDifficultyMix = { easy, medium -> "Easy: $easy · Medium: $medium" },
+    challengeAnnouncementDescription = { maximum -> "Solve up to $maximum questions. Mix difficulties or build a custom challenge that works for you." },
     alarmScheduleFailed = "Couldn’t schedule alarm. Save it again.",
     alarmSaveFailed = "Couldn’t save alarm. Try again.",
     alarmUpdateFailed = "Couldn’t update alarm. Try again.",
@@ -90,3 +126,6 @@ val EnMathAlarmStrings = Strings(
         "It seems that we cannot play $tone, probably because a permission is required. If you want, you can grant the permission. Alternatively, select a different sound. This decision can be changed in System Settings."
     }
 )
+
+private fun questionCountEn(count: Int): String =
+    if (count == 1) "$count question" else "$count questions"

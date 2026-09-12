@@ -20,6 +20,7 @@ import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.*
@@ -27,6 +28,7 @@ import kotlinx.coroutines.test.*
 @OptIn(ExperimentalCoroutinesApi::class)
 class AlarmSettingsViewModelTest {
 
+    private val permission = AlarmPermissionFake()
     private lateinit var viewModel: AlarmSettingsViewModel
     private lateinit var dataSource: AlarmRepositoryFake
     private lateinit var repository: AlarmRepository
@@ -65,7 +67,22 @@ class AlarmSettingsViewModelTest {
             snoozeAlarm = SnoozeAlarm(dateTimeProvider, notificationInteractor, alarmInteractor, repository)
         )
         
-        viewModel = AlarmSettingsViewModel(usecases = usecases)
+        viewModel = AlarmSettingsViewModel(usecases = usecases, permission = permission)
+    }
+
+    @Test
+    fun `saving without exact alarm permission requests permission before writing`() = runTest {
+        permission.setPermission(false)
+        viewModel.setAlarm(Alarm(alarmTone = "test_tone"))
+        viewModel.eventFlow.test {
+            viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+            awaitItem() shouldBe AlarmSettingsViewModel.UiEvent.RequestExactAlarmPermission
+            usecases.getSavedAlarms().first().size shouldBe 0
+            permission.setPermission(true)
+            viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+            awaitItem() shouldBe AlarmSettingsViewModel.UiEvent.SaveAlarm
+            usecases.getSavedAlarms().first().size shouldBe 1
+        }
     }
 
     @AfterTest
@@ -86,7 +103,7 @@ class AlarmSettingsViewModelTest {
         }
         val saved = usecases.findAlarm(732)!!
         saved.mathChallenge shouldBe config
-        val reopened = AlarmSettingsViewModel(usecases)
+        val reopened = AlarmSettingsViewModel(usecases, permission)
         reopened.setAlarm(saved)
         reopened.challenge.value shouldBe config
         reopened.onEvent(AddEditAlarmEvent.OnChallengeChange(config.copy(questionCount = 99)))
@@ -104,7 +121,7 @@ class AlarmSettingsViewModelTest {
             viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
             awaitItem() shouldBe AlarmSettingsViewModel.UiEvent.SaveAlarm
         }
-        val reopened = AlarmSettingsViewModel(usecases)
+        val reopened = AlarmSettingsViewModel(usecases, permission)
         reopened.setAlarm(usecases.findAlarm(733)!!)
         reopened.challenge.value shouldBe config
     }
@@ -117,7 +134,7 @@ class AlarmSettingsViewModelTest {
             }
         }
         val commands = usecases.copy(scheduleAlarm = ScheduleAlarm(repository, backend, AlarmTimeCalculatorFake()))
-        viewModel = AlarmSettingsViewModel(commands)
+        viewModel = AlarmSettingsViewModel(commands, permission)
         viewModel.setAlarm(Alarm(isOn = true, alarmTone = "test_tone"))
         advanceUntilIdle()
         viewModel.eventFlow.test {
@@ -133,7 +150,7 @@ class AlarmSettingsViewModelTest {
         dateTimeProvider.setFixedDateTime(LocalDateTime(2030, 1, 8, 6, 0))
         val calculator = AlarmTimeCalculatorImpl(dateTimeProvider)
         val commands = usecases.copy(scheduleAlarm = ScheduleAlarm(repository, alarmInteractor, calculator))
-        viewModel = AlarmSettingsViewModel(commands)
+        viewModel = AlarmSettingsViewModel(commands, permission)
         val remaining = LocalDateTime(2030, 1, 9, 7, 0)
             .toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         val alarm = Alarm(
@@ -160,7 +177,7 @@ class AlarmSettingsViewModelTest {
             override suspend fun update(alarm: Alarm) { platformUpdate = alarm }
         }
         val commands = usecases.copy(updateAlarm = UpdateAlarm(repository, backend))
-        viewModel = AlarmSettingsViewModel(commands)
+        viewModel = AlarmSettingsViewModel(commands, permission)
         val alarm = Alarm(
             alarmId = 882, isOn = true, isSaved = true, alarmTone = "test_tone",
             pendingTimes = listOf(2_000_000_000_000), snoozedUntil = 1_999_999_000_000,

@@ -46,8 +46,12 @@ import com.timilehinaregbesola.mathalarm.framework.Usecases
  * Foreground service that handles alarm playback independently of the app lifecycle.
  * Playback survives activity teardown; a system force-stop still stops the application.
  */
-@OptIn(ExperimentalAnimationApi::class, InternalCoroutinesApi::class,
-    ExperimentalComposeUiApi::class, ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
+@OptIn(
+    ExperimentalAnimationApi::class,
+    InternalCoroutinesApi::class,
+    ExperimentalComposeUiApi::class,
+    ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class
+)
 class AlarmService : Service() {
 
     private val channel: MathAlarmNotificationChannel by inject()

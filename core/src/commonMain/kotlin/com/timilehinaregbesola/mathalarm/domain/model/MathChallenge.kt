@@ -11,9 +11,12 @@ data class MathChallenge(
 ) {
     /** One preset digit per question, stored easiest first; empty means a single preset/custom setup. */
     val mixedDifficulties: List<Int>
-        get() = difficultyMix.mapNotNull { digit ->
-            digit.digitToIntOrNull()?.takeIf { it in 0 until CUSTOM }
-        }.sorted().take(MAX_QUESTIONS)
+        get() = difficultyMix
+            .mapNotNull { digit ->
+                digit.digitToIntOrNull()?.takeIf { it in 0 until CUSTOM }
+            }
+            .sorted()
+            .take(MAX_QUESTIONS)
 
     fun normalized(): MathChallenge {
         val mix = if (difficulty.coerceIn(0, CUSTOM) == CUSTOM) emptyList() else mixedDifficulties
@@ -37,4 +40,11 @@ data class MathChallenge(
 }
 
 val Alarm.mathChallenge: MathChallenge
-    get() = MathChallenge(difficulty, questionCount, challengeOperations, additionRange, factorRange, difficultyMix).normalized()
+    get() = MathChallenge(
+        difficulty = difficulty,
+        questionCount = questionCount,
+        operations = challengeOperations,
+        additionRange = additionRange,
+        factorRange = factorRange,
+        difficultyMix = difficultyMix
+    ).normalized()

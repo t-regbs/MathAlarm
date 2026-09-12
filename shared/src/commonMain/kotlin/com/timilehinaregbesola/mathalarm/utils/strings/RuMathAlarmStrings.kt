@@ -4,6 +4,42 @@ import cafe.adriel.lyricist.LyricistStrings
 
 @LyricistStrings(languageTag = Locales.RU)
 val RuMathAlarmStrings = Strings(
+    mathDifficultyNames = listOf("Легко", "Средне", "Сложно", "Своя настройка"),
+    mathChallengeTitle = "Математическое задание",
+    mixedDifficulty = "Разная сложность",
+    mixDifficulties = "Смешать уровни сложности",
+    mathDifficulty = "Сложность",
+    mathOperations = "Операции",
+    addition = "Сложение",
+    subtraction = "Вычитание",
+    multiplication = "Умножение",
+    division = "Деление",
+    additionAndSubtraction = "Сложение и вычитание",
+    multiplicationAndDivision = "Умножение и деление",
+    mathExample = "Пример",
+    refreshExample = "Обновить",
+    applyChallenge = "Применить задание",
+    easiestFirst = "Сначала простые",
+    questions = "Вопросы",
+    chooseRange = "Выбрать диапазон",
+    checkAnswer = "Проверить ответ",
+    whatsNew = "Что нового",
+    latestFeatures = "Узнайте о новых функциях",
+    gotIt = "Понятно",
+    tryFeature = "Попробовать",
+    challengeAnnouncementTitle = "Больше способов проснуться",
+    challengeAnnouncementInstructions = "Добавьте или измените будильник и нажмите «Редактировать» рядом с математическим заданием.",
+    exampleChallenge = "Пример задания",
+    questionCount = ::questionCountRu,
+    challengeSummary = { difficulty, count -> "$difficulty · ${questionCountRu(count)}" },
+    mixedQuestionTotal = { count, maximum -> "Всего: ${questionCountRu(count)} · Максимум: $maximum" },
+    questionProgress = { current, total -> "Вопрос $current из $total" },
+    questionCountHint = { maximum -> "Выберите от 1 до $maximum. Нажмите на число для ввода." },
+    difficultyQuestionLabel = { difficulty -> "Вопросы — $difficulty" },
+    decreaseQuestionCount = { label -> "Уменьшить количество: $label" },
+    increaseQuestionCount = { label -> "Увеличить количество: $label" },
+    exampleDifficultyMix = { easy, medium -> "Легко: $easy · Средне: $medium" },
+    challengeAnnouncementDescription = { maximum -> "Решайте до $maximum вопросов. Смешивайте уровни сложности или создайте своё задание." },
     alarmScheduleFailed = "Не удалось установить будильник. Сохраните его ещё раз.",
     alarmSaveFailed = "Не удалось сохранить будильник. Повторите попытку.",
     alarmUpdateFailed = "Не удалось обновить будильник. Повторите попытку.",
@@ -90,3 +126,10 @@ val RuMathAlarmStrings = Strings(
         "Кажется, мы не можем воспроизвести $tone, возможно, потому, что требуется разрешение. Если хотите, можете дать разрешение. Либо выберите другой звук. Это решение можно изменить в настройках системы."
     }
 )
+
+private fun questionCountRu(count: Int): String =
+    when {
+        count % 10 == 1 && count % 100 != 11 -> "$count вопрос"
+        count % 10 in 2..4 && count % 100 !in 12..14 -> "$count вопроса"
+        else -> "$count вопросов"
+    }

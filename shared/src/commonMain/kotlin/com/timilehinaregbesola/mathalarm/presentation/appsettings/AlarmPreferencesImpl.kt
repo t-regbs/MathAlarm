@@ -12,8 +12,18 @@ class AlarmPreferencesImpl(
     private val settings: Settings
 ) : AlarmPreferences {
     companion object {
+        private const val LAST_ANNOUNCEMENT = "mathalarm_last_announcement"
         const val APP_THEME_OPTION = "mathalarm_theme_option"
         const val ALARM_SORT_ORDER_OPTION = "mathalarm_alarm_sort_order"
+    }
+
+    private val lastAnnouncement = mutableStateOf(settings.getString(LAST_ANNOUNCEMENT, ""))
+
+    fun hasSeenAnnouncement(id: String): Boolean = lastAnnouncement.value == id
+
+    fun markAnnouncementSeen(id: String) {
+        settings.putString(LAST_ANNOUNCEMENT, id)
+        lastAnnouncement.value = id
     }
 
     val themeState = mutableStateOf(loadAppThemeFromStorage())

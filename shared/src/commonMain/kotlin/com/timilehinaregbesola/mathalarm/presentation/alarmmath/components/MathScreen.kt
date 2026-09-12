@@ -22,6 +22,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.FilledTonalButton
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.text.TextAutoSize.Companion.StepBased
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.LinearProgressIndicator
@@ -38,7 +39,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Alignment.Companion.CenterVertically
+import androidx.compose.ui.Alignment.Companion.TopCenter
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color.Companion.Transparent
@@ -106,7 +109,10 @@ fun MathScreen(
     ChallengeBackHandler(enabled = true) { }
     val vibrator = remember(alarm.alarmId, alarm.vibrate) { if (alarm.vibrate) PlatformVibrator() else null }
     LaunchedEffect(alarm.alarmId, alarm.activeAt, fromSheet) {
-        viewModel.initializeChallenge(AlarmMapper().mapToDomainModel(alarm), preview = fromSheet)
+        viewModel.initializeChallenge(
+            alarm = AlarmMapper().mapToDomainModel(alarm),
+            preview = fromSheet
+        )
     }
     val snackbarHostState = remember {
         SnackbarHostState()
@@ -164,8 +170,10 @@ fun MathScreen(
         snackbarHostState = snackbarHostState,
         question = buildQuestionString(problem),
         questionProgress = if (viewModel.questionCount > 1) {
-            "Question ${viewModel.questionIndex.value + 1} of ${viewModel.questionCount}"
-        } else null,
+            strings.questionProgress(viewModel.questionIndex.value + 1, viewModel.questionCount)
+        } else {
+            null
+        },
         animatedProgress = animatedProgress,
         inputField = {
             MathInputField(
@@ -222,7 +230,7 @@ private fun MathScreenContent(
                 BoxWithConstraints(
                     modifier = Modifier.fillMaxSize(),
                 ) {
-                    val centerContent = minOf(maxWidth, maxHeight) >= 600.dp
+                    val centerContent = minOf(maxWidth, maxHeight) >= MathScreen.CENTERED_CONTENT_MIN_SIZE
                     val contentWidthModifier = if (maxWidth > MATH_CONTENT_MAX_WIDTH) {
                         Modifier.width(MATH_CONTENT_MAX_WIDTH)
                     } else {
@@ -230,7 +238,7 @@ private fun MathScreenContent(
                     }
                     Column(
                         modifier = contentWidthModifier
-                            .align(if (centerContent) androidx.compose.ui.Alignment.Center else androidx.compose.ui.Alignment.TopCenter)
+                            .align(if (centerContent) Alignment.Center else TopCenter)
                             .verticalScroll(rememberScrollState()),
                     ) {
                         Spacer(modifier = Modifier.height(spacing.extraMedium))
@@ -254,7 +262,7 @@ private fun MathScreenContent(
                             )
                             Spacer(modifier = Modifier.height(spacing.medium))
                         } else if (!centerContent) {
-                            Spacer(modifier = Modifier.height(80.dp))
+                            Spacer(modifier = Modifier.height(MathScreen.SINGLE_QUESTION_TOP_SPACING))
                         }
                         Row(
                             modifier = Modifier.fillMaxWidth(),
@@ -262,14 +270,19 @@ private fun MathScreenContent(
                         ) {
                             BasicText(
                                 text = question,
-                                modifier = Modifier.fillMaxWidth().padding(horizontal = spacing.extraMedium),
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(horizontal = spacing.extraMedium),
                                 maxLines = 1,
                                 style = typography.headlineLarge.copy(
                                     color = colorScheme.onSurface,
                                     fontWeight = Bold,
                                     textAlign = TextAlign.Center,
                                 ),
-                                autoSize = TextAutoSize.StepBased(minFontSize = 24.sp, maxFontSize = QUESTION_FONT_SIZE),
+                                autoSize = StepBased(
+                                    minFontSize = 24.sp,
+                                    maxFontSize = QUESTION_FONT_SIZE
+                                ),
                             )
                         }
                         Spacer(modifier = Modifier.height(spacing.medium))
@@ -343,26 +356,42 @@ private fun ButtonSection(
     val snoozeEnabled = alarm.snooze != 0
 
     Column(
-        Modifier.fillMaxWidth().padding(horizontal = BUTTON_SECTION_HORIZONTAL_PADDING),
-        verticalArrangement = spacedBy(12.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = BUTTON_SECTION_HORIZONTAL_PADDING),
+        verticalArrangement = spacedBy(MathScreen.ACTION_SPACING),
     ) {
         Button(
             onClick = onEnterClick,
-            modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .heightIn(min = MathScreen.PRIMARY_ACTION_MIN_HEIGHT),
             colors = ButtonDefaults.buttonColors(
                 containerColor = MaterialTheme.colorScheme.primary,
                 contentColor = MaterialTheme.colorScheme.onPrimary,
             ),
-        ) { Text("Check answer", style = MaterialTheme.typography.titleMedium) }
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = spacedBy(12.dp)) {
+        ) {
+            Text(strings.checkAnswer, style = MaterialTheme.typography.titleMedium)
+        }
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = spacedBy(MathScreen.ACTION_SPACING)
+        ) {
             TextButton(
                 onClick = onClearClick,
-                modifier = Modifier.weight(1f).heightIn(min = 48.dp),
-            ) { Text(strings.clear, style = MaterialTheme.typography.titleMedium) }
+                modifier = Modifier
+                    .weight(1f)
+                    .heightIn(min = MathScreen.SECONDARY_ACTION_MIN_HEIGHT),
+            ) {
+                Text(
+                    text = strings.clear,
+                    style = MaterialTheme.typography.titleMedium
+                )
+            }
             if (snoozeEnabled) {
                 FilledTonalButton(
                     onClick = onSnoozeClick,
-                    modifier = Modifier.weight(1f).heightIn(min = 48.dp),
+                    modifier = Modifier.weight(1f).heightIn(min = MathScreen.SECONDARY_ACTION_MIN_HEIGHT),
                 ) { Text(strings.snooze, style = MaterialTheme.typography.titleMedium) }
             }
         }
@@ -398,6 +427,11 @@ fun MathPreview() {
 }
 
 private object MathScreen {
+    val CENTERED_CONTENT_MIN_SIZE = 600.dp
+    val SINGLE_QUESTION_TOP_SPACING = 80.dp
+    val ACTION_SPACING = 12.dp
+    val PRIMARY_ACTION_MIN_HEIGHT = 56.dp
+    val SECONDARY_ACTION_MIN_HEIGHT = 48.dp
     val DEFAULT_VIBRATION_PATTERN = longArrayOf(0, 1000, 3000)
     const val INITIAL_INDICATOR_PROGRESS = 0.1f
     const val MAX_ANSWER_CHARS = 8

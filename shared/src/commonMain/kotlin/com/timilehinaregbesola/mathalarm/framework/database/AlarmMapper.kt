@@ -8,7 +8,12 @@ import com.timilehinaregbesola.mathalarm.domain.util.DomainMapper
 class AlarmMapper : DomainMapper<AlarmEntity, Alarm> {
     override fun mapToDomainModel(model: AlarmEntity): Alarm {
         val challenge = MathChallenge(
-            model.difficulty, model.questionCount, model.challengeOperations, model.additionRange, model.factorRange, model.difficultyMix,
+            difficulty = model.difficulty,
+            questionCount = model.questionCount,
+            operations = model.challengeOperations,
+            additionRange = model.additionRange,
+            factorRange = model.factorRange,
+            difficultyMix = model.difficultyMix,
         ).normalized()
         return Alarm(
             alarmId = model.alarmId,

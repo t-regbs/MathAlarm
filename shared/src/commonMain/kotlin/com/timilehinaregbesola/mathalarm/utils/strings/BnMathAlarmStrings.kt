@@ -4,6 +4,42 @@ import cafe.adriel.lyricist.LyricistStrings
 
 @LyricistStrings(languageTag = Locales.BN)
 val BnMathAlarmStrings = Strings(
+    mathDifficultyNames = listOf("সহজ", "মাঝারি", "কঠিন", "নিজস্ব"),
+    mathChallengeTitle = "গণিত চ্যালেঞ্জ",
+    mixedDifficulty = "মিশ্র কঠিনতা",
+    mixDifficulties = "কঠিনতার মাত্রা মেশান",
+    mathDifficulty = "কঠিনতা",
+    mathOperations = "গাণিতিক ক্রিয়া",
+    addition = "যোগ",
+    subtraction = "বিয়োগ",
+    multiplication = "গুণ",
+    division = "ভাগ",
+    additionAndSubtraction = "যোগ ও বিয়োগ",
+    multiplicationAndDivision = "গুণ ও ভাগ",
+    mathExample = "উদাহরণ",
+    refreshExample = "নতুন উদাহরণ",
+    applyChallenge = "চ্যালেঞ্জ প্রয়োগ করুন",
+    easiestFirst = "আগে সহজ প্রশ্ন",
+    questions = "প্রশ্ন",
+    chooseRange = "সীমা বেছে নিন",
+    checkAnswer = "উত্তর যাচাই করুন",
+    whatsNew = "নতুন কী আছে",
+    latestFeatures = "নতুন সুবিধাগুলি দেখুন",
+    gotIt = "বুঝেছি",
+    tryFeature = "চেষ্টা করুন",
+    challengeAnnouncementTitle = "জেগে ওঠার আরও উপায়",
+    challengeAnnouncementInstructions = "অ্যালার্ম যোগ বা সম্পাদনা করুন, তারপর গণিত চ্যালেঞ্জের পাশে সম্পাদনা করুন-এ ট্যাপ করুন।",
+    exampleChallenge = "চ্যালেঞ্জের উদাহরণ",
+    questionCount = ::questionCountBn,
+    challengeSummary = { difficulty, count -> "$difficulty · ${questionCountBn(count)}" },
+    mixedQuestionTotal = { count, maximum -> "মোট ${questionCountBn(count)} · সর্বোচ্চ ${maximum}" },
+    questionProgress = { current, total -> "${total}টির মধ্যে প্রশ্ন ${current}" },
+    questionCountHint = { maximum -> "1–${maximum} বেছে নিন। লিখতে সংখ্যাটিতে ট্যাপ করুন।" },
+    difficultyQuestionLabel = { difficulty -> "প্রশ্ন: ${difficulty}" },
+    decreaseQuestionCount = { label -> "সংখ্যা কমান: ${label}" },
+    increaseQuestionCount = { label -> "সংখ্যা বাড়ান: ${label}" },
+    exampleDifficultyMix = { easy, medium -> "সহজ: ${easy} · মাঝারি: ${medium}" },
+    challengeAnnouncementDescription = { maximum -> "সর্বোচ্চ ${maximum}টি প্রশ্নের সমাধান করুন। কঠিনতার মাত্রা মেশান বা নিজের চ্যালেঞ্জ তৈরি করুন।" },
     alarmScheduleFailed = "অ্যালার্ম সেট করা যায়নি। আবার সেভ করুন।",
     alarmSaveFailed = "অ্যালার্ম সেভ করা যায়নি। আবার চেষ্টা করুন।",
     alarmUpdateFailed = "অ্যালার্ম আপডেট করা যায়নি। আবার চেষ্টা করুন।",
@@ -90,3 +126,6 @@ val BnMathAlarmStrings = Strings(
         "মনে হচ্ছে আমরা $tone চালাতে পারছি না, সম্ভবত একটি অনুমতির প্রয়োজন। যদি আপনি চান, আপনি অনুমতি দিতে পারেন। বিকল্পভাবে, একটি ভিন্ন শব্দ নির্বাচন করুন। এই সিদ্ধান্তটি সিস্টেম সেটিংসে পরিবর্তন করা যেতে পারে।"
     }
 )
+
+private fun questionCountBn(count: Int): String =
+    "${count}টি প্রশ্ন"

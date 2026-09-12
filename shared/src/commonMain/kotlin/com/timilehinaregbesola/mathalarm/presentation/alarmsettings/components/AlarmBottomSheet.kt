@@ -1,6 +1,7 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components
 
-import com.timilehinaregbesola.mathalarm.domain.model.MathChallenge
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmPermissionDialog
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Arrangement.SpaceBetween
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -55,6 +56,7 @@ import com.mohamedrejeb.calf.ui.button.AdaptiveButton
 import com.mohamedrejeb.calf.ui.button.AdaptiveIconButton
 import com.mohamedrejeb.calf.ui.gesture.adaptiveClickable
 import com.mohamedrejeb.calf.ui.timepicker.rememberAdaptiveTimePickerState
+import com.timilehinaregbesola.mathalarm.domain.model.MathChallenge
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.platform.areNotificationsEnabled
@@ -81,7 +83,6 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarm
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AlarmSettingsViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.TimeState
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.ALARM_DAYS_TOP_PADDING
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.DIVIDER_THICKNESS
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.MIDDLE_CONTROL_SECTION_TOP_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.NO_ELEVATION
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.SAVE_BUTTON_FONT_SIZE
@@ -108,7 +109,7 @@ import com.timilehinaregbesola.mathalarm.presentation.ui.icon.PlayArrow
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Stop
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.utils.Destinations.AlarmMath
-import com.timilehinaregbesola.mathalarm.navigation.LocalDismissSettingsSheet
+import com.timilehinaregbesola.mathalarm.utils.Destinations.SettingsSheet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -135,18 +136,20 @@ fun AlarmBottomSheet(
     var showTimePickerDialog by remember { mutableStateOf(false) }
     var showTonePickerDialog by remember { mutableStateOf(false) }
     var showConfirmationDialog by remember { mutableStateOf(false) }
+    var showExactAlarmPermissionDialog by remember { mutableStateOf(false) }
     var showPermRequiredDialog by remember { mutableStateOf(false) }
 
     val toneUri = viewModel.tone.value
     val toneText = remember(toneUri) { mutableStateOf<String?>(null) }
     LaunchedEffect(toneUri) {
         if (toneUri.isNotEmpty()) {
-            toneText.value = withContext(Dispatchers.Default) { getRingtoneTitle(toneUri) }
+            toneText.value = withContext(Dispatchers.Default) {
+                getRingtoneTitle(toneUri)
+            }
         }
     }
-    val dismissSheet = LocalDismissSettingsSheet.current
-    val closeSettings: () -> Unit = dismissSheet ?: {
-        if (backstack.size > 1) backstack.removeLastOrNull()
+    val closeSettings: () -> Unit = {
+        if (backstack.lastOrNull() is SettingsSheet) backstack.removeLastOrNull()
     }
 
     // Capture string values for use in non-composable callbacks
@@ -182,6 +185,7 @@ fun AlarmBottomSheet(
     LaunchedEffect(errorStrings) {
         viewModel.eventFlow.collectLatest { event ->
             when (event) {
+                AlarmSettingsViewModel.UiEvent.RequestExactAlarmPermission -> showExactAlarmPermissionDialog = true
                 is AlarmSettingsViewModel.UiEvent.ShowError -> {
                     scaffoldState.snackbarHostState.showSnackbar(message = event.error.resolve(errorStrings))
                 }
@@ -201,7 +205,9 @@ fun AlarmBottomSheet(
         }
     }
     AlarmBottomSheetContent(
-        onChallengeChange = { viewModel.onEvent(AddEditAlarmEvent.OnChallengeChange(it)) },
+        onChallengeChange = {
+            viewModel.onEvent(AddEditAlarmEvent.OnChallengeChange(it))
+        },
         onCloseClick = closeSettings,
         showDismissButton = showDismissButton,
         topSection = {
@@ -265,6 +271,10 @@ fun AlarmBottomSheet(
             requestNotificationPermission()
         },
         dialogSection = {
+            AlarmPermissionDialog(
+                isDialogOpen = showExactAlarmPermissionDialog,
+                onCloseDialog = { showExactAlarmPermissionDialog = false },
+            )
             with(viewModel.alarmTime.value) {
                 if (showTimePickerDialog) {
                     TimePickerDialog(
@@ -426,7 +436,11 @@ private fun AlarmBottomSheetContent(
                             if (showDismissButton) {
                                 SheetHeader(onCloseClick = onCloseClick)
                             }
-                            Column(Modifier.weight(1f).verticalScroll(rememberScrollState())) {
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .verticalScroll(rememberScrollState())
+                            ) {
                                 SheetSettingsContent(
                                     topSection = topSection,
                                     bottomSection = bottomSection,
@@ -462,7 +476,7 @@ private fun SheetHeader(
     ) {
         AdaptiveIconButton(onClick = onCloseClick) {
             Icon(
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier.size(AlarmBottomSheet.HEADER_ICON_SIZE),
                 imageVector = Close,
                 contentDescription = "Dismiss",
             )
@@ -470,7 +484,7 @@ private fun SheetHeader(
         if (showSaveAction && onSaveClick != null) {
             AdaptiveIconButton(onClick = onSaveClick) {
                 Icon(
-                    modifier = Modifier.size(32.dp),
+                    modifier = Modifier.size(AlarmBottomSheet.HEADER_ICON_SIZE),
                     imageVector = Check,
                     contentDescription = strings.save,
                     tint = MaterialTheme.colorScheme.secondary,
@@ -492,7 +506,6 @@ private fun SheetSettingsContent(
             start = MaterialTheme.spacing.medium,
             end = MaterialTheme.spacing.medium,
         ),
-        thickness = 1.dp,
         color = MaterialTheme.colorScheme.outlineVariant
     )
     bottomSection()
@@ -642,9 +655,14 @@ internal fun SheetFooter(
     showPrimary: Boolean = true,
 ) {
     AdaptiveButton(
-        modifier = Modifier.padding(top = MaterialTheme.spacing.medium).fillMaxWidth(),
+        modifier = Modifier
+            .padding(top = MaterialTheme.spacing.medium)
+            .fillMaxWidth(),
         onClick = onSecondaryClick,
-        colors = buttonColors(containerColor = MaterialTheme.colorScheme.surfaceContainerHigh, contentColor = MaterialTheme.colorScheme.onSurface),
+        colors = buttonColors(
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
     ) {
         Text(fontSize = TEST_BUTTON_FONT_SIZE, text = secondaryLabel)
     }
@@ -703,7 +721,7 @@ private fun AlarmTonePickerDialog(
                         .height(TONE_PICKER_HEADER_HEIGHT),
                     verticalAlignment = CenterVertically,
                 ) {
-                    Spacer(modifier = Modifier.size(48.dp))
+                    Spacer(modifier = Modifier.size(AlarmBottomSheet.TONE_ACTION_PLACEHOLDER_SIZE))
                     Text(
                         modifier = Modifier.weight(1f),
                         text = "Alarm Sound",
@@ -800,7 +818,7 @@ private fun AlarmTonePickerRow(
             Icon(
                 modifier = Modifier
                     .padding(end = MaterialTheme.spacing.small)
-                    .size(22.dp),
+                    .size(AlarmBottomSheet.TONE_SELECTION_ICON_SIZE),
                 imageVector = Check,
                 contentDescription = "Selected",
                 tint = MaterialTheme.colorScheme.secondary,
@@ -809,7 +827,7 @@ private fun AlarmTonePickerRow(
             Spacer(
                 modifier = Modifier
                     .padding(end = MaterialTheme.spacing.small)
-                    .size(22.dp),
+                    .size(AlarmBottomSheet.TONE_SELECTION_ICON_SIZE),
             )
         }
         Text(
@@ -880,12 +898,14 @@ private val IosAlarmToneOptions = listOf(
 )
 
 private object AlarmBottomSheet {
+    val HEADER_ICON_SIZE = 32.dp
+    val TONE_ACTION_PLACEHOLDER_SIZE = 48.dp
+    val TONE_SELECTION_ICON_SIZE = 22.dp
     val TIME_CARD_HEIGHT = 150.dp
     val NO_ELEVATION = 0.dp
     val TIME_CARD_CORNER_SIZE = 24.dp
     val TIME_TEXT_FONT_SIZE = 50.sp
     val ALARM_DAYS_TOP_PADDING = 12.dp
-    val DIVIDER_THICKNESS = 10.dp
     val MIDDLE_CONTROL_SECTION_TOP_PADDING = 28.dp
     val TEST_BUTTON_FONT_SIZE = 14.sp
     val SAVE_BUTTON_FONT_SIZE = 14.sp

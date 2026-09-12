@@ -143,7 +143,6 @@ fun PickerDialog(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Preview
 @Composable
 private fun TimePickerDialogPreview() {

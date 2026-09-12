@@ -240,7 +240,6 @@ fun ListDisplayScreen(
 }
 
 @OptIn(
-    ExperimentalFoundationApi::class,
     ExperimentalAnimationApi::class,
     ExperimentalMaterial3Api::class,
 )
@@ -308,7 +307,7 @@ private fun checkPermissionAndPerformAction(
 }
 
 @Composable
-private fun AlarmPermissionDialog(
+internal fun AlarmPermissionDialog(
     isDialogOpen: Boolean,
     onCloseDialog: () -> Unit,
 ) {

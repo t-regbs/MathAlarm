@@ -4,6 +4,42 @@ import cafe.adriel.lyricist.LyricistStrings
 
 @LyricistStrings(languageTag = Locales.DE, default = false)
 val DeMathAlarmStrings = Strings(
+    mathDifficultyNames = listOf("Leicht", "Mittel", "Schwer", "Individuell"),
+    mathChallengeTitle = "Matheaufgabe",
+    mixedDifficulty = "Gemischte Schwierigkeit",
+    mixDifficulties = "Schwierigkeitsgrade mischen",
+    mathDifficulty = "Schwierigkeit",
+    mathOperations = "Rechenarten",
+    addition = "Addition",
+    subtraction = "Subtraktion",
+    multiplication = "Multiplikation",
+    division = "Division",
+    additionAndSubtraction = "Addition & Subtraktion",
+    multiplicationAndDivision = "Multiplikation & Division",
+    mathExample = "Beispiel",
+    refreshExample = "Neu laden",
+    applyChallenge = "Aufgaben übernehmen",
+    easiestFirst = "Leichteste zuerst",
+    questions = "Aufgaben",
+    chooseRange = "Zahlenbereich wählen",
+    checkAnswer = "Antwort prüfen",
+    whatsNew = "Was ist neu?",
+    latestFeatures = "Die neuesten Funktionen entdecken",
+    gotIt = "Verstanden",
+    tryFeature = "Ausprobieren",
+    challengeAnnouncementTitle = "Mehr Möglichkeiten zum Aufwachen",
+    challengeAnnouncementInstructions = "Füge einen Wecker hinzu oder bearbeite ihn. Tippe neben Matheaufgabe auf Bearbeiten.",
+    exampleChallenge = "Beispielaufgaben",
+    questionCount = ::questionCountDe,
+    challengeSummary = { difficulty, count -> "$difficulty · ${questionCountDe(count)}" },
+    mixedQuestionTotal = { count, maximum -> "Insgesamt ${questionCountDe(count)} · Höchstens $maximum" },
+    questionProgress = { current, total -> "Aufgabe $current von $total" },
+    questionCountHint = { maximum -> "Wähle 1–$maximum. Tippe auf die Zahl, um sie einzugeben." },
+    difficultyQuestionLabel = { difficulty -> "Aufgaben: $difficulty" },
+    decreaseQuestionCount = { label -> "Anzahl verringern: $label" },
+    increaseQuestionCount = { label -> "Anzahl erhöhen: $label" },
+    exampleDifficultyMix = { easy, medium -> "Leicht: $easy · Mittel: $medium" },
+    challengeAnnouncementDescription = { maximum -> "Löse bis zu $maximum Aufgaben. Mische Schwierigkeitsgrade oder erstelle deine eigenen Aufgaben." },
     alarmScheduleFailed = "Wecker konnte nicht gestellt werden. Erneut speichern.",
     alarmSaveFailed = "Wecker konnte nicht gespeichert werden. Erneut versuchen.",
     alarmUpdateFailed = "Wecker konnte nicht aktualisiert werden. Erneut versuchen.",
@@ -90,3 +126,6 @@ val DeMathAlarmStrings = Strings(
         "Es scheint, dass wir $tone nicht abspielen können, wahrscheinlich weil eine Erlaubnis erforderlich ist. Wenn Sie möchten, können Sie die Erlaubnis erteilen. Alternativ können Sie einen anderen Ton auswählen. Diese Entscheidung kann in den Systemeinstellungen geändert werden."
     }
 )
+
+private fun questionCountDe(count: Int): String =
+    if (count == 1) "$count Aufgabe" else "$count Aufgaben"

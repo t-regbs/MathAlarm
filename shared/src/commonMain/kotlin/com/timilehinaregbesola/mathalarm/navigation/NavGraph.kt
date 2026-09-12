@@ -22,6 +22,15 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
+import com.timilehinaregbesola.mathalarm.presentation.whatsnew.MathChallengeAnnouncementPreview
+import com.timilehinaregbesola.mathalarm.presentation.whatsnew.WhatsNewDialog
+import com.timilehinaregbesola.mathalarm.presentation.whatsnew.currentAnnouncement
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -31,7 +40,6 @@ import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import androidx.savedstate.serialization.SavedStateConfiguration
-import androidx.window.core.layout.WindowSizeClass
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.navigation.NavGraph.ANIM_TRANSITION_DURATION
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.ListDisplayScreen
@@ -72,14 +80,13 @@ fun NavGraph(
         }
     }
     val backStack = rememberNavBackStack(config, AlarmList)
-    val bottomSheetStrategy = remember {
-        BottomSheetSceneStrategy<NavKey>()
+    var replayAnnouncement by rememberSaveable { mutableStateOf(false) }
+    val settingsLayout = settingsWindowLayout(currentWindowAdaptiveInfo().windowSizeClass)
+    val bottomSheetStrategy = remember(settingsLayout.useCenteredDialog) {
+        BottomSheetSceneStrategy<NavKey>(useCenteredDialog = settingsLayout.useCenteredDialog)
     }
     val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>()
-    val adaptiveSceneStrategy = listDetailStrategy then bottomSheetStrategy
-    val windowSizeClass = currentWindowAdaptiveInfo().windowSizeClass
-    val showSettingsDismissButton =
-        windowSizeClass.isWidthAtLeastBreakpoint(WindowSizeClass.WIDTH_DP_MEDIUM_LOWER_BOUND)
+    val mathPreviewStrategy = remember { MathPreviewSceneStrategy<NavKey>() }
 
     // Navigate to MathScreen when deeplinkInfo changes (e.g., from notification tap)
     LaunchedEffect(deeplinkInfo) {
@@ -100,7 +107,7 @@ fun NavGraph(
                 backStack.removeLastOrNull()
             }
         },
-        sceneStrategy = adaptiveSceneStrategy,
+        sceneStrategies = listOf(mathPreviewStrategy, bottomSheetStrategy, listDetailStrategy),
         entryDecorators = listOf(
             rememberSaveableStateHolderNavEntryDecorator(),
             rememberViewModelStoreNavEntryDecorator()
@@ -148,33 +155,61 @@ fun NavGraph(
                     backstack = backStack,
                     darkTheme = preferences.shouldUseDarkColors(),
                     alarm = alarmObject,
-                    showDismissButton = showSettingsDismissButton,
+                    showDismissButton = settingsLayout.showDismissButton,
                 )
             }
 
-            backStack.filterIsInstance<AlarmMath>().distinct().forEach { destination ->
-                entry(
-                    destination,
-                    metadata = mapOf("mathScreen" to true, "mathPreview" to destination.fromSheet),
-                ) {
-                    val alarmObject = Json.decodeFromString<AlarmEntity>(it.alarmJson)
-                    MathScreen(
-                        backStack = backStack,
-                        alarm = alarmObject,
-                        fromSheet = it.fromSheet,
-                    )
-                }
+            entry<AlarmMath>(
+                metadata = { destination ->
+                    mapOf("mathScreen" to true) +
+                        if (destination.fromSheet) MathPreviewSceneStrategy.metadata() else emptyMap()
+                },
+            ) {
+                val alarmObject = Json.decodeFromString<AlarmEntity>(it.alarmJson)
+                MathScreen(
+                    backStack = backStack,
+                    alarm = alarmObject,
+                    fromSheet = it.fromSheet,
+                )
             }
 
             entry<AppSettings> {
                 AppSettingsScreen(
-                    onBackPress = { if (backStack.size > 1) backStack.removeLastOrNull() },
-                    pref = preferences
+                    onBackPress = {
+                        if (backStack.size > 1) {
+                            backStack.removeLastOrNull()
+                        }
+                    },
+                    pref = preferences,
+                    onWhatsNew = {
+                        replayAnnouncement = true
+                    },
                 )
             }
 
         }
     )
+    val announcement = currentAnnouncement
+    val destination = backStack.lastOrNull()
+    val canShowAnnouncement = deeplinkInfo == null &&
+        (destination == AlarmList || destination == AppSettings)
+    val unseenAnnouncement = destination == AlarmList && !preferences.hasSeenAnnouncement(announcement.id)
+    if (canShowAnnouncement && (replayAnnouncement || unseenAnnouncement)) {
+        val dismiss = {
+            preferences.markAnnouncementSeen(announcement.id)
+            replayAnnouncement = false
+        }
+        WhatsNewDialog(
+            announcement = announcement,
+            visual = { MathChallengeAnnouncementPreview() },
+            onDismiss = dismiss,
+            onTryFeature = {
+                dismiss()
+                val alarmJson = Json.encodeToString(AlarmMapper().mapFromDomainModel(Alarm()))
+                backStack.add(SettingsSheet(alarmJson))
+            },
+        )
+    }
 }
 
 private object NavGraph {

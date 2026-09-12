@@ -25,7 +25,6 @@ fun AddAlarmFab(
         modifier = modifier,
         onClick = onClick,
         shape = fabShape,
-        // The artwork has a transparent plus; the container supplies its contrasting color.
         containerColor = MaterialTheme.colorScheme.onPrimary,
     ) {
         Image(

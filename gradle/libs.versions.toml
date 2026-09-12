@@ -1,6 +1,6 @@
 [versions]
 # @keep
-android_compile_sdk = "36"
+android_compile_sdk = "37"
 android_gradle_plugin = "9.3.1"
 # @keep
 android_min_sdk = "26"
@@ -44,7 +44,7 @@ timber = "4.7.1"
 lyricist = "1.7.0"
 ksp = "2.3.10"
 navigation3 = "1.0.0"
-jetbrains-navigation3 = "1.0.0-alpha06"
+jetbrains-navigation3 = "1.2.0-beta01"
 nav3Material = "1.0.0-SNAPSHOT"
 lifecycleViewmodel = "1.0.0-SNAPSHOT"
 jetbrainsLifecycleViewmodel = "2.10.0-alpha07"

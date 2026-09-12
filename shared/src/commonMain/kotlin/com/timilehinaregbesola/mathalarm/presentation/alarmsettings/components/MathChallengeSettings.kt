@@ -66,19 +66,35 @@ private class ChallengeSheetState {
 
 private val challengeSheetSaver = listSaver<ChallengeSheetState, Any>(
     save = {
-        with(it.challenge) { listOf(it.editing, difficulty, questionCount, operations, additionRange, factorRange, difficultyMix) }
+        with(it.challenge) {
+            listOf(
+                it.editing,
+                difficulty,
+                questionCount,
+                operations,
+                additionRange,
+                factorRange,
+                difficultyMix
+            )
+        }
     },
     restore = { values ->
         ChallengeSheetState().apply {
             editing = values[0] as Boolean
             challenge = MathChallenge(
-                values[1] as Int, values[2] as Int, values[3] as String, values[4] as Int, values[5] as Int, values[6] as String,
+                values[1] as Int,
+                values[2] as Int,
+                values[3] as String,
+                values[4] as Int,
+                values[5] as Int,
+                values[6] as String,
             ).normalized()
         }
     },
 )
 
-private val LocalChallengeSheet = staticCompositionLocalOf<ChallengeSheetState> { error("ChallengeSheetHost is required") }
+private val LocalChallengeSheet =
+    staticCompositionLocalOf<ChallengeSheetState> { error("ChallengeSheetHost is required") }
 
 /** Owns both views so opening the editor never creates a second modal surface. */
 @Composable
@@ -120,25 +136,33 @@ internal fun MathChallengeSettings(
     }
     val names = challengePresetNames
     Row(
-        modifier = modifier.fillMaxWidth().clickable(onClick = edit).padding(vertical = 12.dp),
+        modifier = modifier.fillMaxWidth().clickable(onClick = edit).padding(vertical = ChallengeDimensions.ROW_SPACING),
         verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
     ) {
         Icon(EmojiSymbols, contentDescription = null)
         Column(Modifier.weight(1f)) {
-            Text("Math challenge", style = MaterialTheme.typography.bodyLarge)
+            Text(strings.mathChallengeTitle, style = MaterialTheme.typography.bodyLarge)
             Text(
-                "${if (challenge.difficultyMix.isNotEmpty()) "Mixed difficulty" else names[challenge.normalized().difficulty]} · ${challenge.questionCount} ${if (challenge.questionCount == 1) "question" else "questions"}",
+                text = strings.challengeSummary(
+                    if (challenge.difficultyMix.isNotEmpty()) strings.mixedDifficulty
+                    else names[challenge.normalized().difficulty],
+                    challenge.questionCount,
+                ),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
         TextButton(
             onClick = edit,
-            modifier = Modifier.sizeIn(minWidth = 48.dp, minHeight = 48.dp),
+            modifier = Modifier.sizeIn(minWidth = ChallengeDimensions.MIN_TOUCH_TARGET, minHeight = ChallengeDimensions.MIN_TOUCH_TARGET),
             colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.secondary),
         ) {
-            Text(strings.edit, style = MaterialTheme.typography.titleMedium, textDecoration = TextDecoration.Underline)
+            Text(
+                strings.edit,
+                style = MaterialTheme.typography.titleMedium,
+                textDecoration = TextDecoration.Underline
+            )
         }
     }
 }
@@ -168,11 +192,12 @@ private fun ChallengeEditor(
         factorRange = factors,
         difficultyMix = if (mixing) mix else "",
     )
-    val actionColors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
+    val actionColors =
+        ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.onSurface)
     Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.surface) {
         Box(Modifier.fillMaxSize(), contentAlignment = Alignment.TopCenter) {
             Column(
-                Modifier.widthIn(max = 640.dp).fillMaxSize().padding(
+                Modifier.widthIn(max = ChallengeDimensions.MAX_CONTENT_WIDTH).fillMaxSize().padding(
                     start = MaterialTheme.spacing.extraMedium,
                     end = MaterialTheme.spacing.extraMedium,
                     top = MaterialTheme.spacing.medium,
@@ -180,67 +205,92 @@ private fun ChallengeEditor(
                 ),
             ) {
                 Text(
-                    "Math challenge",
+                    strings.mathChallengeTitle,
                     style = MaterialTheme.typography.headlineSmall,
                     textAlign = TextAlign.Center,
                     modifier = Modifier.fillMaxWidth(),
                 )
                 Column(
-                    Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(
-                        top = MaterialTheme.spacing.large,
-                        start = MaterialTheme.spacing.medium,
-                        end = MaterialTheme.spacing.medium,
-                        bottom = MaterialTheme.spacing.medium,
-                    ),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                    modifier = Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                        .padding(
+                            top = MaterialTheme.spacing.large,
+                            start = MaterialTheme.spacing.medium,
+                            end = MaterialTheme.spacing.medium,
+                            bottom = MaterialTheme.spacing.medium,
+                        ),
+                    verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
                 ) {
-                    Column(Modifier.fillMaxWidth().heightIn(min = 280.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                    Column(
+                        modifier = Modifier.fillMaxWidth().heightIn(min = ChallengeDimensions.MIN_CONTROLS_HEIGHT),
+                        verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium)
+                    ) {
                         if (mixing) {
-                            Text("${mix.length} questions total · Maximum 10", style = MaterialTheme.typography.labelLarge)
-                            MixedDifficultyCounts(mix = mix, onMixChange = { mix = it })
+                            Text(
+                                strings.mixedQuestionTotal(mix.length, MathChallenge.MAX_QUESTIONS),
+                                style = MaterialTheme.typography.labelLarge
+                            )
+                            MixedDifficultyCounts(
+                                mix = mix,
+                                onMixChange = { mix = it }
+                            )
                         } else {
-                            DifficultyChoices(selected = preset, onSelect = { selected ->
-                                if (selected == MathChallenge.CUSTOM && !usedCustom) {
-                                    addition = preset
-                                    factors = preset
-                                    usedCustom = true
+                            DifficultyChoices(
+                                selected = preset,
+                                onSelect = { selected ->
+                                    if (selected == MathChallenge.CUSTOM && !usedCustom) {
+                                        addition = preset
+                                        factors = preset
+                                        usedCustom = true
+                                    }
+                                    preset = selected
                                 }
-                                preset = selected
-                            })
-                            QuestionCountControl(countText = countText, onCountChange = { countText = it })
+                            )
+                            QuestionCountControl(
+                                countText = countText,
+                                onCountChange = { countText = it })
                         }
                     }
                     if (mixing || (preset != MathChallenge.CUSTOM && (count ?: 0) > 1)) {
                         Row(
-                            Modifier.fillMaxWidth().toggleable(
-                                value = mixing,
-                                role = Role.Checkbox,
-                                onValueChange = { enabled ->
-                                    if (enabled) mix = preset.toString().repeat(count ?: 1)
-                                    else {
-                                        countText = mix.length.toString()
-                                        preset = mix.firstOrNull()?.digitToInt() ?: preset
-                                    }
-                                    mixing = enabled
-                                },
-                            ),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .toggleable(
+                                    value = mixing,
+                                    role = Role.Checkbox,
+                                    onValueChange = { enabled ->
+                                        if (enabled) mix = preset.toString().repeat(count ?: 1)
+                                        else {
+                                            countText = mix.length.toString()
+                                            preset = mix.firstOrNull()?.digitToInt() ?: preset
+                                        }
+                                        mixing = enabled
+                                    },
+                                ),
                             verticalAlignment = Alignment.CenterVertically,
                         ) {
                             Checkbox(checked = mixing, onCheckedChange = null)
-                            Text("Mix difficulties", modifier = Modifier.padding(start = 8.dp))
+                            Text(strings.mixDifficulties, modifier = Modifier.padding(start = MaterialTheme.spacing.small))
                         }
                     }
                     if (preset == MathChallenge.CUSTOM) {
                         HorizontalDivider()
                         Column {
-                            Text("Operations", style = MaterialTheme.typography.labelLarge)
-                            FlowRow(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                listOf('+' to "Addition", '−' to "Subtraction", '×' to "Multiplication", '÷' to "Division").forEach { (symbol, name) ->
+                            Text(strings.mathOperations, style = MaterialTheme.typography.labelLarge)
+                            FlowRow(horizontalArrangement = Arrangement.spacedBy(ChallengeDimensions.OPERATION_CHIP_SPACING)) {
+                                listOf(
+                                    '+' to strings.addition,
+                                    '−' to strings.subtraction,
+                                    '×' to strings.multiplication,
+                                    '÷' to strings.division
+                                ).forEach { (symbol, name) ->
                                     FilterChip(
                                         selected = symbol in operations,
                                         onClick = {
                                             if (symbol !in operations) operations += symbol
-                                            else if (operations.length > 1) operations = operations.replace(symbol.toString(), "")
+                                            else if (operations.length > 1) operations =
+                                                operations.replace(symbol.toString(), "")
                                         },
                                         label = { Text(symbol.toString()) },
                                         modifier = Modifier.semantics { contentDescription = name },
@@ -249,29 +299,44 @@ private fun ChallengeEditor(
                             }
                         }
                         if ('+' in operations || '−' in operations) {
-                            ChallengeRange("Addition & subtraction", MathChallenge.ADDITION_RANGES.map { "${it.first}–${it.last}" }, addition) { addition = it }
+                            ChallengeRange(
+                                strings.additionAndSubtraction,
+                                MathChallenge.ADDITION_RANGES.map { "${it.first}–${it.last}" },
+                                addition
+                            ) { addition = it }
                         }
                         if ('×' in operations || '÷' in operations) {
-                            ChallengeRange("Multiplication & division", MathChallenge.FACTOR_RANGES.map { "${it.first}–${it.last}" }, factors) { factors = it }
+                            ChallengeRange(
+                                strings.multiplicationAndDivision,
+                                MathChallenge.FACTOR_RANGES.map { "${it.first}–${it.last}" },
+                                factors
+                            ) { factors = it }
                         }
                     }
                     if (!mixing) {
                         HorizontalDivider()
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Column(Modifier.weight(1f)) {
-                                Text("Example", style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Text(
+                                    strings.mathExample,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
                                 Text(
                                     sampleQuestion(draft, seed),
                                     style = MaterialTheme.typography.titleMedium,
                                 )
                             }
-                            TextButton(onClick = { seed++ }, colors = actionColors) { Text("Refresh") }
+                            TextButton(
+                                onClick = { seed++ },
+                                colors = actionColors
+                            ) { Text(strings.refreshExample) }
                         }
                     }
                 }
                 SheetFooter(
                     secondaryLabel = strings.cancel.uppercase(),
-                    primaryLabel = "APPLY CHALLENGE",
+                    primaryLabel = strings.applyChallenge.uppercase(),
                     onSecondaryClick = onDismiss,
                     onPrimaryClick = { if (valid) onApply(draft.normalized()) },
                     primaryEnabled = valid,
@@ -284,15 +349,19 @@ private fun ChallengeEditor(
 @Composable
 private fun DifficultyChoices(selected: Int, onSelect: (Int) -> Unit) {
     Column {
-        Text("Difficulty", style = MaterialTheme.typography.labelLarge)
+        Text(strings.mathDifficulty, style = MaterialTheme.typography.labelLarge)
         challengePresetNames.indices.chunked(2).forEach { row ->
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Row(horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)) {
                 row.forEach { level ->
                     FilterChip(
                         selected = selected == level,
                         onClick = { onSelect(level) },
                         label = {
-                            Text(challengePresetNames[level], modifier = Modifier.fillMaxWidth(), textAlign = TextAlign.Center)
+                            Text(
+                                challengePresetNames[level],
+                                modifier = Modifier.fillMaxWidth(),
+                                textAlign = TextAlign.Center
+                            )
                         },
                         modifier = Modifier.weight(1f),
                     )
@@ -304,15 +373,19 @@ private fun DifficultyChoices(selected: Int, onSelect: (Int) -> Unit) {
 
 @Composable
 private fun MixedDifficultyCounts(mix: String, onMixChange: (String) -> Unit) {
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)) {
         challengePresetNames.take(3).forEachIndexed { level, name ->
             val digit = level.digitToChar()
             val count = mix.count { it == digit }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                Text(name, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyLarge)
+                Text(
+                    name,
+                    modifier = Modifier.weight(1f),
+                    style = MaterialTheme.typography.bodyLarge
+                )
                 CountStepper(
                     value = count.toString(),
-                    label = "$name questions",
+                    label = strings.difficultyQuestionLabel(name),
                     onValueChange = {},
                     readOnly = true,
                     canDecrease = count > 0 && mix.length > 1,
@@ -322,33 +395,47 @@ private fun MixedDifficultyCounts(mix: String, onMixChange: (String) -> Unit) {
                 )
             }
         }
-        Text("Easiest first", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(
+            strings.easiestFirst,
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
 @Composable
 private fun QuestionCountControl(countText: String, onCountChange: (String) -> Unit) {
     val count = countText.toIntOrNull()
-    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+    Column(verticalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.small)) {
         Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-            Text("Questions", modifier = Modifier.weight(1f), style = MaterialTheme.typography.labelLarge)
+            Text(
+                strings.questions,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.labelLarge
+            )
             CountStepper(
                 value = countText,
-                label = "Question count",
+                label = strings.questions,
                 onValueChange = { value ->
                     val number = value.toIntOrNull()
-                    if (value.isEmpty() || (value.length <= 2 && number != null && number in 0..MathChallenge.MAX_QUESTIONS)) onCountChange(value)
+                    if (value.isEmpty() || (value.length <= 2 && number != null && number in 0..MathChallenge.MAX_QUESTIONS)) onCountChange(
+                        value
+                    )
                 },
                 readOnly = false,
                 isError = count == null || count !in 1..MathChallenge.MAX_QUESTIONS,
                 canDecrease = count != null && count > 1,
                 canIncrease = count == null || count < MathChallenge.MAX_QUESTIONS,
                 onDecrease = { onCountChange(((count ?: 1) - 1).coerceAtLeast(1).toString()) },
-                onIncrease = { onCountChange(((count ?: 0) + 1).coerceAtMost(MathChallenge.MAX_QUESTIONS).toString()) },
+                onIncrease = {
+                    onCountChange(
+                        ((count ?: 0) + 1).coerceAtMost(MathChallenge.MAX_QUESTIONS).toString()
+                    )
+                },
             )
         }
         Text(
-            "Choose 1–10. Tap the number to type.",
+            strings.questionCountHint(MathChallenge.MAX_QUESTIONS),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
@@ -367,37 +454,74 @@ private fun CountStepper(
     onIncrease: () -> Unit,
     isError: Boolean = false,
 ) {
+    val decreaseLabel = strings.decreaseQuestionCount(label)
+    val increaseLabel = strings.increaseQuestionCount(label)
     Row(verticalAlignment = Alignment.CenterVertically) {
         TextButton(
-            onClick = onDecrease, enabled = canDecrease,
-            modifier = Modifier.width(48.dp).heightIn(min = 48.dp).semantics { contentDescription = "Fewer $label" },
-        ) { Text("−", style = MaterialTheme.typography.titleLarge) }
+            onClick = onDecrease,
+            enabled = canDecrease,
+            modifier = Modifier
+                .width(ChallengeDimensions.MIN_TOUCH_TARGET)
+                .heightIn(min = ChallengeDimensions.MIN_TOUCH_TARGET)
+                .semantics { contentDescription = decreaseLabel },
+        ) {
+            Text("−", style = MaterialTheme.typography.titleLarge)
+        }
         OutlinedTextField(
-            value = value, onValueChange = onValueChange,
-            modifier = Modifier.width(64.dp).semantics { contentDescription = label },
-            readOnly = readOnly, singleLine = true, isError = isError,
+            value = value,
+            onValueChange = onValueChange,
+            modifier = Modifier
+                .width(ChallengeDimensions.COUNT_FIELD_WIDTH)
+                .semantics { contentDescription = label },
+            readOnly = readOnly,
+            singleLine = true,
+            isError = isError,
             textStyle = MaterialTheme.typography.titleMedium.copy(textAlign = TextAlign.Center),
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
         )
         TextButton(
-            onClick = onIncrease, enabled = canIncrease,
-            modifier = Modifier.width(48.dp).heightIn(min = 48.dp).semantics { contentDescription = "More $label" },
-        ) { Text("+", style = MaterialTheme.typography.titleLarge) }
+            onClick = onIncrease,
+            enabled = canIncrease,
+            modifier = Modifier
+                .width(ChallengeDimensions.MIN_TOUCH_TARGET)
+                .heightIn(min = ChallengeDimensions.MIN_TOUCH_TARGET)
+                .semantics { contentDescription = increaseLabel },
+        ) {
+            Text("+", style = MaterialTheme.typography.titleLarge)
+        }
     }
 }
 
 @Composable
-private fun ChallengeRange(label: String, choices: List<String>, selected: Int, onSelect: (Int) -> Unit) {
+private fun ChallengeRange(
+    label: String,
+    choices: List<String>,
+    selected: Int,
+    onSelect: (Int) -> Unit
+) {
     var open by rememberSaveable { mutableStateOf(false) }
     Box {
         Row(
-            Modifier.fillMaxWidth().clickable { open = true }.padding(vertical = 8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable {
+                    open = true
+                }
+                .padding(vertical = MaterialTheme.spacing.small),
             verticalAlignment = Alignment.CenterVertically,
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            horizontalArrangement = Arrangement.spacedBy(ChallengeDimensions.ROW_SPACING),
         ) {
-            Text(label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.bodyMedium)
-            Text(choices[selected], style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-            Icon(KeyboardArrowDown, contentDescription = "Choose range")
+            Text(
+                text = label,
+                modifier = Modifier.weight(1f),
+                style = MaterialTheme.typography.bodyMedium
+            )
+            Text(
+                text = choices[selected],
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Icon(imageVector = KeyboardArrowDown, contentDescription = strings.chooseRange)
         }
         DropdownMenu(expanded = open, onDismissRequest = { open = false }) {
             choices.forEachIndexed { index, text ->
@@ -407,15 +531,37 @@ private fun ChallengeRange(label: String, choices: List<String>, selected: Int, 
     }
 }
 
-private val challengePresetNames = listOf("Easy", "Medium", "Hard", "Custom")
+private val challengePresetNames: List<String>
+    @Composable get() = strings.mathDifficultyNames
 
 private fun sampleQuestion(challenge: MathChallenge, seed: Int): String =
-    buildQuestionString(generateChallengeProblems(challenge.copy(questionCount = 1), Random(seed)).first()) + " = ?"
+    buildQuestionString(
+        generateChallengeProblems(
+            challenge.copy(questionCount = 1),
+            Random(seed)
+        ).first()
+    ) + " = ?"
 
 @Preview
 @Composable
 private fun MathChallengeSettingsPreview() {
     MathAlarmTheme(darkTheme = false) {
-        ChallengeSheetHost { Surface { MathChallengeSettings(challenge = MathChallenge(difficulty = 1), modifier = Modifier.padding(16.dp)) } }
+        ChallengeSheetHost {
+            Surface {
+                MathChallengeSettings(
+                    challenge = MathChallenge(difficulty = 1),
+                    modifier = Modifier.padding(MaterialTheme.spacing.medium)
+                )
+            }
+        }
     }
+}
+
+private object ChallengeDimensions {
+    val ROW_SPACING = 12.dp
+    val MIN_TOUCH_TARGET = 48.dp
+    val MAX_CONTENT_WIDTH = 640.dp
+    val MIN_CONTROLS_HEIGHT = 280.dp
+    val OPERATION_CHIP_SPACING = 6.dp
+    val COUNT_FIELD_WIDTH = 64.dp
 }

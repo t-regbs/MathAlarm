@@ -1,5 +1,7 @@
 package com.timilehinaregbesola.mathalarm.di
 
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.ChallengeProgressStore
+
 import com.russhwolf.settings.Settings
 import com.timilehinaregbesola.mathalarm.coroutines.AppCoroutineScope
 import com.timilehinaregbesola.mathalarm.data.AlarmDataSource
@@ -87,8 +89,9 @@ val commonModule = module {
     
     // ViewModels
     viewModel { AlarmListViewModel(get(), get(), get(), getWith("AlarmListViewModel")) }
-    viewModel { AlarmSettingsViewModel(get()) }
-    viewModel { AlarmMathViewModel(get(), get(), getWith("AlarmMathViewModel")) }
+    single { ChallengeProgressStore(get()) }
+    viewModel { AlarmSettingsViewModel(get(), get()) }
+    viewModel { AlarmMathViewModel(get(), get(), getWith("AlarmMathViewModel"), get()) }
 }
 
 /**

@@ -1,5 +1,7 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmsettings
 
+import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermission
+
 import com.timilehinaregbesola.mathalarm.domain.model.MathChallenge
 import com.timilehinaregbesola.mathalarm.domain.model.mathChallenge
 import co.touchlab.kermit.Logger
@@ -24,6 +26,7 @@ import kotlinx.datetime.LocalDateTime
 
 class AlarmSettingsViewModel(
     private val usecases: Usecases,
+    private val permission: AlarmPermission,
 ) : ViewModel() {
 
     private var isNewAlarm: Boolean? = null
@@ -70,6 +73,10 @@ class AlarmSettingsViewModel(
         when (event) {
             is AddEditAlarmEvent.OnSaveTodoClick -> {
                 val edited = createAlarm().copy(isSaved = true)
+                if (edited.isOn && !permission.hasExactAlarmPermission()) {
+                    viewModelScope.launch { _eventFlow.emit(UiEvent.RequestExactAlarmPermission) }
+                    return
+                }
                 viewModelScope.launch {
                     try {
                         usecases.command {
@@ -214,6 +221,7 @@ class AlarmSettingsViewModel(
     }
 
     sealed class UiEvent {
+        object RequestExactAlarmPermission : UiEvent()
         data class ShowError(val error: AlarmErrorMessage) : UiEvent()
         object SaveAlarm : UiEvent()
         data class TestAlarm(val alarm: Alarm) : UiEvent()
