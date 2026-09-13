@@ -32,7 +32,6 @@ import com.timilehinaregbesola.mathalarm.presentation.MainActivity
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.serialization.json.Json
 import org.koin.android.ext.android.inject
-import java.io.InputStream
 import android.os.VibrationEffect
 import android.os.Vibrator
 import android.util.Base64
@@ -47,11 +46,12 @@ import com.timilehinaregbesola.mathalarm.framework.Usecases
  * Foreground service that handles alarm playback independently of the app lifecycle.
  * Playback survives activity teardown; a system force-stop still stops the application.
  */
-@ExperimentalAnimationApi
-@InternalCoroutinesApi
-@ExperimentalComposeUiApi
-@ExperimentalMaterial3Api
-@ExperimentalFoundationApi
+@OptIn(
+    ExperimentalAnimationApi::class,
+    InternalCoroutinesApi::class,
+    ExperimentalComposeUiApi::class,
+    ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class
+)
 class AlarmService : Service() {
 
     private val channel: MathAlarmNotificationChannel by inject()
@@ -98,6 +98,12 @@ class AlarmService : Service() {
         }
     }
 
+    override fun onTaskRemoved(rootIntent: Intent?) {
+        super.onTaskRemoved(rootIntent)
+        // Recents dismissal removes the activity, not the service-owned alarm.
+        currentAlarm?.let(::refreshNotificationForAlarm)
+    }
+
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         logger.d("onStartCommand: action=${intent?.action}")
         
@@ -133,6 +139,10 @@ class AlarmService : Service() {
                     queuedAlarms[alarm.alarmId] = alarm
                     persistPlayback()
                 }
+            }
+            ACTION_RESTORE_NOTIFICATION -> {
+                val id = intent.getLongExtra(EXTRA_ALARM_ID, -1)
+                currentAlarm?.takeIf { it.alarmId == id }?.let(::refreshNotificationForAlarm)
             }
             ACTION_STOP_ALARM -> {
                 val id = intent.getLongExtra(EXTRA_ALARM_ID, -1)
@@ -244,8 +254,8 @@ class AlarmService : Service() {
         showForegroundNotification(alarm, isPaused = true)
     }
     
-    private fun showForegroundNotification(alarm: Alarm, isPaused: Boolean) {
-        val notification = buildNotification(alarm, isPaused = isPaused)
+    private fun showForegroundNotification(alarm: Alarm, isPaused: Boolean, launchFullScreen: Boolean = true) {
+        val notification = buildNotification(alarm, isPaused = isPaused, launchFullScreen = launchFullScreen)
         
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
             ServiceCompat.startForeground(
@@ -267,7 +277,7 @@ class AlarmService : Service() {
 
     private fun refreshNotificationForAlarm(alarm: Alarm) {
         val isPaused = timingController?.currentState == AlarmTimingController.State.PAUSED
-        showForegroundNotification(alarm, isPaused = isPaused)
+        showForegroundNotification(alarm, isPaused = isPaused, launchFullScreen = false)
     }
 
     private fun startAudioPlayback(alarm: Alarm) {
@@ -337,7 +347,7 @@ class AlarmService : Service() {
         }
     }
 
-    private fun buildNotification(alarm: Alarm, isPaused: Boolean = false): NotificationCompat.Builder {
+    private fun buildNotification(alarm: Alarm, isPaused: Boolean = false, launchFullScreen: Boolean = true): NotificationCompat.Builder {
         val alarmImage = BitmapFactory.decodeResource(resources, R.drawable.icon)
         val vibratePattern = if (isPaused || !alarm.vibrate) null else longArrayOf(0, 100, 200, 300)
         val bigPicStyle = NotificationCompat.BigPictureStyle()
@@ -365,11 +375,12 @@ class AlarmService : Service() {
             setPriority(NotificationCompat.PRIORITY_HIGH)
             setOngoing(true) // Cannot be dismissed by swiping
             setAutoCancel(false)
+            setOnlyAlertOnce(true)
             if (alarm.snooze != 0) {
                 addAction(getSnoozeAction(alarm))
             }
             // Only set full-screen intent when actively ringing
-            if (!isPaused) {
+            if (!isPaused && launchFullScreen) {
                 setFullScreenIntent(buildPendingIntent(alarm), true)
             }
             // Re-show notification immediately if user somehow manages to dismiss it
@@ -453,6 +464,7 @@ class AlarmService : Service() {
     companion object {
         const val ACTION_START_ALARM = "com.timilehinaregbesola.mathalarm.START_ALARM"
         const val ACTION_UPDATE_ALARM = "com.timilehinaregbesola.mathalarm.UPDATE_ALARM"
+        const val ACTION_RESTORE_NOTIFICATION = "com.timilehinaregbesola.mathalarm.RESTORE_NOTIFICATION"
         const val ACTION_STOP_ALARM = "com.timilehinaregbesola.mathalarm.STOP_ALARM"
         const val EXTRA_ALARM_ID = "alarm_id"
         const val EXTRA_ALARM_JSON = "extra_alarm_json"
@@ -492,6 +504,15 @@ class AlarmService : Service() {
             context.startService(Intent(context, AlarmService::class.java).apply {
                 action = ACTION_UPDATE_ALARM
                 putExtra(EXTRA_ALARM_JSON, alarmJson)
+            })
+        }
+
+        /** Restore controls for existing playback without starting or rearming an alarm. */
+        fun restoreNotification(context: Context, alarmId: Long) {
+            if (ActiveAlarmManager.activeAlarmId != alarmId) return
+            context.startService(Intent(context, AlarmService::class.java).apply {
+                action = ACTION_RESTORE_NOTIFICATION
+                putExtra(EXTRA_ALARM_ID, alarmId)
             })
         }
 

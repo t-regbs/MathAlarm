@@ -1,23 +1,25 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist
 
-import kotlinx.coroutines.CancellationException
+import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import androidx.compose.runtime.snapshotFlow
 import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermission
-import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.AlarmSortOrder.TIME
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
 import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
 import com.timilehinaregbesola.mathalarm.utils.UiEvent
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.Navigate
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.ShowSnackbar
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class AlarmListViewModel(
@@ -26,15 +28,21 @@ class AlarmListViewModel(
     private val preferences: AlarmPreferencesImpl,
     private val logger: Logger
 ) : ViewModel() {
-    var alarms = usecases.getSavedAlarms()
-        .combine(snapshotFlow { preferences.alarmSortOrderState.value }) { alarms, sortOrder ->
-            if (sortOrder == AlarmPreferences.AlarmSortOrder.TIME) {
-                alarms.sortedWith(compareBy<Alarm> { it.hour }.thenBy { it.minute }
-                    .thenByDescending { it.alarmId })
+    val alarms = usecases
+        .getSavedAlarms()
+        .combine(
+            snapshotFlow { preferences.alarmSortOrderState.value }
+        ) { alarms, sortOrder ->
+            if (sortOrder == TIME) {
+                alarms.sortedWith(
+                    compareBy<Alarm> { it.hour }
+                        .thenBy { it.minute }
+                        .thenByDescending { it.alarmId }
+                )
             } else {
                 alarms
             }
-        }
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
 
     private val _uiEvent = Channel<UiEvent>()
     val uiEvent = _uiEvent.receiveAsFlow()

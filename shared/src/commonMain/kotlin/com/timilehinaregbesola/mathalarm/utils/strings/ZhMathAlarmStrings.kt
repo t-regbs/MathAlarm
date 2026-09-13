@@ -4,6 +4,42 @@ import cafe.adriel.lyricist.LyricistStrings
 
 @LyricistStrings(languageTag = Locales.ZH)
 val ZhMathAlarmStrings = Strings(
+    mathDifficultyNames = listOf("简单", "中等", "困难", "自定义"),
+    mathChallengeTitle = "数学挑战",
+    mixedDifficulty = "混合难度",
+    mixDifficulties = "混合难度",
+    mathDifficulty = "难度",
+    mathOperations = "运算",
+    addition = "加法",
+    subtraction = "减法",
+    multiplication = "乘法",
+    division = "除法",
+    additionAndSubtraction = "加法和减法",
+    multiplicationAndDivision = "乘法和除法",
+    mathExample = "示例",
+    refreshExample = "换一个",
+    applyChallenge = "应用挑战",
+    easiestFirst = "从易到难",
+    questions = "题目",
+    chooseRange = "选择范围",
+    checkAnswer = "检查答案",
+    whatsNew = "新功能",
+    latestFeatures = "了解最新功能",
+    gotIt = "知道了",
+    tryFeature = "试试看",
+    challengeAnnouncementTitle = "更多唤醒方式",
+    challengeAnnouncementInstructions = "添加或编辑闹钟，然后点按数学挑战旁的“编辑”。",
+    exampleChallenge = "挑战示例",
+    questionCount = ::questionCountZh,
+    challengeSummary = { difficulty, count -> "$difficulty · ${questionCountZh(count)}" },
+    mixedQuestionTotal = { count, maximum -> "共${questionCountZh(count)} · 最多${maximum}道" },
+    questionProgress = { current, total -> "第${current}题，共${total}题" },
+    questionCountHint = { maximum -> "选择1–${maximum}。点按数字即可输入。" },
+    difficultyQuestionLabel = { difficulty -> "题目：${difficulty}" },
+    decreaseQuestionCount = { label -> "减少数量：${label}" },
+    increaseQuestionCount = { label -> "增加数量：${label}" },
+    exampleDifficultyMix = { easy, medium -> "简单：${easy} · 中等：${medium}" },
+    challengeAnnouncementDescription = { maximum -> "最多解答${maximum}道题。混合不同难度，或创建适合自己的挑战。" },
     alarmScheduleFailed = "无法设置闹钟，请重新保存。",
     alarmSaveFailed = "无法保存闹钟，请重试。",
     alarmUpdateFailed = "无法更新闹钟，请重试。",
@@ -90,3 +126,6 @@ val ZhMathAlarmStrings = Strings(
         "我们似乎无法播放$tone，可能是因为需要权限。如果您愿意，您可以授予权限。或者，选择不同的声音。这个决定可以在系统设置中更改。"
     }
 )
+
+private fun questionCountZh(count: Int): String =
+    "${count}道题"

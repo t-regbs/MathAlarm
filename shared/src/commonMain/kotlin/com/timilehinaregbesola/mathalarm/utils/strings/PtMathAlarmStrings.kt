@@ -4,6 +4,42 @@ import cafe.adriel.lyricist.LyricistStrings
 
 @LyricistStrings(languageTag = Locales.PT)
 val PtMathAlarmStrings = Strings(
+    mathDifficultyNames = listOf("Fácil", "Média", "Difícil", "Personalizada"),
+    mathChallengeTitle = "Desafio matemático",
+    mixedDifficulty = "Dificuldade mista",
+    mixDifficulties = "Misturar dificuldades",
+    mathDifficulty = "Dificuldade",
+    mathOperations = "Operações",
+    addition = "Adição",
+    subtraction = "Subtração",
+    multiplication = "Multiplicação",
+    division = "Divisão",
+    additionAndSubtraction = "Adição e subtração",
+    multiplicationAndDivision = "Multiplicação e divisão",
+    mathExample = "Exemplo",
+    refreshExample = "Atualizar",
+    applyChallenge = "Aplicar desafio",
+    easiestFirst = "Mais fáceis primeiro",
+    questions = "Questões",
+    chooseRange = "Escolher intervalo",
+    checkAnswer = "Verificar resposta",
+    whatsNew = "Novidades",
+    latestFeatures = "Explore os novos recursos",
+    gotIt = "Entendi",
+    tryFeature = "Experimentar",
+    challengeAnnouncementTitle = "Mais formas de acordar",
+    challengeAnnouncementInstructions = "Adicione ou edite um alarme e toque em Editar ao lado de Desafio matemático.",
+    exampleChallenge = "Desafio de exemplo",
+    questionCount = ::questionCountPt,
+    challengeSummary = { difficulty, count -> "$difficulty · ${questionCountPt(count)}" },
+    mixedQuestionTotal = { count, maximum -> "${questionCountPt(count)} no total · Máximo: $maximum" },
+    questionProgress = { current, total -> "Questão $current de $total" },
+    questionCountHint = { maximum -> "Escolha de 1 a $maximum. Toque no número para digitar." },
+    difficultyQuestionLabel = { difficulty -> "Questões: $difficulty" },
+    decreaseQuestionCount = { label -> "Diminuir quantidade: $label" },
+    increaseQuestionCount = { label -> "Aumentar quantidade: $label" },
+    exampleDifficultyMix = { easy, medium -> "Fácil: $easy · Média: $medium" },
+    challengeAnnouncementDescription = { maximum -> "Resolva até $maximum questões. Misture dificuldades ou crie um desafio personalizado." },
     alarmScheduleFailed = "Não foi possível agendar o alarme. Salve novamente.",
     alarmSaveFailed = "Não foi possível salvar o alarme. Tente novamente.",
     alarmUpdateFailed = "Não foi possível atualizar o alarme. Tente novamente.",
@@ -91,3 +127,6 @@ val PtMathAlarmStrings = Strings(
     taskAlarmPermissionDialogConfirm = "Conceder"
 
 )
+
+private fun questionCountPt(count: Int): String =
+    if (count == 1) "$count questão" else "$count questões"

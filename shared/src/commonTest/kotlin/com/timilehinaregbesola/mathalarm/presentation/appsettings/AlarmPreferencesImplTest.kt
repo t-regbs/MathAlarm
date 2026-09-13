@@ -26,4 +26,25 @@ class AlarmPreferencesImplTest {
 
         recreatedPreferences.loadAlarmSortOrder() shouldBe AlarmPreferences.AlarmSortOrder.TIME
     }
+
+    @Test
+    fun `acknowledged announcement stays dismissed after restart`() {
+        val settings = MapSettings()
+        val preferences = AlarmPreferencesImpl(AppThemeOptionsMapper(), Logger.withTag("test"), settings)
+        preferences.hasSeenAnnouncement("math-challenges-v1") shouldBe false
+        preferences.markAnnouncementSeen("math-challenges-v1")
+        preferences.hasSeenAnnouncement("math-challenges-v1") shouldBe true
+
+        val recreated = AlarmPreferencesImpl(AppThemeOptionsMapper(), Logger.withTag("test"), settings)
+        recreated.hasSeenAnnouncement("math-challenges-v1") shouldBe true
+    }
+
+    @Test
+    fun `new feature release is eligible after previous announcement was acknowledged`() {
+        val preferences = AlarmPreferencesImpl(AppThemeOptionsMapper(), Logger.withTag("test"), MapSettings())
+        preferences.markAnnouncementSeen("math-challenges-v1")
+        preferences.hasSeenAnnouncement("next-feature-v1") shouldBe false
+        preferences.markAnnouncementSeen("next-feature-v1")
+        preferences.hasSeenAnnouncement("next-feature-v1") shouldBe true
+    }
 }

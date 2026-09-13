@@ -1,8 +1,15 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 
-import androidx.compose.foundation.background
+import androidx.compose.ui.draw.clip
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.hazeEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -11,31 +18,24 @@ import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color.Companion.LightGray
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.lyricist.strings
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.LIST_HEADER_ELEVATION
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.LIST_HEADER_FONT_SIZE
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.ListHeaderAlpha
-import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimaryLight
-import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.utils.calculateNextAlarmTime
 import com.timilehinaregbesola.mathalarm.utils.getTimeLeft
 import kotlinx.datetime.TimeZone
-import androidx.compose.ui.tooling.preview.Preview
-import kotlin.time.ExperimentalTime
 import kotlin.time.Instant
 
-@OptIn(ExperimentalTime::class)
 @Composable
 fun ListHeader(
     modifier: Modifier = Modifier,
     enabled: Boolean,
+    hazeState: HazeState? = null,
     timeZone: TimeZone = TimeZone.currentSystemDefault(),
     alarmList: List<Alarm>,
-    isDark: Boolean
 ) {
     val (nearestTime, nearestIndex) = buildNearestTime(
         alarmList = alarmList,
@@ -48,36 +48,39 @@ fun ListHeader(
             }
         }
     }
+    val shape = RoundedCornerShape(AlarmListHeader.CORNER_RADIUS)
+    val colors = MaterialTheme.colorScheme
     Surface(
-        modifier = Modifier
-            .padding(top = MaterialTheme.spacing.small)
+        modifier = modifier
             .fillMaxWidth()
-            .background(
-                color = if (isDark) darkPrimaryLight else LightGray.copy(alpha = ListHeaderAlpha),
-            )
-            .then(modifier),
-        tonalElevation = LIST_HEADER_ELEVATION,
+            .padding(horizontal = MaterialTheme.spacing.extraMedium, vertical = AlarmListHeader.VERTICAL_PADDING)
+            .clip(shape)
+            .then(if (hazeState != null) Modifier.hazeEffect(
+                state = hazeState,
+                style = HazeStyle(
+                    backgroundColor = colors.surface,
+                    tint = HazeTint(colors.surfaceContainerLow.copy(alpha = AlarmListHeader.TINT_ALPHA)),
+                    blurRadius = AlarmListHeader.BLUR_RADIUS,
+                    noiseFactor = AlarmListHeader.NOISE_FACTOR,
+                    fallbackTint = HazeTint(colors.surfaceContainerLow.copy(alpha = AlarmListHeader.FALLBACK_TINT_ALPHA)),
+                ),
+            ) else Modifier),
+        shape = shape,
+        color = if (hazeState != null) Color.Transparent else colors.surfaceContainerLow,
+        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
     ) {
-        with(MaterialTheme.spacing) {
-            Text(
-                text = if (enabled && nearestAlarmMessage != null) {
-                    "${strings.nextAlarmText} $nearestAlarmMessage"
-                } else {
-                    strings.noUpcomingAlarms
-                },
-                modifier = Modifier
-                    .padding(
-                        start = extraMedium,
-                        top = extraLarge,
-                        bottom = small,
-                    ),
-                fontSize = LIST_HEADER_FONT_SIZE,
-            )
-        }
+        Text(
+            modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium, vertical = AlarmListHeader.VERTICAL_PADDING),
+            text = if (enabled && nearestAlarmMessage != null) {
+                "${strings.nextAlarmText} $nearestAlarmMessage"
+            } else {
+                strings.noUpcomingAlarms
+            },
+            fontSize = LIST_HEADER_FONT_SIZE,
+        )
     }
 }
 
-@OptIn(ExperimentalTime::class)
 private fun buildNearestTime(
     alarmList: List<Alarm>,
     timeZone: TimeZone
@@ -109,14 +112,16 @@ private fun ListHeaderPreview() {
         ListHeader(
             enabled = false,
             alarmList = emptyList(),
-            isDark = true
         )
     }
 }
 
 private object AlarmListHeader {
-    const val ListHeaderAlpha = 0.1f
-    const val ONE_WEEK_IN_MILLISECONDS = 7 * 24 * 60 * 60 * 1000
-    val LIST_HEADER_ELEVATION = 4.dp
+    val BLUR_RADIUS = 24.dp
+    const val TINT_ALPHA = 0.65f
+    const val NOISE_FACTOR = 0.04f
+    const val FALLBACK_TINT_ALPHA = 0.95f
+    val CORNER_RADIUS = 16.dp
+    val VERTICAL_PADDING = 12.dp
     val LIST_HEADER_FONT_SIZE = 16.sp
 }

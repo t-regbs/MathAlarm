@@ -66,6 +66,54 @@ class AlarmServiceLifecycleTest {
         assertSame(original, field.get(service))
         assertEquals(1L, ActiveAlarmManager.activeAlarmId)
     }
+    private fun restoreNotification(id: Long) {
+        service.onStartCommand(Intent(service, AlarmService::class.java).apply {
+            action = AlarmService.ACTION_RESTORE_NOTIFICATION
+            putExtra(AlarmService.EXTRA_ALARM_ID, id)
+        }, 0, 101)
+    }
+
+    @Test fun removingTaskRestoresNotificationWithoutStoppingOrRestartingPlayback() {
+        start(1)
+        val field = AlarmService::class.java.getDeclaredField("timingController").apply { isAccessible = true }
+        val original = field.get(service)
+        service.onTaskRemoved(Intent())
+        val notification = org.robolectric.Shadows.shadowOf(service).lastForegroundNotification
+        assertNotNull(notification.contentIntent)
+        assertNull(notification.fullScreenIntent)
+        assertSame(original, field.get(service))
+        assertEquals(1L, ActiveAlarmManager.activeAlarmId)
+    }
+
+    @Test fun restoringNotificationKeepsPlaybackAndProvidesReopenAction() {
+        start(1)
+        val field = AlarmService::class.java.getDeclaredField("timingController").apply { isAccessible = true }
+        val original = field.get(service)
+        restoreNotification(1)
+        val notification = org.robolectric.Shadows.shadowOf(service).lastForegroundNotification
+        assertNotNull(notification.contentIntent)
+        assertNotNull(notification.deleteIntent)
+        assertNull(notification.fullScreenIntent)
+        assertTrue(notification.flags and android.app.Notification.FLAG_ONGOING_EVENT != 0)
+        assertTrue(notification.flags and android.app.Notification.FLAG_AUTO_CANCEL == 0)
+        assertSame(original, field.get(service))
+        assertEquals(1L, ActiveAlarmManager.activeAlarmId)
+    }
+
+    @Test fun lateNotificationDismissalCannotRestartCompletedAlarmOrReplaceNextAlarm() {
+        start(1)
+        start(2)
+        dismiss(1)
+        val notification = org.robolectric.Shadows.shadowOf(service).lastForegroundNotification
+        restoreNotification(1)
+        assertSame(notification, org.robolectric.Shadows.shadowOf(service).lastForegroundNotification)
+        assertEquals(2L, ActiveAlarmManager.activeAlarmId)
+        dismiss(2)
+        restoreNotification(2)
+        val field = AlarmService::class.java.getDeclaredField("currentAlarm").apply { isAccessible = true }
+        assertNull(field.get(service))
+    }
+
     @Test fun unreadableDeviceToneFallsBackToBundledAudio() {
         val uri = android.net.Uri.parse("android.resource://${service.packageName}/${com.timilehinaregbesola.mathalarm.R.raw.alarm_fallback}")
         org.robolectric.shadows.ShadowMediaPlayer.addMediaInfo(

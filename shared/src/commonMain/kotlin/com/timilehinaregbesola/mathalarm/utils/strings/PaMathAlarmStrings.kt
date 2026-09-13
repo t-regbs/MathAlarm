@@ -4,6 +4,42 @@ import cafe.adriel.lyricist.LyricistStrings
 
 @LyricistStrings(languageTag = Locales.PA)
 val PaMathAlarmStrings = Strings(
+    mathDifficultyNames = listOf("ਸੌਖਾ", "ਦਰਮਿਆਨਾ", "ਔਖਾ", "ਕਸਟਮ"),
+    mathChallengeTitle = "ਗਣਿਤ ਚੁਣੌਤੀ",
+    mixedDifficulty = "ਮਿਲੀ-ਜੁਲੀ ਮੁਸ਼ਕਲ",
+    mixDifficulties = "ਮੁਸ਼ਕਲ ਦੇ ਪੱਧਰ ਮਿਲਾਓ",
+    mathDifficulty = "ਮੁਸ਼ਕਲ",
+    mathOperations = "ਗਣਿਤ ਕਿਰਿਆਵਾਂ",
+    addition = "ਜੋੜ",
+    subtraction = "ਘਟਾਓ",
+    multiplication = "ਗੁਣਾ",
+    division = "ਭਾਗ",
+    additionAndSubtraction = "ਜੋੜ ਅਤੇ ਘਟਾਓ",
+    multiplicationAndDivision = "ਗੁਣਾ ਅਤੇ ਭਾਗ",
+    mathExample = "ਉਦਾਹਰਨ",
+    refreshExample = "ਨਵੀਂ ਉਦਾਹਰਨ",
+    applyChallenge = "ਚੁਣੌਤੀ ਲਾਗੂ ਕਰੋ",
+    easiestFirst = "ਪਹਿਲਾਂ ਸੌਖੇ ਸਵਾਲ",
+    questions = "ਸਵਾਲ",
+    chooseRange = "ਸੀਮਾ ਚੁਣੋ",
+    checkAnswer = "ਜਵਾਬ ਜਾਂਚੋ",
+    whatsNew = "ਨਵਾਂ ਕੀ ਹੈ",
+    latestFeatures = "ਨਵੀਆਂ ਵਿਸ਼ੇਸ਼ਤਾਵਾਂ ਦੇਖੋ",
+    gotIt = "ਸਮਝ ਆ ਗਿਆ",
+    tryFeature = "ਅਜ਼ਮਾਓ",
+    challengeAnnouncementTitle = "ਜਾਗਣ ਦੇ ਹੋਰ ਤਰੀਕੇ",
+    challengeAnnouncementInstructions = "ਅਲਾਰਮ ਜੋੜੋ ਜਾਂ ਬਦਲੋ, ਫਿਰ ਗਣਿਤ ਚੁਣੌਤੀ ਦੇ ਕੋਲ ਸੋਧੋ ਉੱਤੇ ਟੈਪ ਕਰੋ।",
+    exampleChallenge = "ਚੁਣੌਤੀ ਦੀ ਉਦਾਹਰਨ",
+    questionCount = ::questionCountPa,
+    challengeSummary = { difficulty, count -> "$difficulty · ${questionCountPa(count)}" },
+    mixedQuestionTotal = { count, maximum -> "ਕੁੱਲ ${questionCountPa(count)} · ਵੱਧ ਤੋਂ ਵੱਧ $maximum" },
+    questionProgress = { current, total -> "$total ਵਿੱਚੋਂ ਸਵਾਲ $current" },
+    questionCountHint = { maximum -> "1–$maximum ਚੁਣੋ। ਲਿਖਣ ਲਈ ਗਿਣਤੀ ਉੱਤੇ ਟੈਪ ਕਰੋ।" },
+    difficultyQuestionLabel = { difficulty -> "ਸਵਾਲ: $difficulty" },
+    decreaseQuestionCount = { label -> "ਗਿਣਤੀ ਘਟਾਓ: $label" },
+    increaseQuestionCount = { label -> "ਗਿਣਤੀ ਵਧਾਓ: $label" },
+    exampleDifficultyMix = { easy, medium -> "ਸੌਖੇ: $easy · ਦਰਮਿਆਨੇ: $medium" },
+    challengeAnnouncementDescription = { maximum -> "ਵੱਧ ਤੋਂ ਵੱਧ $maximum ਸਵਾਲ ਹੱਲ ਕਰੋ। ਮੁਸ਼ਕਲ ਦੇ ਪੱਧਰ ਮਿਲਾਓ ਜਾਂ ਆਪਣੀ ਚੁਣੌਤੀ ਬਣਾਓ।" },
     alarmScheduleFailed = "ਅਲਾਰਮ ਸੈੱਟ ਨਹੀਂ ਹੋਇਆ। ਦੁਬਾਰਾ ਸੇਵ ਕਰੋ।",
     alarmSaveFailed = "ਅਲਾਰਮ ਸੇਵ ਨਹੀਂ ਹੋਇਆ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
     alarmUpdateFailed = "ਅਲਾਰਮ ਅੱਪਡੇਟ ਨਹੀਂ ਹੋਇਆ। ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ।",
@@ -90,3 +126,6 @@ val PaMathAlarmStrings = Strings(
         "ਇਹ ਲੱਗਦਾ ਹੈ ਕਿ ਅਸੀਂ $tone ਨਹੀਂ ਚਲਾ ਸਕਦੇ, ਸ਼ਾਇਦ ਕਿਉਂਕਿ ਇੱਕ ਆਗਿਆ ਦੀ ਲੋੜ ਹੈ। ਜੇ ਤੁਸੀਂ ਚਾਹੁੰਦੇ ਹੋ, ਤਾਂ ਤੁਸੀਂ ਆਗਿਆ ਦੇ ਸਕਦੇ ਹੋ। ਬਦਲੇ ਵਿੱਚ, ਇੱਕ ਵੱਖਰਾ ਧੁਨ ਚੁਣੋ। ਇਹ ਫੈਸਲਾ ਸਿਸਟਮ ਸੈਟਿੰਗਜ਼ ਵਿੱਚ ਬਦਲਿਆ ਜਾ ਸਕਦਾ ਹੈ।"
     }
 )
+
+private fun questionCountPa(count: Int): String =
+    "$count ਸਵਾਲ"

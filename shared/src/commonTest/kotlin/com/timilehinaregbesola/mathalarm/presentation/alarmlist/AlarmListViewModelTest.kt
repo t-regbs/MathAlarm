@@ -22,6 +22,7 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.*
 import kotlinx.datetime.LocalDateTime
@@ -163,7 +164,7 @@ class AlarmListViewModelTest {
 
     @Test
     fun `initial state should have empty alarm list`() = runTest {
-        val alarms = viewModel.alarms.first()
+        val alarms = viewModel.alarms.filterNotNull().first()
         alarms shouldBe emptyList()
     }
 
@@ -208,7 +209,7 @@ class AlarmListViewModelTest {
             snackbarEvent.message shouldBe "Alarm Deleted"
             snackbarEvent.action shouldBe "Undo"
             
-            val alarms = viewModel.alarms.first()
+            val alarms = viewModel.alarms.filterNotNull().first()
             alarms.none { it.alarmId == testAlarm.alarmId } shouldBe true
         }
     }
@@ -282,7 +283,7 @@ class AlarmListViewModelTest {
         viewModel.onEvent(AlarmListEvent.OnClearAlarmsClick)
         advanceUntilIdle()
         
-        val alarms = viewModel.alarms.first()
+        val alarms = viewModel.alarms.filterNotNull().first()
         alarms shouldBe emptyList()
     }
 
@@ -339,7 +340,7 @@ class AlarmListViewModelTest {
         viewModel.onEvent(AlarmListEvent.OnUndoDeleteClick)
         advanceUntilIdle()
         
-        val alarms = viewModel.alarms.first()
+        val alarms = viewModel.alarms.filterNotNull().first()
         alarms shouldBe emptyList()
     }
 
@@ -366,6 +367,19 @@ class AlarmListViewModelTest {
     }
 
     @Test
+    fun `returning to list retains loaded alarms after subscription stops`() = runTest {
+        val alarm = Alarm(alarmId = 1, isSaved = true)
+        usecases.addAlarm(alarm)
+        viewModel.alarms.filterNotNull().first() shouldBe listOf(alarm)
+        advanceTimeBy(6_000)
+        runCurrent()
+
+        // A returning screen receives the cached data immediately, not a loading null.
+        viewModel.alarms.value shouldBe listOf(alarm)
+        viewModel.alarms.first() shouldBe listOf(alarm)
+    }
+
+    @Test
     fun `alarms keep creation order by default`() = runTest {
         usecases.apply {
             addAlarm(Alarm(alarmId = 1, hour = 7, minute = 50, isSaved = true))
@@ -374,7 +388,7 @@ class AlarmListViewModelTest {
         }
         advanceUntilIdle()
 
-        val alarms = viewModel.alarms.first()
+        val alarms = viewModel.alarms.filterNotNull().first()
 
         alarms.map { it.alarmId } shouldBe listOf(3L, 2L, 1L)
     }
@@ -392,7 +406,7 @@ class AlarmListViewModelTest {
         preferences.updateAlarmSortOrder(AlarmPreferences.AlarmSortOrder.TIME)
         advanceUntilIdle()
 
-        val alarms = viewModel.alarms.first()
+        val alarms = viewModel.alarms.filterNotNull().first()
 
         alarms.map { it.alarmId } shouldBe listOf(2L, 4L, 3L, 1L)
     }

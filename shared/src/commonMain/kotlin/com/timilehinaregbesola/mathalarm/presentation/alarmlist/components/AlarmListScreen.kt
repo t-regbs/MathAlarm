@@ -9,8 +9,9 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.systemBarsPadding
 import androidx.compose.foundation.layout.width
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -73,7 +74,7 @@ fun ListDisplayScreen(
     backstack: NavBackStack<NavKey>,
     darkTheme: Boolean,
 ) {
-    val alarms by viewModel.alarms.collectAsState(null)
+    val alarms by viewModel.alarms.collectAsState()
     val alarmPermission = viewModel.permission
     var deleteAllAlarmsDialog by remember { mutableStateOf(false) }
     val snackbarHoststate = remember {
@@ -145,7 +146,7 @@ fun ListDisplayScreen(
             )
             Box(
                 modifier = Modifier
-                    .systemBarsPadding()
+                    .padding(padding)
                     .padding(horizontal = 16.dp)
                     .fillMaxSize(),
                 contentAlignment = TopStart,
@@ -241,7 +242,6 @@ fun ListDisplayScreen(
 }
 
 @OptIn(
-    ExperimentalFoundationApi::class,
     ExperimentalAnimationApi::class,
     ExperimentalMaterial3Api::class,
 )
@@ -255,6 +255,7 @@ private fun AlarmListContent(
     onCancelAlarm: (Alarm) -> Unit,
     onScheduleAlarm: (Alarm, Boolean) -> Unit,
 ) {
+    val hazeState = remember { HazeState() }
     Surface(
         modifier = modifier,
     ) {
@@ -265,25 +266,28 @@ private fun AlarmListContent(
                 key = "sticky_header"
             ) {
                 ListHeader(
+                    hazeState = hazeState,
                     enabled = alarmList.any { it.isOn },
                     alarmList = alarmList,
-                    isDark = darkTheme
                 )
             }
             items(
                 items = alarmList,
                 key = { alarm -> alarm.alarmId },
             ) { alarm ->
-                AlarmItem(
-                    alarm = alarm,
-                    onEditAlarm = {
-                        onEditAlarm(alarm)
-                    },
-                    onDeleteAlarm = onDeleteAlarm,
-                    onCancelAlarm = onCancelAlarm,
-                    onScheduleAlarm = onScheduleAlarm,
-                    darkTheme = darkTheme,
-                )
+                // Capture cards individually: the sticky header must not be part of its own source.
+                Box(Modifier.hazeSource(state = hazeState, key = alarm.alarmId)) {
+                    AlarmItem(
+                        alarm = alarm,
+                        onEditAlarm = {
+                            onEditAlarm(alarm)
+                        },
+                        onDeleteAlarm = onDeleteAlarm,
+                        onCancelAlarm = onCancelAlarm,
+                        onScheduleAlarm = onScheduleAlarm,
+                        darkTheme = darkTheme,
+                    )
+                }
             }
         }
     }
@@ -310,7 +314,7 @@ private fun checkPermissionAndPerformAction(
 }
 
 @Composable
-private fun AlarmPermissionDialog(
+internal fun AlarmPermissionDialog(
     isDialogOpen: Boolean,
     onCloseDialog: () -> Unit,
 ) {

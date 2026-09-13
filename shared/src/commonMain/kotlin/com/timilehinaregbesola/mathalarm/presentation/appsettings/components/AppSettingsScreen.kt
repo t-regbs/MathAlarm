@@ -2,6 +2,7 @@ package com.timilehinaregbesola.mathalarm.presentation.appsettings.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Arrangement.Absolute.spacedBy
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -22,6 +23,8 @@ import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,7 +47,6 @@ import com.timilehinaregbesola.mathalarm.platform.getApplicationId
 import com.timilehinaregbesola.mathalarm.platform.applyPlatformNightMode
 import com.timilehinaregbesola.mathalarm.platform.sendEmail
 import com.timilehinaregbesola.mathalarm.platform.shareText
-import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.AlarmSortOrder.CREATION
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.AlarmSortOrder.TIME
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.Theme
@@ -76,7 +78,8 @@ import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 @Composable
 fun AppSettingsScreen(
     pref: AlarmPreferencesImpl,
-    onBackPress: () -> Unit
+    onBackPress: () -> Unit,
+    onWhatsNew: () -> Unit = {},
 ) {
     val isDark = pref.shouldUseDarkColors()
     val themeOptions = listOf(
@@ -137,7 +140,10 @@ fun AppSettingsScreen(
                 } else {
                     Modifier.fillMaxWidth()
                 }
-                Column(contentWidthModifier) {
+                Column(
+                    modifier = contentWidthModifier
+                        .verticalScroll(rememberScrollState())
+                ) {
                     Column(modifier = Modifier.padding(horizontal = MaterialTheme.spacing.large)) {
                         SegmentedSettingSection(
                             title = strings.colorTheme,
@@ -178,7 +184,16 @@ fun AppSettingsScreen(
                     }
                     Spacer(modifier = Modifier.height(MaterialTheme.spacing.large))
                     HorizontalDivider(color = Color.LightGray)
-                    Column(modifier = Modifier.padding(horizontal = MaterialTheme.spacing.large)) {
+                    Column(
+                        modifier = Modifier.padding(horizontal = MaterialTheme.spacing.large),
+                        verticalArrangement = spacedBy(MaterialTheme.spacing.medium)
+                    ) {
+                        HelpItem(
+                            image = Announcement,
+                            primaryText = strings.whatsNew,
+                            detailText = strings.latestFeatures,
+                            onClick = onWhatsNew,
+                        )
                         val emailChooserTitle = strings.emailChooserTitle
                         val email = strings.supportEmail
                         val shareTitle = strings.shareMathAlarm
@@ -187,7 +202,6 @@ fun AppSettingsScreen(
                             text = strings.help,
                             color = MaterialTheme.colorScheme.secondary
                         )
-                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
                         HelpItem(
                             image = Announcement,
                             primaryText = strings.sendFeedback,
@@ -198,7 +212,6 @@ fun AppSettingsScreen(
                                 email = email
                             )
                         }
-                        Spacer(modifier = Modifier.height(MaterialTheme.spacing.medium))
                         HelpItem(
                             image = Share,
                             primaryText = strings.share,
@@ -246,7 +259,7 @@ private fun <T> SegmentedSettingSection(
             modifier = Modifier
                 .background(
                     color = if (isDark) {
-                        MaterialTheme.colorScheme.primaryContainer
+                        MaterialTheme.colorScheme.surfaceContainerHigh
                     } else {
                         Color.LightGray
                     },
@@ -267,10 +280,10 @@ private fun <T> SegmentedSettingSection(
                             )
                             .background(
                                 if (isSelected) {
-                                    MaterialTheme.colorScheme.primary
+                                    MaterialTheme.colorScheme.secondaryContainer
                                 } else {
                                     if (isDark) {
-                                        MaterialTheme.colorScheme.primaryContainer
+                                        MaterialTheme.colorScheme.surfaceContainerHigh
                                     } else {
                                         Color.LightGray
                                     }

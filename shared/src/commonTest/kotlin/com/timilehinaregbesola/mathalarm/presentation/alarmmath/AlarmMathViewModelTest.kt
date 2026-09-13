@@ -42,6 +42,8 @@ import kotlinx.coroutines.test.setMain
 @OptIn(ExperimentalCoroutinesApi::class)
 class AlarmMathViewModelTest {
 
+    private lateinit var progressStore: ChallengeProgressStore
+    private lateinit var progressSettings: com.russhwolf.settings.MapSettings
     private lateinit var viewModel: AlarmMathViewModel
     private lateinit var audioPlayer: AudioPlayerFake
     private lateinit var dataSource: AlarmRepositoryFake
@@ -56,6 +58,8 @@ class AlarmMathViewModelTest {
     fun setup() {
         Dispatchers.setMain(testDispatcher)
         
+        progressSettings = com.russhwolf.settings.MapSettings()
+        progressStore = ChallengeProgressStore(progressSettings)
         audioPlayer = AudioPlayerFake()
         dataSource = AlarmRepositoryFake()
         repository = AlarmRepository(dataSource)
@@ -85,8 +89,135 @@ class AlarmMathViewModelTest {
         viewModel = AlarmMathViewModel(
             usecases = usecases,
             audioPlayer = audioPlayer,
-            logger = Logger.withTag("AlarmMathViewModelTest")
+            logger = Logger.withTag("AlarmMathViewModelTest"),
+            progressStore = progressStore
         )
+    }
+
+    @Test
+    fun `challenge advances only on correct answers and keeps audio playing until final completion`() = runTest {
+        val alarm = Alarm(alarmId = 90, difficulty = 3, questionCount = 3, challengeOperations = "+")
+        viewModel.initializeChallenge(alarm, preview = true)
+        audioPlayer.startAlarmAudio()
+        viewModel.eventFlow.test {
+            val first = viewModel.currentProblem!!
+            viewModel.onEvent(MathScreenEvent.EnteredAnswer("-1"))
+            viewModel.onEvent(MathScreenEvent.OnEnterClick(first))
+            awaitItem() shouldBe AlarmMathViewModel.UiEvent.ShowError(AlarmErrorMessage.INCORRECT_ANSWER)
+            viewModel.questionIndex.value shouldBe 0
+            repeat(3) { index ->
+                val problem = viewModel.currentProblem!!
+                viewModel.onEvent(MathScreenEvent.EnteredAnswer(problem.answer.toString()))
+                viewModel.onEvent(MathScreenEvent.OnEnterClick(problem))
+                if (index < 2) {
+                    expectNoEvents()
+                    viewModel.questionIndex.value shouldBe index + 1
+                    audioPlayer.isPlaying shouldBe true
+                    // Rotation/recomposition must not restart an in-progress challenge.
+                    viewModel.initializeChallenge(alarm, preview = true)
+                    viewModel.questionIndex.value shouldBe index + 1
+                } else {
+                    awaitItem() shouldBe AlarmMathViewModel.UiEvent.CompleteAndClose
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `scheduled alarms recover saved challenge while test alarm uses draft`() = runTest {
+        val saved = Alarm(alarmId = 91, difficulty = 3, questionCount = 7, challengeOperations = "÷", factorRange = 2)
+        usecases.addAlarm(saved)
+        viewModel.initializeChallenge(Alarm(alarmId = 91), preview = false)
+        viewModel.questionCount shouldBe 7
+        viewModel.currentProblem!!.operator shouldBe MathProblemOperator.Divide
+        viewModel.initializeChallenge(saved.copy(questionCount = 2, challengeOperations = "+"), preview = true)
+        viewModel.questionCount shouldBe 2
+        viewModel.currentProblem!!.operator shouldBe MathProblemOperator.Add
+    }
+
+    @Test
+    fun `scheduled alarm uses saved mix and preview uses its own mix`() = runTest {
+        usecases.addAlarm(Alarm(alarmId = 92, difficultyMix = "00112", questionCount = 5))
+        viewModel.initializeChallenge(Alarm(alarmId = 92), preview = false)
+        viewModel.questionCount shouldBe 5
+        viewModel.initializeChallenge(Alarm(alarmId = 92, difficultyMix = "12", questionCount = 2), preview = true)
+        viewModel.questionCount shouldBe 2
+    }
+
+    private fun recreatedViewModel() = AlarmMathViewModel(
+        usecases, AudioPlayerFake(), Logger.withTag("restored"), ChallengeProgressStore(progressSettings)
+    )
+
+    @Test
+    fun `progress and exact questions survive a new view model and store`() = runTest {
+        val alarm = Alarm(alarmId = 501, activeAt = 1000, questionCount = 10)
+        usecases.addAlarm(alarm)
+        viewModel.initializeChallenge(alarm, preview = false)
+        repeat(9) {
+            val problem = viewModel.currentProblem!!
+            viewModel.onEvent(MathScreenEvent.EnteredAnswer(problem.answer.toString()))
+            viewModel.onEvent(MathScreenEvent.OnEnterClick(problem))
+        }
+        val lastProblem = viewModel.currentProblem
+        val restored = recreatedViewModel()
+        restored.initializeChallenge(alarm, preview = false)
+        restored.questionIndex.value shouldBe 9
+        restored.questionCount shouldBe 10
+        restored.currentProblem shouldBe lastProblem
+    }
+
+    @Test
+    fun `new occurrences reset progress and previews do not overwrite it`() = runTest {
+        val alarm = Alarm(alarmId = 502, activeAt = 1000, questionCount = 3)
+        usecases.addAlarm(alarm)
+        viewModel.initializeChallenge(alarm, preview = false)
+        val problem = viewModel.currentProblem!!
+        viewModel.onEvent(MathScreenEvent.EnteredAnswer(problem.answer.toString()))
+        viewModel.onEvent(MathScreenEvent.OnEnterClick(problem))
+        val preview = recreatedViewModel()
+        preview.initializeChallenge(alarm, preview = true)
+        preview.questionIndex.value shouldBe 0
+        preview.completeAlarm(alarm, preview = true)
+        advanceUntilIdle()
+        progressStore.load(502, 1000)!!.questionIndex shouldBe 1
+        usecases.addAlarm(alarm.copy(activeAt = 2000))
+        val next = recreatedViewModel()
+        next.initializeChallenge(alarm, preview = false)
+        next.questionIndex.value shouldBe 0
+        progressStore.load(502, 2000)!!.questionIndex shouldBe 0
+    }
+
+    @Test
+    fun `successful completion and snooze clear persisted progress`() = runTest {
+        for (snooze in listOf(false, true)) {
+            val alarm = Alarm(alarmId = 503, activeAt = 1000, questionCount = 3, isOn = true)
+            usecases.addAlarm(alarm)
+            val vm = recreatedViewModel()
+            vm.initializeChallenge(alarm, preview = false)
+            if (snooze) vm.onEvent(MathScreenEvent.OnSnoozeClick(alarm.alarmId))
+            else vm.completeAlarm(alarm)
+            advanceUntilIdle()
+            progressStore.load(503, 1000) shouldBe null
+        }
+    }
+
+    @Test
+    fun `enter before initialization and stale questions cannot complete a challenge`() = runTest {
+        viewModel.eventFlow.test {
+            viewModel.onEvent(MathScreenEvent.EnteredAnswer("0"))
+            viewModel.onEvent(MathScreenEvent.OnEnterClick(MathProblem()))
+            advanceUntilIdle()
+            expectNoEvents()
+            viewModel.initializeChallenge(Alarm(questionCount = 2), preview = true)
+            val first = viewModel.currentProblem!!
+            viewModel.onEvent(MathScreenEvent.EnteredAnswer(first.answer.toString()))
+            viewModel.onEvent(MathScreenEvent.OnEnterClick(first))
+            viewModel.onEvent(MathScreenEvent.EnteredAnswer(viewModel.currentProblem!!.answer.toString()))
+            viewModel.onEvent(MathScreenEvent.OnEnterClick(first))
+            advanceUntilIdle()
+            viewModel.questionIndex.value shouldBe 1
+            expectNoEvents()
+        }
     }
 
     @AfterTest
@@ -104,8 +235,10 @@ class AlarmMathViewModelTest {
         val commands = usecases.copy(
             snoozeAlarm = SnoozeAlarm(dateTimeProvider, notificationInteractor, backend, repository)
         )
-        viewModel = AlarmMathViewModel(commands, audioPlayer, Logger.withTag("ErrorTest"))
-        commands.addAlarm(Alarm(alarmId = 804, isOn = true, snooze = 5))
+        viewModel = AlarmMathViewModel(commands, audioPlayer, Logger.withTag("ErrorTest"), progressStore)
+        val alarm = Alarm(alarmId = 804, isOn = true, snooze = 5, activeAt = 1000, questionCount = 3)
+        commands.addAlarm(alarm)
+        viewModel.initializeChallenge(alarm, preview = false)
         viewModel.eventFlow.test {
             viewModel.onEvent(MathScreenEvent.OnSnoozeClick(804))
             awaitItem() shouldBe AlarmMathViewModel.UiEvent.ShowError(AlarmErrorMessage.SNOOZE)
@@ -113,26 +246,21 @@ class AlarmMathViewModelTest {
             expectNoEvents()
         }
         commands.findAlarm(804)!!.snoozedUntil shouldBe null
+        progressStore.load(804, 1000)!!.questionIndex shouldBe 0
     }
 
     @Test
-    fun `initial state should be stopped with empty answer`() {
+    fun `initial answer should be empty`() {
         viewModel.answerText.value shouldBe ""
-        viewModel.state.value.shouldBeInstanceOf<ToneState.Stopped>()
-        viewModel.state.value.total shouldBe 0
     }
 
     @Test
     fun `onEvent with correct answer should emit CompleteAndClose event`() = runTest {
-        val problem = MathProblem(
-            operator = MathProblemOperator.Add,
-            numOne = 10,
-            numTwo = 20,
-            answer = 30
-        )
+        viewModel.initializeChallenge(Alarm(), preview = true)
+        val problem = viewModel.currentProblem!!
         
         viewModel.eventFlow.test {
-            viewModel.onEvent(MathScreenEvent.EnteredAnswer("30"))
+            viewModel.onEvent(MathScreenEvent.EnteredAnswer(problem.answer.toString()))
             viewModel.onEvent(MathScreenEvent.OnEnterClick(problem))
 
             val lastEvent = awaitItem()
@@ -146,15 +274,11 @@ class AlarmMathViewModelTest {
 
     @Test
     fun `onEvent with incorrect answer should show error snackbar`() = runTest {
-        val problem = MathProblem(
-            operator = MathProblemOperator.Add,
-            numOne = 10,
-            numTwo = 20,
-            answer = 30
-        )
+        viewModel.initializeChallenge(Alarm(), preview = true)
+        val problem = viewModel.currentProblem!!
         
         viewModel.eventFlow.test {
-            viewModel.onEvent(MathScreenEvent.EnteredAnswer("25")) // Wrong answer
+            viewModel.onEvent(MathScreenEvent.EnteredAnswer("-1")) // Wrong answer
             viewModel.onEvent(MathScreenEvent.OnEnterClick(problem))
             
             val event = awaitItem()
@@ -164,18 +288,14 @@ class AlarmMathViewModelTest {
 
     @Test
     fun `onEvent with blank answer should show error snackbar`() = runTest {
-        val problem = MathProblem(
-            operator = MathProblemOperator.Add,
-            numOne = 10,
-            numTwo = 20,
-            answer = 30
-        )
+        viewModel.initializeChallenge(Alarm(), preview = true)
+        val problem = viewModel.currentProblem!!
         
         viewModel.eventFlow.test {
             viewModel.onEvent(MathScreenEvent.EnteredAnswer(""))
             viewModel.onEvent(MathScreenEvent.OnEnterClick(problem))
             
-            expectNoEvents()
+            awaitItem() shouldBe AlarmMathViewModel.UiEvent.ShowError(AlarmErrorMessage.INCORRECT_ANSWER)
         }
     }
 
@@ -253,15 +373,11 @@ class AlarmMathViewModelTest {
 
     @Test
     fun `answer with correct value after trimming whitespace should be accepted`() = runTest {
-        val problem = MathProblem(
-            operator = MathProblemOperator.Subtract,
-            numOne = 50,
-            numTwo = 20,
-            answer = 30
-        )
+        viewModel.initializeChallenge(Alarm(), preview = true)
+        val problem = viewModel.currentProblem!!
         
         viewModel.eventFlow.test {
-            viewModel.onEvent(MathScreenEvent.EnteredAnswer("  30  ")) // With whitespace
+            viewModel.onEvent(MathScreenEvent.EnteredAnswer("  ${problem.answer}  ")) // With whitespace
             viewModel.onEvent(MathScreenEvent.OnEnterClick(problem))
             
             val nextEvent = awaitItem()
@@ -271,23 +387,19 @@ class AlarmMathViewModelTest {
 
     @Test
     fun `multiple incorrect answers should show error each time`() = runTest {
-        val problem = MathProblem(
-            operator = MathProblemOperator.Times,
-            numOne = 5,
-            numTwo = 6,
-            answer = 30
-        )
+        viewModel.initializeChallenge(Alarm(), preview = true)
+        val problem = viewModel.currentProblem!!
         
         viewModel.eventFlow.test {
-            viewModel.onEvent(MathScreenEvent.EnteredAnswer("25"))
+            viewModel.onEvent(MathScreenEvent.EnteredAnswer("-1"))
             viewModel.onEvent(MathScreenEvent.OnEnterClick(problem))
             awaitItem() shouldBe AlarmMathViewModel.UiEvent.ShowError(AlarmErrorMessage.INCORRECT_ANSWER)
             
-            viewModel.onEvent(MathScreenEvent.EnteredAnswer("28"))
+            viewModel.onEvent(MathScreenEvent.EnteredAnswer("-2"))
             viewModel.onEvent(MathScreenEvent.OnEnterClick(problem))
             awaitItem() shouldBe AlarmMathViewModel.UiEvent.ShowError(AlarmErrorMessage.INCORRECT_ANSWER)
             
-            viewModel.onEvent(MathScreenEvent.EnteredAnswer("30"))
+            viewModel.onEvent(MathScreenEvent.EnteredAnswer(problem.answer.toString()))
             viewModel.onEvent(MathScreenEvent.OnEnterClick(problem))
             awaitItem() shouldBe AlarmMathViewModel.UiEvent.CompleteAndClose
         }

@@ -4,171 +4,42 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemOpera
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemOperator.Divide
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemOperator.Subtract
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathProblemOperator.Times
-import com.timilehinaregbesola.mathalarm.utils.EASY
-import com.timilehinaregbesola.mathalarm.utils.HARD
-import com.timilehinaregbesola.mathalarm.utils.MEDIUM
-import io.kotest.matchers.ints.shouldBeGreaterThan
 import io.kotest.matchers.ints.shouldBeGreaterThanOrEqual
-import io.kotest.matchers.ints.shouldBeLessThan
 import io.kotest.matchers.shouldBe
+import com.timilehinaregbesola.mathalarm.domain.model.MathChallenge
+import kotlin.random.Random
+import kotlin.test.assertTrue
 import kotlin.test.Test
 
 class MathProblemGeneratorTest {
 
     @Test
-    fun `generateMathProblem with EASY difficulty should create valid addition problem`() {
-        val difficulty = EASY
-        
-        repeat(10) {
-            val problem = generateMathProblem(difficulty)
-            
-            if (problem.operator == Add) {
-                val expectedAnswer = problem.numOne + problem.numTwo
-                problem.answer shouldBe expectedAnswer
-                
-                problem.numOne shouldBeGreaterThanOrEqual 10
-                problem.numOne shouldBeLessThan 100
-                problem.numTwo shouldBeGreaterThanOrEqual 10
-                problem.numTwo shouldBeLessThan 100
+    fun `presets generate every operator with valid answers and operand ranges`() {
+        val ranges = listOf(10..99 to 3..12, 100..999 to 3..15, 1000..9999 to 12..25)
+        ranges.forEachIndexed { difficulty, (additionRange, factorRange) ->
+            val problems = generateChallengeProblems(
+                MathChallenge(difficulty = difficulty, questionCount = 4),
+                Random(difficulty),
+            )
+            problems.map { it.operator }.toSet() shouldBe MathProblemOperator.entries.toSet()
+            problems.forEach { problem ->
+                val range = if (problem.operator == Add || problem.operator == Subtract) additionRange else factorRange
+                val firstOperand = if (problem.operator == Divide) problem.answer else problem.numOne
+                assertTrue(firstOperand in range)
+                assertTrue(problem.numTwo in range)
+                val expected = when (problem.operator) {
+                    Add -> problem.numOne + problem.numTwo
+                    Subtract -> problem.numOne - problem.numTwo
+                    Times -> problem.numOne * problem.numTwo
+                    Divide -> {
+                        (problem.numOne % problem.numTwo) shouldBe 0
+                        problem.numOne / problem.numTwo
+                    }
+                }
+                problem.answer shouldBe expected
+                problem.answer shouldBeGreaterThanOrEqual 0
             }
         }
-    }
-
-    @Test
-    fun `generateMathProblem with EASY difficulty should create valid subtraction problem`() {
-        val difficulty = EASY
-        
-        repeat(10) {
-            val problem = generateMathProblem(difficulty)
-
-            with(problem) {
-                if (operator == Subtract) {
-                    val expectedAnswer = numOne - numTwo
-                    answer shouldBe expectedAnswer
-                    answer shouldBeGreaterThanOrEqual 0
-                    numOne shouldBeGreaterThanOrEqual numTwo
-                }
-            }
-        }
-    }
-
-    @Test
-    fun `generateMathProblem with EASY difficulty should create valid multiplication problem`() {
-        val difficulty = EASY
-        
-        repeat(10) {
-            val problem = generateMathProblem(difficulty)
-
-            with(problem) {
-                if (operator == Times) {
-                    val expectedAnswer = numOne * numTwo
-                    answer shouldBe expectedAnswer
-
-                    // Verify numbers are within EASY multiplication range (3-13)
-                    numOne shouldBeGreaterThanOrEqual 3
-                    numOne shouldBeLessThan 13
-                    numTwo shouldBeGreaterThanOrEqual 3
-                    numTwo shouldBeLessThan 13
-                }
-            }
-        }
-    }
-
-    @Test
-    fun `generateMathProblem with EASY difficulty should create valid division problem`() {
-        val difficulty = EASY
-        
-        repeat(10) {
-            val problem = generateMathProblem(difficulty)
-
-            with(problem) {
-                if (operator == Divide) {
-                    val expectedResult = numOne / numTwo
-                    answer shouldBe expectedResult
-                    (numOne % numTwo) shouldBe 0
-                    numTwo shouldBeGreaterThan 0  // No division by zero
-                }
-            }
-        }
-    }
-
-    @Test
-    fun `generateMathProblem with MEDIUM difficulty should create harder problems`() {
-        val difficulty = MEDIUM
-        
-        repeat(10) {
-            val problem = generateMathProblem(difficulty)
-            
-            when (problem.operator) {
-                Add -> {
-                    problem.answer shouldBe (problem.numOne + problem.numTwo)
-                    // MEDIUM range: 100-1000
-                    problem.numOne shouldBeGreaterThanOrEqual 100
-                    problem.numOne shouldBeLessThan 1000
-                }
-                Subtract -> {
-                    problem.answer shouldBe (problem.numOne - problem.numTwo)
-                    problem.answer shouldBeGreaterThanOrEqual 0
-                    problem.numOne shouldBeGreaterThanOrEqual problem.numTwo
-                }
-                Times -> {
-                    problem.answer shouldBe (problem.numOne * problem.numTwo)
-                    // MEDIUM multiplication range: 3-16
-                    problem.numOne shouldBeGreaterThanOrEqual 3
-                    problem.numOne shouldBeLessThan 16
-                }
-                Divide -> {
-                    problem.answer shouldBe (problem.numOne / problem.numTwo)
-                    (problem.numOne % problem.numTwo) shouldBe 0
-                    problem.numTwo shouldBeGreaterThan 0
-                }
-            }
-        }
-    }
-
-    @Test
-    fun `generateMathProblem with HARD difficulty should create challenging problems`() {
-        val difficulty = HARD
-        
-        repeat(10) {
-            val problem = generateMathProblem(difficulty)
-            
-            when (problem.operator) {
-                Add -> {
-                    problem.answer shouldBe (problem.numOne + problem.numTwo)
-                    // HARD range: 1000-10000
-                    problem.numOne shouldBeGreaterThanOrEqual 1000
-                    problem.numOne shouldBeLessThan 10000
-                }
-                Subtract -> {
-                    problem.answer shouldBe (problem.numOne - problem.numTwo)
-                    problem.answer shouldBeGreaterThanOrEqual 0
-                }
-                Times -> {
-                    problem.answer shouldBe (problem.numOne * problem.numTwo)
-                    // HARD multiplication range: 12-26
-                    problem.numOne shouldBeGreaterThanOrEqual 12
-                    problem.numOne shouldBeLessThan 26
-                }
-                Divide -> {
-                    problem.answer shouldBe (problem.numOne / problem.numTwo)
-                    (problem.numOne % problem.numTwo) shouldBe 0
-                }
-            }
-        }
-    }
-
-    @Test
-    fun `generateMathProblem should create problems with all operators over multiple generations`() {
-        val difficulty = MEDIUM
-        val operators = mutableSetOf<MathProblemOperator>()
-        
-        repeat(100) {
-            val problem = generateMathProblem(difficulty)
-            operators.add(problem.operator)
-        }
-        
-        operators.size shouldBeGreaterThan 1 // At least 2 different operators
     }
 
     @Test
@@ -222,17 +93,4 @@ class MathProblemGeneratorTest {
         questionString shouldBe "30 / 6"
     }
 
-    @Test
-    fun `generateMathProblem should never divide by zero`() {
-        val difficulties = listOf(EASY, MEDIUM, HARD)
-        difficulties.forEach { difficulty ->
-            repeat(50) {
-                val problem = generateMathProblem(difficulty)
-                
-                if (problem.operator == Divide) {
-                    problem.numTwo shouldBeGreaterThan 0
-                }
-            }
-        }
-    }
 }

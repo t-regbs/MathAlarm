@@ -74,7 +74,9 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
             DISMISS_ACTION -> {
                 // User swiped away the notification - immediately re-show it
                 Logger.d("Notification dismissed by user, re-showing alarm")
-                getAlarmId(intent)?.let { usecases.showAlarm(it) }
+                getAlarmId(intent)?.let {
+                    com.timilehinaregbesola.mathalarm.notification.AlarmService.restoreNotification(context, it)
+                }
             }
             Intent.ACTION_TIME_CHANGED,
             Intent.ACTION_TIMEZONE_CHANGED,

@@ -4,6 +4,42 @@ import cafe.adriel.lyricist.LyricistStrings
 
 @LyricistStrings(languageTag = Locales.HI)
 val HiMathAlarmStrings = Strings(
+    mathDifficultyNames = listOf("आसान", "मध्यम", "कठिन", "कस्टम"),
+    mathChallengeTitle = "गणित चुनौती",
+    mixedDifficulty = "मिली-जुली कठिनाई",
+    mixDifficulties = "कठिनाई स्तर मिलाएँ",
+    mathDifficulty = "कठिनाई",
+    mathOperations = "संक्रियाएँ",
+    addition = "जोड़",
+    subtraction = "घटाव",
+    multiplication = "गुणा",
+    division = "भाग",
+    additionAndSubtraction = "जोड़ और घटाव",
+    multiplicationAndDivision = "गुणा और भाग",
+    mathExample = "उदाहरण",
+    refreshExample = "नया उदाहरण",
+    applyChallenge = "चुनौती लागू करें",
+    easiestFirst = "पहले आसान सवाल",
+    questions = "सवाल",
+    chooseRange = "सीमा चुनें",
+    checkAnswer = "उत्तर जाँचें",
+    whatsNew = "नया क्या है",
+    latestFeatures = "नई सुविधाएँ देखें",
+    gotIt = "समझ गया",
+    tryFeature = "आज़माएँ",
+    challengeAnnouncementTitle = "जागने के और तरीके",
+    challengeAnnouncementInstructions = "अलार्म जोड़ें या बदलें, फिर गणित चुनौती के पास संपादित करें पर टैप करें।",
+    exampleChallenge = "चुनौती का उदाहरण",
+    questionCount = ::questionCountHi,
+    challengeSummary = { difficulty, count -> "$difficulty · ${questionCountHi(count)}" },
+    mixedQuestionTotal = { count, maximum -> "कुल ${questionCountHi(count)} · अधिकतम $maximum" },
+    questionProgress = { current, total -> "$total में से सवाल $current" },
+    questionCountHint = { maximum -> "1–$maximum चुनें। लिखने के लिए संख्या पर टैप करें।" },
+    difficultyQuestionLabel = { difficulty -> "सवाल: $difficulty" },
+    decreaseQuestionCount = { label -> "संख्या घटाएँ: $label" },
+    increaseQuestionCount = { label -> "संख्या बढ़ाएँ: $label" },
+    exampleDifficultyMix = { easy, medium -> "आसान: $easy · मध्यम: $medium" },
+    challengeAnnouncementDescription = { maximum -> "अधिकतम $maximum सवाल हल करें। कठिनाई स्तर मिलाएँ या अपनी पसंद की चुनौती बनाएँ।" },
     alarmScheduleFailed = "अलार्म सेट नहीं हुआ। फिर से सेव करें।",
     alarmSaveFailed = "अलार्म सेव नहीं हुआ। फिर कोशिश करें।",
     alarmUpdateFailed = "अलार्म अपडेट नहीं हुआ। फिर कोशिश करें।",
@@ -90,3 +126,6 @@ val HiMathAlarmStrings = Strings(
         "ऐसा लगता है कि हम $tone नहीं चला सकते, शायद क्योंकि अनुमति की आवश्यकता है। यदि आप चाहें तो अनुमति दे सकते हैं। वैकल्पिक रूप से, एक अलग ध्वनि चुनें। यह निर्णय सिस्टम सेटिंग्स में बदला जा सकता है।"
     }
 )
+
+private fun questionCountHi(count: Int): String =
+    "$count सवाल"

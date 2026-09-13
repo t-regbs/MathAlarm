@@ -4,6 +4,42 @@ import cafe.adriel.lyricist.LyricistStrings
 
 @LyricistStrings(languageTag = Locales.ES)
 val EsMathAlarmStrings = Strings(
+    mathDifficultyNames = listOf("Fácil", "Media", "Difícil", "Personalizada"),
+    mathChallengeTitle = "Reto matemático",
+    mixedDifficulty = "Dificultad mixta",
+    mixDifficulties = "Combinar dificultades",
+    mathDifficulty = "Dificultad",
+    mathOperations = "Operaciones",
+    addition = "Suma",
+    subtraction = "Resta",
+    multiplication = "Multiplicación",
+    division = "División",
+    additionAndSubtraction = "Suma y resta",
+    multiplicationAndDivision = "Multiplicación y división",
+    mathExample = "Ejemplo",
+    refreshExample = "Actualizar",
+    applyChallenge = "Aplicar reto",
+    easiestFirst = "Más fáciles primero",
+    questions = "Preguntas",
+    chooseRange = "Elegir rango",
+    checkAnswer = "Comprobar respuesta",
+    whatsNew = "Novedades",
+    latestFeatures = "Descubre las últimas funciones",
+    gotIt = "Entendido",
+    tryFeature = "Probar",
+    challengeAnnouncementTitle = "Más formas de despertarte",
+    challengeAnnouncementInstructions = "Añade o edita una alarma y toca Editar junto a Reto matemático.",
+    exampleChallenge = "Reto de ejemplo",
+    questionCount = ::questionCountEs,
+    challengeSummary = { difficulty, count -> "$difficulty · ${questionCountEs(count)}" },
+    mixedQuestionTotal = { count, maximum -> "${questionCountEs(count)} en total · Máximo: $maximum" },
+    questionProgress = { current, total -> "Pregunta $current de $total" },
+    questionCountHint = { maximum -> "Elige entre 1 y $maximum. Toca el número para escribir." },
+    difficultyQuestionLabel = { difficulty -> "Preguntas: $difficulty" },
+    decreaseQuestionCount = { label -> "Reducir cantidad: $label" },
+    increaseQuestionCount = { label -> "Aumentar cantidad: $label" },
+    exampleDifficultyMix = { easy, medium -> "Fácil: $easy · Media: $medium" },
+    challengeAnnouncementDescription = { maximum -> "Resuelve hasta $maximum preguntas. Combina dificultades o crea un reto a tu medida." },
     alarmScheduleFailed = "No se pudo programar la alarma. Guárdala de nuevo.",
     alarmSaveFailed = "No se pudo guardar la alarma. Inténtalo de nuevo.",
     alarmUpdateFailed = "No se pudo actualizar la alarma. Inténtalo de nuevo.",
@@ -90,3 +126,6 @@ val EsMathAlarmStrings = Strings(
     taskAlarmPermissionDialogCancel = "Ahora no",
     taskAlarmPermissionDialogConfirm = "Conceder"
 )
+
+private fun questionCountEs(count: Int): String =
+    if (count == 1) "$count pregunta" else "$count preguntas"

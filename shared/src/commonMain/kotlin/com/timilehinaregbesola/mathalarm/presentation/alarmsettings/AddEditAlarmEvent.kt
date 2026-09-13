@@ -10,8 +10,8 @@ sealed class AddEditAlarmEvent {
     data class ToggleSnooze(val value: Boolean) : AddEditAlarmEvent()
     data class ToggleRepeat(val value: Boolean) : AddEditAlarmEvent()
     data class ToggleDayChooser(val value: String) : AddEditAlarmEvent()
-    data class OnDifficultyChange(val value: Int) : AddEditAlarmEvent()
     data class OnToneChange(val value: String) : AddEditAlarmEvent()
     data class OnToneError(val message: String) : AddEditAlarmEvent()
+    data class OnChallengeChange(val value: com.timilehinaregbesola.mathalarm.domain.model.MathChallenge) : AddEditAlarmEvent()
     object OnTestClick : AddEditAlarmEvent()
 }

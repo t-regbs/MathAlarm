@@ -76,7 +76,6 @@ dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)
     implementation(libs.androidx.datastore.preferences)
-    implementation(libs.android.material)
     implementation(libs.lyricist)
     implementation(libs.kermit)
     implementation(libs.kermit.crashlytics)

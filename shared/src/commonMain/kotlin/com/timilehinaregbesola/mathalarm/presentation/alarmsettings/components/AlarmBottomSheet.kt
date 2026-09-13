@@ -1,5 +1,7 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components
 
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmPermissionDialog
+
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Arrangement.SpaceBetween
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -39,7 +41,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Alignment.Companion.TopCenter
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color.Companion.Black
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.text.style.TextAlign.Companion.Center
@@ -55,6 +56,7 @@ import com.mohamedrejeb.calf.ui.button.AdaptiveButton
 import com.mohamedrejeb.calf.ui.button.AdaptiveIconButton
 import com.mohamedrejeb.calf.ui.gesture.adaptiveClickable
 import com.mohamedrejeb.calf.ui.timepicker.rememberAdaptiveTimePickerState
+import com.timilehinaregbesola.mathalarm.domain.model.MathChallenge
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.platform.areNotificationsEnabled
@@ -70,7 +72,6 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.Dialo
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.MathAlarmDialog
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarmEvent
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarmEvent.EnteredTitle
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarmEvent.OnDifficultyChange
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarmEvent.OnSaveTodoClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarmEvent.OnTestClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarmEvent.OnToneChange
@@ -82,10 +83,6 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarm
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AlarmSettingsViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.TimeState
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.ALARM_DAYS_TOP_PADDING
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.DIFFICULTY_ICON_END_PADDING
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.DIFFICULTY_SECTION_HORIZONTAL_PADDING
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.DIFFICULTY_SECTION_TOP_PADDING
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.DIVIDER_THICKNESS
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.MIDDLE_CONTROL_SECTION_TOP_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.NO_ELEVATION
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.SAVE_BUTTON_FONT_SIZE
@@ -95,7 +92,6 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.A
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_CARD_CORNER_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_CARD_HEIGHT
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_TEXT_FONT_SIZE
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_TEXT_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_DIALOG_ELEVATION
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_DIALOG_MAX_WIDTH
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_DIALOG_PADDING
@@ -106,16 +102,14 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.A
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_ROW_HEIGHT
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_SEPARATOR_THICKNESS
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
-import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimaryLight
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Check
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Close
-import com.timilehinaregbesola.mathalarm.presentation.ui.icon.EmojiSymbols
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Notifications
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.PlayArrow
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Stop
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
-import com.timilehinaregbesola.mathalarm.presentation.ui.unSelectedDay
 import com.timilehinaregbesola.mathalarm.utils.Destinations.AlarmMath
+import com.timilehinaregbesola.mathalarm.utils.Destinations.SettingsSheet
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
@@ -142,11 +136,20 @@ fun AlarmBottomSheet(
     var showTimePickerDialog by remember { mutableStateOf(false) }
     var showTonePickerDialog by remember { mutableStateOf(false) }
     var showConfirmationDialog by remember { mutableStateOf(false) }
+    var showExactAlarmPermissionDialog by remember { mutableStateOf(false) }
     var showPermRequiredDialog by remember { mutableStateOf(false) }
 
-    val toneText = remember { mutableStateOf<String?>(null) }
+    val toneUri = viewModel.tone.value
+    val toneText = remember(toneUri) { mutableStateOf<String?>(null) }
+    LaunchedEffect(toneUri) {
+        if (toneUri.isNotEmpty()) {
+            toneText.value = withContext(Dispatchers.Default) {
+                getRingtoneTitle(toneUri)
+            }
+        }
+    }
     val closeSettings: () -> Unit = {
-        if (backstack.size > 1) backstack.removeLastOrNull()
+        if (backstack.lastOrNull() is SettingsSheet) backstack.removeLastOrNull()
     }
 
     // Capture string values for use in non-composable callbacks
@@ -162,7 +165,6 @@ fun AlarmBottomSheet(
                 unplayableDialogMessage = storagePermissionTextFn,
             )
             viewModel.onEvent(OnToneChange(alert))
-            toneText.value = getRingtoneTitle(alert)
         }
     }
 
@@ -183,6 +185,7 @@ fun AlarmBottomSheet(
     LaunchedEffect(errorStrings) {
         viewModel.eventFlow.collectLatest { event ->
             when (event) {
+                AlarmSettingsViewModel.UiEvent.RequestExactAlarmPermission -> showExactAlarmPermissionDialog = true
                 is AlarmSettingsViewModel.UiEvent.ShowError -> {
                     scaffoldState.snackbarHostState.showSnackbar(message = event.error.resolve(errorStrings))
                 }
@@ -202,12 +205,14 @@ fun AlarmBottomSheet(
         }
     }
     AlarmBottomSheetContent(
+        onChallengeChange = {
+            viewModel.onEvent(AddEditAlarmEvent.OnChallengeChange(it))
+        },
         onCloseClick = closeSettings,
         showDismissButton = showDismissButton,
         topSection = {
             TopSection(
                 selectedDays = viewModel.dayChooser.value,
-                darkTheme = darkTheme,
                 currentTime = viewModel.alarmTime.value.formattedTime,
                 onTimeCardClick = { showTimePickerDialog = true },
                 onSelectedDaysChanged = {
@@ -222,7 +227,7 @@ fun AlarmBottomSheet(
                 repeatWeekly = viewModel.repeatWeekly.value,
                 snoozeEnabled = viewModel.snoozeEnabled.value,
                 vibrate = viewModel.vibrate.value,
-                difficulty = viewModel.difficulty.value,
+                challenge = viewModel.challenge.value,
                 onRepeatToggle = {
                     viewModel.onEvent(ToggleRepeat(it))
                 },
@@ -246,9 +251,6 @@ fun AlarmBottomSheet(
                         }
                     }
                 },
-                onDifficultyChange = {
-                    viewModel.onEvent(OnDifficultyChange(it))
-                },
                 labelTextField = {
                     LabelTextField(
                         text = viewModel.alarmTitle.value,
@@ -259,19 +261,7 @@ fun AlarmBottomSheet(
                         placeholder = { Text(strings.goodDay) },
                     )
                 },
-                currentTone = when {
-                    toneText.value != null -> {
-                        toneText.value!!
-                    }
-
-                    viewModel.tone.value == "" -> {
-                        defaultToneText
-                    }
-
-                    else -> {
-                        getRingtoneTitle(viewModel.tone.value)
-                    }
-                }
+                currentTone = toneText.value?.takeIf { it.isNotBlank() } ?: defaultToneText
             )
         },
         onTestClick = {
@@ -281,6 +271,10 @@ fun AlarmBottomSheet(
             requestNotificationPermission()
         },
         dialogSection = {
+            AlarmPermissionDialog(
+                isDialogOpen = showExactAlarmPermissionDialog,
+                onCloseDialog = { showExactAlarmPermissionDialog = false },
+            )
             with(viewModel.alarmTime.value) {
                 if (showTimePickerDialog) {
                     TimePickerDialog(
@@ -330,7 +324,6 @@ fun AlarmBottomSheet(
                             unplayableDialogMessage = storagePermissionTextFn,
                         )
                         viewModel.onEvent(OnToneChange(selectedTone))
-                        toneText.value = getRingtoneTitle(selectedTone)
                         showTonePickerDialog = false
                     }
                 )
@@ -375,84 +368,93 @@ private fun AlarmBottomSheetContent(
     bottomSection: @Composable () -> Unit,
     onTestClick: () -> Unit,
     onSaveClick: () -> Unit,
+    onChallengeChange: (MathChallenge) -> Unit = {},
     dialogSection: @Composable () -> Unit
 ) {
-    with(MaterialTheme) {
-        val useFullHeightSheetLayout = isIosPlatform()
-        Surface(
-            modifier = if (useFullHeightSheetLayout) {
-                Modifier.fillMaxSize()
-            } else {
-                Modifier
-            }
-        ) {
-            BoxWithConstraints(
+    ChallengeSheetHost(onApply = onChallengeChange) {
+        with(MaterialTheme) {
+            val useFullHeightSheetLayout = isIosPlatform()
+            Surface(
                 modifier = if (useFullHeightSheetLayout) {
                     Modifier.fillMaxSize()
                 } else {
-                    Modifier.fillMaxWidth()
-                },
-                contentAlignment = TopCenter,
-            ) {
-                val contentWidthModifier = if (maxWidth > SETTINGS_CONTENT_MAX_WIDTH) {
-                    Modifier.width(SETTINGS_CONTENT_MAX_WIDTH)
-                } else {
-                    Modifier.fillMaxWidth()
+                    Modifier
                 }
-                val sheetPaddingModifier = Modifier.padding(
-                    start = spacing.extraMedium,
-                    end = spacing.extraMedium,
-                    bottom = spacing.extraMedium,
-                    top = spacing.medium
-                )
-                if (useFullHeightSheetLayout) {
-                    Column(
-                        contentWidthModifier
-                            .fillMaxSize()
-                            .then(sheetPaddingModifier),
-                    ) {
-                        SheetHeader(
-                            onCloseClick = onCloseClick,
-                            onSaveClick = onSaveClick,
-                            showSaveAction = true,
-                        )
+            ) {
+                BoxWithConstraints(
+                    modifier = if (useFullHeightSheetLayout) {
+                        Modifier.fillMaxSize()
+                    } else {
+                        Modifier.fillMaxWidth()
+                    },
+                    contentAlignment = TopCenter,
+                ) {
+                    val contentWidthModifier = if (maxWidth > SETTINGS_CONTENT_MAX_WIDTH) {
+                        Modifier.width(SETTINGS_CONTENT_MAX_WIDTH)
+                    } else {
+                        Modifier.fillMaxWidth()
+                    }
+                    val sheetPaddingModifier = Modifier.padding(
+                        start = spacing.extraMedium,
+                        end = spacing.extraMedium,
+                        bottom = spacing.extraMedium,
+                        top = spacing.medium
+                    )
+                    if (useFullHeightSheetLayout) {
                         Column(
-                            modifier = Modifier
-                                .weight(1f)
-                                .verticalScroll(rememberScrollState()),
+                            contentWidthModifier
+                                .fillMaxSize()
+                                .then(sheetPaddingModifier),
                         ) {
-                            SheetSettingsContent(
-                                topSection = topSection,
-                                bottomSection = bottomSection,
+                            SheetHeader(
+                                onCloseClick = onCloseClick,
+                                onSaveClick = onSaveClick,
+                                showSaveAction = true,
+                            )
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .verticalScroll(rememberScrollState()),
+                            ) {
+                                SheetSettingsContent(
+                                    topSection = topSection,
+                                    bottomSection = bottomSection,
+                                )
+                            }
+                            SheetActionButtons(
+                                onTestClick = onTestClick,
+                                onSaveClick = onSaveClick,
+                                showSaveButton = false,
                             )
                         }
-                        SheetActionButtons(
-                            onTestClick = onTestClick,
-                            onSaveClick = onSaveClick,
-                            showSaveButton = false,
-                        )
-                    }
-                } else {
-                    Column(
-                        contentWidthModifier
-                            .then(sheetPaddingModifier)
-                            .verticalScroll(rememberScrollState()),
-                    ) {
-                        if (showDismissButton) {
-                            SheetHeader(onCloseClick = onCloseClick)
+                    } else {
+                        Column(
+                            contentWidthModifier
+                                .fillMaxSize()
+                                .then(sheetPaddingModifier),
+                        ) {
+                            if (showDismissButton) {
+                                SheetHeader(onCloseClick = onCloseClick)
+                            }
+                            Column(
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .verticalScroll(rememberScrollState())
+                            ) {
+                                SheetSettingsContent(
+                                    topSection = topSection,
+                                    bottomSection = bottomSection,
+                                )
+                            }
+                            SheetActionButtons(
+                                onTestClick = onTestClick,
+                                onSaveClick = onSaveClick,
+                                showSaveButton = true,
+                            )
                         }
-                        SheetSettingsContent(
-                            topSection = topSection,
-                            bottomSection = bottomSection,
-                        )
-                        SheetActionButtons(
-                            onTestClick = onTestClick,
-                            onSaveClick = onSaveClick,
-                            showSaveButton = true,
-                        )
                     }
+                    dialogSection()
                 }
-                dialogSection()
             }
         }
     }
@@ -474,7 +476,7 @@ private fun SheetHeader(
     ) {
         AdaptiveIconButton(onClick = onCloseClick) {
             Icon(
-                modifier = Modifier.size(32.dp),
+                modifier = Modifier.size(AlarmBottomSheet.HEADER_ICON_SIZE),
                 imageVector = Close,
                 contentDescription = "Dismiss",
             )
@@ -482,7 +484,7 @@ private fun SheetHeader(
         if (showSaveAction && onSaveClick != null) {
             AdaptiveIconButton(onClick = onSaveClick) {
                 Icon(
-                    modifier = Modifier.size(32.dp),
+                    modifier = Modifier.size(AlarmBottomSheet.HEADER_ICON_SIZE),
                     imageVector = Check,
                     contentDescription = strings.save,
                     tint = MaterialTheme.colorScheme.secondary,
@@ -504,8 +506,7 @@ private fun SheetSettingsContent(
             start = MaterialTheme.spacing.medium,
             end = MaterialTheme.spacing.medium,
         ),
-        thickness = DIVIDER_THICKNESS,
-        color = unSelectedDay
+        color = MaterialTheme.colorScheme.outlineVariant
     )
     bottomSection()
 }
@@ -514,7 +515,6 @@ private fun SheetSettingsContent(
 fun TopSection(
     selectedDays: String,
     currentTime: String,
-    darkTheme: Boolean,
     onTimeCardClick: () -> Unit,
     onSelectedDaysChanged: (String) -> Unit
 ) {
@@ -524,25 +524,26 @@ fun TopSection(
             .height(TIME_CARD_HEIGHT)
             .padding(horizontal = MaterialTheme.spacing.medium),
         colors = CardDefaults.cardColors(
-            containerColor = if (darkTheme) darkPrimaryLight else unSelectedDay
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
+            contentColor = MaterialTheme.colorScheme.onSurface
         ),
         elevation = CardDefaults.cardElevation(defaultElevation = NO_ELEVATION),
         shape = MaterialTheme.shapes.medium.copy(CornerSize(TIME_CARD_CORNER_SIZE)),
     ) {
-        Row(
+        Column(
             modifier = Modifier
                 .fillMaxSize()
                 .adaptiveClickable(
                     shape = MaterialTheme.shapes.medium.copy(CornerSize(TIME_CARD_CORNER_SIZE)),
                     onClick = { onTimeCardClick() }
                 ),
-            verticalAlignment = CenterVertically,
-            horizontalArrangement = Arrangement.Center,
+            horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
         ) {
             Text(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(TIME_TEXT_PADDING),
+                    .padding(horizontal = MaterialTheme.spacing.medium),
                 text = currentTime,
                 fontSize = TIME_TEXT_FONT_SIZE,
                 fontWeight = Bold,
@@ -561,14 +562,13 @@ private fun BottomSettingsSection(
     repeatWeekly: Boolean,
     snoozeEnabled: Boolean,
     vibrate: Boolean,
-    difficulty: Int,
     onRepeatToggle: (Boolean) -> Unit,
     onSnoozeToggle: (Boolean) -> Unit,
     onVibrateToggle: (Boolean) -> Unit,
     onToneClick: () -> Unit,
-    onDifficultyChange: (Int) -> Unit,
     labelTextField: @Composable () -> Unit,
-    currentTone: String
+    currentTone: String,
+    challenge: MathChallenge = MathChallenge(),
 ) {
     val showVibrateToggle = !isIosPlatform()
 
@@ -619,24 +619,14 @@ private fun BottomSettingsSection(
             onToneClick()
         },
     )
-    Row(
-        modifier = Modifier
-            .padding(
-                top = DIFFICULTY_SECTION_TOP_PADDING,
-                start = DIFFICULTY_SECTION_HORIZONTAL_PADDING,
-                end = DIFFICULTY_SECTION_HORIZONTAL_PADDING,
-            )
-            .fillMaxWidth(),
-    ) {
-        Icon(
-            modifier = Modifier.padding(end = DIFFICULTY_ICON_END_PADDING),
-            imageVector = EmojiSymbols,
-            contentDescription = null,
-        )
-        DifficultyChooser(difficulty) {
-            onDifficultyChange(it)
-        }
-    }
+    MathChallengeSettings(
+        challenge = challenge,
+        modifier = Modifier.padding(
+            top = MaterialTheme.spacing.large,
+            start = MaterialTheme.spacing.medium,
+            end = MaterialTheme.spacing.medium,
+        ),
+    )
 }
 
 @Composable
@@ -645,33 +635,48 @@ private fun SheetActionButtons(
     onSaveClick: () -> Unit,
     showSaveButton: Boolean = true,
 ) {
+    SheetFooter(
+        secondaryLabel = strings.testAlarm.uppercase(),
+        primaryLabel = strings.save.uppercase(),
+        onSecondaryClick = onTestClick,
+        onPrimaryClick = onSaveClick,
+        showPrimary = showSaveButton,
+    )
+}
+
+/** Shared geometry keeps actions stationary when switching sheet views. */
+@Composable
+internal fun SheetFooter(
+    secondaryLabel: String,
+    primaryLabel: String,
+    onSecondaryClick: () -> Unit,
+    onPrimaryClick: () -> Unit,
+    primaryEnabled: Boolean = true,
+    showPrimary: Boolean = true,
+) {
     AdaptiveButton(
         modifier = Modifier
-            .padding(top = MaterialTheme.spacing.large)
+            .padding(top = MaterialTheme.spacing.medium)
             .fillMaxWidth(),
-        onClick = onTestClick,
+        onClick = onSecondaryClick,
         colors = buttonColors(
-            containerColor = unSelectedDay,
-            contentColor = Black,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh,
+            contentColor = MaterialTheme.colorScheme.onSurface
         ),
     ) {
-        Text(
-            fontSize = TEST_BUTTON_FONT_SIZE,
-            text = strings.testAlarm.uppercase(),
-        )
+        Text(fontSize = TEST_BUTTON_FONT_SIZE, text = secondaryLabel)
     }
-    if (showSaveButton) {
+    if (showPrimary) {
         AdaptiveButton(
-            modifier = Modifier
-                .padding(top = SAVE_BUTTON_TOP_PADDING)
-                .fillMaxWidth(),
-            onClick = onSaveClick,
-            colors = buttonColors(containerColor = MaterialTheme.colorScheme.secondary),
+            modifier = Modifier.padding(top = SAVE_BUTTON_TOP_PADDING).fillMaxWidth(),
+            onClick = onPrimaryClick,
+            enabled = primaryEnabled,
+            colors = buttonColors(
+                containerColor = MaterialTheme.colorScheme.secondary,
+                contentColor = MaterialTheme.colorScheme.onSecondary,
+            ),
         ) {
-            Text(
-                fontSize = SAVE_BUTTON_FONT_SIZE,
-                text = strings.save.uppercase(),
-            )
+            Text(fontSize = SAVE_BUTTON_FONT_SIZE, text = primaryLabel)
         }
     }
 }
@@ -716,7 +721,7 @@ private fun AlarmTonePickerDialog(
                         .height(TONE_PICKER_HEADER_HEIGHT),
                     verticalAlignment = CenterVertically,
                 ) {
-                    Spacer(modifier = Modifier.size(48.dp))
+                    Spacer(modifier = Modifier.size(AlarmBottomSheet.TONE_ACTION_PLACEHOLDER_SIZE))
                     Text(
                         modifier = Modifier.weight(1f),
                         text = "Alarm Sound",
@@ -813,7 +818,7 @@ private fun AlarmTonePickerRow(
             Icon(
                 modifier = Modifier
                     .padding(end = MaterialTheme.spacing.small)
-                    .size(22.dp),
+                    .size(AlarmBottomSheet.TONE_SELECTION_ICON_SIZE),
                 imageVector = Check,
                 contentDescription = "Selected",
                 tint = MaterialTheme.colorScheme.secondary,
@@ -822,7 +827,7 @@ private fun AlarmTonePickerRow(
             Spacer(
                 modifier = Modifier
                     .padding(end = MaterialTheme.spacing.small)
-                    .size(22.dp),
+                    .size(AlarmBottomSheet.TONE_SELECTION_ICON_SIZE),
             )
         }
         Text(
@@ -851,7 +856,6 @@ private fun BottomSheetPreview() {
                     TopSection(
                         selectedDays = "TFFFFFF",
                         currentTime = "12:00",
-                        darkTheme = true,
                         onTimeCardClick = {}
                     ) {}
                 },
@@ -860,12 +864,11 @@ private fun BottomSheetPreview() {
                         repeatWeekly = true,
                         snoozeEnabled = true,
                         vibrate = true,
-                        difficulty = 1,
+                        challenge = MathChallenge(difficulty = 1),
                         onRepeatToggle = {},
                         onSnoozeToggle = {},
                         onVibrateToggle = {},
                         onToneClick = {},
-                        onDifficultyChange = {},
                         labelTextField = {
                             LabelTextField(
                                 text = TextFieldValue(),
@@ -895,20 +898,15 @@ private val IosAlarmToneOptions = listOf(
 )
 
 private object AlarmBottomSheet {
-    const val FROM_SHEET_KEY = "fromSheet"
-    const val URL_ENCODER = "utf-8"
-    const val TIME_PATTERN = "hh:mm a"
+    val HEADER_ICON_SIZE = 32.dp
+    val TONE_ACTION_PLACEHOLDER_SIZE = 48.dp
+    val TONE_SELECTION_ICON_SIZE = 22.dp
     val TIME_CARD_HEIGHT = 150.dp
     val NO_ELEVATION = 0.dp
     val TIME_CARD_CORNER_SIZE = 24.dp
-    val TIME_TEXT_PADDING = 30.dp
     val TIME_TEXT_FONT_SIZE = 50.sp
     val ALARM_DAYS_TOP_PADDING = 12.dp
-    val DIVIDER_THICKNESS = 10.dp
     val MIDDLE_CONTROL_SECTION_TOP_PADDING = 28.dp
-    val DIFFICULTY_SECTION_TOP_PADDING = 30.dp
-    val DIFFICULTY_SECTION_HORIZONTAL_PADDING = 26.dp
-    val DIFFICULTY_ICON_END_PADDING = 14.dp
     val TEST_BUTTON_FONT_SIZE = 14.sp
     val SAVE_BUTTON_FONT_SIZE = 14.sp
     val SAVE_BUTTON_TOP_PADDING = 12.dp

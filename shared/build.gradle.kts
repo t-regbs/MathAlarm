@@ -75,7 +75,6 @@ kotlin {
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.appcompat)
             implementation(libs.androidx.core.ktx)
-            implementation(libs.android.material)
         }
         commonMain {
             kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
@@ -84,6 +83,7 @@ kotlin {
                 implementation(libs.runtime)
                 implementation(libs.foundation)
                 implementation(libs.material3)
+                implementation(libs.haze)
                 api(libs.calf.ui)
                 implementation(libs.ui)
                 implementation(libs.components.resources)
