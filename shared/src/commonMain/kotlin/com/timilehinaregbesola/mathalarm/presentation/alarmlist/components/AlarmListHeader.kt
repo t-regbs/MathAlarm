@@ -1,5 +1,11 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 
+import androidx.compose.ui.draw.clip
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.HazeStyle
+import dev.chrisbanes.haze.HazeTint
+import dev.chrisbanes.haze.hazeEffect
+import androidx.compose.ui.graphics.Color
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -27,6 +33,7 @@ import kotlin.time.Instant
 fun ListHeader(
     modifier: Modifier = Modifier,
     enabled: Boolean,
+    hazeState: HazeState? = null,
     timeZone: TimeZone = TimeZone.currentSystemDefault(),
     alarmList: List<Alarm>,
 ) {
@@ -41,12 +48,25 @@ fun ListHeader(
             }
         }
     }
+    val shape = RoundedCornerShape(AlarmListHeader.CORNER_RADIUS)
+    val colors = MaterialTheme.colorScheme
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = MaterialTheme.spacing.extraMedium, vertical = AlarmListHeader.VERTICAL_PADDING),
-        shape = RoundedCornerShape(AlarmListHeader.CORNER_RADIUS),
-        color = MaterialTheme.colorScheme.surfaceContainerLow,
+            .padding(horizontal = MaterialTheme.spacing.extraMedium, vertical = AlarmListHeader.VERTICAL_PADDING)
+            .clip(shape)
+            .then(if (hazeState != null) Modifier.hazeEffect(
+                state = hazeState,
+                style = HazeStyle(
+                    backgroundColor = colors.surface,
+                    tint = HazeTint(colors.surfaceContainerLow.copy(alpha = AlarmListHeader.TINT_ALPHA)),
+                    blurRadius = AlarmListHeader.BLUR_RADIUS,
+                    noiseFactor = AlarmListHeader.NOISE_FACTOR,
+                    fallbackTint = HazeTint(colors.surfaceContainerLow.copy(alpha = AlarmListHeader.FALLBACK_TINT_ALPHA)),
+                ),
+            ) else Modifier),
+        shape = shape,
+        color = if (hazeState != null) Color.Transparent else colors.surfaceContainerLow,
         contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
     ) {
         Text(
@@ -97,6 +117,10 @@ private fun ListHeaderPreview() {
 }
 
 private object AlarmListHeader {
+    val BLUR_RADIUS = 24.dp
+    const val TINT_ALPHA = 0.65f
+    const val NOISE_FACTOR = 0.04f
+    const val FALLBACK_TINT_ALPHA = 0.95f
     val CORNER_RADIUS = 16.dp
     val VERTICAL_PADDING = 12.dp
     val LIST_HEADER_FONT_SIZE = 16.sp

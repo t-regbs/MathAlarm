@@ -10,6 +10,8 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import dev.chrisbanes.haze.HazeState
+import dev.chrisbanes.haze.hazeSource
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -253,6 +255,7 @@ private fun AlarmListContent(
     onCancelAlarm: (Alarm) -> Unit,
     onScheduleAlarm: (Alarm, Boolean) -> Unit,
 ) {
+    val hazeState = remember { HazeState() }
     Surface(
         modifier = modifier,
     ) {
@@ -263,6 +266,7 @@ private fun AlarmListContent(
                 key = "sticky_header"
             ) {
                 ListHeader(
+                    hazeState = hazeState,
                     enabled = alarmList.any { it.isOn },
                     alarmList = alarmList,
                 )
@@ -271,16 +275,19 @@ private fun AlarmListContent(
                 items = alarmList,
                 key = { alarm -> alarm.alarmId },
             ) { alarm ->
-                AlarmItem(
-                    alarm = alarm,
-                    onEditAlarm = {
-                        onEditAlarm(alarm)
-                    },
-                    onDeleteAlarm = onDeleteAlarm,
-                    onCancelAlarm = onCancelAlarm,
-                    onScheduleAlarm = onScheduleAlarm,
-                    darkTheme = darkTheme,
-                )
+                // Capture cards individually: the sticky header must not be part of its own source.
+                Box(Modifier.hazeSource(state = hazeState, key = alarm.alarmId)) {
+                    AlarmItem(
+                        alarm = alarm,
+                        onEditAlarm = {
+                            onEditAlarm(alarm)
+                        },
+                        onDeleteAlarm = onDeleteAlarm,
+                        onCancelAlarm = onCancelAlarm,
+                        onScheduleAlarm = onScheduleAlarm,
+                        darkTheme = darkTheme,
+                    )
+                }
             }
         }
     }
