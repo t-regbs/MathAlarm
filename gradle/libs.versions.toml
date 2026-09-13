@@ -6,7 +6,7 @@ android_gradle_plugin = "9.3.1"
 # @keep
 android_min_sdk = "26"
 # @keep
-android_target_sdk = "36"
+android_target_sdk = "37"
 androidx_activity_compose = "1.12.2"
 androidx_datastore = "1.1.7"
 androidx_ktx = "1.17.0"
