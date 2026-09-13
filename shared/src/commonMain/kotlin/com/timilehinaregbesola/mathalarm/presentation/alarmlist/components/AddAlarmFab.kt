@@ -25,12 +25,12 @@ fun AddAlarmFab(
         modifier = modifier,
         onClick = onClick,
         shape = fabShape,
-        containerColor = MaterialTheme.colorScheme.onPrimary,
+        containerColor = MaterialTheme.colorScheme.primary,
     ) {
         Image(
             painter = fabImage,
             contentDescription = "Add alarm",
-            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.primary),
+            colorFilter = ColorFilter.tint(MaterialTheme.colorScheme.onPrimary),
         )
     }
 }
