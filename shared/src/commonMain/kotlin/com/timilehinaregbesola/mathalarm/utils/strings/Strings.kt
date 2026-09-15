@@ -50,7 +50,7 @@ data class Strings(
     val edit: String,
     val skipNext: String,
     val skippedAlarmOn: (date: String) -> String,
-    val undoSkipFor: (date: String) -> String,
+    val undoSkip: String,
     val collapse: String,
     val noUpcomingAlarms: String,
     val nextAlarmText: String,

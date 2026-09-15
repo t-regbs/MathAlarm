@@ -3,6 +3,7 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -10,14 +11,19 @@ import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -25,11 +31,13 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment.Companion.Bottom
 import androidx.compose.ui.Alignment.Companion.CenterVertically
+import androidx.compose.ui.Alignment.Companion.End
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Color.Companion.Gray
 import androidx.compose.ui.graphics.Color.Companion.LightGray
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
+import androidx.compose.ui.text.font.FontWeight.Companion.Medium
 import androidx.compose.ui.text.font.FontWeight.Companion.Normal
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -39,6 +47,8 @@ import com.mohamedrejeb.calf.ui.gesture.adaptiveClickable
 import com.mohamedrejeb.calf.ui.toggle.AdaptiveSwitch
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.ACTUAL_TIME_FONT_SIZE
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.ACTION_FONT_SIZE
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.ACTION_ICON_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.ALARM_INFO_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.ALARM_ITEM_CORNER_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.ALARM_ITEM_ELEVATION
@@ -47,7 +57,7 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.DAYS_SET_LIMIT
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.DIVIDER_THICKNESS
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.EQUAL_WEIGHT
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.EXPANDED_SECTION_DIVIDER_SPACING
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.SKIPPED_STATUS_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.THREE_QUARTERS_WEIGHT
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.TIME_LENGTH_INDEX
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmItem.TIME_OF_DAY_FONT_SIZE
@@ -60,7 +70,9 @@ import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Delete
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Edit
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.KeyboardArrowDown
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.KeyboardArrowUp
+import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Schedule
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
+import com.timilehinaregbesola.mathalarm.utils.formatShortDate
 import com.timilehinaregbesola.mathalarm.utils.fullDays
 import com.timilehinaregbesola.mathalarm.utils.getFormatTime
 
@@ -99,7 +111,10 @@ fun AlarmItem(
                     .adaptiveClickable(onClick = { expandItem = !expandItem }),
             ) {
                 Column(modifier = Modifier) {
-                    Row {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = CenterVertically,
+                    ) {
                         val time = alarm.getFormatTime().toString()
                         val actualTime = time.substring(ZERO_INDEX, TIME_LENGTH_INDEX)
                         val timeOfDay = time.substring(actualTime.length)
@@ -110,7 +125,7 @@ fun AlarmItem(
                                     top = small,
                                     bottom = small,
                                 )
-                                .weight(THREE_QUARTERS_WEIGHT),
+                                .weight(EQUAL_WEIGHT),
                         ) {
                             Text(
                                 text = actualTime,
@@ -127,35 +142,35 @@ fun AlarmItem(
                                     .padding(bottom = small),
                             )
                         }
-                        AdaptiveSwitch(
+                        Column(
                             modifier = Modifier
-                                .weight(EQUAL_WEIGHT)
-                                .padding(extraSmall)
+                                .padding(top = extraSmall, end = small)
                                 .align(CenterVertically),
-                            checked = alarm.isOn,
-                            onCheckedChange = {
-                                if (it) onScheduleAlarm(alarm.copy(isOn = true), true)
-                                else onCancelAlarm(alarm.copy(isOn = false))
-                            },
-                        )
+                            horizontalAlignment = End,
+                        ) {
+                            AdaptiveSwitch(
+                                checked = alarm.isOn,
+                                onCheckedChange = {
+                                    if (it) onScheduleAlarm(alarm.copy(isOn = true), true)
+                                    else onCancelAlarm(alarm.copy(isOn = false))
+                                },
+                            )
+                            alarm.skippedDate?.let { date ->
+                                Text(
+                                    text = strings.skippedAlarmOn(formatShortDate(date)),
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    fontSize = SKIPPED_STATUS_FONT_SIZE,
+                                    fontWeight = Medium,
+                                    maxLines = 1,
+                                )
+                            }
+                        }
                     }
                     Text(
                         modifier = Modifier.padding(start = extraMedium),
                         text = alarm.title,
                         fontSize = ALARM_TITLE_FONT_SIZE,
                     )
-                    alarm.skippedDate?.let { date ->
-                        Text(
-                            text = strings.skippedAlarmOn(date),
-                            color = MaterialTheme.colorScheme.primary,
-                            fontSize = ALARM_INFO_FONT_SIZE,
-                            modifier = Modifier.padding(
-                                start = extraMedium,
-                                end = extraMedium,
-                                top = extraSmall,
-                            ),
-                        )
-                    }
                     if (alarm.scheduleError != null && alarm.scheduleError != Alarm.SCHEDULING_IN_PROGRESS) {
                         Text(
                             text = strings.alarmScheduleFailed,
@@ -216,7 +231,7 @@ fun AlarmItem(
                         onDeleteAlarm = { onDeleteAlarm(alarm) },
                         skipActionLabel = when {
                             !alarm.isOn || !alarm.repeat -> null
-                            skippedDate != null -> strings.undoSkipFor(skippedDate)
+                            skippedDate != null -> strings.undoSkip
                             else -> strings.skipNext
                         },
                         onSkipAction = {
@@ -249,68 +264,78 @@ private fun AlarmItemExpandableSection(
                         end = small,
                     ),
             )
-            Spacer(modifier = Modifier.height(EXPANDED_SECTION_DIVIDER_SPACING))
-            skipActionLabel?.let { label ->
-                Text(
-                    text = label,
-                    color = MaterialTheme.colorScheme.primary,
-                    modifier = Modifier
-                        .padding(start = extraMedium, bottom = medium)
-                        .adaptiveClickable(onClick = onSkipAction),
-                )
-            }
+            Spacer(modifier = Modifier.height(small))
             Row(
                 modifier = Modifier
-                    .padding(
-                        start = extraMedium,
-                        bottom = medium,
-                    ),
+                    .fillMaxWidth()
+                    .padding(horizontal = small)
+                    .padding(bottom = small),
+                verticalAlignment = CenterVertically,
             ) {
-                Row(modifier = Modifier.weight(THREE_QUARTERS_WEIGHT)) {
-                    Row(
-                        modifier = Modifier
-                            .padding(end = extraMedium)
-                            .adaptiveClickable(onClick = onDeleteAlarm),
+                skipActionLabel?.let { label ->
+                    TextButton(
+                        onClick = onSkipAction,
+                        contentPadding = PaddingValues(horizontal = small),
                     ) {
                         Icon(
-                            imageVector = Delete,
-                            contentDescription = strings.delete,
-                            modifier = Modifier
-                                .padding(end = extraSmall)
-                                .adaptiveClickable(onClick = onDeleteAlarm),
+                            imageVector = Schedule,
+                            contentDescription = null,
+                            modifier = Modifier.size(ACTION_ICON_SIZE),
                         )
+                        Spacer(modifier = Modifier.width(extraSmall))
                         Text(
-                            text = strings.delete,
-                            modifier = Modifier
-                                .align(CenterVertically),
-                        )
-                    }
-                    Row(
-                        modifier = Modifier.adaptiveClickable(onClick = onEditAlarm),
-                    ) {
-                        Icon(
-                            imageVector = Edit,
-                            contentDescription = strings.edit,
-                            modifier = Modifier
-                                .padding(end = extraSmall),
-                        )
-                        Text(
-                            text = strings.edit,
-                            modifier = Modifier
-                                .align(CenterVertically),
+                            text = label,
+                            fontSize = ACTION_FONT_SIZE,
+                            fontWeight = Medium,
+                            maxLines = 1,
                         )
                     }
                 }
-                Icon(
-                    imageVector = KeyboardArrowUp,
-                    contentDescription = strings.collapse,
-                    modifier = Modifier
-                        .weight(EQUAL_WEIGHT)
-                        .align(CenterVertically)
-                        .adaptiveClickable(
-                            onClick = onExpandClick,
-                        ),
-                )
+                Spacer(modifier = Modifier.weight(EQUAL_WEIGHT))
+                TextButton(
+                    onClick = onDeleteAlarm,
+                    contentPadding = PaddingValues(horizontal = small),
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
+                ) {
+                    Icon(
+                        imageVector = Delete,
+                        contentDescription = null,
+                        modifier = Modifier.size(ACTION_ICON_SIZE),
+                    )
+                    Spacer(modifier = Modifier.width(extraSmall))
+                    Text(
+                        text = strings.delete,
+                        fontSize = ACTION_FONT_SIZE,
+                        maxLines = 1,
+                    )
+                }
+                TextButton(
+                    onClick = onEditAlarm,
+                    contentPadding = PaddingValues(horizontal = small),
+                    colors = ButtonDefaults.textButtonColors(
+                        contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                    ),
+                ) {
+                    Icon(
+                        imageVector = Edit,
+                        contentDescription = null,
+                        modifier = Modifier.size(ACTION_ICON_SIZE),
+                    )
+                    Spacer(modifier = Modifier.width(extraSmall))
+                    Text(
+                        text = strings.edit,
+                        fontSize = ACTION_FONT_SIZE,
+                        maxLines = 1,
+                    )
+                }
+                IconButton(onClick = onExpandClick) {
+                    Icon(
+                        imageVector = KeyboardArrowUp,
+                        contentDescription = strings.collapse,
+                    )
+                }
             }
         }
     }
@@ -350,8 +375,10 @@ private object AlarmItem {
     val ALARM_TITLE_FONT_SIZE = 15.sp
     val ACTUAL_TIME_FONT_SIZE = 40.sp
     val TIME_OF_DAY_FONT_SIZE = 16.sp
-    val EXPANDED_SECTION_DIVIDER_SPACING = 20.dp
     val ALARM_INFO_FONT_SIZE = 14.sp
+    val SKIPPED_STATUS_FONT_SIZE = 11.sp
+    val ACTION_FONT_SIZE = 13.sp
+    val ACTION_ICON_SIZE = 18.dp
     val DIVIDER_THICKNESS = 3.dp
     val ALARM_ITEM_CORNER_SIZE = 8.dp
 }

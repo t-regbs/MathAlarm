@@ -3,6 +3,7 @@ package com.timilehinaregbesola.mathalarm.utils
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
@@ -28,6 +29,17 @@ val days = listOf("S", "M", "T", "W", "T", "F", "S")
 val fullDays = listOf(
     "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
 )
+
+private val shortDays = listOf("Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat")
+private val shortMonths = listOf(
+    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
+    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
+)
+
+fun formatShortDate(value: String): String = runCatching {
+    val date = LocalDate.parse(value)
+    "${shortDays[date.dayOfWeek.toIndex()]} ${date.day} ${shortMonths[date.month.ordinal]}"
+}.getOrDefault(value)
 
 /**
  * Returns a 12-hour "hh:mm AM/PM" string for this Alarm's hour/minute.

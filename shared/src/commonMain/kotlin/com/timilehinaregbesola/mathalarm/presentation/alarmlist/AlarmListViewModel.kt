@@ -10,6 +10,7 @@ import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermissio
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.AlarmSortOrder.TIME
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
 import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
+import com.timilehinaregbesola.mathalarm.utils.formatShortDate
 import com.timilehinaregbesola.mathalarm.utils.UiEvent
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.Navigate
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.ShowSnackbar
@@ -70,7 +71,7 @@ class AlarmListViewModel(
             is AlarmListEvent.OnSkipNextClick -> launchCommand {
                 val skippedDate = skipNextAlarm(event.alarmId) ?: return@launchCommand
                 sendUiEvent(ShowSnackbar(
-                    message = "Alarm skipped for $skippedDate",
+                    message = "Skipped ${formatShortDate(skippedDate)}",
                     action = "Undo",
                     actionType = SnackbarAction.UNDO_SKIP,
                     relatedAlarmId = event.alarmId,
