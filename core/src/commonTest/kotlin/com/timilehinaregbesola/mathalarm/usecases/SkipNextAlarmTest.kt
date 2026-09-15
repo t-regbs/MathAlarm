@@ -40,7 +40,7 @@ class SkipNextAlarmTest {
         val skipped = subject(41)
 
         assertEquals("2025-01-06", repository.findAlarm(41)?.skippedDate)
-        assertEquals("2025-01-06", skipped?.toDate())
+        assertEquals("2025-01-06", skipped)
         assertEquals(
             listOf("2025-01-08", "2025-01-13"),
             repository.findAlarm(41)!!.pendingTimes.map { it.toDate() }.sorted(),

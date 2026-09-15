@@ -144,6 +144,18 @@ fun AlarmItem(
                         text = alarm.title,
                         fontSize = ALARM_TITLE_FONT_SIZE,
                     )
+                    alarm.skippedDate?.let { date ->
+                        Text(
+                            text = strings.skippedAlarmOn(date),
+                            color = MaterialTheme.colorScheme.primary,
+                            fontSize = ALARM_INFO_FONT_SIZE,
+                            modifier = Modifier.padding(
+                                start = extraMedium,
+                                end = extraMedium,
+                                top = extraSmall,
+                            ),
+                        )
+                    }
                     if (alarm.scheduleError != null && alarm.scheduleError != Alarm.SCHEDULING_IN_PROGRESS) {
                         Text(
                             text = strings.alarmScheduleFailed,
@@ -198,16 +210,17 @@ fun AlarmItem(
                     }
                 }
                 AnimatedVisibility(expandItem) {
+                    val skippedDate = alarm.skippedDate
                     AlarmItemExpandableSection(
                         onEditAlarm = onEditAlarm,
                         onDeleteAlarm = { onDeleteAlarm(alarm) },
                         skipActionLabel = when {
                             !alarm.isOn || !alarm.repeat -> null
-                            alarm.skippedDate != null -> strings.undoSkip
+                            skippedDate != null -> strings.undoSkipFor(skippedDate)
                             else -> strings.skipNext
                         },
                         onSkipAction = {
-                            if (alarm.skippedDate == null) onSkipNext(alarm) else onUndoSkip(alarm)
+                            if (skippedDate == null) onSkipNext(alarm) else onUndoSkip(alarm)
                         },
                         onExpandClick = { expandItem = false },
                     )

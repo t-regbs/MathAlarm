@@ -68,9 +68,9 @@ class AlarmListViewModel(
             is AlarmListEvent.OnAddAlarmClick -> sendUiEvent(Navigate(Alarm()))
             is AlarmListEvent.OnAlarmOnChange -> setEnabled(event.alarm, event.isOn)
             is AlarmListEvent.OnSkipNextClick -> launchCommand {
-                skipNextAlarm(event.alarmId) ?: return@launchCommand
+                val skippedDate = skipNextAlarm(event.alarmId) ?: return@launchCommand
                 sendUiEvent(ShowSnackbar(
-                    message = "Next alarm skipped",
+                    message = "Alarm skipped for $skippedDate",
                     action = "Undo",
                     actionType = SnackbarAction.UNDO_SKIP,
                     relatedAlarmId = event.alarmId,

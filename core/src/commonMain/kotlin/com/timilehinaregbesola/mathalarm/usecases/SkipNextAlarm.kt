@@ -11,8 +11,8 @@ class SkipNextAlarm(
     private val alarmTimeCalculator: AlarmTimeCalculator,
     private val rescheduleFutureAlarms: RescheduleFutureAlarms,
 ) {
-    /** Skips the next normal occurrence and returns its epoch time for presentation. */
-    suspend operator fun invoke(alarmId: Long): Long? {
+    /** Skips the next normal occurrence and returns its local date for presentation. */
+    suspend operator fun invoke(alarmId: Long): String? {
         val alarm = alarmRepository.findAlarm(alarmId) ?: return null
         if (!alarm.isOn || !alarm.repeat || alarm.skippedDate != null) return null
 
@@ -23,7 +23,7 @@ class SkipNextAlarm(
             .toString()
         val updated = alarm.copy(skippedDate = skippedDate)
         rescheduleFutureAlarms.restoreAlarm(updated)
-        return next
+        return skippedDate
     }
 
     suspend fun undo(alarmId: Long): Boolean {

@@ -234,7 +234,10 @@ class AlarmListViewModelTest {
             advanceUntilIdle()
 
             awaitItem() shouldBe UiEvent.ShowSnackbar(
-                message = "Next alarm skipped",
+                message = "Alarm skipped for ${
+                    kotlin.time.Instant.fromEpochMilliseconds(1_893_913_200_000L)
+                        .toLocalDateTime(TimeZone.currentSystemDefault()).date
+                }",
                 action = "Undo",
                 actionType = UiEvent.SnackbarAction.UNDO_SKIP,
                 relatedAlarmId = alarm.alarmId,
