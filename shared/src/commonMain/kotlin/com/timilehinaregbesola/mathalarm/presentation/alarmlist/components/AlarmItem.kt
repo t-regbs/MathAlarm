@@ -151,8 +151,11 @@ fun AlarmItem(
                             AdaptiveSwitch(
                                 checked = alarm.isOn,
                                 onCheckedChange = {
-                                    if (it) onScheduleAlarm(alarm.copy(isOn = true), true)
-                                    else onCancelAlarm(alarm.copy(isOn = false))
+                                    when {
+                                        it && alarm.skippedDate != null -> onUndoSkip(alarm)
+                                        it -> onScheduleAlarm(alarm.copy(isOn = true), true)
+                                        else -> onCancelAlarm(alarm.copy(isOn = false))
+                                    }
                                 },
                             )
                             alarm.skippedDate?.let { date ->
@@ -230,8 +233,8 @@ fun AlarmItem(
                         onEditAlarm = onEditAlarm,
                         onDeleteAlarm = { onDeleteAlarm(alarm) },
                         skipActionLabel = when {
-                            !alarm.isOn || !alarm.repeat -> null
                             skippedDate != null -> strings.undoSkip
+                            !alarm.isOn -> null
                             else -> strings.skipNext
                         },
                         onSkipAction = {
