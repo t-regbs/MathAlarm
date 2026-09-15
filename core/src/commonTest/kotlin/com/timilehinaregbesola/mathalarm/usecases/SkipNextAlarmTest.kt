@@ -86,6 +86,23 @@ class SkipNextAlarmTest {
     }
 
     @Test
+    fun `single-day one-time alarm cannot be skipped`() = runTest {
+        repository.addAlarm(
+            repeatingAlarm().copy(
+                alarmId = 45,
+                repeat = false,
+                repeatDays = "FTFFFFF",
+            )
+        )
+
+        assertNull(subject(45))
+
+        val unchanged = repository.findAlarm(45)!!
+        assertTrue(unchanged.isOn)
+        assertNull(unchanged.skippedDate)
+    }
+
+    @Test
     fun `skip removes only the next occurrence from a one-time sequence`() = runTest {
         repository.addAlarm(repeatingAlarm().copy(alarmId = 43, repeat = false))
 
@@ -110,27 +127,29 @@ class SkipNextAlarmTest {
 
     @Test
     fun `skipping the final one-time occurrence turns alarm off and undo restores it`() = runTest {
+        val alarm = repeatingAlarm().copy(alarmId = 44, repeat = false)
+        val finalOccurrence = calculator.calculateAlarmTimes(alarm).max()
         repository.addAlarm(
-            repeatingAlarm().copy(
-                alarmId = 44,
-                repeat = false,
-                repeatDays = "FTFFFFF",
+            alarm.copy(
+                scheduleInitialized = true,
+                pendingTimes = listOf(finalOccurrence),
+                scheduleTimeZone = TimeZone.currentSystemDefault().id,
             )
         )
 
-        assertEquals("2025-01-06", subject(44))
+        assertEquals("2025-01-08", subject(44))
 
         val skipped = repository.findAlarm(44)!!
         assertFalse(skipped.isOn)
         assertTrue(skipped.pendingTimes.isEmpty())
-        assertEquals("2025-01-06", skipped.skippedDate)
+        assertEquals("2025-01-08", skipped.skippedDate)
 
         assertTrue(subject.undo(44))
 
         val restored = repository.findAlarm(44)!!
         assertTrue(restored.isOn)
         assertNull(restored.skippedDate)
-        assertEquals(listOf("2025-01-06"), restored.pendingTimes.map { it.toDate() })
+        assertEquals(listOf("2025-01-08"), restored.pendingTimes.map { it.toDate() })
     }
 
     private fun repeatingAlarm() = Alarm(

@@ -229,12 +229,13 @@ fun AlarmItem(
                 }
                 AnimatedVisibility(expandItem) {
                     val skippedDate = alarm.skippedDate
+                    val canSkipNext = alarm.repeat || alarm.repeatDays.count { it == TRUE_CHAR } > 1
                     AlarmItemExpandableSection(
                         onEditAlarm = onEditAlarm,
                         onDeleteAlarm = { onDeleteAlarm(alarm) },
                         skipActionLabel = when {
                             skippedDate != null -> strings.undoSkip
-                            !alarm.isOn -> null
+                            !alarm.isOn || !canSkipNext -> null
                             else -> strings.skipNext
                         },
                         onSkipAction = {

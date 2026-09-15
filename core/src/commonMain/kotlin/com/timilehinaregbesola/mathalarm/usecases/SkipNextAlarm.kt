@@ -19,7 +19,7 @@ class SkipNextAlarm(
     /** Skips the next normal occurrence and returns its local date for presentation. */
     suspend operator fun invoke(alarmId: Long): String? {
         val alarm = alarmRepository.findAlarm(alarmId) ?: return null
-        if (!alarm.isOn || alarm.skippedDate != null) return null
+        if (!alarm.isOn || alarm.skippedDate != null || !alarm.canSkipNext()) return null
 
         val zone = TimeZone.currentSystemDefault()
         val oneTimeOccurrences = if (alarm.repeat) {
@@ -91,4 +91,6 @@ class SkipNextAlarm(
         }
         return occurrences.filter(alarmTimeCalculator::isInFuture).sorted()
     }
+
+    private fun Alarm.canSkipNext(): Boolean = repeat || repeatDays.count { it == 'T' } > 1
 }
