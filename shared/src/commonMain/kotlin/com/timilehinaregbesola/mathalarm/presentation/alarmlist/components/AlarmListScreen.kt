@@ -47,7 +47,9 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.O
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnClearEmptyAlarmsClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnDeleteAlarmClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnEditAlarmClick
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnSkipNextClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnUndoDeleteClick
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnUndoSkipClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.LIST_CONTENT_MAX_WIDTH
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.LOADER_SIZE
@@ -58,6 +60,7 @@ import com.timilehinaregbesola.mathalarm.utils.Destinations.SettingsSheet
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.Navigate
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.ShowError
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.ShowSnackbar
+import com.timilehinaregbesola.mathalarm.utils.UiEvent.SnackbarAction
 import com.timilehinaregbesola.mathalarm.utils.getTimeLeft
 import kotlinx.serialization.json.Json
 import mathalarm.app.generated.resources.Res
@@ -98,7 +101,13 @@ fun ListDisplayScreen(
                         duration = SnackbarDuration.Short
                     )
                     if (result == ActionPerformed) {
-                        viewModel.onEvent(OnUndoDeleteClick)
+                        when (event.actionType) {
+                            SnackbarAction.UNDO_DELETE -> viewModel.onEvent(OnUndoDeleteClick)
+                            SnackbarAction.UNDO_SKIP -> event.relatedAlarmId?.let {
+                                viewModel.onEvent(OnUndoSkipClick(it))
+                            }
+                            null -> Unit
+                        }
                     }
                 }
 
@@ -194,6 +203,8 @@ fun ListDisplayScreen(
                                     viewModel.onEvent(OnDeleteAlarmClick(it))
                                 },
                                 onCancelAlarm = viewModel::cancelAlarm,
+                                onSkipNext = { viewModel.onEvent(OnSkipNextClick(it.alarmId)) },
+                                onUndoSkip = { viewModel.onEvent(OnUndoSkipClick(it.alarmId)) },
                                 onScheduleAlarm = { curAlarm: Alarm, b: Boolean ->
                                     checkPermissionAndPerformAction(
                                         value = alarmPermission.hasExactAlarmPermission(),
@@ -253,6 +264,8 @@ private fun AlarmListContent(
     onEditAlarm: (Alarm) -> Unit,
     onDeleteAlarm: (Alarm) -> Unit,
     onCancelAlarm: (Alarm) -> Unit,
+    onSkipNext: (Alarm) -> Unit,
+    onUndoSkip: (Alarm) -> Unit,
     onScheduleAlarm: (Alarm, Boolean) -> Unit,
 ) {
     val hazeState = remember { HazeState() }
@@ -284,6 +297,8 @@ private fun AlarmListContent(
                         },
                         onDeleteAlarm = onDeleteAlarm,
                         onCancelAlarm = onCancelAlarm,
+                        onSkipNext = onSkipNext,
+                        onUndoSkip = onUndoSkip,
                         onScheduleAlarm = onScheduleAlarm,
                         darkTheme = darkTheme,
                     )
@@ -344,7 +359,9 @@ private fun AlarmListScreenPreview() {
             darkTheme = false,
             onEditAlarm = {},
             onDeleteAlarm = {},
-            onCancelAlarm = {}
+            onCancelAlarm = {},
+            onSkipNext = {},
+            onUndoSkip = {},
         ) { _, _ -> }
     }
 }

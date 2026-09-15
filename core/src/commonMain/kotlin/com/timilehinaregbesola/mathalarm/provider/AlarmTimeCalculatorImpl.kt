@@ -3,6 +3,7 @@ package com.timilehinaregbesola.mathalarm.provider
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import kotlinx.datetime.DatePeriod
 import kotlinx.datetime.DayOfWeek
+import kotlinx.datetime.LocalDate
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
@@ -19,6 +20,7 @@ class AlarmTimeCalculatorImpl(
     companion object {
         private const val SUN = 0
         private const val SAT = 6
+        private const val DAYS_IN_WEEK = 7
     }
 
     override fun calculateAlarmTimes(alarm: Alarm): List<Long> {
@@ -27,6 +29,9 @@ class AlarmTimeCalculatorImpl(
         val nowInstant = localNow.toInstant(tz)
         val todayDate = localNow.date
         val currentDayIndex = todayDate.dayOfWeek.toIndex()
+        val skippedDate = alarm.skippedDate?.let { value ->
+            runCatching { LocalDate.parse(value) }.getOrNull()
+        }
 
         val times = mutableListOf<Long>()
 
@@ -55,7 +60,7 @@ class AlarmTimeCalculatorImpl(
 
         for (i in SUN..SAT) {
             if (repeatDays.getOrNull(i) == 'T') {
-                val targetDate = calculateTargetDate(
+                var targetDate = calculateTargetDate(
                     currentDayIndex = currentDayIndex,
                     targetDayIndex = i,
                     todayDate = todayDate,
@@ -64,6 +69,9 @@ class AlarmTimeCalculatorImpl(
                     nowInstant = nowInstant,
                     tz = tz
                 )
+                if (alarm.repeat && targetDate == skippedDate) {
+                    targetDate = targetDate.plus(DatePeriod(days = DAYS_IN_WEEK))
+                }
 
                 val targetDateTime = LocalDateTime(
                     date = targetDate,

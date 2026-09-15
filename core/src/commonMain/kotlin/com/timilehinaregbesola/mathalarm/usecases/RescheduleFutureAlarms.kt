@@ -8,6 +8,9 @@ import com.timilehinaregbesola.mathalarm.provider.AlarmTimeCalculator
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.TimeZone
+import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalDateTime
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
@@ -52,10 +55,11 @@ class RescheduleFutureAlarms(
     suspend fun restoreAlarm(alarm: Alarm, clearActive: Boolean = false) {
         try {
             val zone = TimeZone.currentSystemDefault()
-            val times = remainingTimes(alarm, zone)
-            val snooze = alarm.snoozedUntil?.takeIf(alarmTimeCalculator::isInFuture)
-            val active = if (clearActive) null else alarm.activeAt
-            val planned = alarm.copy(
+            val normalized = alarm.copy(skippedDate = activeSkippedDate(alarm, zone))
+            val times = remainingTimes(normalized, zone)
+            val snooze = normalized.snoozedUntil?.takeIf(alarmTimeCalculator::isInFuture)
+            val active = if (clearActive) null else normalized.activeAt
+            val planned = normalized.copy(
                 pendingTimes = times.sorted(),
                 snoozedUntil = snooze,
                 activeAt = active,
@@ -90,6 +94,15 @@ class RescheduleFutureAlarms(
             Instant.fromEpochMilliseconds(time).toLocalDateTime(previousZone)
                 .toInstant(zone).toEpochMilliseconds()
         }.filter(alarmTimeCalculator::isInFuture)
+    }
+
+    private fun activeSkippedDate(alarm: Alarm, zone: TimeZone): String? {
+        val value = alarm.skippedDate ?: return null
+        val date = runCatching { LocalDate.parse(value) }.getOrNull() ?: return null
+        val skippedTime = LocalDateTime(date, LocalTime(alarm.hour, alarm.minute))
+            .toInstant(zone)
+            .toEpochMilliseconds()
+        return value.takeIf { alarmTimeCalculator.isInFuture(skippedTime) }
     }
 
     private companion object {

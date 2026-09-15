@@ -11,6 +11,7 @@ import com.timilehinaregbesola.mathalarm.usecases.RescheduleFutureAlarms
 import com.timilehinaregbesola.mathalarm.usecases.ScheduleAlarm
 import com.timilehinaregbesola.mathalarm.usecases.ScheduleNextAlarm
 import com.timilehinaregbesola.mathalarm.usecases.ShowAlarm
+import com.timilehinaregbesola.mathalarm.usecases.SkipNextAlarm
 import com.timilehinaregbesola.mathalarm.usecases.SnoozeAlarm
 import com.timilehinaregbesola.mathalarm.usecases.UpdateAlarm
 
@@ -30,7 +31,8 @@ data class Usecases(
     val scheduleNextAlarm: ScheduleNextAlarm,
     val showAlarm: ShowAlarm,
     val snoozeAlarm: SnoozeAlarm,
-    val cancelAlarm: CancelAlarm
+    val cancelAlarm: CancelAlarm,
+    val skipNextAlarm: SkipNextAlarm,
 ) {
     private val commandMutex = Mutex()
 

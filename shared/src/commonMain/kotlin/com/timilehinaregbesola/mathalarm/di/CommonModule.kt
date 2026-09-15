@@ -29,6 +29,7 @@ import com.timilehinaregbesola.mathalarm.usecases.RescheduleFutureAlarms
 import com.timilehinaregbesola.mathalarm.usecases.ScheduleAlarm
 import com.timilehinaregbesola.mathalarm.usecases.ScheduleNextAlarm
 import com.timilehinaregbesola.mathalarm.usecases.ShowAlarm
+import com.timilehinaregbesola.mathalarm.usecases.SkipNextAlarm
 import com.timilehinaregbesola.mathalarm.usecases.SnoozeAlarm
 import com.timilehinaregbesola.mathalarm.usecases.UpdateAlarm
 import org.koin.core.module.dsl.viewModel
@@ -70,6 +71,7 @@ val commonModule = module {
     // Usecases
     single {
         val deleteAlarm = DeleteAlarm(get(), get(), get())
+        val rescheduleFutureAlarms = RescheduleFutureAlarms(get(), get(), get())
         Usecases(
             addAlarm = AddAlarm(get()),
             clearAlarms = ClearAlarms(get(), deleteAlarm),
@@ -79,11 +81,12 @@ val commonModule = module {
             updateAlarm = UpdateAlarm(get(), get()),
             scheduleAlarm = ScheduleAlarm(get(), get(), get()),
             completeAlarm = CompleteAlarm(get(), get(), get(), get()),
-            rescheduleFutureAlarms = RescheduleFutureAlarms(get(), get(), get()),
+            rescheduleFutureAlarms = rescheduleFutureAlarms,
             scheduleNextAlarm = get(),
             showAlarm = ShowAlarm(get(), get(), get()),
             snoozeAlarm = SnoozeAlarm(get(), get(), get(), get()),
-            cancelAlarm = CancelAlarm(get())
+            cancelAlarm = CancelAlarm(get()),
+            skipNextAlarm = SkipNextAlarm(get(), get(), rescheduleFutureAlarms),
         )
     }
     

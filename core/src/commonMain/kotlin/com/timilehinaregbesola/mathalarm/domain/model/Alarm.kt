@@ -31,6 +31,8 @@ data class Alarm(
     val scheduleInitialized: Boolean = false,
     val snoozedUntil: Long? = null,
     val activeAt: Long? = null,
+    // Local calendar date (yyyy-MM-dd) of the one recurring occurrence to omit.
+    val skippedDate: String? = null,
     val scheduleError: String? = null,
     val scheduleTimeZone: String? = null
 ) {

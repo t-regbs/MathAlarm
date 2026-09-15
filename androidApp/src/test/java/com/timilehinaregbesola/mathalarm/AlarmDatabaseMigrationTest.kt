@@ -8,6 +8,7 @@ import androidx.test.core.app.ApplicationProvider
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmDatabase
 import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_5_6
 import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_6_7
+import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_7_8
 import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_4_5
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
@@ -35,7 +36,7 @@ class AlarmDatabaseMigrationTest {
         }
         val database = Room.databaseBuilder<AlarmDatabase>(context, context.getDatabasePath(name).absolutePath)
             .setDriver(AndroidSQLiteDriver()).setQueryCoroutineContext(Dispatchers.IO)
-            .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7).build()
+            .addMigrations(MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7, MIGRATION_7_8).build()
         try {
             val alarm = database.alarmDatabaseDao.getAlarm(1)!!
             assertEquals("Work", alarm.title)
@@ -47,6 +48,7 @@ class AlarmDatabaseMigrationTest {
             assertNull(alarm.snoozedUntil)
             assertEquals(1, alarm.questionCount)
             assertEquals("", alarm.difficultyMix)
+            assertNull(alarm.skippedDate)
             assertEquals(2, alarm.difficulty)
             val configured = alarm.copy(difficulty = 3, questionCount = 7, challengeOperations = "+×", additionRange = 1, factorRange = 2, difficultyMix = "00112")
             database.alarmDatabaseDao.updateAlarm(configured)

@@ -23,6 +23,7 @@ import com.timilehinaregbesola.mathalarm.usecases.RescheduleFutureAlarms
 import com.timilehinaregbesola.mathalarm.usecases.ScheduleAlarm
 import com.timilehinaregbesola.mathalarm.usecases.ScheduleNextAlarm
 import com.timilehinaregbesola.mathalarm.usecases.ShowAlarm
+import com.timilehinaregbesola.mathalarm.usecases.SkipNextAlarm
 import com.timilehinaregbesola.mathalarm.usecases.SnoozeAlarm
 import com.timilehinaregbesola.mathalarm.usecases.UpdateAlarm
 import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
@@ -69,6 +70,7 @@ class AlarmMathViewModelTest {
         
         val alarmTimeCalculator = AlarmTimeCalculatorFake()
         val scheduleNextAlarm = ScheduleNextAlarm(alarmInteractor, alarmTimeCalculator)
+        val rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor, alarmTimeCalculator)
         
         usecases = Usecases(
             addAlarm = AddAlarm(repository),
@@ -82,8 +84,9 @@ class AlarmMathViewModelTest {
             cancelAlarm = CancelAlarm(alarmInteractor),
             clearAlarms = ClearAlarms(repository, DeleteAlarm(repository, alarmInteractor, notificationInteractor)),
             scheduleNextAlarm = scheduleNextAlarm,
-            rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor, alarmTimeCalculator),
-            snoozeAlarm = SnoozeAlarm(dateTimeProvider, notificationInteractor, alarmInteractor, repository)
+            rescheduleFutureAlarms = rescheduleFutureAlarms,
+            snoozeAlarm = SnoozeAlarm(dateTimeProvider, notificationInteractor, alarmInteractor, repository),
+            skipNextAlarm = SkipNextAlarm(repository, alarmTimeCalculator, rescheduleFutureAlarms),
         )
         
         viewModel = AlarmMathViewModel(

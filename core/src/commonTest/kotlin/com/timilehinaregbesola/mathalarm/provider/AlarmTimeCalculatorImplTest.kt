@@ -134,6 +134,24 @@ class AlarmTimeCalculatorImplTest {
     }
 
     @Test
+    fun `skipped recurring date moves only that weekday to the following week`() {
+        dateTimeProvider.setFixedDateTime(2025, 1, 6, 6, 0)
+        val alarm = Alarm(
+            hour = 7,
+            minute = 0,
+            repeat = true,
+            repeatDays = "FTFTFFF",
+            skippedDate = "2025-01-06",
+        )
+
+        val scheduled = calculator.calculateAlarmTimes(alarm)
+            .map(::instantToLocalDateTime)
+            .sortedBy { it.date }
+
+        scheduled.map { it.date.toString() } shouldBe listOf("2025-01-08", "2025-01-13")
+    }
+
+    @Test
     fun `repeating alarm for single day already passed this week should schedule next week`() {
         // Wednesday, January 8, 2025 at 8:00 AM
         dateTimeProvider.setFixedDateTime(2025, 1, 8, 8, 0)

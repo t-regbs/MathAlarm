@@ -73,6 +73,8 @@ fun AlarmItem(
     onEditAlarm: () -> Unit,
     onDeleteAlarm: (Alarm) -> Unit,
     onCancelAlarm: (Alarm) -> Unit,
+    onSkipNext: (Alarm) -> Unit = {},
+    onUndoSkip: (Alarm) -> Unit = {},
     onScheduleAlarm: (Alarm, Boolean) -> Unit,
     darkTheme: Boolean,
 ) {
@@ -199,6 +201,14 @@ fun AlarmItem(
                     AlarmItemExpandableSection(
                         onEditAlarm = onEditAlarm,
                         onDeleteAlarm = { onDeleteAlarm(alarm) },
+                        skipActionLabel = when {
+                            !alarm.isOn || !alarm.repeat -> null
+                            alarm.skippedDate != null -> strings.undoSkip
+                            else -> strings.skipNext
+                        },
+                        onSkipAction = {
+                            if (alarm.skippedDate == null) onSkipNext(alarm) else onUndoSkip(alarm)
+                        },
                         onExpandClick = { expandItem = false },
                     )
                 }
@@ -211,6 +221,8 @@ fun AlarmItem(
 private fun AlarmItemExpandableSection(
     onEditAlarm: () -> Unit,
     onDeleteAlarm: () -> Unit,
+    skipActionLabel: String?,
+    onSkipAction: () -> Unit,
     onExpandClick: () -> Unit,
 ) {
     with(MaterialTheme.spacing) {
@@ -225,6 +237,15 @@ private fun AlarmItemExpandableSection(
                     ),
             )
             Spacer(modifier = Modifier.height(EXPANDED_SECTION_DIVIDER_SPACING))
+            skipActionLabel?.let { label ->
+                Text(
+                    text = label,
+                    color = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier
+                        .padding(start = extraMedium, bottom = medium)
+                        .adaptiveClickable(onClick = onSkipAction),
+                )
+            }
             Row(
                 modifier = Modifier
                     .padding(
@@ -294,6 +315,8 @@ fun ItemPreview() {
                 onEditAlarm = {},
                 onDeleteAlarm = {},
                 onCancelAlarm = {},
+                onSkipNext = {},
+                onUndoSkip = {},
                 onScheduleAlarm = { _: Alarm, _: Boolean -> },
                 darkTheme = true,
             )

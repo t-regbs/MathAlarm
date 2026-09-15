@@ -48,6 +48,8 @@ data class Strings(
     val expand: String,
     val delete: String,
     val edit: String,
+    val skipNext: String,
+    val undoSkip: String,
     val collapse: String,
     val noUpcomingAlarms: String,
     val nextAlarmText: String,

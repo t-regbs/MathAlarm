@@ -37,6 +37,7 @@ class AlarmMapper : DomainMapper<AlarmEntity, Alarm> {
             scheduleInitialized = model.scheduleInitialized,
             snoozedUntil = model.snoozedUntil,
             activeAt = model.activeAt,
+            skippedDate = model.skippedDate,
             scheduleError = model.scheduleError,
             scheduleTimeZone = model.scheduleTimeZone
         )
@@ -66,6 +67,7 @@ class AlarmMapper : DomainMapper<AlarmEntity, Alarm> {
             scheduleInitialized = domainModel.scheduleInitialized,
             snoozedUntil = domainModel.snoozedUntil,
             activeAt = domainModel.activeAt,
+            skippedDate = domainModel.skippedDate,
             scheduleError = domainModel.scheduleError,
             scheduleTimeZone = domainModel.scheduleTimeZone
         )

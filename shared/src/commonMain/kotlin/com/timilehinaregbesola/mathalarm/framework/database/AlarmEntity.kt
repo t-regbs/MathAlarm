@@ -48,6 +48,7 @@ data class AlarmEntity(
     val scheduleInitialized: Boolean = false,
     val snoozedUntil: Long? = null,
     val activeAt: Long? = null,
+    val skippedDate: String? = null,
     val scheduleError: String? = null,
     val scheduleTimeZone: String? = null,
 )

@@ -86,6 +86,7 @@ class AlarmSettingsViewModel(
                                 scheduleInitialized = old?.scheduleInitialized ?: false,
                                 snoozedUntil = old?.snoozedUntil,
                                 activeAt = old?.activeAt,
+                                skippedDate = old?.skippedDate.takeIf { isRescheduled != true },
                                 scheduleError = old?.scheduleError,
                                 scheduleTimeZone = old?.scheduleTimeZone
                             )
