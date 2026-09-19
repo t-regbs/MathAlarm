@@ -52,7 +52,12 @@ import kotlin.time.Instant
  */
 @OptIn(ExperimentalForeignApi::class, ExperimentalTime::class)
 class IosAlarmScheduler(
-    private val logger: Logger
+    private val logger: Logger,
+    private val removeNotifications: (List<String>) -> Unit = { identifiers ->
+        val center = UNUserNotificationCenter.currentNotificationCenter()
+        center.removePendingNotificationRequestsWithIdentifiers(identifiers)
+        center.removeDeliveredNotificationsWithIdentifiers(identifiers)
+    },
 ) {
     private val notificationCenter by lazy {
         UNUserNotificationCenter.currentNotificationCenter().also(::registerNotificationCategories)
@@ -230,10 +235,15 @@ class IosAlarmScheduler(
         return "$resourceName.caf"
     }
 
-    /**
-     * Cancel all notifications/alarms for an alarm
-     * Cancels both AlarmKit alarms and notification-based alarms
-     */
+    /** Keep the independent snooze registration and its delivered notification intact. */
+    fun cancelRegularOccurrences(alarm: Alarm) {
+        for (day in 0..6) AlarmSchedulerBridge.cancelOccurrence(alarm.alarmId, "day_$day")
+        val identifiers = notificationIdentifiersForAlarm(alarm.alarmId)
+            .filterNot { it == "alarm_${alarm.alarmId}_snooze" }
+        removeNotifications(identifiers)
+    }
+
+    /** Cancel all AlarmKit and notification-based occurrences, including snoozes. */
     fun cancelAlarm(alarm: Alarm) {
         logger.d { "Cancelling alarm: id=${alarm.alarmId}" }
         
@@ -243,8 +253,7 @@ class IosAlarmScheduler(
         // Also cancel notification-based alarm (in case of migration or fallback)
         val identifiers = notificationIdentifiersForAlarm(alarm.alarmId)
         
-        notificationCenter.removePendingNotificationRequestsWithIdentifiers(identifiers)
-        notificationCenter.removeDeliveredNotificationsWithIdentifiers(identifiers)
+        removeNotifications(identifiers)
         
         logger.d { "Alarm cancelled: id=${alarm.alarmId}" }
     }

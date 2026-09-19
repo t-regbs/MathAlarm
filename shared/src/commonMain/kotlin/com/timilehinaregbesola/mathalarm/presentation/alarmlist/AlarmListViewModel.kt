@@ -10,7 +10,6 @@ import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermissio
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.AlarmSortOrder.TIME
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
 import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
-import com.timilehinaregbesola.mathalarm.utils.formatShortDate
 import com.timilehinaregbesola.mathalarm.utils.UiEvent
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.Navigate
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.ShowSnackbar
@@ -71,14 +70,14 @@ class AlarmListViewModel(
             is AlarmListEvent.OnSkipNextClick -> launchCommand {
                 val skippedDate = skipNextAlarm(event.alarmId) ?: return@launchCommand
                 sendUiEvent(ShowSnackbar(
-                    message = "Skipped ${formatShortDate(skippedDate)}",
-                    action = "Undo",
+                    message = "",
+                    skippedDate = skippedDate,
                     actionType = SnackbarAction.UNDO_SKIP,
                     relatedAlarmId = event.alarmId,
                 ))
             }
             is AlarmListEvent.OnUndoSkipClick -> launchCommand {
-                skipNextAlarm.undo(event.alarmId)
+                skipNextAlarm.undo(event.alarmId, event.skippedDate)
             }
             is AlarmListEvent.OnUndoDeleteClick -> launchCommand {
                 val restored = recentlyDeletedAlarm ?: return@launchCommand
@@ -129,6 +128,8 @@ class AlarmListViewModel(
         scheduleAlarm(alarm, reschedule)
         sendUiEvent(ShowSnackbar(message))
     }
+
+    fun expireSkips() = launchCommand { rescheduleFutureAlarms.clearExpiredSkips() }
 
     fun cancelAlarm(alarm: Alarm) = setEnabled(alarm, false)
 }

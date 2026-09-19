@@ -37,6 +37,31 @@ class DeleteAlarmTest {
     }
 
     @Test
+    fun `deleted regular and snoozed occurrences cannot ring after late delivery or recovery`() = runTest {
+        for (repeat in listOf(false, true)) {
+            for (active in listOf(false, true)) {
+                val alarm = baseAlarm.copy(repeat = repeat, scheduleInitialized = true,
+                    pendingTimes = listOf(1_000L), snoozedUntil = 2_000L,
+                    activeAt = if (active) 500L else null)
+                alarmRepository.addAlarm(alarm)
+                alarmInteractor.schedule(alarm, 1_000L)
+                alarmInteractor.scheduleSnooze(alarm, 2_000L)
+                if (active) notifications.show(alarm)
+                deleteAlarmUseCase(alarm.alarmId)
+                val calculator = com.timilehinaregbesola.mathalarm.fake.AlarmTimeCalculatorFake()
+                val show = ShowAlarm(alarmRepository, notifications, ScheduleNextAlarm(alarmInteractor, calculator))
+                show(alarm.alarmId, 1_000L)
+                show(alarm.alarmId, 2_000L, snoozed = true)
+                show(alarm.alarmId) // Pre-migration delivery also cannot revive a deleted row.
+                RescheduleFutureAlarms(alarmRepository, alarmInteractor, calculator)()
+                assertNull(alarmRepository.findAlarm(alarm.alarmId))
+                assertFalse(alarmInteractor.isAlarmScheduled(alarm))
+                assertFalse(notifications.isNotificationShown(alarm.alarmId))
+            }
+        }
+    }
+
+    @Test
     fun `test if alarm is deleted`() = runTest {
         deleteAlarmUseCase(baseAlarm)
 

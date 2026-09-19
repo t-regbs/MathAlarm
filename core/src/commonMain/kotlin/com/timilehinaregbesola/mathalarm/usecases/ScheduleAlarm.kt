@@ -19,13 +19,14 @@ class ScheduleAlarm(
         } else {
             alarmRepository.findAlarm(alarm.alarmId)
         } ?: return
-        val times = alarmTimeCalculator.calculateAlarmTimes(saved).sorted()
+        val times = alarmTimeCalculator.calculateAlarmTimes(saved.copy(skippedDate = null)).sorted()
         val planned = saved.copy(
             isOn = times.isNotEmpty(),
             pendingTimes = times,
             scheduleInitialized = true,
             snoozedUntil = null,
             activeAt = null,
+            skippedDate = null,
             scheduleError = Alarm.SCHEDULING_IN_PROGRESS,
             scheduleTimeZone = TimeZone.currentSystemDefault().id
         )

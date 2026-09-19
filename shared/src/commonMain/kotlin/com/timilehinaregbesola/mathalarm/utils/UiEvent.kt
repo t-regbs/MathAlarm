@@ -11,6 +11,7 @@ sealed class UiEvent {
         val action: String? = null,
         val actionType: SnackbarAction? = null,
         val relatedAlarmId: Long? = null,
+        val skippedDate: String? = null,
     ) : UiEvent()
 
     enum class SnackbarAction {

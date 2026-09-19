@@ -66,14 +66,18 @@ class AlarmNotificationScheduler(
     fun cancelSnooze(alarm: Alarm) = cancel(occurrenceIntent(alarm.alarmId, "snooze"))
 
     fun cancelAlarm(alarm: Alarm) {
-        for (day in 0..6) cancel(occurrenceIntent(alarm.alarmId, "day/$day"))
+        cancelRegularOccurrences(alarm)
         cancelSnooze(alarm)
+        AlarmDeliveryLog.record(context, "canceled", alarm.alarmId)
+    }
+
+    fun cancelRegularOccurrences(alarm: Alarm) {
+        for (day in 0..6) cancel(occurrenceIntent(alarm.alarmId, "day/$day"))
         // Cancel identities from earlier releases for the saved time. Orphan legacy broadcasts
         // from older edits are also rejected by the receiver after occurrence-state migration.
         val legacy = Intent(context, AlarmReceiver::class.java).setAction(AlarmReceiver.ALARM_ACTION)
         cancel(legacy, idGenerator.generateSimpleId(alarm.alarmId))
         for (day in 0..6) cancel(legacy, idGenerator.generateId(alarm, day))
-        AlarmDeliveryLog.record(context, "canceled", alarm.alarmId)
     }
 
     fun consume(intent: Intent) {

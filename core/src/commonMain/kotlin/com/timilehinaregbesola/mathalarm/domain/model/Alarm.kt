@@ -36,6 +36,10 @@ data class Alarm(
     val scheduleError: String? = null,
     val scheduleTimeZone: String? = null
 ) {
+    /** A single one-time alarm is disabled with its switch instead. */
+    val canSkipNext: Boolean
+        get() = isOn && skippedDate == null && (repeat || repeatDays.count { it == 'T' } > 1)
+
     companion object {
         // Retain the persisted value for alarms saved by schema version 5.
         const val SCHEDULING_IN_PROGRESS = "Scheduling has not completed"

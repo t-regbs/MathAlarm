@@ -20,6 +20,8 @@ class AlarmInteractorImpl(logger: Logger) : AlarmInteractor {
 
     override fun cancel(alarm: Alarm) = scheduler.cancelAlarm(alarm)
 
+    override fun cancelRegularOccurrences(alarm: Alarm) = scheduler.cancelRegularOccurrences(alarm)
+
     override fun cancelSnooze(alarm: Alarm) = scheduler.cancelSnooze(alarm)
 
     override suspend fun update(alarm: Alarm) {

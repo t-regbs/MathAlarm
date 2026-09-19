@@ -5,20 +5,17 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
 import com.timilehinaregbesola.mathalarm.interactors.scheduleOccurrences
 import com.timilehinaregbesola.mathalarm.provider.AlarmTimeCalculator
+import com.timilehinaregbesola.mathalarm.provider.activeSkippedDate
+import com.timilehinaregbesola.mathalarm.provider.remainingOccurrences
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.LocalDate
-import kotlinx.datetime.LocalDateTime
-import kotlinx.datetime.LocalTime
-import kotlinx.datetime.toInstant
-import kotlinx.datetime.toLocalDateTime
-import kotlin.time.Instant
 
 class RescheduleFutureAlarms(
     private val alarmRepository: AlarmRepository,
     private val alarmInteractor: AlarmInteractor,
-    private val alarmTimeCalculator: AlarmTimeCalculator
+    private val alarmTimeCalculator: AlarmTimeCalculator,
+    private val timeZone: () -> TimeZone = { TimeZone.currentSystemDefault() },
 ) {
     suspend operator fun invoke(clearActive: Boolean = false) {
         restoreAlarms(preservePendingDelivery = false, clearActive = clearActive)
@@ -30,7 +27,8 @@ class RescheduleFutureAlarms(
     }
 
     private suspend fun restoreAlarms(preservePendingDelivery: Boolean, clearActive: Boolean) {
-        val zone = TimeZone.currentSystemDefault()
+        clearExpiredSkips()
+        val zone = timeZone()
         val alarms = alarmRepository.getSavedAlarms().first().filter { it.isOn }
         for (alarm in alarms) {
             val scheduleIsCurrent = alarm.scheduleInitialized &&
@@ -52,12 +50,17 @@ class RescheduleFutureAlarms(
     }
 
     /** Restore saved occurrences, including a separate snooze, without starting a new cycle. */
-    suspend fun restoreAlarm(alarm: Alarm, clearActive: Boolean = false) {
+    suspend fun restoreAlarm(alarm: Alarm, clearActive: Boolean = false, preserveSnooze: Boolean = false) {
         try {
-            val zone = TimeZone.currentSystemDefault()
-            val normalized = alarm.copy(skippedDate = activeSkippedDate(alarm, zone))
-            val times = remainingTimes(normalized, zone)
-            val snooze = normalized.snoozedUntil?.takeIf(alarmTimeCalculator::isInFuture)
+            val zone = timeZone()
+            val normalized = alarm.copy(skippedDate = alarm.activeSkippedDate(alarmTimeCalculator, zone))
+            val times = normalized.remainingOccurrences(alarmTimeCalculator, zone)
+            // Skip/Undo change only normal occurrences. Leave the OS snooze untouched
+            // while it is future or recently due, so queued delivery remains valid.
+            val keepSnooze = preserveSnooze && normalized.snoozedUntil?.let {
+                alarmTimeCalculator.isInFuture(it + DELIVERY_GRACE_MILLIS)
+            } == true
+            val snooze = normalized.snoozedUntil?.takeIf { keepSnooze || alarmTimeCalculator.isInFuture(it) }
             val active = if (clearActive) null else normalized.activeAt
             val planned = normalized.copy(
                 pendingTimes = times.sorted(),
@@ -70,9 +73,10 @@ class RescheduleFutureAlarms(
             )
             alarmRepository.updateAlarm(planned)
             // Remove old-zone weekday identities before installing the restored schedule.
-            alarmInteractor.cancel(alarm)
+            if (keepSnooze) alarmInteractor.cancelRegularOccurrences(alarm)
+            else alarmInteractor.cancel(alarm)
             alarmInteractor.scheduleOccurrences(planned, times)
-            if (snooze != null) alarmInteractor.scheduleSnooze(planned, snooze)
+            if (snooze != null && !keepSnooze) alarmInteractor.scheduleSnooze(planned, snooze)
             alarmRepository.updateAlarm(planned.copy(scheduleError = null))
         } catch (e: CancellationException) {
             throw e
@@ -84,25 +88,14 @@ class RescheduleFutureAlarms(
         }
     }
 
-    private fun remainingTimes(alarm: Alarm, zone: TimeZone): List<Long> {
-        if (alarm.repeat || !alarm.scheduleInitialized) {
-            return alarmTimeCalculator.calculateAlarmTimes(alarm)
+    /** Disabled alarms can still carry an undoable final occurrence. Expire those too. */
+    suspend fun clearExpiredSkips() {
+        val zone = timeZone()
+        alarmRepository.getSavedAlarms().first().forEach { alarm ->
+            if (alarm.skippedDate != null && alarm.activeSkippedDate(alarmTimeCalculator, zone) == null) {
+                alarmRepository.updateAlarm(alarm.copy(skippedDate = null))
+            }
         }
-        val previousZone = alarm.scheduleTimeZone?.let(TimeZone::of) ?: zone
-        // Preserve the original local dates of one-time occurrences across zone changes.
-        return alarm.pendingTimes.map { time ->
-            Instant.fromEpochMilliseconds(time).toLocalDateTime(previousZone)
-                .toInstant(zone).toEpochMilliseconds()
-        }.filter(alarmTimeCalculator::isInFuture)
-    }
-
-    private fun activeSkippedDate(alarm: Alarm, zone: TimeZone): String? {
-        val value = alarm.skippedDate ?: return null
-        val date = runCatching { LocalDate.parse(value) }.getOrNull() ?: return null
-        val skippedTime = LocalDateTime(date, LocalTime(alarm.hour, alarm.minute))
-            .toInstant(zone)
-            .toEpochMilliseconds()
-        return value.takeIf { alarmTimeCalculator.isInFuture(skippedTime) }
     }
 
     private companion object {

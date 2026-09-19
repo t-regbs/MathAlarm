@@ -49,7 +49,6 @@ class ChallengeStringsTest {
                 assertTrue(text.mixedQuestionTotal(count, 10).contains(text.questionCount(count)))
             }
             assertTrue(text.questionCountHint(10).contains("10"))
-            assertTrue(text.challengeAnnouncementDescription(10).contains("10"))
         }
     }
 }

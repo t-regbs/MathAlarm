@@ -28,9 +28,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
-import com.timilehinaregbesola.mathalarm.presentation.whatsnew.MathChallengeAnnouncementPreview
+import com.timilehinaregbesola.mathalarm.presentation.whatsnew.AnnouncementFeature
+import com.timilehinaregbesola.mathalarm.presentation.whatsnew.announcementFeaturesToShow
 import com.timilehinaregbesola.mathalarm.presentation.whatsnew.WhatsNewDialog
-import com.timilehinaregbesola.mathalarm.presentation.whatsnew.currentAnnouncement
+import com.timilehinaregbesola.mathalarm.presentation.whatsnew.announcementCatalog
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
@@ -80,7 +81,10 @@ fun NavGraph(
         }
     }
     val backStack = rememberNavBackStack(config, AlarmList)
-    var replayAnnouncement by rememberSaveable { mutableStateOf(false) }
+    val catalog = announcementCatalog
+    // Freeze the pages for this session: acknowledging one must not remove it mid-navigation.
+    var announcementIds by rememberSaveable { mutableStateOf<List<String>?>(null) }
+    var automaticAnnouncementOffered by rememberSaveable { mutableStateOf(false) }
     val settingsLayout = settingsWindowLayout(currentWindowAdaptiveInfo().windowSizeClass)
     val bottomSheetStrategy = remember(settingsLayout.useCenteredDialog) {
         BottomSheetSceneStrategy<NavKey>(useCenteredDialog = settingsLayout.useCenteredDialog)
@@ -182,31 +186,45 @@ fun NavGraph(
                     },
                     pref = preferences,
                     onWhatsNew = {
-                        replayAnnouncement = true
+                        announcementIds = preferences.latestAnnouncementBatch(catalog.map { it.feature.id })
                     },
                 )
             }
 
         }
     )
-    val announcement = currentAnnouncement
     val destination = backStack.lastOrNull()
     val canShowAnnouncement = deeplinkInfo == null &&
         (destination == AlarmList || destination == AppSettings)
-    val unseenAnnouncement = destination == AlarmList && !preferences.hasSeenAnnouncement(announcement.id)
-    if (canShowAnnouncement && (replayAnnouncement || unseenAnnouncement)) {
-        val dismiss = {
-            preferences.markAnnouncementSeen(announcement.id)
-            replayAnnouncement = false
+    LaunchedEffect(canShowAnnouncement, destination) {
+        if (canShowAnnouncement && destination == AlarmList && !automaticAnnouncementOffered) {
+            automaticAnnouncementOffered = true
+            preferences.latestAnnouncementBatch(catalog.map { it.feature.id })
+            if (announcementIds == null) {
+                announcementIds = announcementFeaturesToShow(preferences::hasSeenAnnouncement)
+                    .map { it.id }.takeIf { it.isNotEmpty() }
+            }
         }
+    }
+    val sessionAnnouncements = announcementIds?.mapNotNull { id ->
+        catalog.find { it.feature.id == id }
+    }.orEmpty()
+    if (canShowAnnouncement && sessionAnnouncements.isNotEmpty()) {
         WhatsNewDialog(
-            announcement = announcement,
-            visual = { MathChallengeAnnouncementPreview() },
-            onDismiss = dismiss,
-            onTryFeature = {
-                dismiss()
-                val alarmJson = Json.encodeToString(AlarmMapper().mapFromDomainModel(Alarm()))
-                backStack.add(SettingsSheet(alarmJson))
+            announcements = sessionAnnouncements,
+            onSeen = preferences::markAnnouncementSeen,
+            onDismiss = { announcementIds = null },
+            onTryFeature = { feature ->
+                announcementIds = null
+                when (feature) {
+                    AnnouncementFeature.MATH_CHALLENGES -> {
+                        val alarmJson = Json.encodeToString(AlarmMapper().mapFromDomainModel(Alarm()))
+                        backStack.add(SettingsSheet(alarmJson))
+                    }
+                    AnnouncementFeature.SKIP_NEXT -> {
+                        while (backStack.size > 1) backStack.removeLastOrNull()
+                    }
+                }
             },
         )
     }
