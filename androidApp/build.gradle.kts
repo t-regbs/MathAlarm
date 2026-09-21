@@ -39,10 +39,6 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
 
-    lint {
-        disable += setOf("LogNotTimber", "StringFormatInTimber", "ThrowableNotAtBeginning", "BinaryOperationInTimber", "TimberArgCount", "TimberArgTypes", "TimberTagLength", "TimberExceptionLogging")
-    }
-
     buildFeatures {
         compose = true
         buildConfig = true
@@ -79,7 +75,6 @@ dependencies {
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.core.splashscreen)
-    implementation(libs.androidx.datastore.preferences)
     implementation(libs.lyricist)
     implementation(libs.kermit)
     implementation(libs.kermit.crashlytics)
@@ -88,18 +83,17 @@ dependencies {
     implementation(libs.kotlinx.datetime)
     implementation(libs.multiplatform.settings.no.arg)
     implementation(libs.androidx.room.runtime)
-    implementation(libs.androidx.sqlite.driver.android)
 
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.android)
     implementation(libs.koin.core)
-    implementation(libs.koin.compose)
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.messaging)
 
+    testImplementation(libs.androidx.sqlite.driver.android)
     testImplementation(libs.junit)
     testImplementation(libs.coroutines.test)
     testImplementation(libs.robolectric)

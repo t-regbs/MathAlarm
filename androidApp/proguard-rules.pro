@@ -19,3 +19,9 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Firebase discovers registrars from manifest metadata using reflection.
+# AGP 9 strict keep rules require explicitly preserving their no-argument constructors.
+-keep class * implements com.google.firebase.components.ComponentRegistrar {
+    void <init>();
+}
