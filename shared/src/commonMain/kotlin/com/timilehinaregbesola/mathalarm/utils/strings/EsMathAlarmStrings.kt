@@ -4,6 +4,11 @@ import cafe.adriel.lyricist.LyricistStrings
 
 @LyricistStrings(languageTag = Locales.ES)
 val EsMathAlarmStrings = Strings(
+    selectAlarmPrompt = "Selecciona una alarma o crea una nueva",
+    closeAlarmEditor = "¿Cerrar el editor?",
+    closeAlarmEditorMessage = "Se descartarán los cambios sin guardar de esta alarma.",
+    discardChanges = "Descartar cambios",
+
     mathDifficultyNames = listOf("Fácil", "Media", "Difícil", "Personalizada"),
     mathChallengeTitle = "Reto matemático",
     mixedDifficulty = "Dificultad mixta",

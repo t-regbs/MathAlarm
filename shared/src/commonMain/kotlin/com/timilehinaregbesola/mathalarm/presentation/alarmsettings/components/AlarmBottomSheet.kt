@@ -31,6 +31,10 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.rememberBottomSheetScaffoldState
+import androidx.compose.foundation.layout.safeDrawingPadding
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -128,16 +132,22 @@ fun AlarmBottomSheet(
     darkTheme: Boolean,
     alarm: AlarmEntity,
     showDismissButton: Boolean,
+    isPane: Boolean = false,
+    onDraftStateChange: (Boolean) -> Unit = {},
 ) {
     LaunchedEffect(Unit) {
         viewModel.setAlarm(AlarmMapper().mapToDomainModel(alarm))
     }
     val scaffoldState = rememberBottomSheetScaffoldState()
-    var showTimePickerDialog by remember { mutableStateOf(false) }
+    var showTimePickerDialog by rememberSaveable { mutableStateOf(false) }
     var showTonePickerDialog by remember { mutableStateOf(false) }
     var showConfirmationDialog by remember { mutableStateOf(false) }
     var showExactAlarmPermissionDialog by remember { mutableStateOf(false) }
     var showPermRequiredDialog by remember { mutableStateOf(false) }
+
+    var editingSubPage by remember { mutableStateOf(false) }
+    val hasDraft = viewModel.hasUnsavedChanges || editingSubPage || showTimePickerDialog || showTonePickerDialog
+    SideEffect { onDraftStateChange(hasDraft) }
 
     val toneUri = viewModel.tone.value
     val toneText = remember(toneUri) { mutableStateOf<String?>(null) }
@@ -219,6 +229,8 @@ fun AlarmBottomSheet(
         },
         onCloseClick = closeSettings,
         showDismissButton = showDismissButton,
+        isPane = isPane,
+        onSubEditorChanged = { editingSubPage = it },
         topSection = {
             TopSection(
                 selectedDays = viewModel.dayChooser.value,
@@ -289,6 +301,7 @@ fun AlarmBottomSheet(
             with(viewModel.alarmTime.value) {
                 if (showTimePickerDialog) {
                     TimePickerDialog(
+                        embedded = isPane,
                         timeState = rememberAdaptiveTimePickerState(
                             initialHour = hour,
                             initialMinute = minute,
@@ -375,6 +388,8 @@ fun AlarmBottomSheet(
 private fun AlarmBottomSheetContent(
     onCloseClick: () -> Unit,
     showDismissButton: Boolean,
+    isPane: Boolean = false,
+    onSubEditorChanged: (Boolean) -> Unit = {},
     topSection: @Composable () -> Unit,
     bottomSection: @Composable (onEditChallenge: () -> Unit, onEditSnooze: () -> Unit) -> Unit,
     onTestClick: () -> Unit,
@@ -388,10 +403,12 @@ private fun AlarmBottomSheetContent(
     dialogSection: @Composable () -> Unit
 ) {
     AlarmSettingsSheetHost(
+        modifier = if (isPane) Modifier.safeDrawingPadding().imePadding() else Modifier,
         challenge = challenge,
         snoozeEnabled = snoozeEnabled,
         snoozeMinutes = snoozeMinutes,
         maxSnoozes = maxSnoozes,
+        onSubEditorChanged = onSubEditorChanged,
         onChallengeApply = onChallengeChange,
         onSnoozeApply = onSnoozeChange,
     ) { onEditChallenge, onEditSnooze ->

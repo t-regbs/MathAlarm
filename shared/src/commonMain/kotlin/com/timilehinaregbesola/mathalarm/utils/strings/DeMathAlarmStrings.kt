@@ -4,6 +4,11 @@ import cafe.adriel.lyricist.LyricistStrings
 
 @LyricistStrings(languageTag = Locales.DE, default = false)
 val DeMathAlarmStrings = Strings(
+    selectAlarmPrompt = "Wähle einen Wecker aus oder erstelle einen neuen",
+    closeAlarmEditor = "Bearbeitung schließen?",
+    closeAlarmEditorMessage = "Nicht gespeicherte Änderungen an diesem Wecker werden verworfen.",
+    discardChanges = "Änderungen verwerfen",
+
     mathDifficultyNames = listOf("Leicht", "Mittel", "Schwer", "Individuell"),
     mathChallengeTitle = "Matheaufgabe",
     mixedDifficulty = "Gemischte Schwierigkeit",

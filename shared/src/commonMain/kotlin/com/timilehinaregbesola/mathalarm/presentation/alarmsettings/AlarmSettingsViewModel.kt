@@ -31,6 +31,14 @@ class AlarmSettingsViewModel(
     private val permission: AlarmPermission,
 ) : ViewModel() {
 
+    private var initialDraft: Alarm? = null
+    val hasUnsavedChanges: Boolean
+        get() = initialDraft?.let { initial ->
+            // Alarm's constructor timestamps are defaults, not editable fields.
+            createAlarm().copy(newDateTime = initial.newDateTime,
+                newHour = initial.newHour, newMinute = initial.newMinute) != initial
+        } ?: false
+
     private var isNewAlarm: Boolean? = null
 
     private var isRescheduled: Boolean? = null
@@ -80,15 +88,13 @@ class AlarmSettingsViewModel(
         when (event) {
             is AddEditAlarmEvent.OnSaveTodoClick -> {
                 val edited = createAlarm().copy(isSaved = true)
-                if (edited.isOn && !permission.hasExactAlarmPermission()) {
-                    viewModelScope.launch { _eventFlow.emit(UiEvent.RequestExactAlarmPermission) }
-                    return
-                }
                 viewModelScope.launch {
                     try {
-                        usecases.command {
+                        val didSave = usecases.command {
                             val old = findAlarm(edited.alarmId)
                             val alarm = edited.copy(
+                                // The list can toggle this alarm while its editor is open.
+                                isOn = old?.isOn ?: edited.isOn,
                                 pendingTimes = old?.pendingTimes.orEmpty(),
                                 scheduleInitialized = old?.scheduleInitialized ?: false,
                                 snoozedUntil = old?.snoozedUntil,
@@ -98,6 +104,9 @@ class AlarmSettingsViewModel(
                                 scheduleError = old?.scheduleError,
                                 scheduleTimeZone = old?.scheduleTimeZone
                             )
+                            if (alarm.isOn && !permission.hasExactAlarmPermission()) {
+                                return@command false
+                            }
                             // Cancel using the old snapshot as well, for pre-migration identities.
                             if (old != null && isRescheduled == true) cancelAlarm(old)
                             val id = addAlarm(alarm)
@@ -110,8 +119,9 @@ class AlarmSettingsViewModel(
                             } else {
                                 updateAlarm(saved)
                             }
+                            true
                         }
-                        _eventFlow.emit(UiEvent.SaveAlarm)
+                        _eventFlow.emit(if (didSave) UiEvent.SaveAlarm else UiEvent.RequestExactAlarmPermission)
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
@@ -234,6 +244,7 @@ class AlarmSettingsViewModel(
                 _alarmTitle.value = TextFieldValue(formattedTitle)
                 _isOn.value = alarm.isOn
                 _isSaved.value = alarm.isSaved
+                initialDraft = createAlarm()
             }
         }
     }

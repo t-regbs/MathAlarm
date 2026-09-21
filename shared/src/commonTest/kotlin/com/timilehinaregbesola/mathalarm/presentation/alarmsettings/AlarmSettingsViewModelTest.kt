@@ -87,6 +87,93 @@ class AlarmSettingsViewModelTest {
         }
     }
 
+    @Test
+    fun `saving after enabling in list preserves enabled state and occurrences`() = runTest {
+        for (changeTime in listOf(false, true)) {
+            val original = Alarm(alarmId = if (changeTime) 996 else 995,
+                isSaved = true, isOn = false, alarmTone = "test_tone")
+            usecases.addAlarm(original)
+            viewModel = AlarmSettingsViewModel(usecases, permission)
+            viewModel.setAlarm(original)
+            usecases.command { scheduleAlarm(original, true) }
+            val enabled = usecases.findAlarm(original.alarmId)!!
+            viewModel.onEvent(AddEditAlarmEvent.EnteredTitle(TextFieldValue("Edited")))
+            if (changeTime) viewModel.onEvent(AddEditAlarmEvent.ChangeTime(TimeState(8, 30)))
+            viewModel.eventFlow.test {
+                viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+                awaitItem() shouldBe AlarmSettingsViewModel.UiEvent.SaveAlarm
+            }
+            val saved = usecases.findAlarm(original.alarmId)!!
+            saved.isOn shouldBe true
+            saved.title shouldBe "Edited"
+            saved.pendingTimes shouldBe enabled.pendingTimes
+            listOf(alarmInteractor.getScheduledAlarms()[saved.alarmId]!!.timeInMillis) shouldBe saved.pendingTimes
+        }
+    }
+
+    @Test
+    fun `saving after disabling in list stays disabled even without permission`() = runTest {
+        for (changeTime in listOf(false, true)) {
+            val original = Alarm(alarmId = if (changeTime) 998 else 997,
+                isSaved = true, isOn = true, alarmTone = "test_tone")
+            usecases.addAlarm(original)
+            usecases.scheduleAlarm(original, true)
+            viewModel = AlarmSettingsViewModel(usecases, permission)
+            viewModel.setAlarm(usecases.findAlarm(original.alarmId)!!)
+            usecases.command {
+                val latest = findAlarm(original.alarmId)!!
+                cancelAlarm(latest)
+                updateAlarm(latest.copy(isOn = false, pendingTimes = emptyList()))
+            }
+            permission.setPermission(false)
+            viewModel.onEvent(AddEditAlarmEvent.EnteredTitle(TextFieldValue("Edited")))
+            if (changeTime) viewModel.onEvent(AddEditAlarmEvent.ChangeTime(TimeState(8, 30)))
+            viewModel.eventFlow.test {
+                viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+                awaitItem() shouldBe AlarmSettingsViewModel.UiEvent.SaveAlarm
+            }
+            val saved = usecases.findAlarm(original.alarmId)!!
+            saved.isOn shouldBe false
+            saved.title shouldBe "Edited"
+            saved.pendingTimes shouldBe emptyList()
+            alarmInteractor.isAlarmScheduled(saved) shouldBe false
+        }
+    }
+
+    @Test
+    fun `permission check uses latest enabled state before saving edits`() = runTest {
+        val original = Alarm(alarmId = 999, isSaved = true, isOn = false, alarmTone = "test_tone")
+        usecases.addAlarm(original)
+        viewModel.setAlarm(original)
+        usecases.command { scheduleAlarm(original, true) }
+        val enabled = usecases.findAlarm(original.alarmId)!!
+        val scheduled = alarmInteractor.getScheduledAlarms()
+        permission.setPermission(false)
+        viewModel.onEvent(AddEditAlarmEvent.EnteredTitle(TextFieldValue("Edited")))
+        viewModel.eventFlow.test {
+            viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+            awaitItem() shouldBe AlarmSettingsViewModel.UiEvent.RequestExactAlarmPermission
+            usecases.findAlarm(original.alarmId) shouldBe enabled
+            alarmInteractor.getScheduledAlarms() shouldBe scheduled
+        }
+    }
+
+    @Test
+    fun `draft detection ignores initialization and clears when edits are reverted`() {
+        viewModel.hasUnsavedChanges shouldBe false
+        viewModel.setAlarm(Alarm(alarmId = 99, title = "Morning", alarmTone = "test_tone"))
+        viewModel.hasUnsavedChanges shouldBe false
+        viewModel.onEvent(AddEditAlarmEvent.EnteredTitle(androidx.compose.ui.text.input.TextFieldValue("Changed")))
+        viewModel.hasUnsavedChanges shouldBe true
+        // Re-entering an existing destination after a resize must not reset its draft.
+        viewModel.setAlarm(Alarm(alarmId = 99, title = "Morning", alarmTone = "test_tone"))
+        viewModel.alarmTitle.value.text shouldBe "Changed"
+        viewModel.onEvent(AddEditAlarmEvent.EnteredTitle(androidx.compose.ui.text.input.TextFieldValue("Morning")))
+        viewModel.hasUnsavedChanges shouldBe false
+        viewModel.onEvent(AddEditAlarmEvent.ToggleVibrate(true))
+        viewModel.hasUnsavedChanges shouldBe true
+    }
+
     @AfterTest
     fun tearDown() {
         Dispatchers.resetMain()

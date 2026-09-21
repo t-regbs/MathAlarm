@@ -25,6 +25,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.NotificationSnoozeEvents
@@ -35,6 +36,9 @@ import com.timilehinaregbesola.mathalarm.presentation.whatsnew.WhatsNewDialog
 import com.timilehinaregbesola.mathalarm.presentation.whatsnew.announcementCatalog
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
+import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
+import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
@@ -95,11 +99,22 @@ fun NavGraph(
     // Freeze the pages for this session: acknowledging one must not remove it mid-navigation.
     var announcementIds by rememberSaveable { mutableStateOf<List<String>?>(null) }
     var automaticAnnouncementOffered by rememberSaveable { mutableStateOf(false) }
+    // Settings can hide the editor, preventing it from republishing its dirty state on recreation.
+    var dirtyEditor by rememberSaveable(
+        stateSaver = Saver<SettingsSheet?, String>(
+            save = { editor -> editor?.let { Json.encodeToString(SettingsSheet.serializer(), it) } },
+            restore = { Json.decodeFromString(SettingsSheet.serializer(), it) },
+        ),
+    ) { mutableStateOf<SettingsSheet?>(null) }
     val settingsLayout = settingsWindowLayout(currentWindowAdaptiveInfo().windowSizeClass)
-    val bottomSheetStrategy = remember(settingsLayout.useCenteredDialog) {
-        BottomSheetSceneStrategy<NavKey>(useCenteredDialog = settingsLayout.useCenteredDialog)
-    }
-    val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>()
+    val bottomSheetStrategy = remember { BottomSheetSceneStrategy<NavKey>() }
+    val listDetailStrategy = rememberListDetailSceneStrategy<NavKey>(
+        backNavigationBehavior = BackNavigationBehavior.PopLatest,
+        directive = calculatePaneScaffoldDirective(currentWindowAdaptiveInfoV2()).copy(
+            maxHorizontalPartitions = if (settingsLayout.useTwoPanes) 2 else 1,
+            maxVerticalPartitions = 1,
+        ),
+    )
     val mathPreviewStrategy = remember { MathPreviewSceneStrategy<NavKey>() }
 
     // Navigate to MathScreen when deeplinkInfo changes (e.g., from notification tap)
@@ -121,7 +136,11 @@ fun NavGraph(
                 backStack.removeLastOrNull()
             }
         },
-        sceneStrategies = listOf(mathPreviewStrategy, bottomSheetStrategy, listDetailStrategy),
+        sceneStrategies = if (settingsLayout.useTwoPanes) {
+            listOf(listDetailStrategy, mathPreviewStrategy, bottomSheetStrategy)
+        } else {
+            listOf(mathPreviewStrategy, bottomSheetStrategy)
+        },
         entryDecorators = listOf(
             rememberSaveableStateHolderNavEntryDecorator(),
             rememberViewModelStoreNavEntryDecorator()
@@ -152,11 +171,15 @@ fun NavGraph(
         },
         entryProvider = entryProvider {
             entry<AlarmList>(
-                metadata = ListDetailSceneStrategy.listPane(sceneKey = AlarmList)
+                metadata = ListDetailSceneStrategy.listPane(sceneKey = AlarmList) {
+                    AlarmDetailPlaceholder()
+                } + ListDetailSceneStrategy.preferredPaneSize(width = 0.4f)
             ) {
                 ListDisplayScreen(
                     backstack = backStack,
                     darkTheme = preferences.shouldUseDarkColors(),
+                    useTwoPanes = settingsLayout.useTwoPanes,
+                    hasUnsavedEditorChanges = dirtyEditor != null && backStack.any { it == dirtyEditor },
                 )
             }
 
@@ -170,13 +193,20 @@ fun NavGraph(
                     darkTheme = preferences.shouldUseDarkColors(),
                     alarm = alarmObject,
                     showDismissButton = settingsLayout.showDismissButton,
+                    isPane = settingsLayout.useTwoPanes,
+                    onDraftStateChange = { dirty ->
+                        if (dirty) dirtyEditor = it else if (dirtyEditor == it) dirtyEditor = null
+                    },
                 )
             }
 
             entry<AlarmMath>(
                 metadata = { destination ->
                     mapOf("mathScreen" to true) +
-                        if (destination.fromSheet) MathPreviewSceneStrategy.metadata() else emptyMap()
+                        if (destination.fromSheet) {
+                            MathPreviewSceneStrategy.metadata() +
+                                ListDetailSceneStrategy.detailPane(sceneKey = AlarmList)
+                        } else emptyMap()
                 },
             ) {
                 val alarmObject = Json.decodeFromString<AlarmEntity>(it.alarmJson)
@@ -187,7 +217,7 @@ fun NavGraph(
                 )
             }
 
-            entry<AppSettings> {
+            entry<AppSettings>(metadata = ListDetailSceneStrategy.detailPane(sceneKey = AlarmList)) {
                 AppSettingsScreen(
                     onBackPress = {
                         if (backStack.size > 1) {

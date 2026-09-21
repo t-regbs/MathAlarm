@@ -55,6 +55,7 @@ class AlarmCardLayoutTest {
                                 onUndoSkip = { undone++ },
                                 onScheduleAlarm = { _, _ -> enabled++ },
                                 darkTheme = false,
+                                selected = true,
                             )
                         }
                     }
@@ -71,7 +72,7 @@ class AlarmCardLayoutTest {
         compose.runOnIdle { assertEquals(1, undone); assertEquals(0, edited) }
         compose.onNode(isToggleable()).performScrollTo().performClick()
         compose.runOnIdle { assertEquals(1, enabled); assertEquals(1, undone) }
-        compose.onNodeWithContentDescription(labels.expand).performScrollTo().performClick()
+        compose.onNodeWithText("Workdays").performScrollTo().performClick()
         compose.onNodeWithText(labels.edit).performScrollTo().assertIsDisplayed().performClick()
         compose.runOnIdle { assertEquals(1, edited) }
         compose.onNodeWithText("Workdays").performScrollTo().performClick()

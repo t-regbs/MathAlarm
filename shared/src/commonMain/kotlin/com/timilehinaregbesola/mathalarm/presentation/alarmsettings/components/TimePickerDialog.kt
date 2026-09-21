@@ -21,6 +21,11 @@ import androidx.compose.material3.ProvideTextStyle
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
+import com.timilehinaregbesola.mathalarm.platform.ChallengeBackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Alignment
@@ -46,11 +51,31 @@ fun TimePickerDialog(
     onConfirm: (LocalTime) -> Unit,
     modifier: Modifier = Modifier,
     darkTheme: Boolean = false,
+    embedded: Boolean = false,
 ) {
 
     fun onConfirmClicked() {
         val currentTime = LocalTime(timeState.hour, timeState.minute)
         onConfirm(currentTime)
+    }
+
+    if (embedded) {
+        ChallengeBackHandler(enabled = true, onBack = onCancel)
+        Surface(modifier.fillMaxSize()) {
+            Column(
+                Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(24.dp),
+            ) {
+                Text(strings.selectHour, style = MaterialTheme.typography.titleLarge)
+                AdaptiveTimePicker(state = timeState)
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.End) {
+                    TextButton(onClick = onCancel) { Text(strings.cancel) }
+                    TextButton(onClick = ::onConfirmClicked) { Text(strings.ok) }
+                }
+            }
+        }
+        return
     }
 
     // TimePicker does not provide a default TimePickerDialog, so we use our own PickerDialog:
