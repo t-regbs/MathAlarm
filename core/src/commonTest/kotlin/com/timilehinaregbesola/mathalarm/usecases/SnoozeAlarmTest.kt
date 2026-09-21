@@ -169,4 +169,87 @@ class SnoozeAlarmTest {
         return Instant.fromEpochMilliseconds(epochMillis)
             .toLocalDateTime(TimeZone.currentSystemDefault())
     }
+
+    @Test
+    fun `limit is durable and rejects the fourth snooze without silencing the alarm`() = runTest {
+        addAlarmUseCase(baseAlarm.copy(activeAt = 1000))
+        repeat(3) { index ->
+            snoozeAlarmUseCase(baseAlarm.alarmId) shouldBe true
+            val saved = alarmRepository.findAlarm(baseAlarm.alarmId)!!
+            saved.snoozeCount shouldBe index + 1
+            // Next delivery retains the count, including across a recreated use case.
+            alarmRepository.updateAlarm(saved.copy(activeAt = 2000L + index, snoozedUntil = null))
+        }
+        notificationInteractor.show(alarmRepository.findAlarm(baseAlarm.alarmId)!!)
+        val recreated = SnoozeAlarm(dateTimeProvider, notificationInteractor, alarmInteractor, alarmRepository)
+        recreated(baseAlarm.alarmId) shouldBe false
+        alarmRepository.findAlarm(baseAlarm.alarmId)!!.snoozeCount shouldBe 3
+        notificationInteractor.isNotificationShown(baseAlarm.alarmId) shouldBe true
+    }
+
+    @Test
+    fun `unlimited snoozes remain available beyond three`() = runTest {
+        addAlarmUseCase(baseAlarm.copy(maxSnoozes = 0, snoozeCount = 20))
+        snoozeAlarmUseCase(baseAlarm.alarmId) shouldBe true
+        alarmRepository.findAlarm(baseAlarm.alarmId)!!.snoozeCount shouldBe 21
+    }
+
+    @Test
+    fun `duration override cannot bypass disabled snoozes or a stale occurrence`() = runTest {
+        addAlarmUseCase(baseAlarm.copy(snooze = 0))
+        snoozeAlarmUseCase(baseAlarm.alarmId, 5) shouldBe false
+        alarmRepository.updateAlarm(baseAlarm.copy(activeAt = 1000))
+        snoozeAlarmUseCase(baseAlarm.alarmId, expectedActiveAt = 999) shouldBe false
+        alarmRepository.findAlarm(baseAlarm.alarmId)!!.snoozeCount shouldBe 0
+        snoozeAlarmUseCase(baseAlarm.alarmId, expectedActiveAt = 1000) shouldBe true
+        alarmRepository.findAlarm(baseAlarm.alarmId)!!.snoozeCount shouldBe 1
+    }
+
+    @Test
+    fun `duplicate snooze requests consume only one allowance`() = runTest {
+        addAlarmUseCase(baseAlarm.copy(activeAt = 1000))
+        snoozeAlarmUseCase(baseAlarm.alarmId) shouldBe true
+        snoozeAlarmUseCase(baseAlarm.alarmId) shouldBe false
+        alarmRepository.findAlarm(baseAlarm.alarmId)!!.snoozeCount shouldBe 1
+    }
+
+    @Test
+    fun `failed scheduling does not consume allowance or stop ringing`() = runTest {
+        val failing = object : com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor by alarmInteractor {
+            override suspend fun scheduleSnooze(alarm: Alarm, timeInMillis: Long) { error("Scheduling failed") }
+        }
+        addAlarmUseCase(baseAlarm)
+        notificationInteractor.show(baseAlarm)
+        assertFailsWith<IllegalStateException> {
+            SnoozeAlarm(dateTimeProvider, notificationInteractor, failing, alarmRepository)(baseAlarm.alarmId)
+        }
+        alarmRepository.findAlarm(baseAlarm.alarmId)!!.snoozeCount shouldBe 0
+        notificationInteractor.isNotificationShown(baseAlarm.alarmId) shouldBe true
+    }
+
+
+    @Test
+    fun `scheduled metadata includes the accepted snooze count`() = runTest {
+        var scheduled: Alarm? = null
+        val backend = object : com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor by alarmInteractor {
+            override suspend fun scheduleSnooze(alarm: Alarm, timeInMillis: Long) { scheduled = alarm }
+        }
+        addAlarmUseCase(baseAlarm.copy(snoozeCount = 2, activeAt = 1000))
+        SnoozeAlarm(dateTimeProvider, notificationInteractor, backend, alarmRepository)(baseAlarm.alarmId) shouldBe true
+        scheduled!!.snoozeCount shouldBe 3
+        scheduled!!.canSnooze shouldBe false
+        scheduled shouldBe alarmRepository.findAlarm(baseAlarm.alarmId)
+    }
+
+
+    @Test
+    fun `snooze uses the saved custom duration without an override`() = runTest {
+        dateTimeProvider.setFixedDateTime(2025, 1, 8, 7, 55)
+        addAlarmUseCase(baseAlarm.copy(snooze = 12))
+        snoozeAlarmUseCase(baseAlarm.alarmId) shouldBe true
+        val scheduled = instantToLocalDateTime(alarmInteractor.getAlarmTimeMillis(baseAlarm.alarmId)!!)
+        scheduled.hour shouldBe 8
+        scheduled.minute shouldBe 7
+    }
+
 }

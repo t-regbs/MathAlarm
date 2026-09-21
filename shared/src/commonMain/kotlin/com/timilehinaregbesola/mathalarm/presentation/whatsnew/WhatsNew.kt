@@ -67,6 +67,13 @@ internal val announcementCatalog: List<FeatureAnnouncement>
             steps = listOf(strings.skipAnnouncementInstructions, strings.skipAnnouncementUndo),
             actionLabel = strings.viewAlarms,
         ),
+        FeatureAnnouncement(
+            feature = AnnouncementFeature.SNOOZE_SETTINGS,
+            title = strings.snoozeAnnouncementTitle,
+            description = strings.snoozeAnnouncementDescription,
+            steps = listOf(strings.snoozeAnnouncementInstructions),
+            actionLabel = strings.tryFeature,
+        ),
     )
 
 @Composable
@@ -109,6 +116,7 @@ internal fun WhatsNewDialog(
                         when (announcement.feature) {
                             AnnouncementFeature.MATH_CHALLENGES -> MathChallengeAnnouncementPreview()
                             AnnouncementFeature.SKIP_NEXT -> SkipAlarmAnnouncementPreview()
+                            AnnouncementFeature.SNOOZE_SETTINGS -> SnoozeAnnouncementPreview()
                         }
                         Text(announcement.description, style = MaterialTheme.typography.bodyLarge)
                         announcement.steps.forEachIndexed { index, step ->

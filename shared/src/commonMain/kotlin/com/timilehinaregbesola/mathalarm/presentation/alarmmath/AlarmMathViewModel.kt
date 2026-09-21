@@ -12,6 +12,7 @@ import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.Usecases
+import com.timilehinaregbesola.mathalarm.framework.consumeDueOccurrence
 import com.timilehinaregbesola.mathalarm.interactors.AudioPlayer
 import com.timilehinaregbesola.mathalarm.platform.stopPlatformAlarmAudio
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -34,6 +35,8 @@ class AlarmMathViewModel(
     private var problems by mutableStateOf<List<MathProblem>>(emptyList())
     private val _questionIndex = mutableStateOf(0)
     val questionIndex: State<Int> = _questionIndex
+    var currentAlarm by mutableStateOf<Alarm?>(null)
+        private set
     val questionCount: Int get() = problems.size.coerceAtLeast(1)
     val currentProblem: MathProblem? get() = problems.getOrNull(_questionIndex.value)
 
@@ -43,12 +46,17 @@ class AlarmMathViewModel(
         // Notifications (including older iOS payloads) identify the alarm; its saved settings
         // are authoritative. Test Alarm deliberately uses the unsaved editor draft instead.
         val saved = if (!preview && alarm.alarmId != 0L) {
-            try { usecases.findAlarm(alarm.alarmId) }
+            try {
+                usecases.command {
+                    consumeDueOccurrence(alarm.alarmId)
+                }
+            }
             catch (e: CancellationException) { throw e }
             catch (e: Exception) { logger.e(e) { "Unable to load challenge settings" }; null }
         } else {
             null
         }
+        currentAlarm = saved ?: alarm
         occurrence = if (preview) null else (saved?.activeAt ?: alarm.activeAt)?.let { alarm.alarmId to it }
         val restored = occurrence?.let { (id, activeAt) -> progressStore.load(id, activeAt) }
         problems = restored?.problems ?: generateChallengeProblems(challenge = (saved ?: alarm).mathChallenge)
@@ -64,7 +72,20 @@ class AlarmMathViewModel(
                 _answerText.value = ""
             }
             is MathScreenEvent.OnSnoozeClick -> {
-                finishAlarm(event.alarm, preview = event.preview, snooze = true)
+                viewModelScope.launch {
+                    try {
+                        val alarm = if (event.preview) currentAlarm ?: Alarm(alarmId = event.alarm)
+                            else usecases.findAlarm(event.alarm) ?: return@launch
+                        currentAlarm = alarm
+                        if (!alarm.canSnooze || finishing) return@launch
+                        finishAlarm(event.alarm, preview = event.preview, snooze = true)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        logger.e(e) { "Unable to load snooze settings" }
+                        _eventFlow.emit(UiEvent.ShowError(AlarmErrorMessage.SNOOZE))
+                    }
+                }
             }
             is MathScreenEvent.OnEnterClick -> {
                 // Ignore a queued Enter from the previous question after advancing.
@@ -110,8 +131,21 @@ class AlarmMathViewModel(
         finishing = true
         viewModelScope.launch {
             try {
-                if (!preview) usecases.command {
-                    if (snooze) snoozeAlarm(alarmId) else completeAlarm(alarmId)
+                val accepted = preview || usecases.command {
+                    if (snooze) {
+                        snoozeAlarm(
+                            alarmId,
+                            expectedActiveAt = currentAlarm?.activeAt,
+                        )
+                    } else {
+                        completeAlarm(alarmId)
+                        true
+                    }
+                }
+                if (!accepted) {
+                    currentAlarm = usecases.findAlarm(alarmId)
+                    _eventFlow.emit(UiEvent.ShowError(AlarmErrorMessage.SNOOZE))
+                    return@launch
                 }
                 if (!preview) occurrence?.let { (id, activeAt) -> progressStore.clear(id, activeAt) }
                 stopAudioAndHideKeyboard(preview)

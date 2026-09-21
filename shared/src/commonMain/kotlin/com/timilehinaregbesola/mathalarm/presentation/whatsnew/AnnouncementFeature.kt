@@ -4,6 +4,7 @@ package com.timilehinaregbesola.mathalarm.presentation.whatsnew
 internal enum class AnnouncementFeature(val id: String) {
     MATH_CHALLENGES("math-challenges-v1"),
     SKIP_NEXT("skip-next-alarm-v1"),
+    SNOOZE_SETTINGS("snooze-settings-v1"),
 }
 
 internal fun announcementFeaturesToShow(

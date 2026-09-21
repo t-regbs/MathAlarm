@@ -70,7 +70,10 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
                 usecases.showAlarm(it, trigger, intent.getBooleanExtra(EXTRA_SNOOZED, false))
             }
             COMPLETE_ACTION -> getAlarmId(intent)?.let { usecases.completeAlarm(it) }
-            SNOOZE_ACTION -> getAlarmId(intent)?.let { usecases.snoozeAlarm(it) }
+            SNOOZE_ACTION -> getAlarmId(intent)?.let {
+                val activeAt = if (intent.hasExtra(EXTRA_TRIGGER_AT)) intent.getLongExtra(EXTRA_TRIGGER_AT, 0) else null
+                usecases.snoozeAlarm(it, expectedActiveAt = activeAt)
+            }
             DISMISS_ACTION -> {
                 // User swiped away the notification - immediately re-show it
                 Logger.d("Notification dismissed by user, re-showing alarm")

@@ -38,6 +38,12 @@ data class AlarmEntity(
     val vibrate: Boolean,
     @ColumnInfo(name = "snooze")
     val snooze: Int,
+    @ColumnInfo(defaultValue = "0")
+    val maxSnoozes: Int = 0,
+    @ColumnInfo(defaultValue = "0")
+    val snoozeRequiresQuestion: Boolean = false, // Retired flag retained for database compatibility.
+    @ColumnInfo(defaultValue = "0")
+    val snoozeCount: Int = 0,
     @ColumnInfo(name = "title", defaultValue = "")
     val title: String,
     @ColumnInfo(name = "isSaved")

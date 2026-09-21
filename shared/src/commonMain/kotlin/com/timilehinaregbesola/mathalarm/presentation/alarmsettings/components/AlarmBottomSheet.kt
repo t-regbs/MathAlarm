@@ -205,6 +205,15 @@ fun AlarmBottomSheet(
         }
     }
     AlarmBottomSheetContent(
+        challenge = viewModel.challenge.value,
+        snoozeEnabled = viewModel.snoozeEnabled.value,
+        snoozeMinutes = viewModel.snoozeMinutes,
+        maxSnoozes = viewModel.maxSnoozes.value,
+        onSnoozeChange = { enabled, minutes, maximum ->
+            viewModel.onEvent(ToggleSnooze(enabled))
+            viewModel.onEvent(AddEditAlarmEvent.ChangeSnoozeDuration(minutes))
+            viewModel.onEvent(AddEditAlarmEvent.ChangeMaxSnoozes(maximum))
+        },
         onChallengeChange = {
             viewModel.onEvent(AddEditAlarmEvent.OnChallengeChange(it))
         },
@@ -220,19 +229,21 @@ fun AlarmBottomSheet(
                 }
             )
         },
-        bottomSection = {
+        bottomSection = { onEditChallenge, onEditSnooze ->
             val noPickerText = strings.noRingtonePicker
             val defaultToneText = strings.defaultAlarmTone
             BottomSettingsSection(
+                onEditChallenge = onEditChallenge,
+                onEditSnooze = onEditSnooze,
                 repeatWeekly = viewModel.repeatWeekly.value,
                 snoozeEnabled = viewModel.snoozeEnabled.value,
+                onSnoozeToggle = { viewModel.onEvent(ToggleSnooze(it)) },
+                maxSnoozes = viewModel.maxSnoozes.value,
+                snoozeMinutes = viewModel.snoozeMinutes,
                 vibrate = viewModel.vibrate.value,
                 challenge = viewModel.challenge.value,
                 onRepeatToggle = {
                     viewModel.onEvent(ToggleRepeat(it))
-                },
-                onSnoozeToggle = {
-                    viewModel.onEvent(ToggleSnooze(it))
                 },
                 onVibrateToggle = {
                     viewModel.onEvent(ToggleVibrate(it))
@@ -365,13 +376,25 @@ private fun AlarmBottomSheetContent(
     onCloseClick: () -> Unit,
     showDismissButton: Boolean,
     topSection: @Composable () -> Unit,
-    bottomSection: @Composable () -> Unit,
+    bottomSection: @Composable (onEditChallenge: () -> Unit, onEditSnooze: () -> Unit) -> Unit,
     onTestClick: () -> Unit,
     onSaveClick: () -> Unit,
+    challenge: MathChallenge = MathChallenge(),
+    snoozeEnabled: Boolean = true,
+    snoozeMinutes: Int = 5,
+    maxSnoozes: Int = 3,
     onChallengeChange: (MathChallenge) -> Unit = {},
+    onSnoozeChange: (Boolean, Int, Int) -> Unit = { _, _, _ -> },
     dialogSection: @Composable () -> Unit
 ) {
-    ChallengeSheetHost(onApply = onChallengeChange) {
+    AlarmSettingsSheetHost(
+        challenge = challenge,
+        snoozeEnabled = snoozeEnabled,
+        snoozeMinutes = snoozeMinutes,
+        maxSnoozes = maxSnoozes,
+        onChallengeApply = onChallengeChange,
+        onSnoozeApply = onSnoozeChange,
+    ) { onEditChallenge, onEditSnooze ->
         with(MaterialTheme) {
             val useFullHeightSheetLayout = isIosPlatform()
             Surface(
@@ -418,7 +441,9 @@ private fun AlarmBottomSheetContent(
                             ) {
                                 SheetSettingsContent(
                                     topSection = topSection,
-                                    bottomSection = bottomSection,
+                                    bottomSection = {
+                                        bottomSection(onEditChallenge, onEditSnooze)
+                                    },
                                 )
                             }
                             SheetActionButtons(
@@ -443,7 +468,7 @@ private fun AlarmBottomSheetContent(
                             ) {
                                 SheetSettingsContent(
                                     topSection = topSection,
-                                    bottomSection = bottomSection,
+                                    bottomSection = { bottomSection(onEditChallenge, onEditSnooze) },
                                 )
                             }
                             SheetActionButtons(
@@ -559,74 +584,70 @@ fun TopSection(
 
 @Composable
 private fun BottomSettingsSection(
+    onEditChallenge: () -> Unit,
+    onEditSnooze: () -> Unit,
     repeatWeekly: Boolean,
     snoozeEnabled: Boolean,
     vibrate: Boolean,
     onRepeatToggle: (Boolean) -> Unit,
-    onSnoozeToggle: (Boolean) -> Unit,
     onVibrateToggle: (Boolean) -> Unit,
     onToneClick: () -> Unit,
     labelTextField: @Composable () -> Unit,
     currentTone: String,
     challenge: MathChallenge = MathChallenge(),
+    maxSnoozes: Int = 3,
+    snoozeMinutes: Int = 5,
+    onSnoozeToggle: (Boolean) -> Unit = {},
 ) {
     val showVibrateToggle = !isIosPlatform()
 
-    Row(
+    Column(
         modifier = Modifier
-            .padding(
-                top = MIDDLE_CONTROL_SECTION_TOP_PADDING,
-                start = MaterialTheme.spacing.medium,
-                end = MaterialTheme.spacing.medium,
-            )
-            .fillMaxWidth(),
-        horizontalArrangement = SpaceBetween,
+            .fillMaxWidth()
+            .padding(horizontal = MaterialTheme.spacing.medium)
     ) {
-        TextWithCheckbox(
-            text = strings.repeatWeekly,
-            initialState = repeatWeekly,
+        Row(
+            modifier = Modifier
+                .padding(top = MIDDLE_CONTROL_SECTION_TOP_PADDING)
+                .fillMaxWidth(),
+            horizontalArrangement = SpaceBetween,
         ) {
-            onRepeatToggle(it)
-        }
-        if (showVibrateToggle) {
             TextWithCheckbox(
-                text = strings.vibrate,
-                initialState = vibrate,
+                text = strings.repeatWeekly,
+                initialState = repeatWeekly,
             ) {
-                onVibrateToggle(it)
+                onRepeatToggle(it)
+            }
+            if (showVibrateToggle) {
+                TextWithCheckbox(
+                    text = strings.vibrate,
+                    initialState = vibrate,
+                ) {
+                    onVibrateToggle(it)
+                }
             }
         }
+        SnoozeSettings(
+            enabled = snoozeEnabled,
+            onEdit = onEditSnooze,
+            maxSnoozes = maxSnoozes,
+            snoozeMinutes = snoozeMinutes,
+            onEnabledChange = onSnoozeToggle,
+        )
+        labelTextField()
+        TextWithIcon(
+            text = currentTone,
+            image = Notifications,
+            onClick = {
+                onToneClick()
+            },
+        )
+        MathChallengeSettings(
+            challenge = challenge,
+            onEdit = onEditChallenge,
+            modifier = Modifier.padding(top = MaterialTheme.spacing.large),
+        )
     }
-    Row(
-        modifier = Modifier
-            .padding(
-                top = MaterialTheme.spacing.medium,
-                start = MaterialTheme.spacing.medium,
-                end = MaterialTheme.spacing.medium,
-            )
-            .fillMaxWidth(),
-    ) {
-        TextWithCheckbox(text = strings.snooze, initialState = snoozeEnabled) {
-            onSnoozeToggle(it)
-        }
-    }
-    labelTextField()
-    TextWithIcon(
-        modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium),
-        text = currentTone,
-        image = Notifications,
-        onClick = {
-            onToneClick()
-        },
-    )
-    MathChallengeSettings(
-        challenge = challenge,
-        modifier = Modifier.padding(
-            top = MaterialTheme.spacing.large,
-            start = MaterialTheme.spacing.medium,
-            end = MaterialTheme.spacing.medium,
-        ),
-    )
 }
 
 @Composable
@@ -852,6 +873,7 @@ private fun BottomSheetPreview() {
             AlarmBottomSheetContent(
                 onCloseClick = {},
                 showDismissButton = true,
+                challenge = MathChallenge(difficulty = 1),
                 topSection = {
                     TopSection(
                         selectedDays = "TFFFFFF",
@@ -859,14 +881,15 @@ private fun BottomSheetPreview() {
                         onTimeCardClick = {}
                     ) {}
                 },
-                bottomSection = {
+                bottomSection = { onEditChallenge, onEditSnooze ->
                     BottomSettingsSection(
+                        onEditChallenge = onEditChallenge,
+                        onEditSnooze = onEditSnooze,
                         repeatWeekly = true,
                         snoozeEnabled = true,
                         vibrate = true,
                         challenge = MathChallenge(difficulty = 1),
                         onRepeatToggle = {},
-                        onSnoozeToggle = {},
                         onVibrateToggle = {},
                         onToneClick = {},
                         labelTextField = {

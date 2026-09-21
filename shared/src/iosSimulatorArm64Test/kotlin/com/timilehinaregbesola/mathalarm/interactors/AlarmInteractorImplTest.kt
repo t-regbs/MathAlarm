@@ -87,6 +87,16 @@ class AlarmInteractorImplTest {
         assertTrue("alarm_9_snooze" in removedNotifications.last())
     }
 
+    @Test fun controlledSnoozesCannotUseTheNativeCountdown() = runTest {
+        val backend = NativeAlarmSchedulerFake()
+        AlarmSchedulerBridge.registerScheduler(backend)
+        val interactor = AlarmInteractorImpl(Logger.withTag("Test"))
+        val alarm = Alarm(alarmId = 11, snooze = 5)
+        interactor.schedule(alarm, 2_000_000_000_000)
+        interactor.schedule(alarm.copy(maxSnoozes = 0), 2_000_000_000_000)
+        assertEquals(listOf(0, 5), backend.requests.map { it.snoozeMinutes })
+    }
+
     private class NativeAlarmSchedulerFake : NativeAlarmScheduler {
         private val scheduledAlarmIds = mutableSetOf<Long>()
 

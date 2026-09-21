@@ -7,6 +7,8 @@ import com.timilehinaregbesola.mathalarm.domain.model.mathChallenge
 import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
 import com.timilehinaregbesola.mathalarm.platform.getDefaultAlarmTone
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
@@ -52,6 +54,11 @@ class AlarmSettingsViewModel(
     private val _snoozeEnabled = mutableStateOf(true)
     val snoozeEnabled: State<Boolean> = _snoozeEnabled
 
+    private val _maxSnoozes = mutableStateOf(3)
+    val maxSnoozes: State<Int> = _maxSnoozes
+    var snoozeMinutes by mutableStateOf(DEFAULT_SNOOZE_MINUTES)
+        private set
+
     private val _challenge = mutableStateOf(MathChallenge())
     val challenge: State<MathChallenge> = _challenge
 
@@ -86,6 +93,7 @@ class AlarmSettingsViewModel(
                                 scheduleInitialized = old?.scheduleInitialized ?: false,
                                 snoozedUntil = old?.snoozedUntil,
                                 activeAt = old?.activeAt,
+                                snoozeCount = old?.snoozeCount ?: 0,
                                 skippedDate = old?.skippedDate.takeIf { isRescheduled != true },
                                 scheduleError = old?.scheduleError,
                                 scheduleTimeZone = old?.scheduleTimeZone
@@ -134,6 +142,12 @@ class AlarmSettingsViewModel(
             is AddEditAlarmEvent.ToggleSnooze -> {
                 _snoozeEnabled.value = event.value
             }
+            is AddEditAlarmEvent.ChangeMaxSnoozes -> {
+                if (event.value in listOf(0, 1, 2, 3, 5)) _maxSnoozes.value = event.value
+            }
+            is AddEditAlarmEvent.ChangeSnoozeDuration -> {
+                if (event.minutes in 1..30) snoozeMinutes = event.minutes
+            }
             is AddEditAlarmEvent.ToggleDayChooser -> {
                 markExistingAlarmForReschedule()
                 _dayChooser.value = event.value
@@ -171,7 +185,8 @@ class AlarmSettingsViewModel(
         difficultyMix = _challenge.value.difficultyMix,
         alarmTone = _tone.value,
         isSaved = _isSaved.value,
-        snooze = if (_snoozeEnabled.value) DEFAULT_SNOOZE_MINUTES else 0,
+        snooze = if (_snoozeEnabled.value) snoozeMinutes else 0,
+        maxSnoozes = _maxSnoozes.value,
     )
 
     private fun initDateTime(alarm: Alarm): LocalDateTime = alarm.initLocalDateTimeInSystemZone()
@@ -207,6 +222,8 @@ class AlarmSettingsViewModel(
                 _repeatWeekly.value = alarm.repeat
                 _vibrate.value = alarm.vibrate
                 _snoozeEnabled.value = alarm.snooze != 0
+                snoozeMinutes = alarm.snooze.takeIf { it > 0 }?.coerceAtMost(30) ?: DEFAULT_SNOOZE_MINUTES
+                _maxSnoozes.value = alarm.maxSnoozes
                 _challenge.value = alarm.mathChallenge
                 if (alarm.alarmTone == "") {
                     _tone.value = getDefaultAlarmTone()

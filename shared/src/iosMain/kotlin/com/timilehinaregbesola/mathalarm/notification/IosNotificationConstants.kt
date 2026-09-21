@@ -11,6 +11,7 @@ object IosNotificationConstants {
      * Used to associate actions with the notification.
      */
     const val CATEGORY_IDENTIFIER_ALARM = "ALARM_CATEGORY"
+    const val CATEGORY_IDENTIFIER_NO_SNOOZE = "ALARM_NO_SNOOZE_CATEGORY"
     
     /**
      * Action identifier for snooze button.

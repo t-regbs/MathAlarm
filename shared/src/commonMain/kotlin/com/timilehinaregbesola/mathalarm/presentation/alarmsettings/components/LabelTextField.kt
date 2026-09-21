@@ -1,21 +1,20 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components
 
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults.colors
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color.Companion.Transparent
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.tooling.preview.Preview
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Label
-import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -25,25 +24,28 @@ fun LabelTextField(
     placeholder: @Composable (() -> Unit)? = null,
     onValueChange: (TextFieldValue) -> Unit,
 ) {
-    TextField(
-        modifier = Modifier
-            .padding(horizontal = MaterialTheme.spacing.medium)
-            .fillMaxWidth(),
-        value = text,
-        onValueChange = onValueChange,
-        leadingIcon = { Icon(imageVector = Label, contentDescription = null) },
-        label = label,
-        placeholder = placeholder,
-        singleLine = true,
-        keyboardOptions = KeyboardOptions(
-            imeAction = ImeAction.Done
-        ),
-        colors = colors(
-            unfocusedContainerColor = Transparent,
-            focusedContainerColor = Transparent,
-            cursorColor = MaterialTheme.colorScheme.onSurface
+    Row(
+        Modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        SettingsLeadingIcon(Label)
+        TextField(
+            modifier = Modifier.weight(1f),
+            value = text,
+            onValueChange = onValueChange,
+            label = label,
+            placeholder = placeholder,
+            singleLine = true,
+            keyboardOptions = KeyboardOptions(
+                imeAction = ImeAction.Done
+            ),
+            colors = colors(
+                unfocusedContainerColor = Transparent,
+                focusedContainerColor = Transparent,
+                cursorColor = MaterialTheme.colorScheme.onSurface
+            )
         )
-    )
+    }
 }
 
 @Preview

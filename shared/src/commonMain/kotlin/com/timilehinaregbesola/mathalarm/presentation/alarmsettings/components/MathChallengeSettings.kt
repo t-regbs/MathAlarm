@@ -31,14 +31,10 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
-import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
@@ -50,7 +46,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import cafe.adriel.lyricist.strings
 import com.timilehinaregbesola.mathalarm.domain.model.MathChallenge
-import com.timilehinaregbesola.mathalarm.platform.ChallengeBackHandler
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.buildQuestionString
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.generateChallengeProblems
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
@@ -59,88 +54,20 @@ import com.timilehinaregbesola.mathalarm.presentation.ui.icon.KeyboardArrowDown
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import kotlin.random.Random
 
-private class ChallengeSheetState {
-    var challenge by mutableStateOf(MathChallenge())
-    var editing by mutableStateOf(false)
-}
-
-private val challengeSheetSaver = listSaver<ChallengeSheetState, Any>(
-    save = {
-        with(it.challenge) {
-            listOf(
-                it.editing,
-                difficulty,
-                questionCount,
-                operations,
-                additionRange,
-                factorRange,
-                difficultyMix
-            )
-        }
-    },
-    restore = { values ->
-        ChallengeSheetState().apply {
-            editing = values[0] as Boolean
-            challenge = MathChallenge(
-                values[1] as Int,
-                values[2] as Int,
-                values[3] as String,
-                values[4] as Int,
-                values[5] as Int,
-                values[6] as String,
-            ).normalized()
-        }
-    },
-)
-
-private val LocalChallengeSheet =
-    staticCompositionLocalOf<ChallengeSheetState> { error("ChallengeSheetHost is required") }
-
-/** Owns both views so opening the editor never creates a second modal surface. */
-@Composable
-internal fun ChallengeSheetHost(
-    onApply: (MathChallenge) -> Unit = {},
-    content: @Composable () -> Unit,
-) {
-    val state = rememberSaveable(saver = challengeSheetSaver) { ChallengeSheetState() }
-    val savedViews = rememberSaveableStateHolder()
-    CompositionLocalProvider(LocalChallengeSheet provides state) {
-        ChallengeBackHandler(enabled = state.editing) { state.editing = false }
-        Box(Modifier.fillMaxSize()) {
-            if (state.editing) {
-                ChallengeEditor(
-                    initial = state.challenge,
-                    onDismiss = { state.editing = false },
-                    onApply = { challenge ->
-                        onApply(challenge)
-                        state.editing = false
-                    },
-                )
-            } else {
-                savedViews.SaveableStateProvider("alarm") { content() }
-            }
-        }
-    }
-}
-
 /** Compact summary backed by the alarm editor view model. */
 @Composable
 internal fun MathChallengeSettings(
     challenge: MathChallenge,
+    onEdit: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    val state = LocalChallengeSheet.current
-    val edit = {
-        state.challenge = challenge.normalized()
-        state.editing = true
-    }
     val names = challengePresetNames
     Row(
-        modifier = modifier.fillMaxWidth().clickable(onClick = edit).padding(vertical = ChallengeDimensions.ROW_SPACING),
+        modifier = modifier.fillMaxWidth().clickable(onClick = onEdit).padding(vertical = ChallengeDimensions.ROW_SPACING),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
     ) {
-        Icon(EmojiSymbols, contentDescription = null)
+        SettingsLeadingIcon(EmojiSymbols)
         Column(Modifier.weight(1f)) {
             Text(strings.mathChallengeTitle, style = MaterialTheme.typography.bodyLarge)
             Text(
@@ -154,7 +81,7 @@ internal fun MathChallengeSettings(
             )
         }
         TextButton(
-            onClick = edit,
+            onClick = onEdit,
             modifier = Modifier.sizeIn(minWidth = ChallengeDimensions.MIN_TOUCH_TARGET, minHeight = ChallengeDimensions.MIN_TOUCH_TARGET),
             colors = ButtonDefaults.textButtonColors(contentColor = MaterialTheme.colorScheme.secondary),
         ) {
@@ -168,7 +95,7 @@ internal fun MathChallengeSettings(
 }
 
 @Composable
-private fun ChallengeEditor(
+internal fun ChallengeEditor(
     initial: MathChallenge,
     onDismiss: () -> Unit,
     onApply: (MathChallenge) -> Unit,
@@ -443,7 +370,7 @@ private fun QuestionCountControl(countText: String, onCountChange: (String) -> U
 }
 
 @Composable
-private fun CountStepper(
+internal fun CountStepper(
     value: String,
     label: String,
     onValueChange: (String) -> Unit,
@@ -546,13 +473,12 @@ private fun sampleQuestion(challenge: MathChallenge, seed: Int): String =
 @Composable
 private fun MathChallengeSettingsPreview() {
     MathAlarmTheme(darkTheme = false) {
-        ChallengeSheetHost {
-            Surface {
-                MathChallengeSettings(
-                    challenge = MathChallenge(difficulty = 1),
-                    modifier = Modifier.padding(MaterialTheme.spacing.medium)
-                )
-            }
+        Surface {
+            MathChallengeSettings(
+                challenge = MathChallenge(difficulty = 1),
+                onEdit = {},
+                modifier = Modifier.padding(MaterialTheme.spacing.medium)
+            )
         }
     }
 }

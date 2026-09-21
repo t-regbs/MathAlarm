@@ -178,10 +178,15 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         // Handle different actions
         switch actionIdentifier {
         case "SNOOZE_ACTION":
-            // Snooze the alarm
-            let snoozeMinutes = (userInfo["snooze"] as? NSNumber)?.intValue ?? 5
-            AlarmAudioController.shared.snoozeAlarm(minutes: Int32(snoozeMinutes))
-            completionHandler()
+            let alarmId = (userInfo["alarmId"] as? NSNumber)?.int64Value ?? 0
+            IosNotificationSnooze.shared.snooze(alarmId: alarmId) { failure in
+                if failure == nil {
+                    AlarmAudioController.shared.stopAlarm()
+                } else {
+                    self.handleAlarmNotification(userInfo: userInfo)
+                }
+                completionHandler()
+            }
             return
             
         case "DISMISS_ACTION":
