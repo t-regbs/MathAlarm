@@ -2,6 +2,7 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components
 
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -27,15 +28,18 @@ private val pageSaver = Saver<AlarmSettingsPage, String>(
 /** One navigation owner for all pages inside the existing alarm settings sheet. */
 @Composable
 internal fun AlarmSettingsSheetHost(
+    modifier: Modifier = Modifier,
     challenge: MathChallenge,
     snoozeEnabled: Boolean,
     snoozeMinutes: Int,
     maxSnoozes: Int,
     onChallengeApply: (MathChallenge) -> Unit,
     onSnoozeApply: (Boolean, Int, Int) -> Unit,
+    onSubEditorChanged: (Boolean) -> Unit = {},
     content: @Composable (onEditChallenge: () -> Unit, onEditSnooze: () -> Unit) -> Unit,
 ) {
     var page by rememberSaveable(stateSaver = pageSaver) { mutableStateOf(AlarmSettingsPage.Main) }
+    SideEffect { onSubEditorChanged(page != AlarmSettingsPage.Main) }
     val savedPages = rememberSaveableStateHolder()
     val returnToMain = {
         // Editors own temporary drafts. Reopening starts with the latest applied settings.
@@ -43,7 +47,7 @@ internal fun AlarmSettingsSheetHost(
         page = AlarmSettingsPage.Main
     }
     ChallengeBackHandler(enabled = page != AlarmSettingsPage.Main, onBack = returnToMain)
-    Box(Modifier.fillMaxSize()) {
+    Box(modifier.fillMaxSize()) {
         savedPages.SaveableStateProvider(page.name) {
             when (page) {
                 AlarmSettingsPage.Main -> content(

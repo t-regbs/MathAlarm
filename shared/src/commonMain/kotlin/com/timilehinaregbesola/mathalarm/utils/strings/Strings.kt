@@ -1,6 +1,10 @@
 package com.timilehinaregbesola.mathalarm.utils.strings
 
 data class Strings(
+    val selectAlarmPrompt: String,
+    val closeAlarmEditor: String,
+    val closeAlarmEditorMessage: String,
+    val discardChanges: String,
     val mathDifficultyNames: List<String>,
     val mathChallengeTitle: String,
     val mixedDifficulty: String,

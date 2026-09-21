@@ -4,6 +4,11 @@ import cafe.adriel.lyricist.LyricistStrings
 
 @LyricistStrings(languageTag = Locales.RU)
 val RuMathAlarmStrings = Strings(
+    selectAlarmPrompt = "Выберите будильник или создайте новый",
+    closeAlarmEditor = "Закрыть редактор?",
+    closeAlarmEditorMessage = "Несохранённые изменения этого будильника будут потеряны.",
+    discardChanges = "Отменить изменения",
+
     mathDifficultyNames = listOf("Легко", "Средне", "Сложно", "Своя настройка"),
     mathChallengeTitle = "Математическое задание",
     mixedDifficulty = "Разная сложность",

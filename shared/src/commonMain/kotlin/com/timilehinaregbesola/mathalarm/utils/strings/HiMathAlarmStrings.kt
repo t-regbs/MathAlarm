@@ -4,6 +4,11 @@ import cafe.adriel.lyricist.LyricistStrings
 
 @LyricistStrings(languageTag = Locales.HI)
 val HiMathAlarmStrings = Strings(
+    selectAlarmPrompt = "अलार्म चुनें या नया बनाएँ",
+    closeAlarmEditor = "संपादक बंद करें?",
+    closeAlarmEditorMessage = "इस अलार्म के बिना सहेजे बदलाव हटा दिए जाएँगे।",
+    discardChanges = "बदलाव हटाएँ",
+
     mathDifficultyNames = listOf("आसान", "मध्यम", "कठिन", "कस्टम"),
     mathChallengeTitle = "गणित चुनौती",
     mixedDifficulty = "मिली-जुली कठिनाई",

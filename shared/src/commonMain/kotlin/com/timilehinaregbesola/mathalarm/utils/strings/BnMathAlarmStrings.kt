@@ -4,6 +4,11 @@ import cafe.adriel.lyricist.LyricistStrings
 
 @LyricistStrings(languageTag = Locales.BN)
 val BnMathAlarmStrings = Strings(
+    selectAlarmPrompt = "একটি অ্যালার্ম বেছে নিন বা নতুন তৈরি করুন",
+    closeAlarmEditor = "সম্পাদক বন্ধ করবেন?",
+    closeAlarmEditorMessage = "এই অ্যালার্মের সংরক্ষণ না করা পরিবর্তনগুলি বাতিল হবে।",
+    discardChanges = "পরিবর্তন বাতিল করুন",
+
     mathDifficultyNames = listOf("সহজ", "মাঝারি", "কঠিন", "নিজস্ব"),
     mathChallengeTitle = "গণিত চ্যালেঞ্জ",
     mixedDifficulty = "মিশ্র কঠিনতা",
