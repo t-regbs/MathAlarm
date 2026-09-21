@@ -1,23 +1,23 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components
 
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight.Companion.Normal
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.TextWithIcon.ICON_END_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.TextWithIcon.TEXT_FONT_SIZE
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.TextWithIcon.TEXT_WITH_ICON_HORIZONTAL_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.TextWithIcon.TEXT_WITH_ICON_TOP_PADDING
 import androidx.compose.ui.tooling.preview.Preview
 import com.mohamedrejeb.calf.ui.gesture.adaptiveClickable
+import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Notifications
 
 @Composable
@@ -29,18 +29,12 @@ fun TextWithIcon(
 ) {
     Row(
         modifier = modifier
-            .padding(
-                top = TEXT_WITH_ICON_TOP_PADDING,
-                start = TEXT_WITH_ICON_HORIZONTAL_PADDING,
-                end = TEXT_WITH_ICON_HORIZONTAL_PADDING,
-            )
+            .padding(top = TEXT_WITH_ICON_TOP_PADDING)
             .fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
     ) {
-        Icon(
-            modifier = Modifier.padding(end = ICON_END_PADDING),
-            imageVector = image,
-            contentDescription = null,
-        )
+        SettingsLeadingIcon(image)
         Text(
             modifier = Modifier.adaptiveClickable(
                 enabled = onClick != null,
@@ -63,7 +57,5 @@ private fun TextWithIconPreview() {
 
 private object TextWithIcon {
     val TEXT_FONT_SIZE = 16.sp
-    val ICON_END_PADDING = 14.dp
     val TEXT_WITH_ICON_TOP_PADDING = 30.dp
-    val TEXT_WITH_ICON_HORIZONTAL_PADDING = 10.dp
 }

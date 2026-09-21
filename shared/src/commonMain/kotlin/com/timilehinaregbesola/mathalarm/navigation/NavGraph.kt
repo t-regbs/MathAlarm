@@ -27,6 +27,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.framework.NotificationSnoozeEvents
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.presentation.whatsnew.AnnouncementFeature
 import com.timilehinaregbesola.mathalarm.presentation.whatsnew.announcementFeaturesToShow
@@ -81,6 +82,15 @@ fun NavGraph(
         }
     }
     val backStack = rememberNavBackStack(config, AlarmList)
+    LaunchedEffect(backStack) {
+        NotificationSnoozeEvents.snoozed.collect { alarmId ->
+            // A foreground notification can be snoozed while its challenge is visible.
+            val matching = backStack.filterIsInstance<AlarmMath>().filter {
+                !it.fromSheet && Json.decodeFromString<AlarmEntity>(it.alarmJson).alarmId == alarmId
+            }
+            backStack.removeAll(matching.toSet())
+        }
+    }
     val catalog = announcementCatalog
     // Freeze the pages for this session: acknowledging one must not remove it mid-navigation.
     var announcementIds by rememberSaveable { mutableStateOf<List<String>?>(null) }
@@ -217,7 +227,7 @@ fun NavGraph(
             onTryFeature = { feature ->
                 announcementIds = null
                 when (feature) {
-                    AnnouncementFeature.MATH_CHALLENGES -> {
+                    AnnouncementFeature.MATH_CHALLENGES, AnnouncementFeature.SNOOZE_SETTINGS -> {
                         val alarmJson = Json.encodeToString(AlarmMapper().mapFromDomainModel(Alarm()))
                         backStack.add(SettingsSheet(alarmJson))
                     }

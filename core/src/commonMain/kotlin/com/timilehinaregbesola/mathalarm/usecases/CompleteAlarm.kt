@@ -34,6 +34,7 @@ class CompleteAlarm(
             isOn = remainsEnabled,
             pendingTimes = pending,
             activeAt = null,
+            snoozeCount = 0,
             snoozedUntil = null,
             scheduleError = if (alarm.repeat || hasRemaining) alarm.scheduleError else null
         )

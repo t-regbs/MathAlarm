@@ -8,7 +8,7 @@ import androidx.room.migration.Migration
 import androidx.sqlite.SQLiteConnection
 import androidx.sqlite.execSQL
 
-@Database(entities = [AlarmEntity::class], version = 8, exportSchema = true)
+@Database(entities = [AlarmEntity::class], version = 9, exportSchema = true)
 @ConstructedBy(AlarmDatabaseConstructor::class)
 abstract class AlarmDatabase : RoomDatabase() {
     abstract val alarmDatabaseDao: AlarmDao
@@ -122,5 +122,14 @@ val MIGRATION_6_7 = object : Migration(6, 7) {
 val MIGRATION_7_8 = object : Migration(7, 8) {
     override fun migrate(connection: SQLiteConnection) {
         connection.execSQL("ALTER TABLE alarms ADD COLUMN skippedDate TEXT")
+    }
+}
+
+/** Existing alarms keep unlimited snoozes; new alarms choose their default in the domain model. */
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN maxSnoozes INTEGER NOT NULL DEFAULT 0")
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN snoozeRequiresQuestion INTEGER NOT NULL DEFAULT 0")
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN snoozeCount INTEGER NOT NULL DEFAULT 0")
     }
 }

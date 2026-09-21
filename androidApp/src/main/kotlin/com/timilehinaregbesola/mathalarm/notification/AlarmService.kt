@@ -391,7 +391,7 @@ class AlarmService : Service() {
             setOngoing(true) // Cannot be dismissed by swiping
             setAutoCancel(false)
             setOnlyAlertOnce(true)
-            if (alarm.snooze != 0) {
+            if (alarm.canSnooze) {
                 addAction(getSnoozeAction(alarm))
             }
             // Only set full-screen intent when actively ringing
@@ -442,6 +442,7 @@ class AlarmService : Service() {
             action = intentAction
             data = "mathalarm://action/${alarm.alarmId}/${alarm.activeAt}/$intentAction".toUri()
             putExtra(AlarmReceiver.EXTRA_TASK, alarm.alarmId)
+            alarm.activeAt?.let { putExtra(AlarmReceiver.EXTRA_TRIGGER_AT, it) }
         }
 
         return PendingIntent.getBroadcast(

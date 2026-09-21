@@ -12,17 +12,17 @@ class AnnouncementFeatureTest {
         AlarmPreferencesImpl(AppThemeOptionsMapper(), Logger.withTag("test"), settings)
 
     @Test
-    fun skippingReleasesIncludesBothFeaturesInReleaseOrder() {
-        assertEquals(listOf(AnnouncementFeature.MATH_CHALLENGES, AnnouncementFeature.SKIP_NEXT),
+    fun skippingReleasesIncludesAllFeaturesInReleaseOrder() {
+        assertEquals(listOf(AnnouncementFeature.MATH_CHALLENGES, AnnouncementFeature.SKIP_NEXT, AnnouncementFeature.SNOOZE_SETTINGS),
             announcementFeaturesToShow(preferences()::hasSeenAnnouncement))
     }
 
     @Test
-    fun oldMathAcknowledgementShowsOnlySkip() {
+    fun oldMathAcknowledgementShowsLaterFeatures() {
         val prefs = preferences(MapSettings().apply {
             putString("mathalarm_last_announcement", "math-challenges-v1")
         })
-        assertEquals(listOf(AnnouncementFeature.SKIP_NEXT), announcementFeaturesToShow(prefs::hasSeenAnnouncement))
+        assertEquals(listOf(AnnouncementFeature.SKIP_NEXT, AnnouncementFeature.SNOOZE_SETTINGS), announcementFeaturesToShow(prefs::hasSeenAnnouncement))
     }
 
     @Test
@@ -30,7 +30,18 @@ class AnnouncementFeatureTest {
         val prefs = preferences(MapSettings().apply {
             putString("mathalarm_last_announcement", "skip-next-alarm-v1")
         })
-        assertEquals(listOf(AnnouncementFeature.MATH_CHALLENGES), announcementFeaturesToShow(prefs::hasSeenAnnouncement))
+        assertEquals(listOf(AnnouncementFeature.MATH_CHALLENGES, AnnouncementFeature.SNOOZE_SETTINGS), announcementFeaturesToShow(prefs::hasSeenAnnouncement))
+    }
+
+    @Test
+    fun existingUsersSeeSnoozeSettingsAfterEarlierFeaturesWereSeen() {
+        val prefs = preferences()
+        prefs.markAnnouncementSeen(AnnouncementFeature.MATH_CHALLENGES.id)
+        prefs.markAnnouncementSeen(AnnouncementFeature.SKIP_NEXT.id)
+        assertEquals(listOf(AnnouncementFeature.SNOOZE_SETTINGS),
+            announcementFeaturesToShow(prefs::hasSeenAnnouncement))
+        assertEquals(listOf(AnnouncementFeature.SNOOZE_SETTINGS.id),
+            prefs.latestAnnouncementBatch(AnnouncementFeature.entries.map { it.id }))
     }
 
     @Test
@@ -49,8 +60,8 @@ class AnnouncementFeatureTest {
         val prefs = preferences(settings)
         val session = announcementFeaturesToShow(prefs::hasSeenAnnouncement)
         prefs.markAnnouncementSeen(session.first().id)
-        assertEquals(2, session.size)
-        assertEquals(listOf(AnnouncementFeature.SKIP_NEXT),
+        assertEquals(3, session.size)
+        assertEquals(listOf(AnnouncementFeature.SKIP_NEXT, AnnouncementFeature.SNOOZE_SETTINGS),
             announcementFeaturesToShow(preferences(settings)::hasSeenAnnouncement))
     }
 }

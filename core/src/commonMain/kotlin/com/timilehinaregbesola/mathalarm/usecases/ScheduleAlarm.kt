@@ -26,6 +26,7 @@ class ScheduleAlarm(
             scheduleInitialized = true,
             snoozedUntil = null,
             activeAt = null,
+            snoozeCount = 0,
             skippedDate = null,
             scheduleError = Alarm.SCHEDULING_IN_PROGRESS,
             scheduleTimeZone = TimeZone.currentSystemDefault().id

@@ -24,6 +24,7 @@ import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_2_3
 import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_3_4
 import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_5_6
 import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_6_7
+import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_8_9
 import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_7_8
 import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_4_5
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
@@ -67,6 +68,7 @@ val androidModule = module {
             MIGRATION_5_6,
             MIGRATION_6_7,
             MIGRATION_7_8,
+            MIGRATION_8_9,
         ).build()
     }
 

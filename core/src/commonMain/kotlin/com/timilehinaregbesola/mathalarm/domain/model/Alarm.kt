@@ -24,6 +24,8 @@ data class Alarm(
     var alarmTone: String = "",
     var vibrate: Boolean = false,
     var snooze: Int = 5,
+    val maxSnoozes: Int = 3, // Zero means unlimited.
+    val snoozeCount: Int = 0,
     var title: String = "",
     var isSaved: Boolean = false,
     // Concrete occurrences survive process death and reboot. Empty is meaningful once initialized.
@@ -36,6 +38,16 @@ data class Alarm(
     val scheduleError: String? = null,
     val scheduleTimeZone: String? = null
 ) {
+    val snoozesRemaining: Int?
+        get() = maxSnoozes.takeIf { it > 0 }
+            ?.let {
+                (it - snoozeCount).coerceAtLeast(0)
+            }
+
+    val canSnooze: Boolean
+        get() = snooze > 0 && (snoozesRemaining
+            ?.let { it > 0 } ?: true)
+
     /** A single one-time alarm is disabled with its switch instead. */
     val canSkipNext: Boolean
         get() = isOn && skippedDate == null && (repeat || repeatDays.count { it == 'T' } > 1)

@@ -73,7 +73,7 @@ class IosAlarmScheduler(
         val snoozeAction = UNNotificationAction.actionWithIdentifier(
             identifier = IosNotificationConstants.ACTION_IDENTIFIER_SNOOZE,
             title = "Snooze",
-            options = UNNotificationActionOptionNone
+            options = platform.UserNotifications.UNNotificationActionOptionForeground
         )
         
         val dismissAction = UNNotificationAction.actionWithIdentifier(
@@ -89,7 +89,13 @@ class IosAlarmScheduler(
             options = UNNotificationCategoryOptionNone
         )
         
-        notificationCenter.setNotificationCategories(setOf(alarmCategory))
+        val noSnoozeCategory = UNNotificationCategory.categoryWithIdentifier(
+            identifier = IosNotificationConstants.CATEGORY_IDENTIFIER_NO_SNOOZE,
+            actions = listOf(dismissAction),
+            intentIdentifiers = emptyList<String>(),
+            options = UNNotificationCategoryOptionNone
+        )
+        notificationCenter.setNotificationCategories(setOf(alarmCategory, noSnoozeCategory))
         logger.d { "Notification categories registered successfully" }
     }
     
@@ -133,7 +139,9 @@ class IosAlarmScheduler(
                 title = alarm.title,
                 soundName = alarm.alarmTone,
                 repeatDays = days,
-                snoozeMinutes = alarm.snooze,
+                // AlarmKit's native countdown bypasses our durable limit.
+                // Controlled snoozes are scheduled from the shared challenge screen instead.
+                snoozeMinutes = if (alarm.maxSnoozes == 0) alarm.snooze else 0,
                 vibrate = alarm.vibrate,
                 difficulty = alarm.difficulty,
                 repeats = repeating,
@@ -161,7 +169,8 @@ class IosAlarmScheduler(
                 NSCalendarUnitHour or NSCalendarUnitMinute or platform.Foundation.NSCalendarUnitSecond, fromDate = date)
         }
         val request = UNNotificationRequest.requestWithIdentifier(
-            "alarm_${alarm.alarmId}_$key", createNotificationContent(alarm),
+            "alarm_${alarm.alarmId}_$key",
+            createNotificationContent(alarm.copy(snoozeCount = if (snooze) alarm.snoozeCount else 0)),
             UNCalendarNotificationTrigger.triggerWithDateMatchingComponents(components, repeats = repeating))
         val error = suspendCoroutine<String?> { continuation ->
             notificationCenter.addNotificationRequest(request) { error ->
@@ -223,7 +232,10 @@ class IosAlarmScheduler(
             ))
             
             // Set category for action buttons; registration occurs on first notification-center use.
-            setCategoryIdentifier(IosNotificationConstants.CATEGORY_IDENTIFIER_ALARM)
+            setCategoryIdentifier(
+                if (alarm.canSnooze) IosNotificationConstants.CATEGORY_IDENTIFIER_ALARM
+                else IosNotificationConstants.CATEGORY_IDENTIFIER_NO_SNOOZE
+            )
         }
     }
 

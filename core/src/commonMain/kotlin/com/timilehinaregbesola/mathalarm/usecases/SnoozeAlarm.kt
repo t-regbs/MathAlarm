@@ -14,16 +14,24 @@ class SnoozeAlarm(
     private val alarmInteractor: AlarmInteractor,
     private val alarmRepository: AlarmRepository
 ) {
-    suspend operator fun invoke(alarmId: Long, minutes: Int? = null) {
-        val alarm = alarmRepository.findAlarm(alarmId) ?: return
-        if (!alarm.isOn) return
-        val delay = minutes ?: alarm.snooze.takeIf { it > 0 } ?: return
+    suspend operator fun invoke(
+        alarmId: Long,
+        minutes: Int? = null,
+        expectedActiveAt: Long? = null,
+    ): Boolean {
+        val alarm = alarmRepository.findAlarm(alarmId) ?: return false
+        if (!alarm.isOn || !alarm.canSnooze) return false
+        if (alarm.snoozedUntil != null && alarm.activeAt == null) return false
+        if (expectedActiveAt != null && alarm.activeAt != expectedActiveAt) return false
+        val delay = minutes ?: alarm.snooze
         require(delay > 0)
         val time = (dateTimeProvider.getCurrentDateTime().toInstant(TimeZone.currentSystemDefault()) + delay.minutes)
             .toEpochMilliseconds()
         // Preserve the recurring schedule and keep ringing unless the snooze was accepted.
-        alarmInteractor.scheduleSnooze(alarm, time)
-        alarmRepository.updateAlarm(alarm.copy(snoozedUntil = time, activeAt = null))
+        val snoozed = alarm.copy(snoozedUntil = time, activeAt = null, snoozeCount = alarm.snoozeCount + 1)
+        alarmInteractor.scheduleSnooze(snoozed, time)
+        alarmRepository.updateAlarm(snoozed)
         notificationInteractor.dismiss(alarmId)
+        return true
     }
 }
