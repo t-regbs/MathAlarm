@@ -2,33 +2,25 @@ package com.timilehinaregbesola.mathalarm.navigation
 
 import androidx.window.core.layout.WindowSizeClass
 import kotlin.test.Test
-import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
 
 class SettingsWindowLayoutTest {
-    @Test
-    fun compactWidthKeepsBottomSheetEvenWithAmpleHeight() {
-        val layout = settingsWindowLayout(WindowSizeClass(599, 1000))
-        assertFalse(layout.useCenteredDialog)
-        assertFalse(layout.showDismissButton)
+    @Test fun compactAndMediumWindowsKeepOnePane() {
+        for (width in listOf(360, 599, 600, 839)) {
+            assertFalse(settingsWindowLayout(WindowSizeClass(width, 1200)).useTwoPanes)
+        }
     }
 
-    @Test
-    fun shortWideWindowKeepsBottomSheetAndExplicitDismissButton() {
-        val layout = settingsWindowLayout(WindowSizeClass(1000, 479))
-        assertFalse(layout.useCenteredDialog)
-        assertTrue(layout.showDismissButton)
+    @Test fun expandedWidthUsesTwoPanesEvenInAShortWindow() {
+        for (height in listOf(400, 800, 1200)) {
+            assertTrue(settingsWindowLayout(WindowSizeClass(840, height)).useTwoPanes)
+        }
     }
 
-    @Test
-    fun mediumWidthAndHeightAllowCenteredDialogAtTheBoundary() {
-        assertEquals(SettingsWindowLayout(true, true), settingsWindowLayout(WindowSizeClass(600, 480)))
-    }
-
-    @Test
-    fun spaciousWindowsUseSamePresentationRegardlessOfOrientation() {
-        assertEquals(SettingsWindowLayout(true, true), settingsWindowLayout(WindowSizeClass(800, 1200)))
-        assertEquals(SettingsWindowLayout(true, true), settingsWindowLayout(WindowSizeClass(1200, 800)))
+    @Test fun dismissActionRemainsAvailableOutsideCompactPhoneLayout() {
+        assertFalse(settingsWindowLayout(WindowSizeClass(599, 1000)).showDismissButton)
+        assertTrue(settingsWindowLayout(WindowSizeClass(600, 480)).showDismissButton)
+        assertTrue(settingsWindowLayout(WindowSizeClass(1200, 800)).showDismissButton)
     }
 }

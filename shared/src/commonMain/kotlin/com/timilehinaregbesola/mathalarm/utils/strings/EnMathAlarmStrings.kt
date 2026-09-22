@@ -4,6 +4,11 @@ import cafe.adriel.lyricist.LyricistStrings
 
 @LyricistStrings(languageTag = Locales.EN, default = true)
 val EnMathAlarmStrings = Strings(
+    selectAlarmPrompt = "Select an alarm or create a new one",
+    closeAlarmEditor = "Close this editor?",
+    closeAlarmEditorMessage = "Any unsaved changes to this alarm will be discarded.",
+    discardChanges = "Discard changes",
+
     mathDifficultyNames = listOf("Easy", "Medium", "Hard", "Custom"),
     mathChallengeTitle = "Math challenge",
     mixedDifficulty = "Mixed difficulty",

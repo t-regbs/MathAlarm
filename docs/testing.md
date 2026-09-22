@@ -32,6 +32,29 @@ application boundaries.
 
 ## Real Android delivery
 
+### Adaptive layout checks
+
+`TabletPaneLayoutTest` uses disabled fixture alarms and cleans them up afterward.
+On a window at least 840dp wide, run
+`editorAndSettingsShareTheWindowAndProtectDrafts` to verify side-by-side editing,
+the embedded time picker and challenge preview, draft protection, app-settings
+Back navigation, and saving to the correct alarm. On a phone window below 600dp,
+run `compactWindowKeepsTheFamiliarSheet` to check the existing sheet and preview
+return behavior. Each test saves screenshots in the debug app's external files
+directory. Window-size assumptions skip the test on an unsuitable device.
+
+Build the app and test APKs as below, install them on a disposable emulator, and
+grant exact-alarm and notification permissions before running these UI tests.
+For example:
+
+```sh
+adb -s emulator-5554 shell am instrument -w \
+  -e class 'com.timilehinaregbesola.mathalarm.TabletPaneLayoutTest#editorAndSettingsShareTheWindowAndProtectDrafts' \
+  com.timilehinaregbesola.mathalarm.debug.test/androidx.test.runner.AndroidJUnitRunner
+```
+
+### Alarm delivery checks
+
 Build/install the debug app and test APKs on a disposable emulator:
 
 ```sh

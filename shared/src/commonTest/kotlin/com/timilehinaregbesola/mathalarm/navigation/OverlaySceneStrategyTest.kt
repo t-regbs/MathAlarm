@@ -10,7 +10,7 @@ import kotlin.test.assertIs
 import kotlin.test.assertNull
 
 class OverlaySceneStrategyTest {
-    private val sheetStrategy = BottomSheetSceneStrategy<String>(useCenteredDialog = false)
+    private val sheetStrategy = BottomSheetSceneStrategy<String>()
     private val previewStrategy = MathPreviewSceneStrategy<String>()
     private val list = NavEntry("list") {}
     private val settings = NavEntry("settings", metadata = BottomSheetSceneStrategy.bottomSheet()) {}
@@ -48,7 +48,6 @@ class OverlaySceneStrategyTest {
             previousEntries = listOf(list),
             overlaidEntries = listOf(list),
             bottomSheetEntry = settings,
-            useCenteredDialog = false,
             onBack = onBack,
         )
         val original = scene { error("Original callback") }

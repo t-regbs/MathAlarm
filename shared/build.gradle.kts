@@ -27,7 +27,7 @@ compose.resources {
 }
 
 kotlin {
-    androidLibrary {
+    android {
         namespace = "com.timilehinaregbesola.mathalarm.shared"
         compileSdk = libs.versions.android.compile.sdk.get().toInt()
         minSdk = libs.versions.android.min.sdk.get().toInt()
@@ -71,7 +71,6 @@ kotlin {
 
     sourceSets {
         androidMain.dependencies {
-            implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.appcompat)
             implementation(libs.androidx.core.ktx)
@@ -96,8 +95,8 @@ kotlin {
                 implementation(libs.koin.compose.viewmodel)
 
                 implementation(libs.kermit)
-                implementation(libs.kermit.crashlytics)
 
+                implementation(libs.coroutines.core)
                 implementation(libs.kotlinx.serialization)
                 implementation(libs.lyricist)
 
@@ -113,16 +112,6 @@ kotlin {
                 implementation(libs.compottie.lite)
             }
         }
-        
-        // iOS dependencies
-        val iosMain by creating {
-            dependsOn(commonMain.get())
-            dependencies {
-                implementation(libs.androidx.sqlite.driver.bundled)
-            }
-        }
-        val iosArm64Main by getting { dependsOn(iosMain) }
-        val iosSimulatorArm64Main by getting { dependsOn(iosMain) }
         
         commonTest.dependencies {
             implementation(libs.kotlin.test)

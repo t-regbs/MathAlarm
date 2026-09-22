@@ -14,6 +14,9 @@ import dev.chrisbanes.haze.HazeState
 import dev.chrisbanes.haze.hazeSource
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarDuration
@@ -25,7 +28,9 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment.Companion.BottomEnd
 import androidx.compose.ui.Alignment.Companion.Center
@@ -81,7 +86,10 @@ fun ListDisplayScreen(
     viewModel: AlarmListViewModel = koinViewModel(),
     backstack: NavBackStack<NavKey>,
     darkTheme: Boolean,
+    useTwoPanes: Boolean = false,
+    hasUnsavedEditorChanges: Boolean = false,
 ) {
+    val protectDraft by rememberUpdatedState(hasUnsavedEditorChanges)
     val alarms by viewModel.alarms.collectAsState()
     val alarmPermission = viewModel.permission
     var deleteAllAlarmsDialog by remember { mutableStateOf(false) }
@@ -92,6 +100,29 @@ fun ListDisplayScreen(
     var isLoading by remember { mutableStateOf(false) }
     var fabClearance by remember { mutableStateOf(120.dp) }
     val density = LocalDensity.current
+    var pendingAlarmJson by rememberSaveable { mutableStateOf<String?>(null) }
+    val selectedAlarmId = if (useTwoPanes) backstack.filterIsInstance<SettingsSheet>()
+        .lastOrNull()?.let { Json.decodeFromString<AlarmEntity>(it.settingsAlarm).alarmId } else null
+    fun openAlarm(alarmJson: String) {
+        // A selection replaces the detail flow, including a settings page or preview above it.
+        while (backstack.size > 1) backstack.removeLastOrNull()
+        backstack.add(SettingsSheet(alarmJson))
+    }
+    pendingAlarmJson?.let { pending ->
+        AlertDialog(
+            onDismissRequest = { pendingAlarmJson = null },
+            title = { Text(strings.closeAlarmEditor) },
+            text = { Text(strings.closeAlarmEditorMessage) },
+            confirmButton = {
+                TextButton(onClick = { pendingAlarmJson = null; openAlarm(pending) }) {
+                    Text(strings.discardChanges)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { pendingAlarmJson = null }) { Text(strings.cancel) }
+            },
+        )
+    }
 
     val now by rememberAlarmNow()
     val expiredSkips = alarms.orEmpty().filter { alarm ->
@@ -101,7 +132,7 @@ fun ListDisplayScreen(
     LaunchedEffect(expiredSkips) { if (expiredSkips.isNotEmpty()) viewModel.expireSkips() }
 
     val errorStrings = strings
-    LaunchedEffect(errorStrings) {
+    LaunchedEffect(errorStrings, useTwoPanes) {
         viewModel.uiEvent.collect { event ->
             when (event) {
                 is ShowError -> {
@@ -129,8 +160,16 @@ fun ListDisplayScreen(
 
                 is Navigate -> {
                     val alarmJson = Json.encodeToString(AlarmMapper().mapFromDomainModel(event.alarm))
-                    backstack.removeAll { it is SettingsSheet }
-                    backstack.add(SettingsSheet(alarmJson))
+                    val current = backstack.filterIsInstance<SettingsSheet>().lastOrNull()
+                    val currentId = current?.let { Json.decodeFromString<AlarmEntity>(it.settingsAlarm).alarmId }
+                    when {
+                        currentId != null && currentId != 0L && currentId == event.alarm.alarmId -> {
+                            // Return to this draft without replacing its entry or ViewModel.
+                            while (backstack.lastOrNull() != current) backstack.removeLastOrNull()
+                        }
+                        useTwoPanes && current != null && protectDraft -> pendingAlarmJson = alarmJson
+                        else -> openAlarm(alarmJson)
+                    }
                     isLoading = false
                 }
 
@@ -154,7 +193,7 @@ fun ListDisplayScreen(
                         }
                     },
                     onSettingsClick = {
-                        backstack.add(AppSettings)
+                        if (backstack.lastOrNull() != AppSettings) backstack.add(AppSettings)
                     },
                 )
             },
@@ -169,7 +208,10 @@ fun ListDisplayScreen(
             )
             ClearDialog(
                 openDialog = deleteAllAlarmsDialog,
-                onClear = { viewModel.onEvent(OnClearAlarmsClick) },
+                onClear = {
+                    while (backstack.size > 1) backstack.removeLastOrNull()
+                    viewModel.onEvent(OnClearAlarmsClick)
+                },
                 onCloseDialog = { deleteAllAlarmsDialog = false },
             )
             Box(
@@ -209,6 +251,7 @@ fun ListDisplayScreen(
                                 bottomClearance = fabClearance,
                                 alarmList = alarmList,
                                 darkTheme = darkTheme,
+                                selectedAlarmId = selectedAlarmId,
                                 onEditAlarm = {
                                     isLoading = true
                                     checkPermissionAndPerformAction(
@@ -282,6 +325,7 @@ private fun AlarmListContent(
     bottomClearance: androidx.compose.ui.unit.Dp = 120.dp,
     alarmList: List<Alarm>,
     darkTheme: Boolean,
+    selectedAlarmId: Long? = null,
     onEditAlarm: (Alarm) -> Unit,
     onDeleteAlarm: (Alarm) -> Unit,
     onCancelAlarm: (Alarm) -> Unit,
@@ -320,6 +364,7 @@ private fun AlarmListContent(
                 ) {
                     AlarmItem(
                         alarm = alarm,
+                        selected = alarm.alarmId == selectedAlarmId,
                         onEditAlarm = {
                             onEditAlarm(alarm)
                         },

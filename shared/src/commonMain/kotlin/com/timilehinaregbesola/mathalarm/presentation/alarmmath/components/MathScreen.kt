@@ -35,6 +35,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.getValue
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -106,7 +107,9 @@ fun MathScreen(
 ) {
     // Consume Back before Navigation 3 can animate a predictive pop. Rejecting only
     // its completion callback is too late to keep the challenge visibly in place.
-    ChallengeBackHandler(enabled = true) { }
+    ChallengeBackHandler(enabled = true) {
+        if (fromSheet && backStack.size > 1) backStack.removeLastOrNull()
+    }
     val vibrator = remember(alarm.alarmId, alarm.vibrate) { if (alarm.vibrate) PlatformVibrator() else null }
     LaunchedEffect(alarm.alarmId, alarm.activeAt, fromSheet) {
         viewModel.initializeChallenge(
@@ -168,6 +171,7 @@ fun MathScreen(
     val problem = viewModel.currentProblem ?: return
     MathScreenContent(
         snackbarHostState = snackbarHostState,
+        onClosePreview = if (fromSheet) ({ backStack.removeLastOrNull() }) else null,
         question = buildQuestionString(problem),
         questionProgress = if (viewModel.questionCount > 1) {
             strings.questionProgress(viewModel.questionIndex.value + 1, viewModel.questionCount)
@@ -211,6 +215,7 @@ fun MathScreen(
 @Composable
 private fun MathScreenContent(
     snackbarHostState: SnackbarHostState,
+    onClosePreview: (() -> Unit)? = null,
     question: String,
     questionProgress: String? = null,
     animatedProgress: Float,
@@ -218,6 +223,16 @@ private fun MathScreenContent(
     buttonSection: @Composable () -> Unit
 ) {
     Scaffold(
+        topBar = {
+            if (onClosePreview != null) {
+                Row(
+                    Modifier.fillMaxWidth().statusBarsPadding(),
+                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.End,
+                ) {
+                    TextButton(onClick = onClosePreview) { Text(strings.cancel) }
+                }
+            }
+        },
         snackbarHost = { AlarmSnack(state = snackbarHostState) },
     ) { padding ->
         with(MaterialTheme) {

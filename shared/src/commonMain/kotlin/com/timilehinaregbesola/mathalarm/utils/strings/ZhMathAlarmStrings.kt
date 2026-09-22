@@ -4,6 +4,11 @@ import cafe.adriel.lyricist.LyricistStrings
 
 @LyricistStrings(languageTag = Locales.ZH)
 val ZhMathAlarmStrings = Strings(
+    selectAlarmPrompt = "选择闹钟或新建闹钟",
+    closeAlarmEditor = "关闭编辑器？",
+    closeAlarmEditorMessage = "对此闹钟未保存的更改将被舍弃。",
+    discardChanges = "舍弃更改",
+
     mathDifficultyNames = listOf("简单", "中等", "困难", "自定义"),
     mathChallengeTitle = "数学挑战",
     mixedDifficulty = "混合难度",

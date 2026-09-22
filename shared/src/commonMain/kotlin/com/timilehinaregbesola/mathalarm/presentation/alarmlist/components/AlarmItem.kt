@@ -1,6 +1,8 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.ui.semantics.selected
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -48,6 +50,7 @@ fun AlarmItem(
     onUndoSkip: (Alarm) -> Unit = {},
     onScheduleAlarm: (Alarm, Boolean) -> Unit,
     darkTheme: Boolean,
+    selected: Boolean = false,
 ) {
     var expanded by rememberSaveable(alarm.alarmId) { mutableStateOf(false) }
     val labels = strings
@@ -58,7 +61,9 @@ fun AlarmItem(
     val next = nextInstant?.toLocalDateTime(zone)
     Card(
         onClick = { expanded = !expanded },
-        modifier = modifier.fillMaxWidth().padding(vertical = MaterialTheme.spacing.small),
+        modifier = modifier.fillMaxWidth().padding(vertical = MaterialTheme.spacing.small)
+            .semantics { this.selected = selected },
+        border = if (selected) BorderStroke(2.dp, MaterialTheme.colorScheme.primary) else null,
         elevation = CardDefaults.cardElevation(defaultElevation = AlarmItemDimensions.ELEVATION),
         shape = MaterialTheme.shapes.medium.copy(CornerSize(AlarmItemDimensions.CORNER_RADIUS)),
         colors = CardDefaults.cardColors(
