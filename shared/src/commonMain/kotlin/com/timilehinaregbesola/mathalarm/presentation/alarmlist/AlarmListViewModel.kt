@@ -13,6 +13,7 @@ import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
 import com.timilehinaregbesola.mathalarm.utils.UiEvent
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.Navigate
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.ShowSnackbar
+import com.timilehinaregbesola.mathalarm.utils.UiEvent.SnackbarAction
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.SharingStarted
@@ -66,6 +67,18 @@ class AlarmListViewModel(
             is AlarmListEvent.OnEditAlarmClick -> sendUiEvent(Navigate(event.alarm))
             is AlarmListEvent.OnAddAlarmClick -> sendUiEvent(Navigate(Alarm()))
             is AlarmListEvent.OnAlarmOnChange -> setEnabled(event.alarm, event.isOn)
+            is AlarmListEvent.OnSkipNextClick -> launchCommand {
+                val skippedDate = skipNextAlarm(event.alarmId) ?: return@launchCommand
+                sendUiEvent(ShowSnackbar(
+                    message = "",
+                    skippedDate = skippedDate,
+                    actionType = SnackbarAction.UNDO_SKIP,
+                    relatedAlarmId = event.alarmId,
+                ))
+            }
+            is AlarmListEvent.OnUndoSkipClick -> launchCommand {
+                skipNextAlarm.undo(event.alarmId, event.skippedDate)
+            }
             is AlarmListEvent.OnUndoDeleteClick -> launchCommand {
                 val restored = recentlyDeletedAlarm ?: return@launchCommand
                 addAlarm(restored)
@@ -76,7 +89,11 @@ class AlarmListViewModel(
                 val latest = findAlarm(event.alarm.alarmId) ?: return@launchCommand
                 deleteAlarm(latest)
                 recentlyDeletedAlarm = latest
-                sendUiEvent(ShowSnackbar("Alarm Deleted", "Undo"))
+                sendUiEvent(ShowSnackbar(
+                    message = "Alarm Deleted",
+                    action = "Undo",
+                    actionType = SnackbarAction.UNDO_DELETE,
+                ))
             }
             is AlarmListEvent.DeleteTestAlarm -> launchCommand { deleteAlarm(event.alarmId) }
             is AlarmListEvent.OnClearAlarmsClick -> launchCommand { clearAlarms(getSavedAlarms().first()) }
@@ -95,6 +112,7 @@ class AlarmListViewModel(
                 pendingTimes = emptyList(),
                 snoozedUntil = null,
                 activeAt = null,
+                skippedDate = null,
                 scheduleError = null
             ))
         }
@@ -110,6 +128,8 @@ class AlarmListViewModel(
         scheduleAlarm(alarm, reschedule)
         sendUiEvent(ShowSnackbar(message))
     }
+
+    fun expireSkips() = launchCommand { rescheduleFutureAlarms.clearExpiredSkips() }
 
     fun cancelAlarm(alarm: Alarm) = setEnabled(alarm, false)
 }

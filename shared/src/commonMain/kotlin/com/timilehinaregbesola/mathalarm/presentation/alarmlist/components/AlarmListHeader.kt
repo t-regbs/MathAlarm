@@ -14,9 +14,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -25,9 +23,8 @@ import cafe.adriel.lyricist.strings
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListHeader.LIST_HEADER_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.utils.calculateNextAlarmTime
-import com.timilehinaregbesola.mathalarm.utils.getTimeLeft
 import kotlinx.datetime.TimeZone
-import kotlin.time.Instant
+import com.timilehinaregbesola.mathalarm.utils.nextAlarmMessage
 
 @Composable
 fun ListHeader(
@@ -37,17 +34,13 @@ fun ListHeader(
     timeZone: TimeZone = TimeZone.currentSystemDefault(),
     alarmList: List<Alarm>,
 ) {
-    val (nearestTime, nearestIndex) = buildNearestTime(
-        alarmList = alarmList,
-        timeZone = timeZone
+    val now by rememberAlarmNow()
+    val clock = object : kotlin.time.Clock { override fun now() = now }
+    val nearestTime = alarmList.filter { it.isOn }
+        .mapNotNull { calculateNextAlarmTime(it, timeZone, clock) }.minOrNull()
+    val nearestAlarmMessage = nextAlarmMessage(
+        next = nearestTime.takeIf { enabled }, now = now, zone = timeZone, strings = strings,
     )
-    val nearestAlarmMessage by remember(nearestTime, nearestIndex) {
-        derivedStateOf {
-            nearestTime?.let {
-                alarmList.getOrNull(nearestIndex)?.getTimeLeft()
-            }
-        }
-    }
     val shape = RoundedCornerShape(AlarmListHeader.CORNER_RADIUS)
     val colors = MaterialTheme.colorScheme
     Surface(
@@ -71,38 +64,10 @@ fun ListHeader(
     ) {
         Text(
             modifier = Modifier.padding(horizontal = MaterialTheme.spacing.medium, vertical = AlarmListHeader.VERTICAL_PADDING),
-            text = if (enabled && nearestAlarmMessage != null) {
-                "${strings.nextAlarmText} $nearestAlarmMessage"
-            } else {
-                strings.noUpcomingAlarms
-            },
+            text = nearestAlarmMessage,
             fontSize = LIST_HEADER_FONT_SIZE,
         )
     }
-}
-
-private fun buildNearestTime(
-    alarmList: List<Alarm>,
-    timeZone: TimeZone
-): Pair<Instant?, Int> {
-    var nearestTime: Instant? = null
-    var nearestIndex = -1
-
-    if (alarmList.isNotEmpty()) {
-        alarmList
-            .forEachIndexed { originalIndex, alarm ->
-                if (alarm.isOn) {
-                    val alarmInstant = calculateNextAlarmTime(alarm, timeZone)
-
-                    // If a valid future time was found and it's sooner than the current nearest, update
-                    if (alarmInstant != null && (nearestTime == null || alarmInstant < nearestTime)) {
-                        nearestTime = alarmInstant
-                        nearestIndex = originalIndex
-                    }
-                }
-            }
-    }
-    return Pair(nearestTime, nearestIndex)
 }
 
 @Composable

@@ -52,7 +52,12 @@ import kotlin.time.Instant
  */
 @OptIn(ExperimentalForeignApi::class, ExperimentalTime::class)
 class IosAlarmScheduler(
-    private val logger: Logger
+    private val logger: Logger,
+    private val removeNotifications: (List<String>) -> Unit = { identifiers ->
+        val center = UNUserNotificationCenter.currentNotificationCenter()
+        center.removePendingNotificationRequestsWithIdentifiers(identifiers)
+        center.removeDeliveredNotificationsWithIdentifiers(identifiers)
+    },
 ) {
     private val notificationCenter by lazy {
         UNUserNotificationCenter.currentNotificationCenter().also(::registerNotificationCategories)
@@ -68,7 +73,7 @@ class IosAlarmScheduler(
         val snoozeAction = UNNotificationAction.actionWithIdentifier(
             identifier = IosNotificationConstants.ACTION_IDENTIFIER_SNOOZE,
             title = "Snooze",
-            options = UNNotificationActionOptionNone
+            options = platform.UserNotifications.UNNotificationActionOptionForeground
         )
         
         val dismissAction = UNNotificationAction.actionWithIdentifier(
@@ -84,7 +89,13 @@ class IosAlarmScheduler(
             options = UNNotificationCategoryOptionNone
         )
         
-        notificationCenter.setNotificationCategories(setOf(alarmCategory))
+        val noSnoozeCategory = UNNotificationCategory.categoryWithIdentifier(
+            identifier = IosNotificationConstants.CATEGORY_IDENTIFIER_NO_SNOOZE,
+            actions = listOf(dismissAction),
+            intentIdentifiers = emptyList<String>(),
+            options = UNNotificationCategoryOptionNone
+        )
+        notificationCenter.setNotificationCategories(setOf(alarmCategory, noSnoozeCategory))
         logger.d { "Notification categories registered successfully" }
     }
     
@@ -128,7 +139,9 @@ class IosAlarmScheduler(
                 title = alarm.title,
                 soundName = alarm.alarmTone,
                 repeatDays = days,
-                snoozeMinutes = alarm.snooze,
+                // AlarmKit's native countdown bypasses our durable limit.
+                // Controlled snoozes are scheduled from the shared challenge screen instead.
+                snoozeMinutes = if (alarm.maxSnoozes == 0) alarm.snooze else 0,
                 vibrate = alarm.vibrate,
                 difficulty = alarm.difficulty,
                 repeats = repeating,
@@ -156,7 +169,8 @@ class IosAlarmScheduler(
                 NSCalendarUnitHour or NSCalendarUnitMinute or platform.Foundation.NSCalendarUnitSecond, fromDate = date)
         }
         val request = UNNotificationRequest.requestWithIdentifier(
-            "alarm_${alarm.alarmId}_$key", createNotificationContent(alarm),
+            "alarm_${alarm.alarmId}_$key",
+            createNotificationContent(alarm.copy(snoozeCount = if (snooze) alarm.snoozeCount else 0)),
             UNCalendarNotificationTrigger.triggerWithDateMatchingComponents(components, repeats = repeating))
         val error = suspendCoroutine<String?> { continuation ->
             notificationCenter.addNotificationRequest(request) { error ->
@@ -218,7 +232,10 @@ class IosAlarmScheduler(
             ))
             
             // Set category for action buttons; registration occurs on first notification-center use.
-            setCategoryIdentifier(IosNotificationConstants.CATEGORY_IDENTIFIER_ALARM)
+            setCategoryIdentifier(
+                if (alarm.canSnooze) IosNotificationConstants.CATEGORY_IDENTIFIER_ALARM
+                else IosNotificationConstants.CATEGORY_IDENTIFIER_NO_SNOOZE
+            )
         }
     }
 
@@ -230,10 +247,15 @@ class IosAlarmScheduler(
         return "$resourceName.caf"
     }
 
-    /**
-     * Cancel all notifications/alarms for an alarm
-     * Cancels both AlarmKit alarms and notification-based alarms
-     */
+    /** Keep the independent snooze registration and its delivered notification intact. */
+    fun cancelRegularOccurrences(alarm: Alarm) {
+        for (day in 0..6) AlarmSchedulerBridge.cancelOccurrence(alarm.alarmId, "day_$day")
+        val identifiers = notificationIdentifiersForAlarm(alarm.alarmId)
+            .filterNot { it == "alarm_${alarm.alarmId}_snooze" }
+        removeNotifications(identifiers)
+    }
+
+    /** Cancel all AlarmKit and notification-based occurrences, including snoozes. */
     fun cancelAlarm(alarm: Alarm) {
         logger.d { "Cancelling alarm: id=${alarm.alarmId}" }
         
@@ -243,8 +265,7 @@ class IosAlarmScheduler(
         // Also cancel notification-based alarm (in case of migration or fallback)
         val identifiers = notificationIdentifiersForAlarm(alarm.alarmId)
         
-        notificationCenter.removePendingNotificationRequestsWithIdentifiers(identifiers)
-        notificationCenter.removeDeliveredNotificationsWithIdentifiers(identifiers)
+        removeNotifications(identifiers)
         
         logger.d { "Alarm cancelled: id=${alarm.alarmId}" }
     }

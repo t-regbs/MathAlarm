@@ -33,12 +33,17 @@ import androidx.compose.ui.Alignment.Companion.CenterHorizontally
 import androidx.compose.ui.Alignment.Companion.TopCenter
 import androidx.compose.ui.Alignment.Companion.TopStart
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import cafe.adriel.lyricist.strings
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import kotlinx.datetime.TimeZone
+import com.timilehinaregbesola.mathalarm.utils.formatShortDate
+import com.timilehinaregbesola.mathalarm.provider.skippedTime
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.platform.requestExactAlarmPermission
@@ -47,7 +52,9 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.O
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnClearEmptyAlarmsClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnDeleteAlarmClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnEditAlarmClick
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnSkipNextClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnUndoDeleteClick
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListEvent.OnUndoSkipClick
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.LIST_CONTENT_MAX_WIDTH
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmListScreen.LOADER_SIZE
@@ -58,6 +65,7 @@ import com.timilehinaregbesola.mathalarm.utils.Destinations.SettingsSheet
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.Navigate
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.ShowError
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.ShowSnackbar
+import com.timilehinaregbesola.mathalarm.utils.UiEvent.SnackbarAction
 import com.timilehinaregbesola.mathalarm.utils.getTimeLeft
 import kotlinx.serialization.json.Json
 import mathalarm.app.generated.resources.Res
@@ -82,6 +90,15 @@ fun ListDisplayScreen(
     }
     var showPermissionDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
+    var fabClearance by remember { mutableStateOf(120.dp) }
+    val density = LocalDensity.current
+
+    val now by rememberAlarmNow()
+    val expiredSkips = alarms.orEmpty().filter { alarm ->
+        alarm.skippedDate != null && (alarm.skippedTime(TimeZone.currentSystemDefault())
+            ?.let { it <= now.toEpochMilliseconds() } != false)
+    }.map { it.alarmId }
+    LaunchedEffect(expiredSkips) { if (expiredSkips.isNotEmpty()) viewModel.expireSkips() }
 
     val errorStrings = strings
     LaunchedEffect(errorStrings) {
@@ -92,13 +109,21 @@ fun ListDisplayScreen(
                 }
                 is ShowSnackbar -> {
                     val result = snackbarHoststate.showSnackbar(
-                        message = event.message,
-                        actionLabel = event.action,
+                        message = event.skippedDate?.let {
+                            errorStrings.skippedAlarmOn(formatShortDate(it, errorStrings.dateLocale))
+                        } ?: event.message,
+                        actionLabel = if (event.actionType == SnackbarAction.UNDO_SKIP) errorStrings.undoSkip else event.action,
                         withDismissAction = true,
                         duration = SnackbarDuration.Short
                     )
                     if (result == ActionPerformed) {
-                        viewModel.onEvent(OnUndoDeleteClick)
+                        when (event.actionType) {
+                            SnackbarAction.UNDO_DELETE -> viewModel.onEvent(OnUndoDeleteClick)
+                            SnackbarAction.UNDO_SKIP -> event.relatedAlarmId?.let {
+                                viewModel.onEvent(OnUndoSkipClick(it, event.skippedDate))
+                            }
+                            null -> Unit
+                        }
                     }
                 }
 
@@ -133,7 +158,10 @@ fun ListDisplayScreen(
                     },
                 )
             },
-            snackbarHost = { AlarmSnack(state = snackbarHoststate) },
+            snackbarHost = { AlarmSnack(
+                modifier = Modifier.padding(bottom = if (alarmList.isEmpty()) 0.dp else fabClearance),
+                state = snackbarHoststate,
+            ) },
         ) { padding ->
             AlarmPermissionDialog(
                 isDialogOpen = showPermissionDialog,
@@ -147,7 +175,6 @@ fun ListDisplayScreen(
             Box(
                 modifier = Modifier
                     .padding(padding)
-                    .padding(horizontal = 16.dp)
                     .fillMaxSize(),
                 contentAlignment = TopStart,
             ) {
@@ -157,8 +184,8 @@ fun ListDisplayScreen(
                         .align(TopCenter)
                         .fillMaxSize(),
                 ) {
-                    val listWidthModifier = if (maxWidth > LIST_CONTENT_MAX_WIDTH) {
-                        Modifier.width(LIST_CONTENT_MAX_WIDTH)
+                    val listWidthModifier = if (maxWidth > LIST_CONTENT_MAX_WIDTH + 32.dp) {
+                        Modifier.width(LIST_CONTENT_MAX_WIDTH + 32.dp)
                     } else {
                         Modifier.fillMaxWidth()
                     }
@@ -170,7 +197,7 @@ fun ListDisplayScreen(
                     ) {
                         if (alarmList.isEmpty()) {
                             AlarmEmptyScreen(
-                                modifier = Modifier.fillMaxSize(),
+                                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp),
                                 onClickFab = {
                                     viewModel.onEvent(OnAddAlarmClick)
                                 },
@@ -179,6 +206,7 @@ fun ListDisplayScreen(
                         } else {
                             AlarmListContent(
                                 modifier = Modifier.fillMaxSize(),
+                                bottomClearance = fabClearance,
                                 alarmList = alarmList,
                                 darkTheme = darkTheme,
                                 onEditAlarm = {
@@ -194,6 +222,8 @@ fun ListDisplayScreen(
                                     viewModel.onEvent(OnDeleteAlarmClick(it))
                                 },
                                 onCancelAlarm = viewModel::cancelAlarm,
+                                onSkipNext = { viewModel.onEvent(OnSkipNextClick(it.alarmId)) },
+                                onUndoSkip = { viewModel.onEvent(OnUndoSkipClick(it.alarmId, it.skippedDate)) },
                                 onScheduleAlarm = { curAlarm: Alarm, b: Boolean ->
                                     checkPermissionAndPerformAction(
                                         value = alarmPermission.hasExactAlarmPermission(),
@@ -201,7 +231,7 @@ fun ListDisplayScreen(
                                             viewModel.scheduleAlarm(
                                                 alarm = curAlarm,
                                                 reschedule = b,
-                                                message = "$alarmSetText ${curAlarm.getTimeLeft()}",
+                                                message = "$alarmSetText ${curAlarm.copy(skippedDate = null, scheduleInitialized = false, snoozedUntil = null).getTimeLeft()}",
                                             )
                                         },
                                         onPermissionAbsent = { showPermissionDialog = true },
@@ -211,9 +241,10 @@ fun ListDisplayScreen(
                             val fabImage = painterResource(Res.drawable.fab_icon)
                             AddAlarmFab(
                                 modifier = Modifier
+                                    .onSizeChanged { fabClearance = with(density) { it.height.toDp() } + 16.dp }
                                     .align(BottomEnd)
                                     .padding(
-                                        end = 8.dp,
+                                        end = 24.dp,
                                         bottom = 16.dp,
                                     ),
                                 fabImage = fabImage,
@@ -248,11 +279,14 @@ fun ListDisplayScreen(
 @Composable
 private fun AlarmListContent(
     modifier: Modifier = Modifier,
+    bottomClearance: androidx.compose.ui.unit.Dp = 120.dp,
     alarmList: List<Alarm>,
     darkTheme: Boolean,
     onEditAlarm: (Alarm) -> Unit,
     onDeleteAlarm: (Alarm) -> Unit,
     onCancelAlarm: (Alarm) -> Unit,
+    onSkipNext: (Alarm) -> Unit,
+    onUndoSkip: (Alarm) -> Unit,
     onScheduleAlarm: (Alarm, Boolean) -> Unit,
 ) {
     val hazeState = remember { HazeState() }
@@ -260,12 +294,14 @@ private fun AlarmListContent(
         modifier = modifier,
     ) {
         LazyColumn(
+            contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = bottomClearance),
             horizontalAlignment = CenterHorizontally,
         ) {
             stickyHeader(
                 key = "sticky_header"
             ) {
                 ListHeader(
+                    modifier = Modifier.padding(horizontal = 16.dp),
                     hazeState = hazeState,
                     enabled = alarmList.any { it.isOn },
                     alarmList = alarmList,
@@ -275,8 +311,13 @@ private fun AlarmListContent(
                 items = alarmList,
                 key = { alarm -> alarm.alarmId },
             ) { alarm ->
-                // Capture cards individually: the sticky header must not be part of its own source.
-                Box(Modifier.hazeSource(state = hazeState, key = alarm.alarmId)) {
+                // Include the existing side gutters in the capture layer so card shadows
+                // can fade beyond the rounded outline instead of clipping to card width.
+                Box(
+                    Modifier.fillMaxWidth()
+                        .hazeSource(state = hazeState, key = alarm.alarmId)
+                        .padding(horizontal = 16.dp)
+                ) {
                     AlarmItem(
                         alarm = alarm,
                         onEditAlarm = {
@@ -284,6 +325,8 @@ private fun AlarmListContent(
                         },
                         onDeleteAlarm = onDeleteAlarm,
                         onCancelAlarm = onCancelAlarm,
+                        onSkipNext = onSkipNext,
+                        onUndoSkip = onUndoSkip,
                         onScheduleAlarm = onScheduleAlarm,
                         darkTheme = darkTheme,
                     )
@@ -344,7 +387,9 @@ private fun AlarmListScreenPreview() {
             darkTheme = false,
             onEditAlarm = {},
             onDeleteAlarm = {},
-            onCancelAlarm = {}
+            onCancelAlarm = {},
+            onSkipNext = {},
+            onUndoSkip = {},
         ) { _, _ -> }
     }
 }

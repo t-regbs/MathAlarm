@@ -31,6 +31,9 @@ interface AlarmInteractor {
      */
     fun cancel(alarm: Alarm)
 
+    /** Cancel regular occurrences without touching a snooze, including one awaiting delivery. */
+    fun cancelRegularOccurrences(alarm: Alarm)
+
     /**
      * Updates an existing alarm.
      * On Android, the notification will trigger a BroadcastReceiver which will always get the

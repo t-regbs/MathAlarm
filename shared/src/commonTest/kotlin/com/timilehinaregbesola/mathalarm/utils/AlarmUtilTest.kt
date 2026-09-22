@@ -16,6 +16,48 @@ class AlarmUtilTest {
     }
 
     @Test
+    fun `single remaining occurrence hides redundant next label but exceptions retain it`() {
+        val monday = kotlin.time.Instant.parse("2030-01-07T07:00:00Z").toEpochMilliseconds()
+        val wednesday = kotlin.time.Instant.parse("2030-01-09T07:00:00Z").toEpochMilliseconds()
+        val alarm = Alarm(hour = 7, minute = 0, repeatDays = "FTFTFFF", scheduleInitialized = true,
+            pendingTimes = listOf(monday), scheduleTimeZone = "UTC")
+        alarm.shouldShowNextOccurrence(TimeZone.UTC, clock) shouldBe false
+        alarm.copy(pendingTimes = listOf(monday, wednesday))
+            .shouldShowNextOccurrence(TimeZone.UTC, clock) shouldBe true
+        alarm.copy(pendingTimes = listOf(nowMillis() - 1, monday))
+            .shouldShowNextOccurrence(TimeZone.UTC, clock) shouldBe false
+        alarm.copy(repeat = true).shouldShowNextOccurrence(TimeZone.UTC, clock) shouldBe true
+        alarm.copy(skippedDate = "2030-01-06").shouldShowNextOccurrence(TimeZone.UTC, clock) shouldBe true
+        alarm.copy(snoozedUntil = monday).shouldShowNextOccurrence(TimeZone.UTC, clock) shouldBe true
+        alarm.copy(snoozedUntil = nowMillis() - 1).shouldShowNextOccurrence(TimeZone.UTC, clock) shouldBe false
+        Alarm(hour = 7).shouldShowNextOccurrence(TimeZone.UTC, clock) shouldBe false
+    }
+
+    private fun nowMillis() = clock.now().toEpochMilliseconds()
+
+    @Test
+    fun `next alarm display respects recurring skip and persisted one-time dates`() {
+        val monday = kotlin.time.Instant.parse("2030-01-07T07:00:00Z")
+        val wednesday = kotlin.time.Instant.parse("2030-01-09T07:00:00Z")
+        val alarm = Alarm(hour = 7, minute = 0, repeat = true, repeatDays = "FTFTFFF",
+            skippedDate = "2030-01-07")
+        calculateNextAlarmTime(alarm, TimeZone.UTC, clock) shouldBe wednesday
+        calculateNextAlarmTime(alarm.copy(repeat = false, scheduleInitialized = true,
+            pendingTimes = listOf(wednesday.toEpochMilliseconds()), scheduleTimeZone = "UTC"),
+            TimeZone.UTC, clock) shouldBe wednesday
+        calculateNextAlarmTime(alarm.copy(snoozedUntil = monday.toEpochMilliseconds()),
+            TimeZone.UTC, clock) shouldBe monday
+        calculateNextAlarmTime(alarm.copy(repeat = false, scheduleInitialized = true),
+            TimeZone.UTC, clock) shouldBe null
+    }
+
+    @Test
+    fun `date labels follow the selected language`() {
+        formatShortDate("2030-01-07", "de") shouldNotBe formatShortDate("2030-01-07", "en")
+        formatShortDate("not-a-date", "de") shouldBe "not-a-date"
+    }
+
+    @Test
     fun `getFormatTime should format midnight correctly`() {
         val alarm = Alarm(hour = 0, minute = 0)
         
@@ -129,7 +171,7 @@ class AlarmUtilTest {
         )
         
         val timeLeft = alarm.getTimeLeft()
-        timeLeft shouldContain "minutes" // Should have some time component
+        timeLeft shouldContain "minute" // Accept both singular and plural minute components.
     }
 
     @Test

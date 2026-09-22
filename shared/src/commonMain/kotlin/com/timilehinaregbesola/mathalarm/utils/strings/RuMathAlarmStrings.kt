@@ -23,6 +23,10 @@ val RuMathAlarmStrings = Strings(
     questions = "Вопросы",
     chooseRange = "Выбрать диапазон",
     checkAnswer = "Проверить ответ",
+    nextFeature = "Далее",
+    snoozeAnnouncementTitle = "Откладывайте по своим правилам",
+    snoozeAnnouncementDescription = "Задайте лимит повторов, выберите интервал от 1 до 30 минут или отключите откладывание. Для новых будильников доступны 3 повтора по 5 минут. Существующие будильники сохраняют свои лимиты.",
+    snoozeAnnouncementInstructions = "Флажок откладывания позволяет быстро включить или выключить функцию. Нажмите «Изменить» рядом, чтобы настроить лимит и интервал.",
     whatsNew = "Что нового",
     latestFeatures = "Узнайте о новых функциях",
     gotIt = "Понятно",
@@ -30,6 +34,8 @@ val RuMathAlarmStrings = Strings(
     challengeAnnouncementTitle = "Больше способов проснуться",
     challengeAnnouncementInstructions = "Добавьте или измените будильник и нажмите «Редактировать» рядом с математическим заданием.",
     exampleChallenge = "Пример задания",
+    exampleDifficultyMix = { easy, medium -> "Легко: $easy · Средне: $medium" },
+    challengeAnnouncementDescription = { maximum -> "Решайте до $maximum вопросов. Смешивайте уровни сложности или создайте своё задание." },
     questionCount = ::questionCountRu,
     challengeSummary = { difficulty, count -> "$difficulty · ${questionCountRu(count)}" },
     mixedQuestionTotal = { count, maximum -> "Всего: ${questionCountRu(count)} · Максимум: $maximum" },
@@ -38,8 +44,6 @@ val RuMathAlarmStrings = Strings(
     difficultyQuestionLabel = { difficulty -> "Вопросы — $difficulty" },
     decreaseQuestionCount = { label -> "Уменьшить количество: $label" },
     increaseQuestionCount = { label -> "Увеличить количество: $label" },
-    exampleDifficultyMix = { easy, medium -> "Легко: $easy · Средне: $medium" },
-    challengeAnnouncementDescription = { maximum -> "Решайте до $maximum вопросов. Смешивайте уровни сложности или создайте своё задание." },
     alarmScheduleFailed = "Не удалось установить будильник. Сохраните его ещё раз.",
     alarmSaveFailed = "Не удалось сохранить будильник. Повторите попытку.",
     alarmUpdateFailed = "Не удалось обновить будильник. Повторите попытку.",
@@ -57,9 +61,27 @@ val RuMathAlarmStrings = Strings(
     expand = "Развернуть",
     delete = "Удалить",
     edit = "Редактировать",
+    dateLocale = "ru",
+    skipAnnouncementDescription = "Пропустите ближайший сигнал, не меняя остальное расписание.",
+    skipAnnouncementInstructions = "Разверните включённый будильник и нажмите «Пропустить следующий». Доступно для еженедельных будильников и будильников с несколькими выбранными днями.",
+    skipAnnouncementUndo = "Пропускается только ближайший сигнал. Еженедельные будильники возобновятся на следующей неделе; остальные сохранят оставшиеся даты. Нажмите «Отменить» до времени пропущенного сигнала, чтобы вернуть его. Отложенные сигналы и другие будильники остаются в расписании.",
+    viewAlarms = "К будильникам",
+    skipAnnouncementExample = "Попробуйте на примере",
+    skipNext = "Пропустить следующий",
+    skippedAlarmOn = { date -> "Пропущен · $date" },
+    undo = "Отменить",
+    undoSkip = "Отменить пропуск",
     collapse = "Свернуть",
     noUpcomingAlarms = "Нет предстоящих будильников",
-    nextAlarmText = "Следующий будильник через",
+    nextAlarmText = "Следующий будильник:",
+    nextOccurrenceOn = { date -> "Следующий: $date" },
+    nextAlarmIn = { hours, minutes ->
+        if (hours == 0 && minutes == 0) "Следующий будильник менее чем через минуту"
+        else "Следующий будильник через " + listOfNotNull(
+            if (hours > 0) "$hours ${durationUnitRu(hours, "час", "часа", "часов")}" else null,
+            if (minutes > 0) "$minutes ${durationUnitRu(minutes, "минуту", "минуты", "минут")}" else null,
+        ).joinToString(" ")
+    },
     alarmSet = "Будильник установлен на",
     alarmPermissionDialogConfirm = "Подтвердить",
     alarmPermissionDialogCancel = "Отмена",
@@ -76,6 +98,18 @@ val RuMathAlarmStrings = Strings(
     settings = "Настройки",
     toneUnavailable = "Тон недоступен",
     clear = "Очистить",
+    maximumSnoozes = "Максимум отсрочек",
+    unlimitedSnoozes = "Без ограничений",
+    noSnoozesLeft = "Отсрочек не осталось",
+    snoozesLeft = { count -> "Осталось отсрочек: $count" },
+    snoozeLimitSummary = { count, minutes -> "Отсрочек: $count · до $minutes дополнительных минут" },
+    snoozeOff = "Выключено",
+    allowSnooze = "Разрешить отсрочку",
+    snoozeDuration = "Длительность (минуты)",
+    snoozeDurationHint = "Выберите от 1 до 30 минут. Нажмите на число, чтобы ввести значение.",
+    applySnooze = "Применить настройки",
+    snoozeMaximumSummary = { count -> "Максимум $count" },
+    snoozeSettingsSummary = { minutes, limit -> "$minutes мин. · $limit" },
     snooze = "Отложить",
     enter = "Ввод",
     noRingtonePicker = "Выбор мелодии звонка недоступен",
@@ -133,3 +167,10 @@ private fun questionCountRu(count: Int): String =
         count % 10 in 2..4 && count % 100 !in 12..14 -> "$count вопроса"
         else -> "$count вопросов"
     }
+
+private fun durationUnitRu(count: Int, one: String, few: String, many: String): String = when {
+    count % 100 in 11..14 -> many
+    count % 10 == 1 -> one
+    count % 10 in 2..4 -> few
+    else -> many
+}

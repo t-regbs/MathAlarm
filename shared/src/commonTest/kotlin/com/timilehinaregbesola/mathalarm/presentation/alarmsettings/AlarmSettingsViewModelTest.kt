@@ -50,6 +50,7 @@ class AlarmSettingsViewModelTest {
         
         val alarmTimeCalculator = AlarmTimeCalculatorFake()
         val scheduleNextAlarm = ScheduleNextAlarm(alarmInteractor, alarmTimeCalculator)
+        val rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor, alarmTimeCalculator)
         
         usecases = Usecases(
             addAlarm = AddAlarm(repository),
@@ -63,8 +64,9 @@ class AlarmSettingsViewModelTest {
             cancelAlarm = CancelAlarm(alarmInteractor),
             clearAlarms = ClearAlarms(repository, DeleteAlarm(repository, alarmInteractor, notificationInteractor)),
             scheduleNextAlarm = scheduleNextAlarm,
-            rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor, alarmTimeCalculator),
-            snoozeAlarm = SnoozeAlarm(dateTimeProvider, notificationInteractor, alarmInteractor, repository)
+            rescheduleFutureAlarms = rescheduleFutureAlarms,
+            snoozeAlarm = SnoozeAlarm(dateTimeProvider, notificationInteractor, alarmInteractor, repository),
+            skipNextAlarm = SkipNextAlarm(repository, alarmTimeCalculator, rescheduleFutureAlarms),
         )
         
         viewModel = AlarmSettingsViewModel(usecases = usecases, permission = permission)
@@ -591,4 +593,68 @@ class AlarmSettingsViewModelTest {
         viewModel.currentAlarmId shouldBe 444
         viewModel.alarmTime.value.hour shouldBe 8
     }
+
+    @Test
+    fun `new alarms default to three snoozes of five minutes`() = runTest {
+        viewModel.setAlarm(Alarm(alarmTone = "test_tone"))
+        viewModel.eventFlow.test {
+            viewModel.onEvent(AddEditAlarmEvent.OnTestClick)
+            val draft = (awaitItem() as AlarmSettingsViewModel.UiEvent.TestAlarm).alarm
+            draft.maxSnoozes shouldBe 3
+            draft.snooze shouldBe 5
+        }
+    }
+
+    @Test
+    fun `snooze settings persist and editing preserves occurrence count and duration`() = runTest {
+        val alarm = Alarm(alarmId = 904, alarmTone = "test_tone", snooze = 10, maxSnoozes = 0,
+            snoozeCount = 1, activeAt = 1000)
+        usecases.addAlarm(alarm)
+        viewModel.setAlarm(alarm)
+        viewModel.maxSnoozes.value shouldBe 0
+        viewModel.onEvent(AddEditAlarmEvent.ChangeMaxSnoozes(2))
+        viewModel.onEvent(AddEditAlarmEvent.ChangeSnoozeDuration(12))
+        viewModel.eventFlow.test {
+            viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+            awaitItem() shouldBe AlarmSettingsViewModel.UiEvent.SaveAlarm
+        }
+        val saved = usecases.findAlarm(904)!!
+        saved.maxSnoozes shouldBe 2
+        saved.snoozeCount shouldBe 1
+        saved.snooze shouldBe 12
+        val reopened = AlarmSettingsViewModel(usecases, permission)
+        reopened.setAlarm(saved)
+        reopened.snoozeMinutes shouldBe 12
+        reopened.maxSnoozes.value shouldBe 2
+    }
+
+
+    @Test
+    fun `snooze duration validates boundaries and survives toggling snooze`() = runTest {
+        viewModel.setAlarm(Alarm(alarmTone = "test_tone"))
+        viewModel.onEvent(AddEditAlarmEvent.ChangeSnoozeDuration(1))
+        viewModel.snoozeMinutes shouldBe 1
+        viewModel.onEvent(AddEditAlarmEvent.ChangeSnoozeDuration(30))
+        viewModel.snoozeMinutes shouldBe 30
+        for (invalid in listOf(0, -1, 31, 60)) {
+            viewModel.onEvent(AddEditAlarmEvent.ChangeSnoozeDuration(invalid))
+            viewModel.snoozeMinutes shouldBe 30
+        }
+        viewModel.onEvent(AddEditAlarmEvent.ToggleSnooze(false))
+        viewModel.eventFlow.test {
+            viewModel.onEvent(AddEditAlarmEvent.OnTestClick)
+            (awaitItem() as AlarmSettingsViewModel.UiEvent.TestAlarm).alarm.snooze shouldBe 0
+            viewModel.onEvent(AddEditAlarmEvent.ToggleSnooze(true))
+            viewModel.onEvent(AddEditAlarmEvent.OnTestClick)
+            (awaitItem() as AlarmSettingsViewModel.UiEvent.TestAlarm).alarm.snooze shouldBe 30
+        }
+    }
+
+
+    @Test
+    fun `editing a duration above the new maximum clamps it to thirty minutes`() {
+        viewModel.setAlarm(Alarm(alarmId = 905, alarmTone = "test_tone", snooze = 60))
+        viewModel.snoozeMinutes shouldBe 30
+    }
+
 }

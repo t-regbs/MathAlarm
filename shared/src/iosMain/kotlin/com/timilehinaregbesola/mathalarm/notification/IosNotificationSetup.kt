@@ -31,7 +31,7 @@ object IosNotificationSetup {
         val snoozeAction = UNNotificationAction.actionWithIdentifier(
             identifier = ACTION_SNOOZE,
             title = "Snooze",
-            options = 0UL // No special options
+            options = UNNotificationActionOptionForeground // Apply snooze policy in the app
         )
         
         val dismissAction = UNNotificationAction.actionWithIdentifier(
@@ -54,7 +54,13 @@ object IosNotificationSetup {
             options = UNNotificationCategoryOptionCustomDismissAction
         )
         
-        notificationCenter.setNotificationCategories(setOf(alarmCategory))
+        val noSnoozeCategory = UNNotificationCategory.categoryWithIdentifier(
+            identifier = IosNotificationConstants.CATEGORY_IDENTIFIER_NO_SNOOZE,
+            actions = listOf(solveAction, dismissAction),
+            intentIdentifiers = emptyList<String>(),
+            options = UNNotificationCategoryOptionCustomDismissAction
+        )
+        notificationCenter.setNotificationCategories(setOf(alarmCategory, noSnoozeCategory))
     }
     
     /**

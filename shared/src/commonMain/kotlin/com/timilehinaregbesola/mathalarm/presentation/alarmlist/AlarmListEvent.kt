@@ -6,6 +6,8 @@ sealed class AlarmListEvent {
     data class OnDeleteAlarmClick(val alarm: Alarm) : AlarmListEvent()
     data class OnAlarmOnChange(val alarm: Alarm, val isOn: Boolean) : AlarmListEvent()
     object OnUndoDeleteClick : AlarmListEvent()
+    data class OnSkipNextClick(val alarmId: Long) : AlarmListEvent()
+    data class OnUndoSkipClick(val alarmId: Long, val skippedDate: String? = null) : AlarmListEvent()
     data class OnEditAlarmClick(val alarm: Alarm) : AlarmListEvent()
     object OnAddAlarmClick : AlarmListEvent()
     object OnClearAlarmsClick : AlarmListEvent()

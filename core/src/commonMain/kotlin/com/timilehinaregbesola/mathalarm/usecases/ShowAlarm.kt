@@ -20,6 +20,7 @@ class ShowAlarm(
         val active = triggerAt ?: saved.activeAt ?: Clock.System.now().toEpochMilliseconds()
         val alarm = saved.copy(
             activeAt = active,
+            snoozeCount = if (!snoozed && saved.activeAt != active) 0 else saved.snoozeCount,
             pendingTimes = if (triggerAt == null) saved.pendingTimes else saved.pendingTimes - triggerAt,
             snoozedUntil = if (snoozed) null else saved.snoozedUntil
         )

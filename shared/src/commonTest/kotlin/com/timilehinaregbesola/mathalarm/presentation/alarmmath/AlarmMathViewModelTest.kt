@@ -11,6 +11,10 @@ import com.timilehinaregbesola.mathalarm.fake.AudioPlayerFake
 import com.timilehinaregbesola.mathalarm.fake.DateTimeProviderFake
 import com.timilehinaregbesola.mathalarm.fake.NotificationInteractorFake
 import com.timilehinaregbesola.mathalarm.framework.Usecases
+import com.timilehinaregbesola.mathalarm.framework.snoozeFromNotification
+import kotlin.test.assertFailsWith
+import kotlinx.datetime.TimeZone
+import kotlinx.datetime.toInstant
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
 import com.timilehinaregbesola.mathalarm.usecases.AddAlarm
 import com.timilehinaregbesola.mathalarm.usecases.CancelAlarm
@@ -23,6 +27,7 @@ import com.timilehinaregbesola.mathalarm.usecases.RescheduleFutureAlarms
 import com.timilehinaregbesola.mathalarm.usecases.ScheduleAlarm
 import com.timilehinaregbesola.mathalarm.usecases.ScheduleNextAlarm
 import com.timilehinaregbesola.mathalarm.usecases.ShowAlarm
+import com.timilehinaregbesola.mathalarm.usecases.SkipNextAlarm
 import com.timilehinaregbesola.mathalarm.usecases.SnoozeAlarm
 import com.timilehinaregbesola.mathalarm.usecases.UpdateAlarm
 import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
@@ -69,6 +74,7 @@ class AlarmMathViewModelTest {
         
         val alarmTimeCalculator = AlarmTimeCalculatorFake()
         val scheduleNextAlarm = ScheduleNextAlarm(alarmInteractor, alarmTimeCalculator)
+        val rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor, alarmTimeCalculator)
         
         usecases = Usecases(
             addAlarm = AddAlarm(repository),
@@ -82,8 +88,9 @@ class AlarmMathViewModelTest {
             cancelAlarm = CancelAlarm(alarmInteractor),
             clearAlarms = ClearAlarms(repository, DeleteAlarm(repository, alarmInteractor, notificationInteractor)),
             scheduleNextAlarm = scheduleNextAlarm,
-            rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor, alarmTimeCalculator),
-            snoozeAlarm = SnoozeAlarm(dateTimeProvider, notificationInteractor, alarmInteractor, repository)
+            rescheduleFutureAlarms = rescheduleFutureAlarms,
+            snoozeAlarm = SnoozeAlarm(dateTimeProvider, notificationInteractor, alarmInteractor, repository),
+            skipNextAlarm = SkipNextAlarm(repository, alarmTimeCalculator, rescheduleFutureAlarms),
         )
         
         viewModel = AlarmMathViewModel(
@@ -423,6 +430,93 @@ class AlarmMathViewModelTest {
             awaitItem() shouldBe AlarmMathViewModel.UiEvent.Close
         }
         usecases.findAlarm(779)?.snoozedUntil shouldBe null
+    }
+
+
+    @Test
+    fun `opening a due system snooze consumes its delivery without resetting count`() = runTest {
+        val alarm = Alarm(alarmId = 905, isOn = true, scheduleInitialized = true,
+            snoozedUntil = 1000, snoozeCount = 2)
+        usecases.addAlarm(alarm)
+        viewModel.initializeChallenge(alarm, preview = false)
+        viewModel.currentAlarm!!.activeAt shouldBe 1000L
+        viewModel.currentAlarm!!.snoozedUntil shouldBe null
+        viewModel.currentAlarm!!.snoozeCount shouldBe 2
+    }
+
+    @Test
+    fun `opening the next system occurrence resets an exhausted allowance`() = runTest {
+        val alarm = Alarm(alarmId = 906, isOn = true, scheduleInitialized = true,
+            activeAt = 1000, pendingTimes = listOf(2000), snoozeCount = 3)
+        usecases.addAlarm(alarm)
+        viewModel.initializeChallenge(alarm, preview = false)
+        viewModel.currentAlarm!!.activeAt shouldBe 2000L
+        viewModel.currentAlarm!!.snoozeCount shouldBe 0
+        viewModel.currentAlarm!!.canSnooze shouldBe true
+    }
+
+    @Test
+    fun `notification snooze consumes delivery and uses saved duration`() = runTest {
+        val now = dateTimeProvider.getCurrentDateTime().toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        usecases.addAlarm(Alarm(alarmId = 910, isOn = true, scheduleInitialized = true,
+            pendingTimes = listOf(now), snooze = 12, maxSnoozes = 2))
+        usecases.snoozeFromNotification(910, now) shouldBe true
+        val saved = usecases.findAlarm(910)!!
+        saved.pendingTimes shouldBe emptyList()
+        saved.activeAt shouldBe null
+        saved.snoozedUntil shouldBe now + 12 * 60_000L
+        saved.snoozeCount shouldBe 1
+        notificationInteractor.isNotificationShown(910) shouldBe false
+    }
+
+    @Test
+    fun `duplicate notification snooze succeeds without consuming another allowance`() = runTest {
+        val now = dateTimeProvider.getCurrentDateTime().toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        usecases.addAlarm(Alarm(alarmId = 911, isOn = true, activeAt = now, maxSnoozes = 1))
+        usecases.snoozeFromNotification(911, now) shouldBe true
+        val accepted = usecases.findAlarm(911)
+        usecases.snoozeFromNotification(911, now) shouldBe true
+        usecases.findAlarm(911) shouldBe accepted
+    }
+
+    @Test
+    fun `notification snooze rejects exhausted or disabled policy and keeps delivery active`() = runTest {
+        for (disabled in listOf(false, true)) {
+            usecases.addAlarm(Alarm(alarmId = 912, isOn = true, scheduleInitialized = true,
+                snoozedUntil = 1000, snoozeCount = 3, maxSnoozes = 3,
+                snooze = if (disabled) 0 else 5))
+            usecases.snoozeFromNotification(912, 1000) shouldBe false
+            val saved = usecases.findAlarm(912)!!
+            saved.activeAt shouldBe 1000L
+            saved.snoozeCount shouldBe 3
+            notificationInteractor.isNotificationShown(912) shouldBe true
+        }
+    }
+
+    @Test
+    fun `failed notification scheduling preserves allowance and active alarm`() = runTest {
+        val backend = object : AlarmInteractor by alarmInteractor {
+            override suspend fun scheduleSnooze(alarm: Alarm, timeInMillis: Long) {
+                error("Scheduling failed")
+            }
+        }
+        val commands = usecases.copy(snoozeAlarm = SnoozeAlarm(dateTimeProvider, notificationInteractor, backend, repository))
+        commands.addAlarm(Alarm(alarmId = 913, isOn = true, scheduleInitialized = true,
+            snoozedUntil = 1000, snoozeCount = 1))
+        assertFailsWith<IllegalStateException> { commands.snoozeFromNotification(913, 1000) }
+        val saved = commands.findAlarm(913)!!
+        saved.activeAt shouldBe 1000L
+        saved.snoozeCount shouldBe 1
+        saved.snoozedUntil shouldBe null
+        notificationInteractor.isNotificationShown(913) shouldBe true
+    }
+
+    @Test
+    fun `notification snooze cannot create an occurrence for an inactive alarm`() = runTest {
+        usecases.snoozeFromNotification(914, 1000) shouldBe false
+        usecases.addAlarm(Alarm(alarmId = 914, isOn = true, scheduleInitialized = true, pendingTimes = listOf(2000)))
+        usecases.snoozeFromNotification(914, 1000) shouldBe false
+        usecases.findAlarm(914)!!.snoozeCount shouldBe 0
     }
 
 }

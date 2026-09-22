@@ -31,12 +31,15 @@ class AlarmMapper : DomainMapper<AlarmEntity, Alarm> {
             alarmTone = model.alarmTone,
             vibrate = model.vibrate,
             snooze = model.snooze,
+            maxSnoozes = model.maxSnoozes,
+            snoozeCount = model.snoozeCount,
             title = model.title,
             isSaved = model.isSaved,
             pendingTimes = model.pendingTimes.split(',').mapNotNull(String::toLongOrNull),
             scheduleInitialized = model.scheduleInitialized,
             snoozedUntil = model.snoozedUntil,
             activeAt = model.activeAt,
+            skippedDate = model.skippedDate,
             scheduleError = model.scheduleError,
             scheduleTimeZone = model.scheduleTimeZone
         )
@@ -60,12 +63,15 @@ class AlarmMapper : DomainMapper<AlarmEntity, Alarm> {
             alarmTone = domainModel.alarmTone,
             vibrate = domainModel.vibrate,
             snooze = domainModel.snooze,
+            maxSnoozes = domainModel.maxSnoozes,
+            snoozeCount = domainModel.snoozeCount,
             title = domainModel.title,
             isSaved = domainModel.isSaved,
             pendingTimes = domainModel.pendingTimes.joinToString(","),
             scheduleInitialized = domainModel.scheduleInitialized,
             snoozedUntil = domainModel.snoozedUntil,
             activeAt = domainModel.activeAt,
+            skippedDate = domainModel.skippedDate,
             scheduleError = domainModel.scheduleError,
             scheduleTimeZone = domainModel.scheduleTimeZone
         )

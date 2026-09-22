@@ -18,6 +18,8 @@ class AlarmInteractorImpl(
         alarmManager.scheduleSnooze(alarm, timeInMillis)
     }
 
+    override fun cancelRegularOccurrences(alarm: Alarm) = alarmManager.cancelRegularOccurrences(alarm)
+
     override fun cancelSnooze(alarm: Alarm) = alarmManager.cancelSnooze(alarm)
 
     override fun cancel(alarm: Alarm) {

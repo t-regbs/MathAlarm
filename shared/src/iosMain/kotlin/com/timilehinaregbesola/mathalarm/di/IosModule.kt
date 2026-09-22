@@ -12,6 +12,8 @@ import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_2_3
 import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_3_4
 import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_5_6
 import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_6_7
+import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_8_9
+import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_7_8
 import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_4_5
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractorImpl
@@ -47,7 +49,15 @@ val iosModule = module {
         Room.databaseBuilder<AlarmDatabase>(
             name = dbFile
         )
-            .addMigrations(MIGRATION_2_3, MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6, MIGRATION_6_7)
+            .addMigrations(
+                MIGRATION_2_3,
+                MIGRATION_3_4,
+                MIGRATION_4_5,
+                MIGRATION_5_6,
+                MIGRATION_6_7,
+                MIGRATION_7_8,
+                MIGRATION_8_9,
+            )
             .setDriver(BundledSQLiteDriver())
             .build()
     }

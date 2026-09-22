@@ -21,20 +21,89 @@ import org.robolectric.annotation.Config
 class AlarmServiceLifecycleTest {
     private val controller = Robolectric.buildService(AlarmService::class.java).create()
     private val service = controller.get()
+    private val savedAlarms = mutableMapOf<Long, Alarm>()
+    private var lookupGate: kotlinx.coroutines.CompletableDeferred<Unit>? = null
+
+    @org.junit.Before fun setupRepository() {
+        val find = io.mockk.mockk<com.timilehinaregbesola.mathalarm.usecases.FindAlarm>()
+        io.mockk.coEvery { find.invoke(any()) } coAnswers {
+            lookupGate?.await()
+            savedAlarms[firstArg()]
+        }
+        val koin = org.koin.core.context.GlobalContext.get()
+        val original = koin.get<com.timilehinaregbesola.mathalarm.framework.Usecases>()
+        koin.loadModules(listOf(org.koin.dsl.module {
+            single { original.copy(findAlarm = find) }
+        }))
+    }
+
     private fun start(id: Long, at: Long = 123) {
         val alarm = Alarm(alarmId = id, isOn = true, activeAt = at)
+        savedAlarms[id] = alarm
+        deliverStart(alarm)
+    }
+    private fun deliverStart(alarm: Alarm) {
         service.onStartCommand(Intent(service, AlarmService::class.java).apply {
             action = AlarmService.ACTION_START_ALARM
             putExtra(AlarmService.EXTRA_ALARM_JSON, Json.encodeToString(AlarmMapper().mapFromDomainModel(alarm)))
-        }, 0, id.toInt())
+        }, 0, alarm.alarmId.toInt())
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
     }
     private fun dismiss(id: Long) {
+        savedAlarms.remove(id)
         service.onStartCommand(Intent(service, AlarmService::class.java).apply {
             action = AlarmService.ACTION_STOP_ALARM
             putExtra(AlarmService.EXTRA_ALARM_ID, id)
         }, 0, 100)
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
     }
     @After fun cleanup() { controller.destroy() }
+
+    @Test fun delayedStartCannotRingDeletedDisabledCompletedOrReplacedOccurrence() {
+        val snapshot = Alarm(alarmId = 9, isOn = true, activeAt = 123)
+        for (saved in listOf(null, snapshot.copy(isOn = false),
+            snapshot.copy(activeAt = null), snapshot.copy(activeAt = 456))) {
+            savedAlarms.clear()
+            if (saved != null) savedAlarms[9] = saved
+            deliverStart(snapshot)
+            assertFalse(ActiveAlarmManager.hasActiveAlarm())
+            val player = AlarmService::class.java.getDeclaredField("mediaPlayer").apply { isAccessible = true }
+            assertNull(player.get(service))
+        }
+    }
+
+    @Test fun deletionWhileValidationWaitsCannotRingOrDiscardAnotherPendingStart() {
+        val gate = kotlinx.coroutines.CompletableDeferred<Unit>()
+        lookupGate = gate
+        start(1)
+        start(2)
+        assertFalse(ActiveAlarmManager.hasActiveAlarm())
+        savedAlarms.remove(1)
+        gate.complete(Unit)
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
+        assertEquals(2L, ActiveAlarmManager.activeAlarmId)
+        assertFalse(org.robolectric.Shadows.shadowOf(service).isStoppedBySelf)
+    }
+
+    @Test fun serviceRestartDoesNotRestoreDeletedAlarmSnapshot() {
+        val snapshot = Alarm(alarmId = 9, isOn = true, activeAt = 123)
+        service.getSharedPreferences("active_alarm_playback", android.content.Context.MODE_PRIVATE)
+            .edit().putString("alarms", Json.encodeToString(listOf(AlarmMapper().mapFromDomainModel(snapshot)))).commit()
+        service.onStartCommand(null, 0, 1)
+        org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
+        assertFalse(ActiveAlarmManager.hasActiveAlarm())
+        assertEquals("[]", service.getSharedPreferences("active_alarm_playback", android.content.Context.MODE_PRIVATE)
+            .getString("alarms", null))
+    }
+
+    @Test fun deletedQueuedAlarmIsNotPromotedAndNextValidAlarmStillRings() {
+        start(1)
+        start(2)
+        start(3)
+        savedAlarms.remove(2)
+        dismiss(1)
+        assertEquals(3L, ActiveAlarmManager.activeAlarmId)
+    }
 
     @Test fun overlappingAlarmWaitsUntilCurrentAlarmIsDismissed() {
         start(1)

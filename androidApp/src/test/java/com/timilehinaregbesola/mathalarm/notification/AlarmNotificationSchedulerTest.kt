@@ -105,6 +105,29 @@ class AlarmNotificationSchedulerTest {
 
 
     @Test
+    fun `cancelRegularOccurrences preserves the original snooze registration and other alarms`() {
+        val alarm = createAlarm(id = 1L)
+        val other = createAlarm(id = 2L)
+        val due = System.currentTimeMillis() + 60_000L
+        scheduler.scheduleAlarm(alarm, due + 60_000L)
+        scheduler.scheduleSnooze(alarm, due)
+        scheduler.scheduleAlarm(other, due + 120_000L)
+        val snooze = shadowAlarmManager.scheduledAlarms.single {
+            shadowOf(it.operation).savedIntent.getBooleanExtra(AlarmReceiver.EXTRA_SNOOZED, false)
+        }
+
+        scheduler.cancelRegularOccurrences(alarm)
+
+        val remaining = shadowAlarmManager.scheduledAlarms
+        assertEquals(2, remaining.size)
+        assertTrue(remaining.any { it.operation == snooze.operation && it.triggerAtTime == due })
+        assertTrue(remaining.any { shadowOf(it.operation).savedIntent.getLongExtra(AlarmReceiver.EXTRA_TASK, -1) == 2L })
+        scheduler.cancelAlarm(alarm)
+        assertEquals(1, shadowAlarmManager.scheduledAlarms.size)
+        assertEquals(2L, shadowOf(shadowAlarmManager.scheduledAlarms.single().operation).savedIntent.getLongExtra(AlarmReceiver.EXTRA_TASK, -1))
+    }
+
+    @Test
     fun `cancelAlarm should remove scheduled alarm`() {
         val alarm = createAlarm(id = 1L)
         val triggerTime = System.currentTimeMillis() + 60_000L

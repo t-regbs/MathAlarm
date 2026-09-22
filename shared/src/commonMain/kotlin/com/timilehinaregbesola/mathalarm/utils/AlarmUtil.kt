@@ -1,13 +1,11 @@
 package com.timilehinaregbesola.mathalarm.utils
 
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
-import kotlinx.datetime.DatePeriod
+import com.timilehinaregbesola.mathalarm.provider.remainingOccurrences
 import kotlinx.datetime.DayOfWeek
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.TimeZone
-import kotlinx.datetime.plus
-import kotlinx.datetime.toInstant
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Clock
 import kotlin.time.ExperimentalTime
@@ -28,6 +26,9 @@ val days = listOf("S", "M", "T", "W", "T", "F", "S")
 val fullDays = listOf(
     "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"
 )
+
+fun formatShortDate(value: String, languageTag: String = "en"): String =
+    com.timilehinaregbesola.mathalarm.platform.formatAlarmDate(value, languageTag)
 
 /**
  * Returns a 12-hour "hh:mm AM/PM" string for this Alarm's hour/minute.
@@ -76,100 +77,32 @@ fun Alarm.initLocalDateTimeInSystemZone(
     )
 }
 
-/**
- * Calculate the next time an alarm will go off.
- *
- * @param alarm The alarm to calculate the next time for
- * @param timeZone The timezone to use for the calculation
- * @return The next time the alarm will go off as an Instant, or null if the alarm has no repeat days set
- */
+/** Next scheduled occurrence, using the same calendar and persistence rules as recovery. */
 @OptIn(ExperimentalTime::class)
 fun calculateNextAlarmTime(alarm: Alarm, timeZone: TimeZone = TimeZone.currentSystemDefault(), clock: Clock = Clock.System): Instant? {
-    val nowInstant = clock.now()
-    val localNow = nowInstant.toLocalDateTime(timeZone)
-    val todayDate = localNow.date
-
-    // Check if the alarm has any repeat days set
-    val hasRepeatDays = alarm.repeatDays.contains('T')
-
-    if (!hasRepeatDays) {
-        // If alarm doesn't have any repeat days set, just check today
-        val alarmDateTime = LocalDateTime(
-            date = todayDate,
-            time = LocalTime(alarm.hour, alarm.minute, 0)
-        )
-        var candidateInstant = alarmDateTime.toInstant(timeZone)
-
-        // If the alarm time is in the past, add one week (7 days)
-        if (candidateInstant < nowInstant) {
-            val oneWeek = DatePeriod(days = 7)
-            candidateInstant = candidateInstant.plus(oneWeek, timeZone)
-        }
-
-        return candidateInstant
-    } else {
-        // For alarms with repeat days, find the next occurrence based on repeat days
-
-        // Get the current day of week (0..6)
-        val currentDayIndex = todayDate.dayOfWeek.toIndex()
-
-        // Check if the alarm is set for the current day
-        val isSetForToday = alarm.repeatDays.getOrNull(currentDayIndex) == 'T'
-
-        // Create a LocalDateTime for the alarm time today
-        val alarmTimeToday = LocalDateTime(
-            date = todayDate,
-            time = LocalTime(alarm.hour, alarm.minute, 0)
-        )
-        val alarmInstantToday = alarmTimeToday.toInstant(timeZone)
-
-        // If the alarm is set for today and the time hasn't passed yet, use today's time
-        if (isSetForToday && alarmInstantToday > nowInstant) {
-            return alarmInstantToday
-        } else {
-            // Otherwise, find the next occurrence based on repeat days
-            // Find the earliest day such that:
-            //   - repeatDays[dayIndex] == 'T'
-            //   - The alarm time for that day is in the future
-
-            // First, try to find the next occurrence within the next 7 days
-            for (offset in 1..7) {
-                val nextDate = todayDate.plus(DatePeriod(days = offset))
-                val nextDayIndex = nextDate.dayOfWeek.toIndex()
-
-                if (alarm.repeatDays.getOrNull(nextDayIndex) == 'T') {
-                    val candidateDateTime = LocalDateTime(
-                        date = nextDate,
-                        time = LocalTime(alarm.hour, alarm.minute, 0)
-                    )
-                    return candidateDateTime.toInstant(timeZone)
-                }
-            }
-
-            // If no future occurrence was found, and the alarm is set for today but the time has passed,
-            // use today's time + 1 week
-            if (isSetForToday) {
-                val oneWeek = DatePeriod(days = 7)
-                return alarmInstantToday.plus(oneWeek, timeZone)
-            }
-        }
-    }
-
-    // If no future day matched (repeatDays all 'F'), return null
-    return null
+    val calculator = occurrenceCalculator(timeZone, clock)
+    return (alarm.remainingOccurrences(calculator, timeZone) + listOfNotNull(alarm.snoozedUntil))
+        .filter(calculator::isInFuture).minOrNull()?.let(Instant::fromEpochMilliseconds)
 }
 
-/**
- * Compute "time left until next alarm" exactly as your old Calendar‐based function did,
- * but using kotlinx-datetime under the hood. Returns a string like:
- *
- *   • "5 hours 3 minutes"
- *   • "1 day 2 hours 15 minutes"
- *   • "45 minutes"
- *   • "0 minutes"  (if repeatDays is all 'F')
- *
- * We interpret repeatDays[0]=='T' as Sunday, [1]=='T' as Monday, …, [6]=='T' as Saturday.
- */
+/** Show extra schedule context only when the clock and selected day are insufficient. */
+fun Alarm.shouldShowNextOccurrence(
+    timeZone: TimeZone = TimeZone.currentSystemDefault(),
+    clock: Clock = Clock.System,
+): Boolean {
+    if (repeat || skippedDate != null || snoozedUntil?.let { it > clock.now().toEpochMilliseconds() } == true) {
+        return true
+    }
+    return remainingOccurrences(occurrenceCalculator(timeZone, clock), timeZone).size > 1
+}
+
+private fun occurrenceCalculator(timeZone: TimeZone, clock: Clock) = com.timilehinaregbesola.mathalarm.provider.AlarmTimeCalculatorImpl(
+        object : com.timilehinaregbesola.mathalarm.provider.DateTimeProvider {
+            override fun getCurrentDateTime() = clock.now().toLocalDateTime(timeZone)
+        }
+    ) { timeZone }
+
+/** Human-readable interval used by the alarm-set confirmation. */
 @OptIn(ExperimentalTime::class)
 fun Alarm.getTimeLeft(): String {
     val nowInstant = Clock.System.now()

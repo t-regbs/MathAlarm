@@ -28,6 +28,7 @@ import kotlinx.coroutines.test.*
 import kotlinx.datetime.LocalDateTime
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
+import kotlinx.datetime.toLocalDateTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AlarmListViewModelTest {
@@ -61,6 +62,7 @@ class AlarmListViewModelTest {
         
         val alarmTimeCalculator = AlarmTimeCalculatorFake()
         val scheduleNextAlarm = ScheduleNextAlarm(alarmInteractor, alarmTimeCalculator)
+        val rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor, alarmTimeCalculator)
         
         usecases = Usecases(
             addAlarm = AddAlarm(repository),
@@ -74,8 +76,9 @@ class AlarmListViewModelTest {
             cancelAlarm = CancelAlarm(alarmInteractor),
             clearAlarms = ClearAlarms(repository, DeleteAlarm(repository, alarmInteractor, notificationInteractor)),
             scheduleNextAlarm = scheduleNextAlarm,
-            rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor, alarmTimeCalculator),
-            snoozeAlarm = SnoozeAlarm(dateTimeProvider, notificationInteractor, alarmInteractor, repository)
+            rescheduleFutureAlarms = rescheduleFutureAlarms,
+            snoozeAlarm = SnoozeAlarm(dateTimeProvider, notificationInteractor, alarmInteractor, repository),
+            skipNextAlarm = SkipNextAlarm(repository, alarmTimeCalculator, rescheduleFutureAlarms),
         )
         
         viewModel = AlarmListViewModel(
@@ -212,6 +215,40 @@ class AlarmListViewModelTest {
             val alarms = viewModel.alarms.filterNotNull().first()
             alarms.none { it.alarmId == testAlarm.alarmId } shouldBe true
         }
+    }
+
+    @Test
+    fun `skip next exposes undo and undo clears the exception`() = runTest {
+        val alarm = Alarm(
+            alarmId = 457,
+            hour = 7,
+            repeat = true,
+            repeatDays = "FTFFFFF",
+            isOn = true,
+            isSaved = true,
+        )
+        usecases.addAlarm(alarm)
+
+        viewModel.uiEvent.test {
+            viewModel.onEvent(AlarmListEvent.OnSkipNextClick(alarm.alarmId))
+            advanceUntilIdle()
+
+            awaitItem() shouldBe UiEvent.ShowSnackbar(
+                message = "",
+                skippedDate = kotlin.time.Instant.fromEpochMilliseconds(1_893_913_200_000L)
+                    .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString(),
+                actionType = UiEvent.SnackbarAction.UNDO_SKIP,
+                relatedAlarmId = alarm.alarmId,
+            )
+        }
+        usecases.findAlarm(alarm.alarmId)!!.skippedDate shouldBe
+            kotlin.time.Instant.fromEpochMilliseconds(1_893_913_200_000L)
+                .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
+
+        viewModel.onEvent(AlarmListEvent.OnUndoSkipClick(alarm.alarmId))
+        advanceUntilIdle()
+
+        usecases.findAlarm(alarm.alarmId)!!.skippedDate shouldBe null
     }
 
     @Test

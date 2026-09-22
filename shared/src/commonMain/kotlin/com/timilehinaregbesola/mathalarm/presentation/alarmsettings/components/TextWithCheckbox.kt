@@ -1,21 +1,26 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components
 
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.ui.semantics.Role
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment.Companion.CenterVertically
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.text.font.FontWeight.Companion.Normal
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.TextWithCheckbox.CHECKBOX_END_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.TextWithCheckbox.DISABLED_ALPHA
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.TextWithCheckbox.ENABLED_ALPHA
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.TextWithCheckbox.TEXT_FONT_SIZE
+import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import androidx.compose.ui.tooling.preview.Preview
 
 @Composable
@@ -27,15 +32,14 @@ fun TextWithCheckbox(
     onCheckChange: (Boolean) -> Unit,
 ) {
     Row(
-        modifier = modifier.alpha(if (enabled) ENABLED_ALPHA else DISABLED_ALPHA),
+        modifier = modifier.alpha(if (enabled) ENABLED_ALPHA else DISABLED_ALPHA)
+            .toggleable(value = initialState, enabled = enabled, role = Role.Checkbox, onValueChange = onCheckChange),
+        horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.medium),
         verticalAlignment = CenterVertically,
     ) {
-        Checkbox(
-            modifier = Modifier.padding(end = CHECKBOX_END_PADDING),
-            checked = initialState,
-            enabled = enabled,
-            onCheckedChange = { onCheckChange(it) },
-        )
+        Box(Modifier.size(48.dp), contentAlignment = Alignment.Center) {
+            Checkbox(checked = initialState, enabled = enabled, onCheckedChange = null)
+        }
         Text(
             text = text,
             fontSize = TEXT_FONT_SIZE,
@@ -53,7 +57,6 @@ private fun TextWithCheckboxPreview() {
 }
 
 private object TextWithCheckbox {
-    val CHECKBOX_END_PADDING = 14.dp
     val TEXT_FONT_SIZE = 16.sp
     const val ENABLED_ALPHA = 1f
     const val DISABLED_ALPHA = 0.6f

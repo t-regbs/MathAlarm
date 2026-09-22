@@ -113,15 +113,11 @@ class IosNotificationDelegate : NSObject(), UNUserNotificationCenterDelegateProt
         val alarmTone = (userInfo["alarmTone"] as? String) ?: ""
         
         when (actionIdentifier) {
-            ACTION_SNOOZE -> {
-                // Handle snooze - reschedule alarm for snooze minutes later
-                // This would need to be handled by scheduling a new notification
-            }
             ACTION_DISMISS -> {
                 // Just dismiss the notification - no action needed
                 NotificationDeeplinkHolder.clearDeeplink()
             }
-            ACTION_SOLVE, 
+            ACTION_SNOOZE, ACTION_SOLVE,
             "com.apple.UNNotificationDefaultActionIdentifier" -> {
                 // Default tap or "Solve Math" action - navigate to math screen
                 val alarmEntity = AlarmEntity(
@@ -141,6 +137,16 @@ class IosNotificationDelegate : NSObject(), UNUserNotificationCenterDelegateProt
                 
                 // Convert to JSON for the NavGraph
                 val alarmJson = Json.encodeToString(alarmEntity)
+                if (actionIdentifier == ACTION_SNOOZE) {
+                    IosNotificationSnooze.snooze(alarmId) { failure ->
+                        if (failure != null) {
+                            IosAlarmAudioManager.startAlarm(alarmTone, vibrate, 1.0f)
+                            NotificationDeeplinkHolder.setDeeplink(alarmJson)
+                        }
+                        withCompletionHandler()
+                    }
+                    return
+                }
                 NotificationDeeplinkHolder.setDeeplink(alarmJson)
             }
         }

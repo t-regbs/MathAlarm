@@ -18,6 +18,21 @@ class AlarmInteractorFake : AlarmInteractor {
         existingTimes.add(FakeData(timeInMillis, dateTime))
     }
 
+    override suspend fun scheduleSnooze(alarm: Alarm, timeInMillis: Long) {
+        cancelSnooze(alarm)
+        schedule(alarm, timeInMillis)
+        val times = alarmMap.getValue(alarm.alarmId)
+        times[times.lastIndex] = times.last().copy(snoozed = true)
+    }
+
+    override fun cancelSnooze(alarm: Alarm) {
+        alarmMap[alarm.alarmId]?.removeAll { it.snoozed }
+    }
+
+    override fun cancelRegularOccurrences(alarm: Alarm) {
+        alarmMap[alarm.alarmId]?.removeAll { !it.snoozed }
+    }
+
     override fun cancel(alarm: Alarm) {
         alarmMap.remove(alarm.alarmId)
     }
@@ -47,5 +62,6 @@ class AlarmInteractorFake : AlarmInteractor {
 data class FakeData(
     val timeInMillis: Long,
     val dateTime: LocalDateTime,
-    val updated: Boolean = false
+    val updated: Boolean = false,
+    val snoozed: Boolean = false,
 )

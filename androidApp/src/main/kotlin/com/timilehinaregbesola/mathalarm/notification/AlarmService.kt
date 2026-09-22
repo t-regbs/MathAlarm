@@ -61,6 +61,7 @@ class AlarmService : Service() {
     private var wakeLock: PowerManager.WakeLock? = null
     private var currentAlarm: Alarm? = null
     private val queuedAlarms = linkedMapOf<Long, Alarm>()
+    private var pendingPlaybackValidations = 0
     private var alarmVibrator: Vibrator? = null
     private val usecases: Usecases by inject()
     private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
@@ -118,7 +119,7 @@ class AlarmService : Service() {
                     try {
                         val alarmEntity = Json.decodeFromString<AlarmEntity>(alarmJson)
                         val alarm = AlarmMapper().mapToDomainModel(alarmEntity)
-                        startAlarm(alarm)
+                        validatePlayback(listOf(alarm))
                     } catch (e: Exception) {
                         logger.e("Failed to parse alarm JSON", e)
                         stopSelf()
@@ -155,11 +156,12 @@ class AlarmService : Service() {
                     if (next == null) {
                         currentAlarm = null
                         persistPlayback()
-                        stopSelf()
+                        if (pendingPlaybackValidations == 0) stopSelf()
                     } else {
-                        queuedAlarms.remove(next.alarmId)
+                        val waiting = queuedAlarms.values.toList()
+                        queuedAlarms.clear()
                         currentAlarm = null
-                        startAlarm(next)
+                        validatePlayback(waiting)
                     }
                 }
             }
@@ -168,7 +170,7 @@ class AlarmService : Service() {
             }
         }
         
-        return if (currentAlarm == null) START_NOT_STICKY else START_STICKY
+        return if (currentAlarm != null || pendingPlaybackValidations > 0) START_STICKY else START_NOT_STICKY
     }
 
     private fun startAlarm(alarm: Alarm) {
@@ -222,22 +224,35 @@ class AlarmService : Service() {
             Json.decodeFromString<List<AlarmEntity>>(playbackState.getString("alarms", "[]") ?: "[]")
         }.getOrDefault(emptyList())
         if (saved.isEmpty()) { stopSelf(); return }
-        // Enter the foreground promptly, then validate against Room before restarting audio.
-        showForegroundNotification(AlarmMapper().mapToDomainModel(saved.first()), isPaused = true)
+        validatePlayback(saved.map(AlarmMapper()::mapToDomainModel))
+    }
+
+    private fun validatePlayback(snapshots: List<Alarm>) {
+        // A start intent can arrive after deletion, disabling, snoozing or completion.
+        // Meet the foreground deadline without playing sound until Room confirms this occurrence.
+        if (currentAlarm == null) {
+            showForegroundNotification(snapshots.first(), isPaused = true)
+        }
+        pendingPlaybackValidations++
         serviceScope.launch {
             try {
-                val valid = usecases.command {
-                    saved.mapNotNull { snapshot ->
-                        findAlarm(snapshot.alarmId)?.takeIf { it.isOn && it.activeAt != null && it.activeAt == snapshot.activeAt }
+                usecases.command {
+                    snapshots.forEach { snapshot ->
+                        findAlarm(snapshot.alarmId)?.takeIf {
+                            it.isOn && it.activeAt != null && it.activeAt == snapshot.activeAt
+                        }?.let(::startAlarm)
                     }
                 }
-                valid.forEach { startAlarm(it) }
-                if (currentAlarm == null) { persistPlayback(); stopSelf() }
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
-                logger.e(e) { "Unable to restore active alarm playback" }
-                stopSelf()
+                logger.e(e) { "Unable to validate alarm playback" }
+            } finally {
+                pendingPlaybackValidations--
+                if (currentAlarm == null && pendingPlaybackValidations == 0) {
+                    persistPlayback()
+                    stopSelf()
+                }
             }
         }
     }
@@ -376,7 +391,7 @@ class AlarmService : Service() {
             setOngoing(true) // Cannot be dismissed by swiping
             setAutoCancel(false)
             setOnlyAlertOnce(true)
-            if (alarm.snooze != 0) {
+            if (alarm.canSnooze) {
                 addAction(getSnoozeAction(alarm))
             }
             // Only set full-screen intent when actively ringing
@@ -427,6 +442,7 @@ class AlarmService : Service() {
             action = intentAction
             data = "mathalarm://action/${alarm.alarmId}/${alarm.activeAt}/$intentAction".toUri()
             putExtra(AlarmReceiver.EXTRA_TASK, alarm.alarmId)
+            alarm.activeAt?.let { putExtra(AlarmReceiver.EXTRA_TRIGGER_AT, it) }
         }
 
         return PendingIntent.getBroadcast(

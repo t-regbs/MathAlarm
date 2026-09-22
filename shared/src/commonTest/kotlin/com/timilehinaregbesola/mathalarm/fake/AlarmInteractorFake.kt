@@ -8,6 +8,7 @@ import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
 class AlarmInteractorFake : AlarmInteractor {
+    private val snoozes: MutableMap<Long, FakeData> = mutableMapOf()
     private val alarmMap: MutableMap<Long, FakeData> = mutableMapOf()
     
     override suspend fun schedule(alarm: Alarm, timeInMillis: Long) {
@@ -16,8 +17,18 @@ class AlarmInteractorFake : AlarmInteractor {
         alarmMap[alarm.alarmId] = FakeData(timeInMillis, dateTime)
     }
 
+    override suspend fun scheduleSnooze(alarm: Alarm, timeInMillis: Long) {
+        val dateTime = Instant.fromEpochMilliseconds(timeInMillis).toLocalDateTime(TimeZone.currentSystemDefault())
+        snoozes[alarm.alarmId] = FakeData(timeInMillis, dateTime)
+    }
+
+    override fun cancelSnooze(alarm: Alarm) { snoozes.remove(alarm.alarmId) }
+
+    override fun cancelRegularOccurrences(alarm: Alarm) { alarmMap.remove(alarm.alarmId) }
+
     override fun cancel(alarm: Alarm) {
         alarmMap.remove(alarm.alarmId)
+        cancelSnooze(alarm)
     }
 
     override suspend fun update(alarm: Alarm) {
@@ -27,15 +38,22 @@ class AlarmInteractorFake : AlarmInteractor {
         }
     }
 
-    fun isAlarmScheduled(alarm: Alarm): Boolean = alarmMap.contains(alarm.alarmId)
+    fun isAlarmScheduled(alarm: Alarm): Boolean = alarmMap.contains(alarm.alarmId) || snoozes.contains(alarm.alarmId)
 
-    fun clear() = alarmMap.clear()
+    fun clear() {
+        alarmMap.clear()
+        snoozes.clear()
+    }
 
-    fun getAlarmTimeMillis(alarmId: Long): Long? = alarmMap[alarmId]?.timeInMillis
+    fun getAlarmTimeMillis(alarmId: Long): Long? = nextOccurrence(alarmId)?.timeInMillis
 
-    fun getAlarmTime(alarmId: Long): LocalDateTime? = alarmMap[alarmId]?.dateTime
+    fun getAlarmTime(alarmId: Long): LocalDateTime? = nextOccurrence(alarmId)?.dateTime
 
-    fun getScheduledAlarms(): Map<Long, FakeData> = alarmMap.toMap()
+    fun getScheduledAlarms(): Map<Long, FakeData> =
+        (alarmMap.keys + snoozes.keys).associateWith { nextOccurrence(it)!! }
+
+    private fun nextOccurrence(alarmId: Long): FakeData? =
+        listOfNotNull(alarmMap[alarmId], snoozes[alarmId]).minByOrNull { it.timeInMillis }
 }
 
 data class FakeData(

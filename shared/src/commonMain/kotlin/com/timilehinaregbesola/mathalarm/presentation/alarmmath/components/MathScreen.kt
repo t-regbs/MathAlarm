@@ -192,7 +192,7 @@ fun MathScreen(
         },
         buttonSection = {
             ButtonSection(
-                alarm = alarm,
+                alarm = viewModel.currentAlarm?.let { AlarmMapper().mapFromDomainModel(it) } ?: alarm,
                 onEnterClick = {
                     viewModel.onEvent(OnEnterClick(problem))
                 },
@@ -351,9 +351,10 @@ private fun ButtonSection(
     alarm: AlarmEntity,
     onClearClick: () -> Unit,
     onSnoozeClick: () -> Unit,
-    onEnterClick: () -> Unit
+    onEnterClick: () -> Unit,
 ) {
-    val snoozeEnabled = alarm.snooze != 0
+    val snoozePolicy = AlarmMapper().mapToDomainModel(alarm)
+    val snoozeEnabled = snoozePolicy.canSnooze
 
     Column(
         modifier = Modifier
@@ -393,6 +394,17 @@ private fun ButtonSection(
                     onClick = onSnoozeClick,
                     modifier = Modifier.weight(1f).heightIn(min = MathScreen.SECONDARY_ACTION_MIN_HEIGHT),
                 ) { Text(strings.snooze, style = MaterialTheme.typography.titleMedium) }
+            }
+        }
+        if (alarm.snooze > 0) {
+            snoozePolicy.snoozesRemaining?.let { remaining ->
+                Text(
+                    text = if (remaining == 0) strings.noSnoozesLeft else strings.snoozesLeft(remaining),
+                    modifier = Modifier.fillMaxWidth(),
+                    textAlign = TextAlign.Center,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
             }
         }
     }
