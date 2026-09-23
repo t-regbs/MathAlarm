@@ -14,6 +14,7 @@ class CompleteAlarm(
     private val alarmInteractor: AlarmInteractor,
     private val notificationInteractor: NotificationInteractor,
     private val dateTimeProvider: DateTimeProvider = DateTimeProviderImpl(),
+    private val onCompleted: () -> Unit = {},
 ) {
     suspend operator fun invoke(alarmId: Long, expectedActiveAt: Long? = null): Boolean {
         val alarm = alarmRepository.findAlarm(alarmId)
@@ -43,6 +44,7 @@ class CompleteAlarm(
         if (!updated.isOn) alarmInteractor.cancel(alarm)
         alarmRepository.updateAlarm(updated)
         notificationInteractor.dismiss(alarmId)
+        if (alarm.activeAt != null) onCompleted()
         return true
     }
 

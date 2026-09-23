@@ -41,6 +41,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment.Companion.CenterVertically
 import androidx.compose.ui.Alignment.Companion.TopCenter
@@ -132,8 +133,10 @@ fun AlarmBottomSheet(
     darkTheme: Boolean,
     alarm: AlarmEntity,
     showDismissButton: Boolean,
+    closeEditor: () -> Boolean,
     isPane: Boolean = false,
     onDraftStateChange: (Boolean) -> Unit = {},
+    onAlarmSaved: () -> Unit = {},
 ) {
     LaunchedEffect(Unit) {
         viewModel.setAlarm(AlarmMapper().mapToDomainModel(alarm))
@@ -158,9 +161,8 @@ fun AlarmBottomSheet(
             }
         }
     }
-    val closeSettings: () -> Unit = {
-        if (backstack.lastOrNull() is SettingsSheet) backstack.removeLastOrNull()
-    }
+    val currentCloseEditor by rememberUpdatedState(closeEditor)
+    val closeSettings: () -> Unit = { currentCloseEditor() }
 
     // Capture string values for use in non-composable callbacks
     val alertTitle = strings.alert
@@ -192,6 +194,7 @@ fun AlarmBottomSheet(
     }
 
     val errorStrings = strings
+    val notifyAlarmSaved by rememberUpdatedState(onAlarmSaved)
     LaunchedEffect(errorStrings) {
         viewModel.eventFlow.collectLatest { event ->
             when (event) {
@@ -200,7 +203,7 @@ fun AlarmBottomSheet(
                     scaffoldState.snackbarHostState.showSnackbar(message = event.error.resolve(errorStrings))
                 }
                 is AlarmSettingsViewModel.UiEvent.SaveAlarm -> {
-                    closeSettings()
+                    if (currentCloseEditor()) notifyAlarmSaved()
                 }
                 is AlarmSettingsViewModel.UiEvent.TestAlarm -> {
                     launch(Dispatchers.Default) {

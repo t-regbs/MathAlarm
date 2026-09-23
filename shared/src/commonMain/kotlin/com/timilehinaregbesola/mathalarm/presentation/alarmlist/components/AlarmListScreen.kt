@@ -88,6 +88,7 @@ fun ListDisplayScreen(
     darkTheme: Boolean,
     useTwoPanes: Boolean = false,
     hasUnsavedEditorChanges: Boolean = false,
+    onReviewBlockedChanged: (Boolean) -> Unit = {},
 ) {
     val protectDraft by rememberUpdatedState(hasUnsavedEditorChanges)
     val alarms by viewModel.alarms.collectAsState()
@@ -101,6 +102,9 @@ fun ListDisplayScreen(
     var fabClearance by remember { mutableStateOf(120.dp) }
     val density = LocalDensity.current
     var pendingAlarmJson by rememberSaveable { mutableStateOf<String?>(null) }
+    val reviewBlocked = deleteAllAlarmsDialog || showPermissionDialog ||
+        pendingAlarmJson != null || isLoading || snackbarHoststate.currentSnackbarData != null
+    androidx.compose.runtime.SideEffect { onReviewBlockedChanged(reviewBlocked) }
     val selectedAlarmId = if (useTwoPanes) backstack.filterIsInstance<SettingsSheet>()
         .lastOrNull()?.let { Json.decodeFromString<AlarmEntity>(it.settingsAlarm).alarmId } else null
     fun openAlarm(alarmJson: String) {

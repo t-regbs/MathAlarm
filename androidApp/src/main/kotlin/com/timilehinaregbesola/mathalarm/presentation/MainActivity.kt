@@ -9,6 +9,7 @@ import android.util.Base64
 import android.view.WindowManager
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
@@ -19,6 +20,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.core.view.WindowInsetsControllerCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import com.google.android.play.core.review.ReviewManagerFactory
+import com.timilehinaregbesola.mathalarm.data.AlarmRepository
+import com.timilehinaregbesola.mathalarm.notification.ActiveAlarmManager
+import com.timilehinaregbesola.mathalarm.presentation.review.InAppReviewCoordinator
+import com.timilehinaregbesola.mathalarm.presentation.review.ReviewEligibilityStore
+import com.timilehinaregbesola.mathalarm.presentation.review.ReviewVisitViewModel
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import cafe.adriel.lyricist.Lyricist
 import cafe.adriel.lyricist.ProvideStrings
 import cafe.adriel.lyricist.rememberStrings
@@ -42,6 +53,12 @@ class MainActivity : AppCompatActivity() {
     val preferences: AlarmPreferencesImpl by inject()
     private lateinit var lyricist: Lyricist<Strings>
     private val logger = Logger.withTag("MainActivity")
+    private val reviewStore: ReviewEligibilityStore by inject()
+    private val alarmRepository: AlarmRepository by inject()
+    private val reviewSession: ReviewVisitViewModel by viewModels()
+    private val reviewCoordinator get() = reviewSession.coordinator
+    private var reviewUiReady = false
+    private var deeplinkInfo by mutableStateOf<String?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         installSplashScreen()
@@ -51,6 +68,9 @@ class MainActivity : AppCompatActivity() {
         setupLockScreenFlags()
 
         deeplinkInfo = intent.extractAlarmJson()
+        runCatching {
+            reviewStore.recordFirstUse()
+        }.onFailure { logger.w(it) { "Unable to initialize in-app reviews" } }
 
         setContent {
             val isDarkTheme = preferences.shouldUseDarkColors()
@@ -61,7 +81,22 @@ class MainActivity : AppCompatActivity() {
                     NavGraph(
                         preferences = preferences,
                         deeplinkInfo = deeplinkInfo,
-                        onDeeplinkConsumed = ::consumeAlarmDeeplink
+                        onDeeplinkConsumed = ::consumeAlarmDeeplink,
+                        reviewVisit = reviewSession.visit,
+                        onReviewOpportunityChanged = {
+                            if (reviewUiReady && !it) reviewCoordinator?.invalidatePendingRequest()
+                            reviewUiReady = it
+                        },
+                        onRequestReview = {
+                            lifecycleScope.launch {
+                                reviewCoordinator?.request(this@MainActivity) {
+                                    reviewUiReady && deeplinkInfo == null &&
+                                        lifecycle.currentState.isAtLeast(Lifecycle.State.RESUMED) &&
+                                        !isFinishing && !isDestroyed && hasWindowFocus() &&
+                                        !(getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager).isKeyguardLocked
+                                }
+                            }
+                        },
                     )
                 }
             }
@@ -96,11 +131,39 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
+    override fun onStart() {
+        super.onStart()
+        reviewUiReady = false
+        runCatching {
+            reviewSession.onStart {
+                // An alarm-created task can later be reopened from the launcher with its
+                // original ACTION_VIEW intent. Gate on the pending alarm, not that stale action.
+                if (deeplinkInfo != null) return@onStart null
+                // The retained coordinator must never capture an Activity across rotation.
+                val repository = alarmRepository
+                InAppReviewCoordinator(
+                    reviewStore,
+                    ReviewManagerFactory.create(applicationContext),
+                    hasPendingAlarm = {
+                        ActiveAlarmManager.hasActiveAlarm() || repository.getAlarms().first().any {
+                            it.activeAt != null || it.snoozedUntil != null
+                        }
+                    },
+                )
+            }
+        }.onFailure { logger.w(it) { "Unable to initialize in-app reviews" } }
+    }
+
     override fun onResume() {
         super.onResume()
         val scope: AppCoroutineScope by inject()
         val usecases: Usecases by inject()
         scope.launch { usecases.command { rescheduleFutureAlarms.onAppResume() } }
+    }
+
+    override fun onStop() {
+        reviewSession.onStop(isChangingConfigurations)
+        super.onStop()
     }
 
     private fun Intent.extractAlarmJson(): String? {
@@ -120,6 +183,5 @@ class MainActivity : AppCompatActivity() {
 
     companion object {
         private const val PARAM = "alarmId"
-        var deeplinkInfo by mutableStateOf<String?>(null)
     }
 }

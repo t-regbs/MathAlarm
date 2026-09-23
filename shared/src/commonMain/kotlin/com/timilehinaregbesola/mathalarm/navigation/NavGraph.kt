@@ -21,6 +21,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.DisposableEffect
+import kotlinx.coroutines.delay
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
@@ -73,7 +76,10 @@ import kotlinx.serialization.modules.polymorphic
 fun NavGraph(
     preferences: AlarmPreferencesImpl,
     deeplinkInfo: String?,
-    onDeeplinkConsumed: () -> Unit = {}
+    onDeeplinkConsumed: () -> Unit = {},
+    reviewVisit: Int = 0,
+    onReviewOpportunityChanged: (Boolean) -> Unit = {},
+    onRequestReview: () -> Unit = {},
 ) {
     val config = SavedStateConfiguration {
         serializersModule = SerializersModule {
@@ -86,6 +92,13 @@ fun NavGraph(
         }
     }
     val backStack = rememberNavBackStack(config, AlarmList)
+    var savedAlarmForReview by remember(reviewVisit) { mutableStateOf(false) }
+    var reviewBlockedByList by remember { mutableStateOf(true) }
+    var handledAlarmThisVisit by rememberSaveable(reviewVisit) { mutableStateOf(deeplinkInfo != null) }
+    val containsRealAlarm = backStack.filterIsInstance<AlarmMath>().any { !it.fromSheet }
+    SideEffect {
+        if (containsRealAlarm || deeplinkInfo != null) handledAlarmThisVisit = true
+    }
     LaunchedEffect(backStack) {
         NotificationSnoozeEvents.snoozed.collect { alarmId ->
             // A foreground notification can be snoozed while its challenge is visible.
@@ -180,6 +193,7 @@ fun NavGraph(
                     darkTheme = preferences.shouldUseDarkColors(),
                     useTwoPanes = settingsLayout.useTwoPanes,
                     hasUnsavedEditorChanges = dirtyEditor != null && backStack.any { it == dirtyEditor },
+                    onReviewBlockedChanged = { reviewBlockedByList = it },
                 )
             }
 
@@ -197,6 +211,8 @@ fun NavGraph(
                     onDraftStateChange = { dirty ->
                         if (dirty) dirtyEditor = it else if (dirtyEditor == it) dirtyEditor = null
                     },
+                    onAlarmSaved = { savedAlarmForReview = true },
+                    closeEditor = { closeCurrentAlarmEditor(backStack, it) },
                 )
             }
 
@@ -234,6 +250,8 @@ fun NavGraph(
         }
     )
     val destination = backStack.lastOrNull()
+    // A previous save must not re-arm a review after browsing another pane and cancelling it.
+    SideEffect { if (destination != AlarmList) savedAlarmForReview = false }
     val canShowAnnouncement = deeplinkInfo == null &&
         (destination == AlarmList || destination == AppSettings)
     LaunchedEffect(canShowAnnouncement, destination) {
@@ -249,6 +267,20 @@ fun NavGraph(
     val sessionAnnouncements = announcementIds?.mapNotNull { id ->
         catalog.find { it.feature.id == id }
     }.orEmpty()
+    val reviewOpportunity = savedAlarmForReview && destination == AlarmList &&
+        deeplinkInfo == null && !containsRealAlarm && !handledAlarmThisVisit &&
+        !reviewBlockedByList && automaticAnnouncementOffered && sessionAnnouncements.isEmpty()
+    SideEffect { onReviewOpportunityChanged(reviewOpportunity) }
+    DisposableEffect(Unit) {
+        onDispose { onReviewOpportunityChanged(false) }
+    }
+    LaunchedEffect(reviewOpportunity) {
+        if (reviewOpportunity) {
+            // Let the editor finish closing before handing over to Play's UI.
+            delay(800)
+            onRequestReview()
+        }
+    }
     if (canShowAnnouncement && sessionAnnouncements.isNotEmpty()) {
         WhatsNewDialog(
             announcements = sessionAnnouncements,
