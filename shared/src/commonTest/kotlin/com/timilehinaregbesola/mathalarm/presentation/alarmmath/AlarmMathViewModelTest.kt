@@ -4,6 +4,8 @@ import app.cash.turbine.test
 import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.analytics.AnalyticsEvent
+import com.timilehinaregbesola.mathalarm.analytics.AnalyticsTracker
 import com.timilehinaregbesola.mathalarm.fake.AlarmInteractorFake
 import com.timilehinaregbesola.mathalarm.fake.AlarmRepositoryFake
 import com.timilehinaregbesola.mathalarm.fake.AlarmTimeCalculatorFake
@@ -57,6 +59,8 @@ class AlarmMathViewModelTest {
     private lateinit var notificationInteractor: NotificationInteractorFake
     private lateinit var dateTimeProvider: DateTimeProviderFake
     private lateinit var usecases: Usecases
+    private val analyticsEvents = mutableListOf<AnalyticsEvent>()
+    private val analytics = AnalyticsTracker { analyticsEvents.add(it) }
     private val testDispatcher = StandardTestDispatcher()
 
     @BeforeTest
@@ -97,7 +101,8 @@ class AlarmMathViewModelTest {
             usecases = usecases,
             audioPlayer = audioPlayer,
             logger = Logger.withTag("AlarmMathViewModelTest"),
-            progressStore = progressStore
+            progressStore = progressStore,
+            analytics = analytics,
         )
     }
 
@@ -152,8 +157,27 @@ class AlarmMathViewModelTest {
     }
 
     private fun recreatedViewModel() = AlarmMathViewModel(
-        usecases, AudioPlayerFake(), Logger.withTag("restored"), ChallengeProgressStore(progressSettings)
+        usecases, AudioPlayerFake(), Logger.withTag("restored"), ChallengeProgressStore(progressSettings), analytics
     )
+
+    @Test
+    fun `challenge analytics survives recreation without a second start`() = runTest {
+        val alarm = Alarm(alarmId = 900, activeAt = 1000, isOn = true, questionCount = 1)
+        usecases.addAlarm(alarm)
+        viewModel.initializeChallenge(alarm, preview = false)
+        val problem = viewModel.currentProblem!!
+        viewModel.onEvent(MathScreenEvent.EnteredAnswer("wrong"))
+        viewModel.onEvent(MathScreenEvent.OnEnterClick(problem))
+        advanceUntilIdle()
+
+        val restored = recreatedViewModel()
+        restored.initializeChallenge(alarm, preview = false)
+        restored.completeAlarm(alarm)
+        advanceUntilIdle()
+
+        analyticsEvents.map { it.name } shouldBe listOf("challenge_started", "challenge_completed")
+        analyticsEvents.last().counts["incorrect_answers"] shouldBe 1L
+    }
 
     @Test
     fun `progress and exact questions survive a new view model and store`() = runTest {

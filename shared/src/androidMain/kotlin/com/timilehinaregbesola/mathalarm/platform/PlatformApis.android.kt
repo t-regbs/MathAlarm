@@ -24,10 +24,23 @@ import androidx.core.app.NotificationManagerCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import co.touchlab.kermit.Logger
+import com.russhwolf.settings.Settings as AppSettings
+import com.timilehinaregbesola.mathalarm.analytics.AnalyticsEvents
+import com.timilehinaregbesola.mathalarm.analytics.AnalyticsTracker
+import com.timilehinaregbesola.mathalarm.analytics.PermissionAnalyticsPending
+import com.timilehinaregbesola.mathalarm.analytics.trackSafely
 import com.timilehinaregbesola.mathalarm.utils.PickRingtone
 import org.koin.core.context.GlobalContext
 
 private fun getKoinContext(): Context = GlobalContext.get().get()
+
+private fun trackPermissionHandoff(type: String, key: String) {
+    runCatching {
+        GlobalContext.get().get<AppSettings>().putBoolean(key, true)
+        GlobalContext.get().get<AnalyticsTracker>()
+            .trackSafely(AnalyticsEvents.permissionPrompted(type, "settings"))
+    }
+}
 
 actual class PlatformVibrator actual constructor() {
     private val context: Context = getKoinContext()
@@ -71,9 +84,11 @@ actual fun openNotificationSettings() {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         context.startActivity(intent)
+        trackPermissionHandoff("notifications", PermissionAnalyticsPending.NOTIFICATIONS)
     } else {
         val intent = Intent(Settings.ACTION_SETTINGS).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
         context.startActivity(intent)
+        trackPermissionHandoff("notifications", PermissionAnalyticsPending.NOTIFICATIONS)
     }
 }
 
@@ -84,6 +99,7 @@ actual fun requestExactAlarmPermission() {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
         context.startActivity(intent)
+        trackPermissionHandoff("exact_alarm", PermissionAnalyticsPending.EXACT_ALARM)
     }
 }
 
@@ -164,6 +180,11 @@ actual fun rememberNotificationPermissionHandler(onResult: (Boolean) -> Unit): (
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { isGranted ->
+        runCatching {
+            GlobalContext.get().get<AnalyticsTracker>().trackSafely(
+                AnalyticsEvents.permissionResult("notifications", if (isGranted) "granted" else "denied")
+            )
+        }
         onResult(isGranted)
     }
 
@@ -178,6 +199,11 @@ actual fun rememberNotificationPermissionHandler(onResult: (Boolean) -> Unit): (
                         onResult(true)
                     }
                     else -> {
+                        runCatching {
+                            GlobalContext.get().get<AnalyticsTracker>().trackSafely(
+                                AnalyticsEvents.permissionPrompted("notifications", "runtime")
+                            )
+                        }
                         permissionLauncher.launch(permission)
                     }
                 }

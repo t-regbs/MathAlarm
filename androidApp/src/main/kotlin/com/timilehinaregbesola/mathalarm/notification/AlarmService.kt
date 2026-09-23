@@ -24,6 +24,9 @@ import androidx.core.app.ServiceCompat
 import androidx.core.net.toUri
 import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.AlarmReceiver
+import com.timilehinaregbesola.mathalarm.analytics.AnalyticsEvents
+import com.timilehinaregbesola.mathalarm.analytics.AnalyticsTracker
+import com.timilehinaregbesola.mathalarm.analytics.trackSafely
 import com.timilehinaregbesola.mathalarm.R
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
@@ -55,6 +58,7 @@ import com.timilehinaregbesola.mathalarm.framework.Usecases
 class AlarmService : Service() {
 
     private val channel: MathAlarmNotificationChannel by inject()
+    private val analytics: AnalyticsTracker by inject()
     private val logger = Logger.withTag("AlarmService")
     
     private var mediaPlayer: MediaPlayer? = null
@@ -210,6 +214,19 @@ class AlarmService : Service() {
         
         // Start the timing controller (will call onStartRinging)
         timingController?.start()
+        recordRingingStarted(alarm)
+    }
+
+    private fun recordRingingStarted(alarm: Alarm) {
+        // A service restart can restore the same occurrence; count its first playback only.
+        val key = "ringing_${alarm.alarmId}"
+        val occurrence = alarm.activeAt ?: return
+        runCatching {
+            if (playbackState.getLong(key, Long.MIN_VALUE) != occurrence) {
+                playbackState.edit().putLong(key, occurrence).apply()
+                analytics.trackSafely(AnalyticsEvents.alarmRingingStarted(alarm.snoozeCount > 0))
+            }
+        }
     }
     
     private fun persistPlayback() {

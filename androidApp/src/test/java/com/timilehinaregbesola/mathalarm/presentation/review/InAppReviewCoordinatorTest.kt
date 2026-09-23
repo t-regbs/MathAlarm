@@ -6,6 +6,8 @@ import com.google.android.gms.tasks.Tasks
 import com.google.android.play.core.review.ReviewInfo
 import com.google.android.play.core.review.ReviewManager
 import com.timilehinaregbesola.mathalarm.TestApplication
+import com.timilehinaregbesola.mathalarm.analytics.AnalyticsEvent
+import com.timilehinaregbesola.mathalarm.analytics.AnalyticsTracker
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
@@ -34,7 +36,9 @@ class InAppReviewCoordinatorTest {
         every { launchReviewFlow(any(), any()) } returns Tasks.forResult(null)
     }
     private var pendingAlarm = false
-    private fun coordinator() = InAppReviewCoordinator(store, manager) { pendingAlarm }
+    private val events = mutableListOf<AnalyticsEvent>()
+    private val analytics = AnalyticsTracker { events.add(it) }
+    private fun coordinator() = InAppReviewCoordinator(store, manager, analytics) { pendingAlarm }
 
     @Test
     fun `visit opened for an alarm can become a normal visit after backgrounding`() = runTest {
@@ -47,6 +51,10 @@ class InAppReviewCoordinatorTest {
         session.onStart { coordinator() }
         session.coordinator!!.request(activity) { true }
         verify(exactly = 1) { manager.requestReviewFlow() }
+        org.junit.Assert.assertEquals(
+            listOf("review_request_attempted", "review_request_outcome"), events.map { it.name }
+        )
+        org.junit.Assert.assertEquals("flow_finished", events.last().labels["result"])
     }
 
     @Test
@@ -123,6 +131,7 @@ class InAppReviewCoordinatorTest {
         response.setResult(info)
         job.join()
         verify(exactly = 0) { manager.launchReviewFlow(any(), any()) }
+        org.junit.Assert.assertEquals("context_changed", events.last().labels["result"])
     }
 
     @Test
@@ -136,6 +145,7 @@ class InAppReviewCoordinatorTest {
         response.setResult(info)
         job.join()
         verify(exactly = 0) { manager.launchReviewFlow(any(), any()) }
+        org.junit.Assert.assertEquals("context_changed", events.last().labels["result"])
     }
 
     @Test
@@ -160,5 +170,6 @@ class InAppReviewCoordinatorTest {
         verify(exactly = 1) { store.recordAttempt() }
         verify(exactly = 1) { manager.requestReviewFlow() }
         verify(exactly = 0) { manager.launchReviewFlow(any(), any()) }
+        org.junit.Assert.assertEquals("request_failed", events.last().labels["result"])
     }
 }

@@ -3,6 +3,9 @@ package com.timilehinaregbesola.mathalarm.di
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.ChallengeProgressStore
 
 import com.russhwolf.settings.Settings
+import com.timilehinaregbesola.mathalarm.analytics.AnalyticsEvents
+import com.timilehinaregbesola.mathalarm.analytics.AnalyticsTracker
+import com.timilehinaregbesola.mathalarm.analytics.trackSafely
 import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.presentation.review.ReviewEligibilityStore
 import com.timilehinaregbesola.mathalarm.coroutines.AppCoroutineScope
@@ -76,6 +79,7 @@ val commonModule = module {
         val deleteAlarm = DeleteAlarm(get(), get(), get())
         val rescheduleFutureAlarms = RescheduleFutureAlarms(get(), get(), get())
         val reviewEligibility by lazy { get<ReviewEligibilityStore>() }
+        val analytics by lazy { get<AnalyticsTracker>() }
         Usecases(
             addAlarm = AddAlarm(get()),
             clearAlarms = ClearAlarms(get(), deleteAlarm),
@@ -88,21 +92,24 @@ val commonModule = module {
                 // Optional review bookkeeping must never turn a successful dismissal into an error.
                 runCatching { reviewEligibility.recordAlarmCompleted() }
                     .onFailure { Logger.w(it) { "Unable to record review eligibility" } }
+                runCatching { analytics.trackSafely(AnalyticsEvents.alarmCompleted) }
             }),
             rescheduleFutureAlarms = rescheduleFutureAlarms,
             scheduleNextAlarm = get(),
             showAlarm = ShowAlarm(get(), get(), get()),
-            snoozeAlarm = SnoozeAlarm(get(), get(), get(), get()),
+            snoozeAlarm = SnoozeAlarm(get(), get(), get(), get(), onSnoozed = {
+                runCatching { analytics.trackSafely(AnalyticsEvents.alarmSnoozed) }
+            }),
             cancelAlarm = CancelAlarm(get()),
             skipNextAlarm = SkipNextAlarm(get(), get(), rescheduleFutureAlarms),
         )
     }
     
     // ViewModels
-    viewModel { AlarmListViewModel(get(), get(), get(), getWith("AlarmListViewModel")) }
+    viewModel { AlarmListViewModel(get(), get(), get(), getWith("AlarmListViewModel"), get()) }
     single { ChallengeProgressStore(get()) }
-    viewModel { AlarmSettingsViewModel(get(), get()) }
-    viewModel { AlarmMathViewModel(get(), get(), getWith("AlarmMathViewModel"), get()) }
+    viewModel { AlarmSettingsViewModel(get(), get(), get()) }
+    viewModel { AlarmMathViewModel(get(), get(), getWith("AlarmMathViewModel"), get(), get()) }
 }
 
 /**

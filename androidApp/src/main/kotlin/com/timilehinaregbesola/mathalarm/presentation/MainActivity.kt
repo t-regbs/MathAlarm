@@ -19,10 +19,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.view.WindowInsetsControllerCompat
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import com.google.android.play.core.review.ReviewManagerFactory
+import com.timilehinaregbesola.mathalarm.analytics.AnalyticsTracker
+import com.timilehinaregbesola.mathalarm.analytics.AnalyticsEvents
+import com.timilehinaregbesola.mathalarm.analytics.PermissionAnalyticsPending
+import com.timilehinaregbesola.mathalarm.analytics.trackSafely
+import com.russhwolf.settings.Settings
 import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.notification.ActiveAlarmManager
 import com.timilehinaregbesola.mathalarm.presentation.review.InAppReviewCoordinator
@@ -36,6 +42,7 @@ import cafe.adriel.lyricist.rememberStrings
 import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.coroutines.AppCoroutineScope
 import com.timilehinaregbesola.mathalarm.framework.Usecases
+import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermission
 import com.timilehinaregbesola.mathalarm.navigation.NavGraph
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
@@ -54,6 +61,9 @@ class MainActivity : AppCompatActivity() {
     private lateinit var lyricist: Lyricist<Strings>
     private val logger = Logger.withTag("MainActivity")
     private val reviewStore: ReviewEligibilityStore by inject()
+    private val analytics: AnalyticsTracker by inject()
+    private val analyticsSettings: Settings by inject()
+    private val alarmPermission: AlarmPermission by inject()
     private val alarmRepository: AlarmRepository by inject()
     private val reviewSession: ReviewVisitViewModel by viewModels()
     private val reviewCoordinator get() = reviewSession.coordinator
@@ -83,6 +93,7 @@ class MainActivity : AppCompatActivity() {
                         deeplinkInfo = deeplinkInfo,
                         onDeeplinkConsumed = ::consumeAlarmDeeplink,
                         reviewVisit = reviewSession.visit,
+                        analytics = analytics,
                         onReviewOpportunityChanged = {
                             if (reviewUiReady && !it) reviewCoordinator?.invalidatePendingRequest()
                             reviewUiReady = it
@@ -144,6 +155,7 @@ class MainActivity : AppCompatActivity() {
                 InAppReviewCoordinator(
                     reviewStore,
                     ReviewManagerFactory.create(applicationContext),
+                    analytics = analytics,
                     hasPendingAlarm = {
                         ActiveAlarmManager.hasActiveAlarm() || repository.getAlarms().first().any {
                             it.activeAt != null || it.snoozedUntil != null
@@ -156,9 +168,27 @@ class MainActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
+        recordReturnedPermissionResults()
         val scope: AppCoroutineScope by inject()
         val usecases: Usecases by inject()
         scope.launch { usecases.command { rescheduleFutureAlarms.onAppResume() } }
+    }
+
+    private fun recordReturnedPermissionResults() {
+        runCatching {
+            if (analyticsSettings.getBooleanOrNull(PermissionAnalyticsPending.EXACT_ALARM) == true) {
+                analyticsSettings.remove(PermissionAnalyticsPending.EXACT_ALARM)
+                analytics.trackSafely(AnalyticsEvents.permissionResult(
+                    "exact_alarm", if (alarmPermission.hasExactAlarmPermission()) "granted" else "still_missing"
+                ))
+            }
+            if (analyticsSettings.getBooleanOrNull(PermissionAnalyticsPending.NOTIFICATIONS) == true) {
+                analyticsSettings.remove(PermissionAnalyticsPending.NOTIFICATIONS)
+                analytics.trackSafely(AnalyticsEvents.permissionResult(
+                    "notifications", if (NotificationManagerCompat.from(this).areNotificationsEnabled()) "granted" else "still_missing"
+                ))
+            }
+        }.onFailure { logger.w(it) { "Unable to record permission return" } }
     }
 
     override fun onStop() {

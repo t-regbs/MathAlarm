@@ -1,6 +1,8 @@
 package com.timilehinaregbesola.mathalarm.di
 
 import androidx.room.Room
+import com.timilehinaregbesola.mathalarm.analytics.AnalyticsTracker
+import com.timilehinaregbesola.mathalarm.analytics.NoopAnalyticsTracker
 import androidx.sqlite.driver.bundled.BundledSQLiteDriver
 import co.touchlab.kermit.Logger
 import co.touchlab.kermit.StaticConfig
@@ -41,6 +43,7 @@ import platform.Foundation.NSUserDomainMask
  * iOS-specific Koin module
  */
 val iosModule = module {
+    single<AnalyticsTracker> { NoopAnalyticsTracker }
     // Room Database for iOS - uses lazy initialization
     // The database will only be built when first injected
     single<AlarmDatabase> {

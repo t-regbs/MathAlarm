@@ -4,6 +4,10 @@ import androidx.compose.runtime.snapshotFlow
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import co.touchlab.kermit.Logger
+import com.timilehinaregbesola.mathalarm.analytics.AnalyticsEvents
+import com.timilehinaregbesola.mathalarm.analytics.AnalyticsTracker
+import com.timilehinaregbesola.mathalarm.analytics.NoopAnalyticsTracker
+import com.timilehinaregbesola.mathalarm.analytics.trackSafely
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermission
@@ -27,7 +31,8 @@ class AlarmListViewModel(
     private val usecases: Usecases,
     val permission: AlarmPermission,
     private val preferences: AlarmPreferencesImpl,
-    private val logger: Logger
+    private val logger: Logger,
+    private val analytics: AnalyticsTracker = NoopAnalyticsTracker,
 ) : ViewModel() {
     val alarms = usecases
         .getSavedAlarms()
@@ -69,6 +74,7 @@ class AlarmListViewModel(
             is AlarmListEvent.OnAlarmOnChange -> setEnabled(event.alarm, event.isOn)
             is AlarmListEvent.OnSkipNextClick -> launchCommand {
                 val skippedDate = skipNextAlarm(event.alarmId) ?: return@launchCommand
+                analytics.trackSafely(AnalyticsEvents.alarmSkipped)
                 sendUiEvent(ShowSnackbar(
                     message = "",
                     skippedDate = skippedDate,

@@ -31,6 +31,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.saveable.rememberSaveable
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.analytics.AnalyticsEvents
+import com.timilehinaregbesola.mathalarm.analytics.AnalyticsTracker
+import com.timilehinaregbesola.mathalarm.analytics.NoopAnalyticsTracker
+import com.timilehinaregbesola.mathalarm.analytics.trackSafely
 import com.timilehinaregbesola.mathalarm.framework.NotificationSnoozeEvents
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.presentation.whatsnew.AnnouncementFeature
@@ -80,6 +84,7 @@ fun NavGraph(
     reviewVisit: Int = 0,
     onReviewOpportunityChanged: (Boolean) -> Unit = {},
     onRequestReview: () -> Unit = {},
+    analytics: AnalyticsTracker = NoopAnalyticsTracker,
 ) {
     val config = SavedStateConfiguration {
         serializersModule = SerializersModule {
@@ -250,6 +255,18 @@ fun NavGraph(
         }
     )
     val destination = backStack.lastOrNull()
+    LaunchedEffect(destination, settingsLayout.useTwoPanes) {
+        val screen = when (destination) {
+            AlarmList -> "alarm_list"
+            is SettingsSheet -> "alarm_editor"
+            is AlarmMath -> if (destination.fromSheet) "alarm_preview" else "alarm_challenge"
+            AppSettings -> "app_settings"
+            else -> null
+        }
+        if (screen != null) analytics.trackSafely(AnalyticsEvents.screenViewed(
+            screen, if (settingsLayout.useTwoPanes) "two_pane" else "single_pane"
+        ))
+    }
     // A previous save must not re-arm a review after browsing another pane and cancelling it.
     SideEffect { if (destination != AlarmList) savedAlarmForReview = false }
     val canShowAnnouncement = deeplinkInfo == null &&

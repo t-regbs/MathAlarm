@@ -8,7 +8,13 @@ import kotlinx.serialization.json.Json
 /** Keeps each alarm's latest occurrence separate, including simultaneous ringing alarms. */
 class ChallengeProgressStore(private val settings: Settings) {
     @Serializable
-    data class Progress(val activeAt: Long, val problems: List<MathProblem>, val questionIndex: Int)
+    data class Progress(
+        val activeAt: Long,
+        val problems: List<MathProblem>,
+        val questionIndex: Int,
+        val startedAt: Long = 0,
+        val incorrectAnswers: Int = 0,
+    )
 
     fun load(alarmId: Long, activeAt: Long): Progress? {
         val encoded = settings.getStringOrNull(key(alarmId)) ?: return null
