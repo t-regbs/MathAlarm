@@ -83,11 +83,14 @@ class AlarmSettingsViewModel(
     val eventFlow = _eventFlow.asSharedFlow()
 
     var currentAlarmId: Long? = null
+    private var saveInFlight = false
 
     fun onEvent(event: AddEditAlarmEvent) {
         when (event) {
             is AddEditAlarmEvent.OnSaveTodoClick -> {
+                if (saveInFlight) return
                 val edited = createAlarm().copy(isSaved = true)
+                saveInFlight = true
                 viewModelScope.launch {
                     try {
                         val didSave = usecases.command {
@@ -127,6 +130,8 @@ class AlarmSettingsViewModel(
                     } catch (e: Exception) {
                         Logger.e(e) { "Unable to save alarm" }
                         _eventFlow.emit(UiEvent.ShowError(AlarmErrorMessage.SAVE))
+                    } finally {
+                        saveInFlight = false
                     }
                 }
             }

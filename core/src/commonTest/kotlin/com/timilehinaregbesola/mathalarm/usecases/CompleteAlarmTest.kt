@@ -44,6 +44,23 @@ class CompleteAlarmTest {
     }
 
     @Test
+    fun `completion observer counts accepted active occurrences only`() = runTest {
+        var completions = 0
+        val complete = CompleteAlarm(alarmRepository, alarmInteractor, notificationInteractor,
+            dateTimeProvider, onCompleted = { completions++ })
+        // Missing, inactive and stale occurrences must not build review eligibility.
+        complete(999)
+        complete(baseAlarm.alarmId)
+        alarmRepository.updateAlarm(baseAlarm.copy(activeAt = 1000L))
+        assertFalse(complete(baseAlarm.alarmId, expectedActiveAt = 999L))
+        assertEquals(0, completions)
+        assertTrue(complete(baseAlarm.alarmId, expectedActiveAt = 1000L))
+        assertEquals(1, completions)
+        complete(baseAlarm.alarmId)
+        assertEquals(1, completions)
+    }
+
+    @Test
     fun `test if an alarm is turned off after completion`() = runTest {
         completeAlarmUseCase(baseAlarm)
 

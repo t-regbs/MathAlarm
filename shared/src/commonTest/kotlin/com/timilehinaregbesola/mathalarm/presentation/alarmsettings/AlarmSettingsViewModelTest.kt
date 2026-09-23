@@ -22,6 +22,8 @@ import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.*
 
@@ -70,6 +72,27 @@ class AlarmSettingsViewModelTest {
         )
         
         viewModel = AlarmSettingsViewModel(usecases = usecases, permission = permission)
+    }
+
+    @Test
+    fun `two save taps while another command runs create only one alarm`() = runTest {
+        viewModel.setAlarm(Alarm(alarmTone = "test_tone"))
+        val locked = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val command = launch {
+            usecases.command { locked.complete(Unit); release.await() }
+        }
+        locked.await()
+        viewModel.eventFlow.test {
+            viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+            viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+            release.complete(Unit)
+            command.join()
+            awaitItem() shouldBe AlarmSettingsViewModel.UiEvent.SaveAlarm
+            advanceUntilIdle()
+            expectNoEvents()
+            usecases.getSavedAlarms().first().size shouldBe 1
+        }
     }
 
     @Test

@@ -37,6 +37,7 @@ class TabletPaneLayoutTest {
         val labels = EnMathAlarmStrings
         val usecases = GlobalContext.get().get<Usecases>()
         val ids = listOf(900020L, 900021L)
+        val reviewRequests = java.util.concurrent.atomic.AtomicInteger()
         try {
             runBlocking {
                 usecases.command {
@@ -53,13 +54,18 @@ class TabletPaneLayoutTest {
                 compose.activity.setContent {
                     CompositionLocalProvider(LocalStrings provides labels) {
                         androidx.compose.runtime.key("tablet-test") {
-                            MathAlarmTheme(darkTheme = preferences.shouldUseDarkColors()) { NavGraph(preferences, null) }
+                            MathAlarmTheme(darkTheme = preferences.shouldUseDarkColors()) {
+                                NavGraph(preferences, null, onRequestReview = { reviewRequests.incrementAndGet() })
+                            }
                         }
                     }
                 }
             }
+            compose.waitUntil(5_000) {
+                compose.onAllNodesWithText("Morning commute", substring = true).fetchSemanticsNodes().isNotEmpty()
+            }
             compose.onNodeWithText(labels.selectAlarmPrompt).assertIsDisplayed()
-            compose.onNodeWithText("Morning commute").performClick()
+            compose.onNodeWithText("Morning commute", substring = true).performClick()
             compose.onNodeWithText(labels.selectAlarmPrompt).assertIsDisplayed()
             compose.onNodeWithText(labels.delete).assertIsDisplayed()
             editAlarm("Morning commute")
@@ -72,18 +78,18 @@ class TabletPaneLayoutTest {
 
             compose.onAllNodesWithText("07:00 AM").onLast().performClick()
             compose.onNodeWithText(labels.selectHour).assertIsDisplayed()
-            compose.onNodeWithText("Weekend").assertIsDisplayed()
+            compose.onNodeWithText("Weekend", substring = true).assertIsDisplayed()
             compose.onAllNodes(isDialog()).assertCountEquals(0)
             capture("tablet-time-picker.png")
             compose.onNodeWithText(labels.cancel).performClick()
             compose.onNodeWithText(labels.testAlarm.uppercase()).performClick()
             compose.onNodeWithText(labels.cancel).assertIsDisplayed()
-            compose.onNodeWithText("Weekend").assertIsDisplayed()
+            compose.onNodeWithText("Weekend", substring = true).assertIsDisplayed()
             compose.onAllNodes(isDialog()).assertCountEquals(0)
             compose.onNodeWithText(labels.cancel).performClick()
 
             compose.onNode(hasSetTextAction()).performTextReplacement("Draft commute")
-            compose.onNodeWithText("Weekend").performClick()
+            compose.onNodeWithText("Weekend", substring = true).performClick()
             // Expanding another card must not navigate or interrupt the current draft.
             compose.onNodeWithText("Draft commute").assertExists()
             compose.onNodeWithText(labels.closeAlarmEditor).assertDoesNotExist()
@@ -94,7 +100,8 @@ class TabletPaneLayoutTest {
 
             compose.onNodeWithContentDescription("Settings").performClick()
             compose.onNodeWithText(labels.colorTheme).assertIsDisplayed()
-            compose.onNodeWithText("Weekend").assertIsDisplayed()
+            assertEquals("Visible list beside Settings must not trigger review", 0, reviewRequests.get())
+            compose.onNodeWithText("Weekend", substring = true).assertIsDisplayed()
             compose.onAllNodes(isDialog()).assertCountEquals(0)
             capture("tablet-app-settings.png")
             compose.onNodeWithContentDescription(labels.back).performClick()
@@ -102,7 +109,7 @@ class TabletPaneLayoutTest {
 
             compose.onNodeWithText(labels.mathChallengeTitle).performScrollTo().performClick()
             compose.onNodeWithText(labels.applyChallenge.uppercase()).assertIsDisplayed()
-            compose.onNodeWithText("Weekend").assertIsDisplayed()
+            compose.onNodeWithText("Weekend", substring = true).assertIsDisplayed()
             compose.onAllNodes(isDialog()).assertCountEquals(0)
             capture("tablet-challenge-editor.png")
             compose.onNodeWithText(labels.cancel.uppercase()).performClick()
@@ -111,6 +118,7 @@ class TabletPaneLayoutTest {
             compose.onNodeWithText(labels.discardChanges).performClick()
             compose.onNode(hasSetTextAction()).assertTextContains("Weekend")
             compose.onNode(hasSetTextAction()).performTextReplacement("Weekend updated")
+            assertEquals("Editing and previewing must not trigger review", 0, reviewRequests.get())
             compose.onNodeWithText(labels.save.uppercase()).performClick()
             compose.waitUntil(5_000) {
                 compose.onAllNodesWithText(labels.selectAlarmPrompt).fetchSemanticsNodes().isNotEmpty()
@@ -120,6 +128,13 @@ class TabletPaneLayoutTest {
                 assertEquals("Morning commute", usecases.findAlarm(ids[0])?.title)
                 assertTrue(usecases.findAlarm(ids[1])!!.pendingTimes.isEmpty())
             }
+            compose.waitUntil(5_000) { reviewRequests.get() == 1 }
+            compose.onNodeWithContentDescription("Settings").performClick()
+            compose.onNodeWithText(labels.colorTheme).assertIsDisplayed()
+            compose.onNodeWithContentDescription(labels.back).performClick()
+            compose.mainClock.advanceTimeBy(1_500)
+            compose.waitForIdle()
+            assertEquals("Returning from another pane must not reuse an old save", 1, reviewRequests.get())
         } finally {
             runBlocking { usecases.command { ids.forEach { deleteAlarm(it) } } }
         }
@@ -169,6 +184,7 @@ class TabletPaneLayoutTest {
         val labels = EnMathAlarmStrings
         val usecases = GlobalContext.get().get<Usecases>()
         val id = 900022L
+        val reviewRequests = java.util.concurrent.atomic.AtomicInteger()
         try {
             runBlocking { usecases.command {
                 addAlarm(Alarm(alarmId = id, hour = 7, minute = 0, title = "Compact layout",
@@ -181,7 +197,9 @@ class TabletPaneLayoutTest {
                 compose.activity.setContent {
                     androidx.compose.runtime.key("compact-test") {
                         CompositionLocalProvider(LocalStrings provides labels) {
-                            MathAlarmTheme(darkTheme = preferences.shouldUseDarkColors()) { NavGraph(preferences, null) }
+                            MathAlarmTheme(darkTheme = preferences.shouldUseDarkColors()) {
+                                NavGraph(preferences, null, onRequestReview = { reviewRequests.incrementAndGet() })
+                            }
                         }
                     }
                 }
@@ -198,13 +216,22 @@ class TabletPaneLayoutTest {
             compose.onNodeWithText(labels.testAlarm.uppercase()).performClick()
             compose.onNodeWithText(labels.cancel).performClick()
             compose.onNodeWithText("Phone draft").assertExists()
+            assertEquals(0, reviewRequests.get())
+            compose.onNodeWithText(labels.save.uppercase()).performClick()
+            compose.waitUntil(5_000) { reviewRequests.get() == 1 }
+            compose.onNodeWithContentDescription("Settings").performClick()
+            compose.onNodeWithText(labels.colorTheme).assertIsDisplayed()
+            compose.onNodeWithContentDescription(labels.back).performClick()
+            compose.mainClock.advanceTimeBy(1_500)
+            compose.waitForIdle()
+            assertEquals(1, reviewRequests.get())
         } finally {
             runBlocking { usecases.command { deleteAlarm(id) } }
         }
     }
 
     private fun editAlarm(title: String) {
-        compose.onNode(hasText(EnMathAlarmStrings.edit) and hasAnyAncestor(hasText(title)))
+        compose.onNode(hasText(EnMathAlarmStrings.edit) and hasAnyAncestor(hasText(title, substring = true)))
             .performScrollTo().performClick()
     }
 

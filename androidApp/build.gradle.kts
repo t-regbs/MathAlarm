@@ -64,6 +64,7 @@ android {
 }
 
 dependencies {
+    implementation(libs.play.review)
     implementation(project(":shared"))
     implementation(project(":core"))
 

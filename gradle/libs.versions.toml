@@ -1,4 +1,5 @@
 [versions]
+play-review = "2.0.2"
 haze = "1.7.3"
 # @keep
 android_compile_sdk = "37"
@@ -45,6 +46,7 @@ calf = "0.14.0"
 sqlite = "2.7.1"
 
 [libraries]
+play-review = { module = "com.google.android.play:review", version.ref = "play-review" }
 haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx_activity_compose" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }

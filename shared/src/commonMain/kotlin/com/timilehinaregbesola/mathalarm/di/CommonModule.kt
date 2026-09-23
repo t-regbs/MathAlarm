@@ -3,6 +3,8 @@ package com.timilehinaregbesola.mathalarm.di
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.ChallengeProgressStore
 
 import com.russhwolf.settings.Settings
+import co.touchlab.kermit.Logger
+import com.timilehinaregbesola.mathalarm.presentation.review.ReviewEligibilityStore
 import com.timilehinaregbesola.mathalarm.coroutines.AppCoroutineScope
 import com.timilehinaregbesola.mathalarm.data.AlarmDataSource
 import com.timilehinaregbesola.mathalarm.data.AlarmRepository
@@ -60,6 +62,7 @@ val commonModule = module {
     
     // Preferences
     single { Settings() }
+    single { ReviewEligibilityStore(get()) }
     single {
         AlarmPreferencesImpl(
             get<AppThemeOptionsMapper>(),
@@ -72,6 +75,7 @@ val commonModule = module {
     single {
         val deleteAlarm = DeleteAlarm(get(), get(), get())
         val rescheduleFutureAlarms = RescheduleFutureAlarms(get(), get(), get())
+        val reviewEligibility by lazy { get<ReviewEligibilityStore>() }
         Usecases(
             addAlarm = AddAlarm(get()),
             clearAlarms = ClearAlarms(get(), deleteAlarm),
@@ -80,7 +84,11 @@ val commonModule = module {
             getSavedAlarms = GetSavedAlarms(get()),
             updateAlarm = UpdateAlarm(get(), get()),
             scheduleAlarm = ScheduleAlarm(get(), get(), get()),
-            completeAlarm = CompleteAlarm(get(), get(), get(), get()),
+            completeAlarm = CompleteAlarm(get(), get(), get(), get(), onCompleted = {
+                // Optional review bookkeeping must never turn a successful dismissal into an error.
+                runCatching { reviewEligibility.recordAlarmCompleted() }
+                    .onFailure { Logger.w(it) { "Unable to record review eligibility" } }
+            }),
             rescheduleFutureAlarms = rescheduleFutureAlarms,
             scheduleNextAlarm = get(),
             showAlarm = ShowAlarm(get(), get(), get()),
