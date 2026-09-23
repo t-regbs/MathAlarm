@@ -9,6 +9,7 @@ import android.content.Intent
 import android.os.PowerManager
 import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.coroutines.AppCoroutineScope
+import com.timilehinaregbesola.mathalarm.framework.NotificationSnoozeEvents
 import com.timilehinaregbesola.mathalarm.framework.Usecases
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
@@ -72,7 +73,9 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
             COMPLETE_ACTION -> getAlarmId(intent)?.let { usecases.completeAlarm(it) }
             SNOOZE_ACTION -> getAlarmId(intent)?.let {
                 val activeAt = if (intent.hasExtra(EXTRA_TRIGGER_AT)) intent.getLongExtra(EXTRA_TRIGGER_AT, 0) else null
-                usecases.snoozeAlarm(it, expectedActiveAt = activeAt)
+                if (usecases.snoozeAlarm(it, expectedActiveAt = activeAt)) {
+                    NotificationSnoozeEvents.notifySnoozed(it)
+                }
             }
             DISMISS_ACTION -> {
                 // User swiped away the notification - immediately re-show it

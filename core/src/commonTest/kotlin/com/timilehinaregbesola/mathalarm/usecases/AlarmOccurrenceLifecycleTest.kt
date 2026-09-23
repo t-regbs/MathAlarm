@@ -114,7 +114,7 @@ class AlarmOccurrenceLifecycleTest {
         val failing = object : AlarmInteractor by backend {
             override suspend fun scheduleSnooze(alarm: Alarm, timeInMillis: Long) { error("OS rejected snooze") }
         }
-        repository.addAlarm(alarm)
+        repository.addAlarm(alarm.copy(activeAt = time(7)))
         notifications.show(alarm)
         assertFailsWith<IllegalStateException> { SnoozeAlarm(clock, notifications, failing, repository)(12) }
         assertTrue(notifications.isNotificationShown(12))
@@ -122,7 +122,7 @@ class AlarmOccurrenceLifecycleTest {
     }
 
     @Test fun snoozePersistsSeparateTimeWithoutEditingAlarm() = runTest {
-        repository.addAlarm(alarm.copy(pendingTimes = listOf(time(14)), scheduleInitialized = true))
+        repository.addAlarm(alarm.copy(activeAt = time(7), pendingTimes = listOf(time(14)), scheduleInitialized = true))
         SnoozeAlarm(clock, notifications, backend, repository)(12, 5)
         val stored = repository.findAlarm(12)!!
         assertEquals(7, stored.hour)

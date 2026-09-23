@@ -37,7 +37,7 @@ internal suspend fun Usecases.snoozeFromNotification(
 }
 
 /** Closes a challenge already visible when a notification action succeeds. */
-internal object NotificationSnoozeEvents {
+object NotificationSnoozeEvents {
     private val events = kotlinx.coroutines.flow.MutableSharedFlow<Long>()
     val snoozed = events.asSharedFlow()
 

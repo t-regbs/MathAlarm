@@ -20,8 +20,7 @@ class SnoozeAlarm(
         expectedActiveAt: Long? = null,
     ): Boolean {
         val alarm = alarmRepository.findAlarm(alarmId) ?: return false
-        if (!alarm.isOn || !alarm.canSnooze) return false
-        if (alarm.snoozedUntil != null && alarm.activeAt == null) return false
+        if (!alarm.isOn || !alarm.canSnooze || alarm.activeAt == null) return false
         if (expectedActiveAt != null && alarm.activeAt != expectedActiveAt) return false
         val delay = minutes ?: alarm.snooze
         require(delay > 0)
