@@ -15,12 +15,13 @@ class CompleteAlarm(
     private val notificationInteractor: NotificationInteractor,
     private val dateTimeProvider: DateTimeProvider = DateTimeProviderImpl(),
 ) {
-    suspend operator fun invoke(alarmId: Long) {
+    suspend operator fun invoke(alarmId: Long, expectedActiveAt: Long? = null): Boolean {
         val alarm = alarmRepository.findAlarm(alarmId)
         if (alarm == null) {
-            notificationInteractor.dismiss(alarmId)
-            return
+            if (expectedActiveAt == null) notificationInteractor.dismiss(alarmId)
+            return false
         }
+        if (expectedActiveAt != null && alarm.activeAt != expectedActiveAt) return false
         val now = dateTimeProvider.getCurrentDateTime()
             .toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
         val pending = alarm.pendingTimes.filter { it > now }
@@ -42,6 +43,7 @@ class CompleteAlarm(
         if (!updated.isOn) alarmInteractor.cancel(alarm)
         alarmRepository.updateAlarm(updated)
         notificationInteractor.dismiss(alarmId)
+        return true
     }
 
     // Never overwrite current settings with the snapshot embedded in a notification.

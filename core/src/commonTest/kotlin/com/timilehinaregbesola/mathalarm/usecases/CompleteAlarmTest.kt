@@ -92,6 +92,21 @@ class CompleteAlarmTest {
     }
 
     @Test
+    fun `completion for a snoozed occurrence keeps the pending snooze`() = runTest {
+        val active = baseAlarm.copy(activeAt = 1_000L)
+        alarmRepository.updateAlarm(active)
+        val snoozeTime = 1_900_000_000_000L
+        val snoozed = active.copy(activeAt = null, snoozedUntil = snoozeTime, snoozeCount = 1)
+        alarmInteractor.scheduleSnooze(snoozed, snoozeTime)
+        alarmRepository.updateAlarm(snoozed)
+
+        assertFalse(completeAlarmUseCase(active.alarmId, expectedActiveAt = 1_000L))
+
+        assertEquals(snoozed, findAlarmUseCase(active.alarmId))
+        assertEquals(snoozeTime, alarmInteractor.getAlarmTimeMillis(active.alarmId))
+    }
+
+    @Test
     fun `single day alarm without repeat flag should turn off after completion`() = runTest {
         // Alarm set for only Tuesday, repeat = false
         val alarm = Alarm(

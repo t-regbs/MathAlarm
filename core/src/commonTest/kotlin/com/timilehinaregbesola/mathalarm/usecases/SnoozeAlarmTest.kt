@@ -28,7 +28,7 @@ class SnoozeAlarmTest {
     private lateinit var addAlarmUseCase: AddAlarm
     private lateinit var snoozeAlarmUseCase: SnoozeAlarm
 
-    private val baseAlarm = Alarm(alarmId = 216L, title = "snooze me", isOn = true)
+    private val baseAlarm = Alarm(alarmId = 216L, title = "snooze me", isOn = true, activeAt = 1000)
 
     @BeforeTest
     fun setup() = runTest {
@@ -211,6 +211,19 @@ class SnoozeAlarmTest {
         snoozeAlarmUseCase(baseAlarm.alarmId) shouldBe true
         snoozeAlarmUseCase(baseAlarm.alarmId) shouldBe false
         alarmRepository.findAlarm(baseAlarm.alarmId)!!.snoozeCount shouldBe 1
+    }
+
+    @Test
+    fun `enabled alarm without an active occurrence cannot be snoozed`() = runTest {
+        val inactive = baseAlarm.copy(activeAt = null)
+        addAlarmUseCase(inactive)
+        notificationInteractor.show(inactive)
+
+        snoozeAlarmUseCase(inactive.alarmId) shouldBe false
+
+        alarmInteractor.getAlarmTimeMillis(inactive.alarmId) shouldBe null
+        alarmRepository.findAlarm(inactive.alarmId)!!.snoozeCount shouldBe 0
+        notificationInteractor.isNotificationShown(inactive.alarmId) shouldBe true
     }
 
     @Test

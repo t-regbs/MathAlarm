@@ -257,6 +257,45 @@ class AlarmMathViewModelTest {
     }
 
     @Test
+    fun `stale challenge cannot snooze a newer active occurrence`() = runTest {
+        val first = Alarm(alarmId = 805, isOn = true, activeAt = 1000)
+        usecases.addAlarm(first)
+        viewModel.initializeChallenge(first, preview = false)
+        repository.updateAlarm(first.copy(activeAt = 2000))
+
+        viewModel.eventFlow.test {
+            viewModel.onEvent(MathScreenEvent.OnSnoozeClick(first.alarmId))
+            awaitItem() shouldBe AlarmMathViewModel.UiEvent.ShowError(AlarmErrorMessage.SNOOZE)
+            advanceUntilIdle()
+            expectNoEvents()
+        }
+
+        val saved = usecases.findAlarm(first.alarmId)!!
+        saved.activeAt shouldBe 2000L
+        saved.snoozedUntil shouldBe null
+        saved.snoozeCount shouldBe 0
+    }
+
+    @Test
+    fun `stale challenge cannot complete after notification snooze`() = runTest {
+        val alarm = Alarm(alarmId = 806, isOn = true, activeAt = 1000)
+        usecases.addAlarm(alarm)
+        viewModel.initializeChallenge(alarm, preview = false)
+        usecases.command { snoozeAlarm(alarm.alarmId, expectedActiveAt = 1000) } shouldBe true
+        val snoozed = usecases.findAlarm(alarm.alarmId)!!
+
+        viewModel.eventFlow.test {
+            viewModel.completeAlarm(alarm)
+            awaitItem() shouldBe AlarmMathViewModel.UiEvent.ShowError(AlarmErrorMessage.DISMISS)
+            advanceUntilIdle()
+            expectNoEvents()
+        }
+
+        usecases.findAlarm(alarm.alarmId) shouldBe snoozed
+        alarmInteractor.getAlarmTimeMillis(alarm.alarmId) shouldBe snoozed.snoozedUntil
+    }
+
+    @Test
     fun `initial answer should be empty`() {
         viewModel.answerText.value shouldBe ""
     }
@@ -324,8 +363,9 @@ class AlarmMathViewModelTest {
 
     @Test
     fun `onEvent OnSnoozeClick should snooze alarm and stop audio`() = runTest {
-        val alarm = Alarm(alarmId = 123L, hour = 8, minute = 0, isSaved = true, isOn = true)
+        val alarm = Alarm(alarmId = 123L, hour = 8, minute = 0, isSaved = true, isOn = true, activeAt = 1000)
         usecases.addAlarm(alarm)
+        viewModel.initializeChallenge(alarm, preview = false)
         advanceUntilIdle()
         
         viewModel.eventFlow.test {
@@ -367,15 +407,16 @@ class AlarmMathViewModelTest {
 
     @Test
     fun `completeAlarm should call completeAlarm use case`() = runTest {
-        val alarm = Alarm(alarmId = 456, hour = 9, minute = 0, isOn = true, isSaved = true)
+        val alarm = Alarm(alarmId = 456, hour = 9, minute = 0, isOn = true, isSaved = true, activeAt = 1000)
         usecases.addAlarm(alarm)
+        viewModel.initializeChallenge(alarm, preview = false)
         advanceUntilIdle()
         
         viewModel.completeAlarm(alarm)
         advanceUntilIdle()
         
         val completedAlarm = usecases.findAlarm(alarm.alarmId)
-        completedAlarm shouldBe alarm.copy(isOn = false)
+        completedAlarm shouldBe alarm.copy(isOn = false, activeAt = null)
     }
 
     @Test

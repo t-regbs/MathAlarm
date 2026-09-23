@@ -109,7 +109,6 @@ fun AlarmItem(
                     }
                 }
             }
-            if (alarm.title.isNotBlank()) Text(alarm.title, style = MaterialTheme.typography.titleMedium)
             val dayIndices = alarm.repeatDays.mapIndexedNotNull { index, day ->
                 index.takeIf { day == 'T' }
             }
@@ -118,8 +117,19 @@ fun AlarmItem(
                     index, labels.dateLocale, abbreviated = dayIndices.size > 1,
                 )
             }
-            if (selectedDays.isNotEmpty()) Text(
-                text = selectedDays,
+            Text(
+                text = buildAnnotatedString {
+                    if (alarm.title.isNotBlank()) {
+                        withStyle(SpanStyle(color = MaterialTheme.colorScheme.onSurface, fontWeight = FontWeight.SemiBold)) {
+                            append(alarm.title.trim())
+                        }
+                    }
+                    if (selectedDays.isNotEmpty()) {
+                        if (length > 0) append(AlarmItemDimensions.SEPARATOR)
+                        append(selectedDays)
+                    }
+                },
+                minLines = 1,
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )

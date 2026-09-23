@@ -133,18 +133,23 @@ class AlarmMathViewModel(
             try {
                 val accepted = preview || usecases.command {
                     if (snooze) {
+                        // Keep this screen bound to the occurrence that opened its challenge.
+                        val activeAt = occurrence?.takeIf { it.first == alarmId }?.second
+                            ?: return@command false
                         snoozeAlarm(
                             alarmId,
-                            expectedActiveAt = currentAlarm?.activeAt,
+                            expectedActiveAt = activeAt,
                         )
                     } else {
-                        completeAlarm(alarmId)
-                        true
+                        val activeAt = occurrence?.takeIf { it.first == alarmId }?.second
+                            ?: return@command false
+                        completeAlarm(alarmId, expectedActiveAt = activeAt)
                     }
                 }
                 if (!accepted) {
                     currentAlarm = usecases.findAlarm(alarmId)
-                    _eventFlow.emit(UiEvent.ShowError(AlarmErrorMessage.SNOOZE))
+                    val error = if (snooze) AlarmErrorMessage.SNOOZE else AlarmErrorMessage.DISMISS
+                    _eventFlow.emit(UiEvent.ShowError(error))
                     return@launch
                 }
                 if (!preview) occurrence?.let { (id, activeAt) -> progressStore.clear(id, activeAt) }
