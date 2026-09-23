@@ -1,6 +1,7 @@
 package com.timilehinaregbesola.mathalarm.notification
 
 import android.content.Context
+import android.os.Looper
 import org.json.JSONArray
 import org.json.JSONObject
 
@@ -14,6 +15,9 @@ object AlarmDeliveryLog {
         for (i in maxOf(0, previous.length() - 99) until previous.length()) events.put(previous.get(i))
         events.put(JSONObject().put("at", System.currentTimeMillis()).put("event", event)
             .put("alarmId", id).put("triggerAt", triggerAt).put("detail", detail))
-        prefs.edit().putString("events", events.toString()).commit()
+        val editor = prefs.edit().putString("events", events.toString())
+        // A UI callback must not fsync diagnostic history on the main thread. Background
+        // delivery tests can still persist it before their process exits.
+        if (Looper.myLooper() == Looper.getMainLooper()) editor.apply() else editor.commit()
     }
 }
