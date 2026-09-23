@@ -1,6 +1,10 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmmath
 
 import com.timilehinaregbesola.mathalarm.domain.model.mathChallenge
+import com.timilehinaregbesola.mathalarm.analytics.AnalyticsEvents
+import com.timilehinaregbesola.mathalarm.analytics.AnalyticsTracker
+import com.timilehinaregbesola.mathalarm.analytics.NoopAnalyticsTracker
+import com.timilehinaregbesola.mathalarm.analytics.trackSafely
 import kotlinx.coroutines.CancellationException
 import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
 import androidx.compose.runtime.getValue
@@ -18,12 +22,14 @@ import com.timilehinaregbesola.mathalarm.platform.stopPlatformAlarmAudio
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
+import kotlin.time.Clock
 
 class AlarmMathViewModel(
     private val usecases: Usecases,
     private val audioPlayer: AudioPlayer,
     private val logger: Logger,
     private val progressStore: ChallengeProgressStore,
+    private val analytics: AnalyticsTracker = NoopAnalyticsTracker,
 ) : ViewModel() {
     private val _answerText = mutableStateOf("")
     val answerText: State<String> = _answerText
@@ -32,6 +38,8 @@ class AlarmMathViewModel(
 
     private var challengeKey: String? = null
     private var occurrence: Pair<Long, Long>? = null
+    private var challengeStartedAt = 0L
+    private var incorrectAnswers = 0
     private var problems by mutableStateOf<List<MathProblem>>(emptyList())
     private val _questionIndex = mutableStateOf(0)
     val questionIndex: State<Int> = _questionIndex
@@ -60,10 +68,14 @@ class AlarmMathViewModel(
         occurrence = if (preview) null else (saved?.activeAt ?: alarm.activeAt)?.let { alarm.alarmId to it }
         val restored = occurrence?.let { (id, activeAt) -> progressStore.load(id, activeAt) }
         problems = restored?.problems ?: generateChallengeProblems(challenge = (saved ?: alarm).mathChallenge)
+        challengeStartedAt = restored?.startedAt?.takeIf { it > 0 } ?: Clock.System.now().toEpochMilliseconds()
+        incorrectAnswers = restored?.incorrectAnswers ?: 0
         _answerText.value = ""
         _questionIndex.value = restored?.questionIndex ?: 0
         persistProgress()
         challengeKey = key
+        if (preview) analytics.trackSafely(AnalyticsEvents.alarmPreviewStarted)
+        if (restored == null) analytics.trackSafely(AnalyticsEvents.challengeStarted(preview, saved ?: alarm))
     }
 
     fun onEvent(event: MathScreenEvent) {
@@ -102,6 +114,10 @@ class AlarmMathViewModel(
                         }
                     }
                 } else {
+                    if (_answerText.value.isNotBlank()) {
+                        incorrectAnswers++
+                        persistProgress()
+                    }
                     viewModelScope.launch {
                         _eventFlow.emit(UiEvent.ShowError(AlarmErrorMessage.INCORRECT_ANSWER))
                     }
@@ -120,14 +136,17 @@ class AlarmMathViewModel(
 
     private fun persistProgress() {
         occurrence?.let { (id, activeAt) ->
-            progressStore.save(id, ChallengeProgressStore.Progress(activeAt, problems, _questionIndex.value))
+            progressStore.save(id, ChallengeProgressStore.Progress(
+                activeAt, problems, _questionIndex.value, challengeStartedAt, incorrectAnswers
+            ))
         }
     }
 
     private var finishing = false
+    private var finished = false
 
     private fun finishAlarm(alarmId: Long, preview: Boolean, snooze: Boolean) {
-        if (finishing) return
+        if (finishing || finished) return
         finishing = true
         viewModelScope.launch {
             try {
@@ -151,6 +170,12 @@ class AlarmMathViewModel(
                     val error = if (snooze) AlarmErrorMessage.SNOOZE else AlarmErrorMessage.DISMISS
                     _eventFlow.emit(UiEvent.ShowError(error))
                     return@launch
+                }
+                finished = true
+                if (!snooze) {
+                    val elapsedSeconds = ((Clock.System.now().toEpochMilliseconds() - challengeStartedAt)
+                        .coerceAtLeast(0) / 1000)
+                    analytics.trackSafely(AnalyticsEvents.challengeCompleted(preview, elapsedSeconds, incorrectAnswers))
                 }
                 if (!preview) occurrence?.let { (id, activeAt) -> progressStore.clear(id, activeAt) }
                 stopAudioAndHideKeyboard(preview)

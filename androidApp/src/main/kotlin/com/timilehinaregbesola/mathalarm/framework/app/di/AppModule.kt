@@ -5,6 +5,9 @@ import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.room.Room
+import com.google.firebase.analytics.FirebaseAnalytics
+import com.timilehinaregbesola.mathalarm.analytics.AnalyticsTracker
+import com.timilehinaregbesola.mathalarm.analytics.FirebaseAnalyticsTracker
 import co.touchlab.kermit.ExperimentalKermitApi
 import co.touchlab.kermit.Logger
 import co.touchlab.kermit.StaticConfig
@@ -55,6 +58,7 @@ import org.koin.dsl.module
     InternalCoroutinesApi::class
 )
 val androidModule = module {
+    single<AnalyticsTracker> { FirebaseAnalyticsTracker(FirebaseAnalytics.getInstance(androidContext())) }
     // Room Database for Android
     single<AlarmDatabase> {
         Room.databaseBuilder(

@@ -1,6 +1,10 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmsettings
 
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermission
+import com.timilehinaregbesola.mathalarm.analytics.AnalyticsEvents
+import com.timilehinaregbesola.mathalarm.analytics.AnalyticsTracker
+import com.timilehinaregbesola.mathalarm.analytics.NoopAnalyticsTracker
+import com.timilehinaregbesola.mathalarm.analytics.trackSafely
 
 import com.timilehinaregbesola.mathalarm.domain.model.MathChallenge
 import com.timilehinaregbesola.mathalarm.domain.model.mathChallenge
@@ -29,6 +33,7 @@ import kotlinx.datetime.LocalDateTime
 class AlarmSettingsViewModel(
     private val usecases: Usecases,
     private val permission: AlarmPermission,
+    private val analytics: AnalyticsTracker = NoopAnalyticsTracker,
 ) : ViewModel() {
 
     private var initialDraft: Alarm? = null
@@ -124,11 +129,17 @@ class AlarmSettingsViewModel(
                             }
                             true
                         }
+                        if (didSave) {
+                            analytics.trackSafely(AnalyticsEvents.alarmSaved(edited, isNewAlarm == true))
+                        } else {
+                            analytics.trackSafely(AnalyticsEvents.alarmSaveFailed("exact_alarm_permission"))
+                        }
                         _eventFlow.emit(if (didSave) UiEvent.SaveAlarm else UiEvent.RequestExactAlarmPermission)
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
                         Logger.e(e) { "Unable to save alarm" }
+                        analytics.trackSafely(AnalyticsEvents.alarmSaveFailed("operation_error"))
                         _eventFlow.emit(UiEvent.ShowError(AlarmErrorMessage.SAVE))
                     } finally {
                         saveInFlight = false
@@ -250,6 +261,7 @@ class AlarmSettingsViewModel(
                 _isOn.value = alarm.isOn
                 _isSaved.value = alarm.isSaved
                 initialDraft = createAlarm()
+                analytics.trackSafely(AnalyticsEvents.alarmEditorOpened(alarm.alarmId == 0L))
             }
         }
     }

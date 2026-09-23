@@ -12,7 +12,8 @@ class SnoozeAlarm(
     private val dateTimeProvider: DateTimeProvider,
     private val notificationInteractor: NotificationInteractor,
     private val alarmInteractor: AlarmInteractor,
-    private val alarmRepository: AlarmRepository
+    private val alarmRepository: AlarmRepository,
+    private val onSnoozed: () -> Unit = {},
 ) {
     suspend operator fun invoke(
         alarmId: Long,
@@ -31,6 +32,7 @@ class SnoozeAlarm(
         alarmInteractor.scheduleSnooze(snoozed, time)
         alarmRepository.updateAlarm(snoozed)
         notificationInteractor.dismiss(alarmId)
+        onSnoozed()
         return true
     }
 }
