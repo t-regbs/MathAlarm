@@ -82,6 +82,7 @@ fun NavGraph(
     preferences: AlarmPreferencesImpl,
     deeplinkInfo: String?,
     onDeeplinkConsumed: () -> Unit = {},
+    onAlarmReady: (String) -> Unit = {},
     validateAlarmHandoff: suspend (Long) -> Boolean = { true },
     reviewVisit: Int = 0,
     onReviewOpportunityChanged: (Boolean) -> Unit = {},
@@ -143,13 +144,15 @@ fun NavGraph(
         deeplinkInfo?.let {
             val incoming = decodeAlarmHandoff(it)
             val alreadyOpen = incoming != null && backStack.filterIsInstance<AlarmMath>().any { key ->
-                !key.fromSheet && decodeAlarmHandoff(key.alarmJson)?.alarmId == incoming.alarmId
+                !key.fromSheet && key.alarmJson == it
             }
             if (incoming != null && !alreadyOpen && validateAlarmHandoff(incoming.alarmId)) {
                 println("NavGraph: Navigating to AlarmMath")
                 backStack.add(AlarmMath(it, false))
+                if (!isIosPlatform()) onDeeplinkConsumed()
+            } else if (!alreadyOpen || !isIosPlatform()) {
+                onDeeplinkConsumed()
             }
-            onDeeplinkConsumed()
         }
     }
 
@@ -243,6 +246,8 @@ fun NavGraph(
                     backStack = backStack,
                     alarm = alarmObject,
                     fromSheet = it.fromSheet,
+                    onAlarmReady = { onAlarmReady(it.alarmJson) },
+                    handoffPayload = deeplinkInfo,
                 )
             }
 

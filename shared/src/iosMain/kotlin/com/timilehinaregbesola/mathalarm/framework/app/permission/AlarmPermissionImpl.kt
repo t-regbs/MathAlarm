@@ -1,26 +1,17 @@
 package com.timilehinaregbesola.mathalarm.framework.app.permission
 
+import com.timilehinaregbesola.mathalarm.alarm.AlarmSchedulerBridge
 import platform.Foundation.NSURL
 import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationOpenSettingsURLString
 
-/**
- * iOS implementation of AlarmPermission.
- * iOS doesn't require explicit exact alarm permissions - local notifications
- * handle alarm scheduling via UNUserNotificationCenter.
- */
+/** AlarmKit authorization is required for the iOS/iPadOS 26+ release. */
 class AlarmPermissionImpl : AlarmPermission {
-    /**
-     * On iOS, exact alarm permission is not required.
-     * Local notifications handle the scheduling.
-     *
-     * @return Always returns true on iOS
-     */
-    override fun hasExactAlarmPermission(): Boolean = true
+    override fun hasExactAlarmPermission(): Boolean =
+        AlarmSchedulerBridge.authorizationStatus() == "authorized"
 
     /**
-     * On iOS, opens the app settings screen.
-     * iOS doesn't have a separate exact alarm permission screen.
+     * A denied AlarmKit permission can be changed in the app's Settings page.
      */
     override fun openExactAlarmPermissionScreen() {
         openAppSettings()

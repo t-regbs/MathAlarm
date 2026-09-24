@@ -1,6 +1,7 @@
 package com.timilehinaregbesola.mathalarm.notification
 
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
+import com.timilehinaregbesola.mathalarm.alarm.AlarmSchedulerBridge
 import com.timilehinaregbesola.mathalarm.interactors.IosAlarmAudioManager
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -36,6 +37,11 @@ object NotificationDeeplinkHolder {
     fun clearDeeplink() {
         println("NotificationDeeplinkHolder: Clearing deeplink")
         _deeplinkInfo.value = null
+    }
+
+    fun acknowledgeDeeplink(json: String) {
+        if (_deeplinkInfo.value == json) _deeplinkInfo.value = null
+        AlarmSchedulerBridge.acknowledgePendingHandoff(json)
     }
     
     // For Swift access - the shared instance

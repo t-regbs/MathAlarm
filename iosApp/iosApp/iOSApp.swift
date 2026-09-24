@@ -1,7 +1,6 @@
 import SwiftUI
 import app
 import UserNotifications
-import AVFoundation
 import AlarmKit
 
 @main
@@ -21,17 +20,12 @@ struct iOSApp: App {
         WindowGroup {
             ContentView()
                 .ignoresSafeArea()
-                .onAppear {
-                    // Request notification permissions after UI is shown
-                    // This is deferred to not block startup
-                    MainViewControllerKt.requestNotificationPermissionsDeferred()
-                }
         }
         .onChange(of: scenePhase) { newPhase in
             if newPhase == .active {
                 // Check for pending AlarmKit deeplinks when app becomes active
                 AppDelegate.checkPendingAlarmKitDeeplink()
-                MainViewControllerKt.migrateAlarmSchedules()
+                MainViewControllerKt.resumeAlarmSchedules()
             }
         }
     }
@@ -45,10 +39,9 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     /// Check for pending AlarmKit deeplinks and process them
     /// Called when app becomes active (from scenePhase change)
     static func checkPendingAlarmKitDeeplink() {
-        // First check for pending deeplink from StopAlarmIntent
-        if let pendingJson = PendingDeeplinkStore.shared.consumePendingDeeplink() {
+        // Keep the oldest handoff until its challenge has initialized.
+        if let pendingJson = PendingDeeplinkStore.shared.peekPendingDeeplink() {
             print("AppDelegate: Found pending AlarmKit deeplink, setting it now")
-            print("AppDelegate: JSON = \(pendingJson)")
             
             // Set the deeplink in Kotlin holder
             NotificationDeeplinkHolder.shared.setAlarmDeeplink(json: pendingJson)
@@ -76,13 +69,11 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                 // Get alarm data from our store
                 if let alarmData = AlarmDataStore.shared.retrieve(alarmUUID: alarm.id.uuidString) {
                     let deeplinkJson = try createDeeplinkJson(from: alarmData)
-                    
-                    print("AppDelegate: Setting deeplink for alerting alarm")
-                    NotificationDeeplinkHolder.shared.setAlarmDeeplink(json: deeplinkJson)
+                    PendingDeeplinkStore.shared.setPendingDeeplink(deeplinkJson)
                     
                     // Stop the alarm since user is now in app
                     try manager.stop(id: alarm.id)
-                    AlarmDataStore.shared.remove(alarmUUID: alarm.id.uuidString)
+                    NotificationDeeplinkHolder.shared.setAlarmDeeplink(json: deeplinkJson)
                     
                     return  // Handle one alerting alarm at a time
                 }
@@ -100,22 +91,16 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         // Set notification delegate EARLY - before Compose UI loads
         UNUserNotificationCenter.current().delegate = self
         
-        // Configure audio session for alarm playback
-        configureAudioSession()
-        
         // Check if app was launched from a notification
         if let notificationResponse = launchOptions?[.remoteNotification] as? [String: Any] {
             handleAlarmNotification(userInfo: notificationResponse)
         }
         
-        // Log AlarmKit availability and request authorization
+        // Log AlarmKit availability; ask for authorization when saving an alarm.
         let alarmKitAvailable = alarmKitWrapper.isAlarmKitAvailable()
         print("iOSApp: AlarmKit available = \(alarmKitAvailable)")
         
         if alarmKitAvailable {
-            // Explicitly request AlarmKit authorization
-            alarmKitWrapper.requestAuthorization()
-            
             // Debug: Check current auth status and list alarms
             let authStatus = alarmKitWrapper.checkAuthorizationStatus()
             print("iOSApp: AlarmKit authorization status = \(authStatus)")
@@ -145,18 +130,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         AlarmSchedulerBridge.shared.registerScheduler(scheduler: kotlinBridge)
         
         print("iOSApp: AlarmKit bridge registered")
-    }
-    
-    // Configure audio session to play sound even in silent mode
-    private func configureAudioSession() {
-        do {
-            let session = AVAudioSession.sharedInstance()
-            try session.setCategory(.playback, mode: .default, options: [])
-            try session.setActive(true)
-            print("iOSApp: Audio session configured")
-        } catch {
-            print("iOSApp: Failed to configure audio session: \(error)")
-        }
     }
     
     // Called when user taps on a notification
@@ -230,11 +203,12 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         )
         do {
             let alarmJson = try createDeeplinkJson(from: alarmData)
+            PendingDeeplinkStore.shared.setPendingDeeplink(alarmJson)
             DispatchQueue.main.async {
                 AlarmAudioController.shared.startAlarm(soundName: alarmTone, vibrate: vibrate)
             }
             print("iOSApp: Setting deeplink for alarm \(alarmId)")
-            NotificationDeeplinkHolder.shared.setAlarmDeeplink(json: alarmJson)
+            AppDelegate.checkPendingAlarmKitDeeplink()
         } catch {
             print("iOSApp: Unable to encode alarm deeplink: \(error)")
         }

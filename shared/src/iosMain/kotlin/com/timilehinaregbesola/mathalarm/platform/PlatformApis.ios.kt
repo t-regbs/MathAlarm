@@ -1,5 +1,6 @@
 package com.timilehinaregbesola.mathalarm.platform
 
+import com.timilehinaregbesola.mathalarm.alarm.AlarmSchedulerBridge
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import kotlinx.cinterop.ExperimentalForeignApi
@@ -17,19 +18,8 @@ import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationOpenSettingsURLString
 import platform.UIKit.UIImpactFeedbackGenerator
 import platform.UIKit.UIImpactFeedbackStyle
-import platform.UserNotifications.UNAuthorizationOptionAlert
-import platform.UserNotifications.UNAuthorizationOptionBadge
-import platform.UserNotifications.UNAuthorizationOptionSound
-import platform.UserNotifications.UNAuthorizationStatusAuthorized
-import platform.UserNotifications.UNUserNotificationCenter
-
-private var cachedNotificationsEnabled = false
-
-private fun refreshNotificationStatus() {
-    UNUserNotificationCenter.currentNotificationCenter().getNotificationSettingsWithCompletionHandler { settings ->
-        cachedNotificationsEnabled = settings?.authorizationStatus == UNAuthorizationStatusAuthorized
-    }
-}
+import platform.UIKit.UIViewController
+import platform.UIKit.popoverPresentationController
 
 @OptIn(ExperimentalForeignApi::class)
 actual class PlatformVibrator actual constructor() {
@@ -82,21 +72,15 @@ actual fun openNotificationSettings() {
 }
 
 actual fun requestExactAlarmPermission() {
-    // iOS doesn't require explicit exact alarm permission
-    // Local notifications are handled via UNUserNotificationCenter
-    // Request notification permissions instead
-    UNUserNotificationCenter.currentNotificationCenter().requestAuthorizationWithOptions(
-        options = UNAuthorizationOptionAlert or UNAuthorizationOptionSound or UNAuthorizationOptionBadge
-    ) { granted, _ ->
-        cachedNotificationsEnabled = granted
+    AlarmSchedulerBridge.requestAuthorization { granted ->
+        if (!granted) openNotificationSettings()
     }
 }
 
 actual fun toPlatformMediaSource(uriString: String): String = uriString
 
 actual fun areNotificationsEnabled(): Boolean {
-    refreshNotificationStatus()
-    return cachedNotificationsEnabled
+    return AlarmSchedulerBridge.authorizationStatus() == "authorized"
 }
 
 @OptIn(ExperimentalForeignApi::class)
@@ -107,7 +91,15 @@ actual fun shareText(title: String, text: String) {
         applicationActivities = null
     )
     
-    UIApplication.sharedApplication.keyWindow?.rootViewController?.presentViewController(
+    var presenter: UIViewController = UIApplication.sharedApplication.keyWindow?.rootViewController ?: return
+    while (presenter.presentedViewController != null) {
+        presenter = presenter.presentedViewController ?: break
+    }
+    activityController.popoverPresentationController?.apply {
+        sourceView = presenter.view
+        sourceRect = presenter.view.bounds
+    }
+    presenter.presentViewController(
         activityController,
         animated = true,
         completion = null
@@ -128,6 +120,8 @@ actual fun sendEmail(chooserTitle: String, email: String, subject: String, body:
 actual fun getApplicationId(): String {
     return NSBundle.mainBundle.bundleIdentifier ?: "com.timilehinaregbesola.mathalarm"
 }
+
+actual fun getAppShareUrl(): String = "https://github.com/t-regbs/MathAlarm"
 
 private val bundledAlarmTones = listOf(
     "alarm_classic" to "Classic",
@@ -184,12 +178,7 @@ actual fun rememberRingtonePickerLauncher(onResult: (String?) -> Unit): Ringtone
 actual fun rememberNotificationPermissionHandler(onResult: (Boolean) -> Unit): () -> Unit {
     return remember {
         {
-            UNUserNotificationCenter.currentNotificationCenter().requestAuthorizationWithOptions(
-                options = UNAuthorizationOptionAlert or UNAuthorizationOptionSound or UNAuthorizationOptionBadge
-            ) { granted, _ ->
-                cachedNotificationsEnabled = granted
-                onResult(granted)
-            }
+            AlarmSchedulerBridge.requestAuthorization(onResult)
         }
     }
 }

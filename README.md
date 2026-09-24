@@ -67,7 +67,15 @@ git clone https://github.com/t-regbs/MathAlarm.git
 ```
 
 ### Building for iOS
-The iOS app supports iPhone and iPad running iOS/iPadOS **26 or later**. It is located in the `iosApp/` directory and consumes the framework produced by `:shared`. Open the Xcode project to build and run on devices or simulators. Use iPad simulators for layout/navigation checks and a physical iPhone for alarm delivery and audio validation.
+The iOS app supports iPhone and iPad running iOS/iPadOS **26 or later**. The current build is verified locally with Xcode 27.0 and JDK 21. Open the shared `iosApp` scheme in `iosApp/iosApp.xcodeproj`, or run:
+
+```bash
+./gradlew :core:iosSimulatorArm64Test :shared:iosSimulatorArm64Test --continue
+xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -configuration Debug \
+  -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+```
+
+The PR workflow runs these checks on the `xcode-27` macOS runner. Use iPad simulators for layout/navigation checks and a physical iPhone for AlarmKit delivery and audio validation. Signed device builds require your Apple development team and provisioning profile; a simulator build does not establish alarm delivery reliability.
 
 ## Contribution
 All contributions are welcome. Simply make a PR!

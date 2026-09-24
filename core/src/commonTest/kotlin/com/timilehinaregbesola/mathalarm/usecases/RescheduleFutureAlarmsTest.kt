@@ -12,6 +12,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 import kotlin.test.assertTrue
+import kotlinx.datetime.TimeZone
 
 @ExperimentalCoroutinesApi
 class RescheduleFutureAlarmsTest {
@@ -73,5 +74,28 @@ class RescheduleFutureAlarmsTest {
         assertFalse(alarmInteractor.isAlarmScheduled(alarm3))
         assertTrue(alarmInteractor.isAlarmScheduled(alarm4))
         assertFalse(alarmInteractor.isAlarmScheduled(alarm5))
+    }
+
+    @Test
+    fun `iOS resume keeps an accepted native schedule and restores one that disappeared`() = runTest {
+        val future = 1_893_913_200_000L
+        val alarm = Alarm(
+            alarmId = 31,
+            isSaved = true,
+            isOn = true,
+            repeat = true,
+            pendingTimes = listOf(future),
+            scheduleInitialized = true,
+            scheduleTimeZone = TimeZone.currentSystemDefault().id,
+        )
+        addAlarmUseCase(alarm)
+        alarmInteractor.schedule(alarm, future)
+
+        rescheduleFutureAlarmUseCase.onAppResume(skipWhenNativeCurrent = true)
+        assertEquals(1, alarmInteractor.getScheduledAlarms()[alarm.alarmId]?.size)
+
+        alarmInteractor.cancel(alarm)
+        rescheduleFutureAlarmUseCase.onAppResume(skipWhenNativeCurrent = true)
+        assertTrue(alarmInteractor.isAlarmScheduled(alarm))
     }
 }

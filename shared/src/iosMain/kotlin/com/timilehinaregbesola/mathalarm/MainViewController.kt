@@ -20,7 +20,6 @@ import com.timilehinaregbesola.mathalarm.provider.skippedTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.InternalCoroutinesApi
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.TimeZone
@@ -43,18 +42,23 @@ fun prewarmDatabaseInBackground() {
     prewarmDatabase()
 }
 
-/** Replace legacy weekday mappings and random native IDs after upgrading. */
-fun migrateAlarmSchedules() {
+/** Migrate older schedules once, then reconcile missing alarms on each activation. */
+fun resumeAlarmSchedules() {
     CoroutineScope(Dispatchers.Main).launch {
+        if (NotificationDeeplinkHolder.deeplinkInfo.value != null ||
+            com.timilehinaregbesola.mathalarm.alarm.AlarmSchedulerBridge.hasPendingHandoff()) return@launch
         val settings = com.russhwolf.settings.Settings()
-        if (settings.getBoolean("alarm_occurrences_v5", false) &&
-            settings.getBoolean("ios_skip_removed_v1", false)) return@launch
         try {
             val usecases = (object : KoinComponent {}).getKoin().get<com.timilehinaregbesola.mathalarm.framework.Usecases>()
             usecases.command {
+                if (NotificationDeeplinkHolder.deeplinkInfo.value != null ||
+                    com.timilehinaregbesola.mathalarm.alarm.AlarmSchedulerBridge.hasPendingHandoff()) return@command
                 val needsLegacyMigration = !settings.getBoolean("alarm_occurrences_v5", false)
                 val needsSkipRemoval = !settings.getBoolean("ios_skip_removed_v1", false)
-                if (!needsLegacyMigration && !needsSkipRemoval) return@command
+                if (!needsLegacyMigration && !needsSkipRemoval) {
+                    rescheduleFutureAlarms.onAppResume(skipWhenNativeCurrent = true)
+                    return@command
+                }
                 if (needsLegacyMigration) {
                     com.timilehinaregbesola.mathalarm.alarm.AlarmSchedulerBridge.cancelAllAlarms()
                 }
@@ -86,33 +90,7 @@ fun migrateAlarmSchedules() {
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
         } catch (e: Exception) {
-            co.touchlab.kermit.Logger.e(e) { "Alarm migration failed" }
-        }
-    }
-}
-
-/**
- * Request notification permissions in a non-blocking way.
- * Call this after the UI is shown to avoid blocking startup.
- * 
- * The permission request is deferred to not block app launch,
- * following best practices for permission timing.
- */
-fun requestNotificationPermissionsDeferred() {
-    CoroutineScope(Dispatchers.Main).launch {
-        // Small delay to ensure UI is fully rendered first
-        delay(500)
-        
-        try {
-            val koinComponent = object : KoinComponent {}
-            val scheduler: com.timilehinaregbesola.mathalarm.notification.IosAlarmScheduler = 
-                koinComponent.getKoin().get()
-            
-            scheduler.requestPermissions { granted ->
-                println("requestNotificationPermissionsDeferred: granted = $granted")
-            }
-        } catch (e: Exception) {
-            println("requestNotificationPermissionsDeferred: error = ${e.message}")
+            co.touchlab.kermit.Logger.e(e) { "Alarm recovery failed" }
         }
     }
 }
@@ -146,21 +124,19 @@ fun MainViewController(): UIViewController {
         // Debug log
         println("MainViewController: deeplinkInfo = $deeplinkInfo")
         
-        // Clear the deeplink after it's been consumed to prevent re-navigation
-        androidx.compose.runtime.LaunchedEffect(deeplinkInfo) {
-            if (deeplinkInfo != null) {
-                println("MainViewController: LaunchedEffect triggered with deeplinkInfo")
-                // Small delay to ensure navigation happens first
-                kotlinx.coroutines.delay(500)
-                NotificationDeeplinkHolder.clearDeeplink()
-            }
-        }
-        
         ProvideStrings(lyricist) {
             MathAlarmTheme(darkTheme = isDarkTheme) {
                 NavGraph(
                     preferences,
                     deeplinkInfo,
+                    onDeeplinkConsumed = {
+                        deeplinkInfo?.let(NotificationDeeplinkHolder::acknowledgeDeeplink)
+                        resumeAlarmSchedules()
+                    },
+                    onAlarmReady = { payload ->
+                        NotificationDeeplinkHolder.acknowledgeDeeplink(payload)
+                        resumeAlarmSchedules()
+                    },
                     validateAlarmHandoff = { id -> usecases.findAlarm(id)?.isOn == true },
                 )
             }

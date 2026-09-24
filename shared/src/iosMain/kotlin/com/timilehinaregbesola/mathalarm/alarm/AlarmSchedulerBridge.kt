@@ -29,6 +29,10 @@ interface AlarmScheduleCompletion {
     fun complete(success: Boolean, error: String?)
 }
 
+interface AlarmAuthorizationCompletion {
+    fun complete(authorized: Boolean)
+}
+
 interface NativeAlarmScheduler {
     fun scheduleAlarm(request: AlarmScheduleRequest, completion: AlarmScheduleCompletion)
     /** Null on success; a message on failure. Cancellation is synchronous in AlarmKit. */
@@ -36,8 +40,12 @@ interface NativeAlarmScheduler {
     fun cancelOccurrence(alarmId: Long, occurrenceKey: String): String?
     fun cancelAllAlarms(): String?
     fun isAlarmKitAvailable(): Boolean
-    fun hasPendingOccurrence(alarmId: Long): Boolean
+    fun hasPendingOccurrence(alarmId: Long, occurrenceKey: String): Boolean
+    fun authorizationStatus(): String
+    fun requestAuthorization(completion: AlarmAuthorizationCompletion)
     fun snoozeAlarm(alarmId: Long, minutes: Int)
+    fun acknowledgePendingHandoff(payload: String)
+    fun hasPendingHandoff(): Boolean
 }
 
 object AlarmSchedulerBridge {
@@ -64,7 +72,21 @@ object AlarmSchedulerBridge {
     fun cancelAllAlarms() {
         nativeScheduler?.cancelAllAlarms()?.let { throw IllegalStateException(it) }
     }
-    fun hasPendingOccurrence(alarmId: Long): Boolean = nativeScheduler?.hasPendingOccurrence(alarmId) == true
+    fun hasPendingOccurrence(alarmId: Long, occurrenceKey: String): Boolean =
+        nativeScheduler?.hasPendingOccurrence(alarmId, occurrenceKey) == true
+    fun authorizationStatus(): String = nativeScheduler?.authorizationStatus() ?: "unavailable"
+    fun requestAuthorization(onResult: (Boolean) -> Unit) {
+        val scheduler = nativeScheduler
+        if (scheduler == null) {
+            onResult(false)
+            return
+        }
+        scheduler.requestAuthorization(object : AlarmAuthorizationCompletion {
+            override fun complete(authorized: Boolean) = onResult(authorized)
+        })
+    }
     fun snoozeAlarm(alarmId: Long, minutes: Int) { nativeScheduler?.snoozeAlarm(alarmId, minutes) }
+    fun acknowledgePendingHandoff(payload: String) { nativeScheduler?.acknowledgePendingHandoff(payload) }
+    fun hasPendingHandoff(): Boolean = nativeScheduler?.hasPendingHandoff() == true
     val shared: AlarmSchedulerBridge get() = this
 }

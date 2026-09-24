@@ -104,20 +104,33 @@ jobs:
           path: build/alarm-device-results/
 
   ios:
-    name: iOS simulator tests
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    runs-on: macos-15
-    timeout-minutes: 40
+    name: iOS shared tests and app build
+    runs-on: xcode-27
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
       - uses: gradle/actions/setup-gradle@v4
       - uses: android-actions/setup-android@v4
+      - name: Show build tool versions
+        run: |
+          xcodebuild -version
+          java -version
       - name: Run native shared and platform tests
         run: ./gradlew :core:iosSimulatorArm64Test :shared:iosSimulatorArm64Test --continue
+      - name: Verify durable handoff queue
+        run: |
+          swiftc iosApp/iosApp/PendingDeeplinkStore.swift iosApp/tests/PendingDeeplinkStoreSmoke.swift -o "$RUNNER_TEMP/mathalarm-handoff-test"
+          "$RUNNER_TEMP/mathalarm-handoff-test"
+      - name: Build Swift iOS app
+        run: |
+          xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -configuration Debug \
+            -destination 'generic/platform=iOS Simulator' \
+            -derivedDataPath "$RUNNER_TEMP/mathalarm-ios" CODE_SIGNING_ALLOWED=NO build
+          plutil -lint "$RUNNER_TEMP/mathalarm-ios/Build/Products/Debug-iphonesimulator/MathAlarm.app/PrivacyInfo.xcprivacy"
       - name: Upload native reports
         if: always()
         uses: actions/upload-artifact@v4

@@ -104,7 +104,9 @@ fun MathScreen(
     backStack: NavBackStack<NavKey>,
     alarm: AlarmEntity,
     viewModel: AlarmMathViewModel = koinViewModel(),
-    fromSheet: Boolean = false
+    fromSheet: Boolean = false,
+    onAlarmReady: () -> Unit = {},
+    handoffPayload: String? = null,
 ) {
     // Consume Back before Navigation 3 can animate a predictive pop. Rejecting only
     // its completion callback is too late to keep the challenge visibly in place.
@@ -114,11 +116,12 @@ fun MathScreen(
     val vibrator = remember(alarm.alarmId, alarm.vibrate) {
         if (alarm.vibrate && !isIosPlatform()) PlatformVibrator() else null
     }
-    LaunchedEffect(alarm.alarmId, alarm.activeAt, fromSheet) {
-        viewModel.initializeChallenge(
+    LaunchedEffect(alarm.alarmId, alarm.activeAt, fromSheet, handoffPayload) {
+        val ready = viewModel.initializeChallenge(
             alarm = AlarmMapper().mapToDomainModel(alarm),
             preview = fromSheet
         )
+        if (ready && !fromSheet) onAlarmReady()
     }
     val snackbarHostState = remember {
         SnackbarHostState()

@@ -21,6 +21,7 @@
 		A1B2C3D4E5F60718293A4B64 /* alarm_nature.caf in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B59 /* alarm_nature.caf */; };
 		A1B2C3D4E5F60718293A4B65 /* alarm_urgent.caf in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5A /* alarm_urgent.caf */; };
 		ALARMKIT01273AAA24004C7B11 /* AlarmKitWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = ALARMKIT02273AAA24004C7B11 /* AlarmKitWrapper.swift */; };
+		C6A5E4D3B2F1098765432103 /* PendingDeeplinkStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6A5E4D3B2F1098765432104 /* PendingDeeplinkStore.swift */; };
 		B4C0D1E2F3A4051627384950 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B4C0D1E2F3A405162738494F /* LaunchScreen.storyboard */; };
 		C6A5E4D3B2F1098765432101 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = C6A5E4D3B2F1098765432102 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
@@ -42,6 +43,7 @@
 		A1B2C3D4E5F60718293A4B59 /* alarm_nature.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_nature.caf; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5A /* alarm_urgent.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_urgent.caf; sourceTree = "<group>"; };
 		ALARMKIT02273AAA24004C7B11 /* AlarmKitWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmKitWrapper.swift; sourceTree = "<group>"; };
+		C6A5E4D3B2F1098765432104 /* PendingDeeplinkStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingDeeplinkStore.swift; sourceTree = "<group>"; };
 		B4C0D1E2F3A405162738494F /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		C6A5E4D3B2F1098765432102 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -61,6 +63,7 @@
 			isa = PBXGroup;
 			children = (
 				ALARMKIT02273AAA24004C7B11 /* AlarmKitWrapper.swift */,
+				C6A5E4D3B2F1098765432104 /* PendingDeeplinkStore.swift */,
 				058557BA273AAA24004C7B11 /* Assets.xcassets */,
 				058557D8273AAEEB004C7B11 /* ContentView.swift */,
 				2152FB032600AC8F00CF470E /* iOSApp.swift */,
@@ -217,6 +220,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				ALARMKIT01273AAA24004C7B11 /* AlarmKitWrapper.swift in Sources */,
+				C6A5E4D3B2F1098765432103 /* PendingDeeplinkStore.swift in Sources */,
 				2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */,
 				058557D9273AAEEB004C7B11 /* ContentView.swift in Sources */,
 			);

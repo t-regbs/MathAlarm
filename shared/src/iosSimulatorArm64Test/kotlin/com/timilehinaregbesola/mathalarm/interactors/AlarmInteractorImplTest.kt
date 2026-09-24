@@ -2,11 +2,13 @@ package com.timilehinaregbesola.mathalarm.interactors
 
 import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.alarm.AlarmScheduleCompletion
+import com.timilehinaregbesola.mathalarm.alarm.AlarmAuthorizationCompletion
 import com.timilehinaregbesola.mathalarm.alarm.AlarmScheduleRequest
 import com.timilehinaregbesola.mathalarm.alarm.AlarmSchedulerBridge
 import com.timilehinaregbesola.mathalarm.alarm.NativeAlarmScheduler
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.notification.IosAlarmScheduler
+import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermissionImpl
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.*
@@ -31,8 +33,23 @@ class AlarmInteractorImplTest {
             title = "Wrapped one-time alarm"
         )
 
-        nativeScheduler.markScheduled(alarm.alarmId)
+        val time = LocalDateTime(2030, 1, 7, 7, 0).toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        val scheduledAlarm = alarm.copy(pendingTimes = listOf(time))
+        nativeScheduler.markScheduled(alarm.alarmId, "day_1")
 
+        assertTrue(interactor.hasPendingOccurrence(scheduledAlarm))
+    }
+
+    @Test fun snoozeCannotHideMissingRegularAlarm() = runTest {
+        val backend = NativeAlarmSchedulerFake()
+        AlarmSchedulerBridge.registerScheduler(backend)
+        val interactor = AlarmInteractorImpl(Logger.withTag("Test"))
+        val monday = LocalDateTime(2030, 1, 7, 7, 0).toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        val alarm = Alarm(alarmId = 43, repeat = true, repeatDays = "FTFFFFF",
+            pendingTimes = listOf(monday), snoozedUntil = monday + 300_000)
+        backend.markScheduled(43, "snooze")
+        assertFalse(interactor.hasPendingOccurrence(alarm))
+        backend.markScheduled(43, "day_1")
         assertTrue(interactor.hasPendingOccurrence(alarm))
     }
 
@@ -110,47 +127,69 @@ class AlarmInteractorImplTest {
         assertFailsWith<IllegalStateException> { scheduler.cancelAlarm(alarm) }
     }
 
-    private class NativeAlarmSchedulerFake : NativeAlarmScheduler {
-        private val scheduledAlarmIds = mutableSetOf<Long>()
+    @Test fun iOSPermissionReflectsAlarmKitAuthorization() {
+        val backend = NativeAlarmSchedulerFake()
+        AlarmSchedulerBridge.registerScheduler(backend)
+        val permission = AlarmPermissionImpl()
 
-        fun markScheduled(alarmId: Long) {
-            scheduledAlarmIds.add(alarmId)
+        backend.authorization = "denied"
+        assertFalse(permission.hasExactAlarmPermission())
+        backend.authorization = "authorized"
+        assertTrue(permission.hasExactAlarmPermission())
+    }
+
+    private class NativeAlarmSchedulerFake : NativeAlarmScheduler {
+        private val scheduledKeys = mutableSetOf<Pair<Long, String>>()
+
+        fun markScheduled(alarmId: Long, key: String) {
+            scheduledKeys.add(alarmId to key)
         }
 
         val requests = mutableListOf<AlarmScheduleRequest>()
         var failure: String? = null
         var cancelFailure: String? = null
+        var authorization = "authorized"
         val cancelledKeys = mutableListOf<String>()
         override fun scheduleAlarm(request: AlarmScheduleRequest, completion: AlarmScheduleCompletion) {
             requests.add(request)
-            scheduledAlarmIds.add(request.alarmId)
+            scheduledKeys.add(request.alarmId to request.occurrenceKey)
             completion.complete(failure == null, failure)
         }
         override fun cancelOccurrence(alarmId: Long, occurrenceKey: String): String? {
             cancelledKeys.add(occurrenceKey)
             if (cancelFailure == null) {
                 requests.removeAll { it.alarmId == alarmId && it.occurrenceKey == occurrenceKey }
+                scheduledKeys.remove(alarmId to occurrenceKey)
             }
             return cancelFailure
         }
 
         override fun cancelAlarm(alarmId: Long): String? {
             if (cancelFailure == null) {
-                scheduledAlarmIds.remove(alarmId)
+                scheduledKeys.removeAll { it.first == alarmId }
                 requests.removeAll { it.alarmId == alarmId }
             }
             return cancelFailure
         }
 
         override fun cancelAllAlarms(): String? {
-            if (cancelFailure == null) scheduledAlarmIds.clear()
+            if (cancelFailure == null) scheduledKeys.clear()
             return cancelFailure
         }
 
         override fun isAlarmKitAvailable(): Boolean = true
 
-        override fun hasPendingOccurrence(alarmId: Long): Boolean = scheduledAlarmIds.contains(alarmId)
+        override fun hasPendingOccurrence(alarmId: Long, occurrenceKey: String): Boolean =
+            scheduledKeys.contains(alarmId to occurrenceKey)
+
+        override fun authorizationStatus(): String = authorization
+
+        override fun requestAuthorization(completion: AlarmAuthorizationCompletion) {
+            completion.complete(authorization == "authorized")
+        }
 
         override fun snoozeAlarm(alarmId: Long, minutes: Int) = Unit
+        override fun acknowledgePendingHandoff(payload: String) = Unit
+        override fun hasPendingHandoff(): Boolean = false
     }
 }

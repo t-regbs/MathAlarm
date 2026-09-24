@@ -45,6 +45,9 @@ expect fun sendEmail(chooserTitle: String, email: String, subject: String = "", 
 // Get application ID for sharing
 expect fun getApplicationId(): String
 
+/** URL safe to share for the current platform's release. */
+expect fun getAppShareUrl(): String
+
 // Applies platform night mode state for Android XML resources and launch surfaces.
 expect fun applyPlatformNightMode(theme: AlarmPreferences.Theme)
 

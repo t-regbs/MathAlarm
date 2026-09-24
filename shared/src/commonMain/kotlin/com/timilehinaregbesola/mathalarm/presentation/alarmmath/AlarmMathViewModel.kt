@@ -48,9 +48,9 @@ class AlarmMathViewModel(
     val questionCount: Int get() = problems.size.coerceAtLeast(1)
     val currentProblem: MathProblem? get() = problems.getOrNull(_questionIndex.value)
 
-    suspend fun initializeChallenge(alarm: Alarm, preview: Boolean) {
+    suspend fun initializeChallenge(alarm: Alarm, preview: Boolean): Boolean {
         val key = "${alarm.alarmId}:${alarm.activeAt}:$preview"
-        if (challengeKey == key) return
+        if (challengeKey == key) return true
         // Notifications (including older iOS payloads) identify the alarm; its saved settings
         // are authoritative. Test Alarm deliberately uses the unsaved editor draft instead.
         val saved = if (!preview && alarm.alarmId != 0L) {
@@ -76,6 +76,7 @@ class AlarmMathViewModel(
         challengeKey = key
         if (preview) analytics.trackSafely(AnalyticsEvents.alarmPreviewStarted)
         if (restored == null) analytics.trackSafely(AnalyticsEvents.challengeStarted(preview, saved ?: alarm))
+        return preview || saved != null
     }
 
     fun onEvent(event: MathScreenEvent) {

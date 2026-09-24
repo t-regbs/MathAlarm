@@ -22,11 +22,16 @@ class RescheduleFutureAlarms(
     }
 
     /** Leave recently due broadcasts time to finish; older missed occurrences still expire. */
-    suspend fun onAppResume() {
-        restoreAlarms(preservePendingDelivery = true, clearActive = false)
+    suspend fun onAppResume(skipWhenNativeCurrent: Boolean = false) {
+        restoreAlarms(preservePendingDelivery = true, clearActive = false,
+            skipWhenNativeCurrent = skipWhenNativeCurrent)
     }
 
-    private suspend fun restoreAlarms(preservePendingDelivery: Boolean, clearActive: Boolean) {
+    private suspend fun restoreAlarms(
+        preservePendingDelivery: Boolean,
+        clearActive: Boolean,
+        skipWhenNativeCurrent: Boolean = false,
+    ) {
         clearExpiredSkips()
         val zone = timeZone()
         val alarms = alarmRepository.getSavedAlarms().first().filter { it.isOn }
@@ -39,6 +44,17 @@ class RescheduleFutureAlarms(
                     alarmTimeCalculator.isInFuture(time + DELIVERY_GRACE_MILLIS)
             }
             if (preservePendingDelivery && scheduleIsCurrent && awaitingDelivery) continue
+            if (preservePendingDelivery && skipWhenNativeCurrent && alarm.activeAt != null) continue
+            if (preservePendingDelivery && skipWhenNativeCurrent && scheduleIsCurrent) {
+                val nativeCurrent = try {
+                    alarmInteractor.hasPendingOccurrence(alarm)
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (_: Exception) {
+                    false
+                }
+                if (nativeCurrent) continue
+            }
             try {
                 restoreAlarm(alarm, clearActive = clearActive)
             } catch (e: CancellationException) {

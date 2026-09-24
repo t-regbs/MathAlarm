@@ -51,10 +51,7 @@
     <key>UIBackgroundModes</key>
     <array>
         <string>audio</string>
-        <string>fetch</string>
     </array>
-    <key>NSCriticalAlertUsageDescription</key>
-    <string>MathAlarm needs critical alert permission to ensure alarms can wake you up even in Do Not Disturb mode.</string>
     <key>NSAlarmKitUsageDescription</key>
     <string>MathAlarm uses alarms to wake you up at your scheduled times.</string>
 </dict>

@@ -1,8 +1,8 @@
 # iOS first-release readiness review
 
-Reviewed 24 September 2026 against commit `8fd60fc`. Follow-up changes in the working tree are recorded below.
+Reviewed 24 September 2026 against commit `8fd60fc`. Implementation is on `codex/ios-first-release`; the first batch is committed as `d6fef01` and later work is recorded below.
 
-**Recommendation: do not submit this build yet.** The first implementation pass is underway on `codex/ios-first-release`, but physical alarm delivery, durable handoff, authorization recovery, and App Store packaging still need release-blocking work.
+**Recommendation: do not submit this build yet.** Source changes address the identified handoff and authorization gaps, but physical alarm delivery, interruption recovery, final privacy details, and App Store packaging still need release-blocking verification.
 
 ## Scope and evidence
 
@@ -85,9 +85,9 @@ Normal challenge initialization calls `consumeDueOccurrence` → `showAlarm` →
 
 Evidence: `iOSApp.swift:47,73,136`, `AlarmKitWrapper.swift:89,155`, `shared/.../framework/NotificationSnooze.kt:8`.
 
-- [ ] Persist handoffs by occurrence, deliver them on the main actor, deduplicate them, and acknowledge only after navigation/lifecycle state is established.
-- [ ] Retain metadata for surviving recurring OS alarms and clean it up on definitive cancellation/deletion.
-- [ ] Test cold launch, app already open, two simultaneous alarms, lock/unlock, interrupted launch, and the next recurring delivery without editing the alarm.
+- [x] Replace the single handoff string with a durable ordered queue, deduplicate identical payloads, migrate legacy pending data, and acknowledge only after the challenge initializes. A Foundation-only Swift smoke test covers queue/relaunch behavior.
+- [x] Retain metadata when a recurring alarm opens the challenge; clean it up on definitive native cancellation/deletion.
+- [ ] Give each AlarmKit delivery a stable occurrence identity, so two unacknowledged deliveries of the *same* recurring alarm cannot coalesce as identical payloads. Then test cold launch, app already open, two simultaneous alarms, lock/unlock, interrupted launch, and the next recurring delivery without editing the alarm.
 
 ### 7. Surface real authorization and recover on resume
 
@@ -95,9 +95,9 @@ Evidence: `iOSApp.swift:47,73,136`, `AlarmKitWrapper.swift:89,155`, `shared/.../
 
 Evidence: `framework/app/permission/AlarmPermissionImpl.kt:19`, `PlatformApis.ios.kt:26,97`, `iOSApp.swift:30,118`, `MainViewController.kt:44`, `AlarmKitWrapper.swift:372`.
 
-- [ ] Build an iOS permission state appropriate to the selected backend, with an explanation, actionable denial state, and Settings return handling.
-- [ ] If retaining Time Sensitive local notifications, configure/validate their capability: the inspected signed Debug entitlements contain no Time Sensitive notification entitlement.
-- [ ] Reconcile saved alarms against native state after permissions change, timezone/time changes, relaunch, and scheduling failures, without cancelling an alarm currently sounding.
+- [x] Use AlarmKit authorization as the iOS permission state, request it when saving/enabling rather than on launch, and route denial through the existing permission dialog/Settings action. Verify the full deny → allow UI flow on device.
+- [x] Scope the first release to iOS/iPadOS 26+ AlarmKit; local Time Sensitive notifications are legacy fallback code, not the supported delivery backend.
+- [x] Run saved/native schedule reconciliation on activation and after handoff acknowledgment. Check each expected weekday/snooze registration so one surviving snooze cannot hide a missing regular alarm; skip an active challenge. Real timezone, revoke/regrant, and interrupted-write checks remain pending.
 - [ ] Test deny → Settings allow, revoke after saving, retry a failed save, timezone travel, DST, and interrupted schedule writes. An enabled card must not falsely imply an OS alarm is armed.
 
 ### 8. Propagate cancellation failures
@@ -112,21 +112,21 @@ Evidence: `AlarmKitWrapper.swift:483,683,698`, `alarm/AlarmSchedulerBridge.kt:31
 
 ### 9. Remove remaining platform mismatches
 
-- [ ] Replace the Android Play Store share URL with the iOS App Store URL or a platform-neutral landing page (`AppSettingsScreen.kt:357`).
-- [ ] If iPad remains enabled, anchor `UIActivityViewController`'s popover and test sharing from iPad (`PlatformApis.ios.kt:103`); no popover anchor is configured today. See [Apple's presentation requirements](https://developer.apple.com/documentation/uikit/uiactivityviewcontroller).
+- [x] Use the public project page as the provisional iOS share destination; replace it with the App Store URL when the listing exists.
+- [x] Anchor `UIActivityViewController`'s popover to its presenting view; visually test sharing from iPad before release. See [Apple's presentation requirements](https://developer.apple.com/documentation/uikit/uiactivityviewcontroller).
 - [ ] Audit VoiceOver labels/focus, large text, contrast, dark mode, keyboard dismissal, safe areas, rotation, and the alarm editor/math screen on the chosen supported devices. These are unverified UI gates, not claimed visual defects.
 - [ ] Check modal presentation/dismissal on device: the startup log reported an unbalanced Compose appearance-transition warning, although the initial What's New screen rendered without visible clipping.
 - [ ] Localize native permission/action/tone strings to match supported languages, or explicitly scope the first release to English.
-- [ ] Remove unused `fetch` background mode and unused critical-alert usage copy unless an actual supported feature needs them. Audit the audio background mode against the final playback implementation.
-- [ ] Stop activating the playback audio session on ordinary app launch unless needed; test coexistence with music, calls, headphones, and Bluetooth.
+- [x] Remove unused `fetch` background mode and critical-alert usage copy. Retain the audio background mode for in-app challenge playback; verify its real behavior on device.
+- [x] Activate the playback audio session when alarm playback begins rather than on ordinary app launch; test coexistence with music, calls, headphones, and Bluetooth.
 
 ### 10. Make the build and test pipeline cover the shipped app
 
-The existing iOS CI job runs only nightly/manually and runs Kotlin simulator tests. It does not compile the Swift app, validate an archive, or exercise real AlarmKit. There are six dedicated iOS adapter tests using a fake native scheduler, but no Swift/XCTest/UI-test target. The Xcode scheme is stored under a user's `xcuserdata` directory.
+The initial iOS CI job ran only nightly/manually and only ran Kotlin simulator tests. The new PR job also builds the Swift simulator app and runs a Foundation-only handoff smoke test. It still cannot exercise real AlarmKit delivery or validate a distribution archive. There is no Swift/XCTest/UI-test target yet.
 
-- [ ] Commit a shared Xcode scheme and reproducible build prerequisites, including the selected Xcode/JDK versions.
-- [ ] Add a PR macOS check for the Swift app and native shared tests; run a Release archive check for release candidates.
-- [ ] Add focused Swift/integration coverage for serialization, handoff, native schedule construction, cancellation, and audio ownership. Keep the physical-device test gate for system behavior.
+- [x] Add a shared Xcode scheme and document local Xcode 27.0/JDK 21 prerequisites.
+- [x] Add a PR macOS check for native shared tests and the unsigned Swift simulator app. The hosted `xcode-27` workflow has not yet run; add a signed Release archive check for release candidates.
+- [ ] Expand native integration coverage beyond the new durable-handoff smoke test to serialization, AlarmKit schedule construction, cancellation, and audio ownership. Keep the physical-device test gate for system behavior.
 - [ ] Set the intended iOS marketing version/build number. They are currently hard-coded to `2.3.1` / `20`; a first iOS release does not have to restart at 1.0, but the choice should be deliberate and future uploads need increasing build numbers.
 - [ ] Validate signing, distribution archive/export, bundled resources/manifests, and TestFlight processing. A successful unsigned build does not prove these steps.
 
@@ -183,7 +183,15 @@ References: [Apple submission preparation](https://developer.apple.com/app-store
 - Swift and Kotlin audio starts/stops now share `IosAlarmAudioManager`; handoff payloads use one JSON serializer and navigation rejects malformed, deleted, disabled, or duplicate alarm entries. AlarmKit's countdown is disabled until a widget extension and native snooze contract exist.
 - AlarmKit cancellation errors now reach Kotlin. Each weekday cancellation is attempted even if another fails. The built simulator app includes a valid privacy manifest for app-only `UserDefaults` access.
 - The Info.plist device capability was updated from obsolete `armv7` to `arm64` for the iOS/iPadOS 26+ release; final archive inspection remains pending.
-- Shared tests: **187 iOS simulator and 180 Android host tests passed** (zero failures) after the implementation pass. Full iOS simulator app build passed; the final Info.plist-only change still needs a rebuild. Logs: `/tmp/mathalarm-ios-cancellation-tests.log`, `/tmp/mathalarm-ios-first-release-build.log`.
+- Shared tests: **187 iOS simulator and 180 Android host tests passed** (zero failures) after the implementation pass. Full iOS simulator app build passed. Later final builds also include the Info.plist change. Logs: `/tmp/mathalarm-ios-cancellation-tests.log`, `/tmp/mathalarm-ios-first-release-build.log`.
+
+### Follow-up: handoff, recovery, platform polish, and CI
+
+- The handoff queue survives relaunch and advances only after challenge initialization; a Swift smoke test passed. Recurring native metadata is retained until cancellation. A distinct identity for each delivery of the same recurring alarm remains open.
+- AlarmKit authorization is queried and requested on demand. App activation reconciles expected weekday/snooze registrations without cancelling an active challenge. A simulator test covers a missing weekday masked by a surviving snooze. Denial, revocation, timezone travel, and the resumed UI still require physical tests.
+- The iPad share sheet has a popover anchor; the iOS share destination is the public project page until an App Store URL exists. Unused background fetch/critical-alert declarations and startup audio-session activation were removed.
+- A shared Xcode scheme and PR iOS CI job now build the Swift simulator app and run native tests plus a Swift handoff smoke test. Local verification: **322 iOS tests** (133 core, 189 shared) and **314 Android host tests** (134 core, 180 shared), all passing. The full unsigned simulator build and signed iPhone Debug build passed. The built app contains a valid privacy manifest, requires iOS 26.0, and declares iPhone/iPad families. The updated app launched on the iPad simulator in dark mode. CI itself, archive/TestFlight, and full iPad interaction remain unverified. Logs: `/tmp/mathalarm-ios-final-tests.log`, `/tmp/mathalarm-ios-final-build.log`, `/tmp/mathalarm-ios-final-device-build.log`; iPad screenshot: `/tmp/mathalarm-ipad-final.png`.
+- The first attempt to install that signed Debug build on the paired iPhone failed when CoreDevice's installation connection closed (`IXRemoteErrorDomain` code 6). It is not yet a device-tested revision; retry with the iPhone unlocked/awake before interpreting any physical results.
 - Physical tests still needed for audible playback/vibration, recurring AlarmKit delivery, cancellation, and the sheet/preview return behavior. A simulator build cannot establish those outcomes.
 
 ### Follow-up: launch artwork and Test Alarm presentation

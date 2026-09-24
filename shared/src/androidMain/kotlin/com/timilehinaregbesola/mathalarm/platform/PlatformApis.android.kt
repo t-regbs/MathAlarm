@@ -145,6 +145,9 @@ actual fun sendEmail(chooserTitle: String, email: String, subject: String, body:
 
 actual fun getApplicationId(): String = getKoinContext().packageName
 
+actual fun getAppShareUrl(): String =
+    "https://play.google.com/store/apps/details?id=${getApplicationId()}"
+
 actual class RingtonePickerLauncher(
     private val launchPicker: (String?) -> Unit,
 ) {

@@ -297,16 +297,24 @@ class IosAlarmScheduler(
     }
 
     suspend fun hasPendingOccurrence(alarm: Alarm): Boolean {
+        val keys = alarm.pendingTimes.map { time ->
+            val day = Instant.fromEpochMilliseconds(time)
+                .toLocalDateTime(TimeZone.currentSystemDefault()).dayOfWeek.ordinal.let { (it + 1) % 7 }
+            "day_$day"
+        }.toMutableSet()
+        if (alarm.snoozedUntil != null) keys.add("snooze")
+        if (keys.isEmpty()) return false
         if (AlarmSchedulerBridge.isAlarmKitAvailable()) {
-            return AlarmSchedulerBridge.hasPendingOccurrence(alarm.alarmId)
+            return keys.all { key -> AlarmSchedulerBridge.hasPendingOccurrence(alarm.alarmId, key) }
         }
 
-        val identifiers = notificationIdentifiersForAlarm(alarm.alarmId).toSet()
+        val identifiers = keys.map { "alarm_${alarm.alarmId}_$it" }.toSet()
         return suspendCoroutine { continuation ->
             notificationCenter.getPendingNotificationRequestsWithCompletionHandler { requests ->
-                val hasPending = requests?.any { request ->
-                    (request as? UNNotificationRequest)?.identifier in identifiers
-                } == true
+                val pendingIdentifiers = requests?.mapNotNull { request ->
+                    (request as? UNNotificationRequest)?.identifier
+                }?.toSet().orEmpty()
+                val hasPending = pendingIdentifiers.containsAll(identifiers)
                 continuation.resume(hasPending)
             }
         }

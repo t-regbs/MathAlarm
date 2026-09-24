@@ -86,38 +86,6 @@ class AlarmDataStore {
 
 // MARK: - Pending Deeplink Storage
 
-/// Stores pending deeplink for AlarmKit alarms
-/// This is checked when the app becomes active since intents run AFTER app opens
-class PendingDeeplinkStore {
-    static let shared = PendingDeeplinkStore()
-    
-    private let userDefaults = UserDefaults.standard
-    private let pendingDeeplinkKey = "MathAlarm.pendingAlarmKitDeeplink"
-    
-    /// Store a pending deeplink (called from intent BEFORE app opens)
-    func setPendingDeeplink(_ json: String) {
-        userDefaults.set(json, forKey: pendingDeeplinkKey)
-        userDefaults.synchronize()  // Force immediate write
-        print("PendingDeeplinkStore: Stored pending deeplink")
-    }
-    
-    /// Get and clear the pending deeplink (called when app activates)
-    func consumePendingDeeplink() -> String? {
-        guard let json = userDefaults.string(forKey: pendingDeeplinkKey) else {
-            return nil
-        }
-        userDefaults.removeObject(forKey: pendingDeeplinkKey)
-        userDefaults.synchronize()
-        print("PendingDeeplinkStore: Consumed pending deeplink")
-        return json
-    }
-    
-    /// Check if there's a pending deeplink without consuming it
-    func hasPendingDeeplink() -> Bool {
-        return userDefaults.string(forKey: pendingDeeplinkKey) != nil
-    }
-}
-
 // MARK: - App Intents for AlarmKit
 
 /// Intent to stop/dismiss an alarm and open the Math Screen
@@ -153,7 +121,6 @@ struct StopAlarmIntent: LiveActivityIntent {
         if let alarmData = AlarmDataStore.shared.retrieve(alarmUUID: alarmUUID) {
             let deeplinkJson = try createDeeplinkJson(from: alarmData)
             PendingDeeplinkStore.shared.setPendingDeeplink(deeplinkJson)
-            AlarmDataStore.shared.remove(alarmUUID: alarmUUID)
             print("StopAlarmIntent: Stored pending deeplink for MathScreen")
         } else {
             print("StopAlarmIntent: No alarm data found for UUID \(alarmUUID)")
@@ -186,7 +153,7 @@ func createDeeplinkJson(from data: MathAlarmData) throws -> String {
         "isSaved": true
     ]
 
-    let jsonData = try JSONSerialization.data(withJSONObject: payload)
+    let jsonData = try JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys])
     guard let json = String(data: jsonData, encoding: .utf8) else {
         throw CocoaError(.fileReadInapplicableStringEncoding)
     }
@@ -276,92 +243,18 @@ class AlarmKitWrapperImpl: NSObject {
     /// Shared singleton instance
     static let shared = AlarmKitWrapperImpl()
     
-    /// Store alarm IDs for cancellation
-    
-    /// Track authorization status
-    private var isAuthorized: Bool = false
-    
     private override init() {
         super.init()
-        // Request authorization on init
         if #available(iOS 26, *) {
             Task {
-                await self.requestAuthorizationIfNeeded()
                 self.observeAlarmUpdates()
             }
-        }
-    }
-    
-    // MARK: - Authorization
-    
-    @available(iOS 26, *)
-    private func requestAuthorizationIfNeeded() async {
-        let manager = AlarmManager.shared
-        
-        switch manager.authorizationState {
-        case .notDetermined:
-            print("AlarmKitWrapper: Authorization not determined, requesting...")
-            do {
-                let state = try await manager.requestAuthorization()
-                isAuthorized = (state == .authorized)
-                print("AlarmKitWrapper: Authorization result: \(state), isAuthorized: \(isAuthorized)")
-            } catch {
-                print("AlarmKitWrapper: Authorization request failed: \(error)")
-                isAuthorized = false
-            }
-        case .authorized:
-            print("AlarmKitWrapper: Already authorized")
-            isAuthorized = true
-        case .denied:
-            print("AlarmKitWrapper: Authorization denied")
-            isAuthorized = false
-        @unknown default:
-            print("AlarmKitWrapper: Unknown authorization state")
-            isAuthorized = false
-        }
-    }
-    
-    @available(iOS 26, *)
-    private func ensureAuthorized() async throws {
-        let manager = AlarmManager.shared
-        
-        switch manager.authorizationState {
-        case .notDetermined:
-            let state = try await manager.requestAuthorization()
-            if state != .authorized {
-                throw AlarmKitError.notAuthorized
-            }
-            isAuthorized = true
-        case .denied:
-            throw AlarmKitError.notAuthorized
-        case .authorized:
-            isAuthorized = true
-        @unknown default:
-            throw AlarmKitError.unknownAuthState
         }
     }
 
     @available(iOS 26, *)
     private func hasAlarmKitAuthorization() -> Bool {
-        let manager = AlarmManager.shared
-
-        switch manager.authorizationState {
-        case .authorized:
-            isAuthorized = true
-            return true
-        case .notDetermined:
-            print("AlarmKitWrapper: Authorization not determined; using notification fallback")
-            isAuthorized = false
-            return false
-        case .denied:
-            print("AlarmKitWrapper: Authorization denied; using notification fallback")
-            isAuthorized = false
-            return false
-        @unknown default:
-            print("AlarmKitWrapper: Unknown authorization state; using notification fallback")
-            isAuthorized = false
-            return false
-        }
+        AlarmManager.shared.authorizationState == .authorized
     }
     
     // MARK: - Alarm Observation
@@ -397,32 +290,46 @@ class AlarmKitWrapperImpl: NSObject {
         return false
     }
 
-    /// Check whether AlarmKit still has a future occurrence pending for this app alarm id.
-    func hasPendingOccurrence(alarmId: Int64) -> Bool {
+    /// Check the exact native registration; a snooze must not mask a missing weekday alarm.
+    func hasPendingOccurrence(alarmId: Int64, occurrenceKey: String) -> Bool {
         guard #available(iOS 26, *) else {
             return false
         }
 
         do {
             let manager = AlarmManager.shared
-            let alarms = try manager.alarms
-            return alarms.contains { alarm in
-                guard let metadata = AlarmDataStore.shared.retrieve(alarmUUID: alarm.id.uuidString) else {
-                    return false
-                }
-                return metadata.alarmId == alarmId
-            }
+            let id = occurrenceUUID(alarmId: alarmId, key: occurrenceKey)
+            return try manager.alarms.contains { $0.id == id }
         } catch {
             print("AlarmKitWrapper: Failed to check pending occurrence for alarm \(alarmId): \(error)")
             return false
         }
     }
     
-    /// Request alarm authorization - call this early in app lifecycle
-    func requestAuthorization() {
-        guard #available(iOS 26, *) else { return }
-        Task {
-            await requestAuthorizationIfNeeded()
+    /// Request authorization when someone saves or enables an alarm.
+    func requestAuthorization(completion: AlarmAuthorizationCompletion) {
+        guard #available(iOS 26, *) else {
+            completion.complete(authorized: false)
+            return
+        }
+        Task { @MainActor in
+            let manager = AlarmManager.shared
+            switch manager.authorizationState {
+            case .authorized:
+                completion.complete(authorized: true)
+            case .denied:
+                completion.complete(authorized: false)
+            case .notDetermined:
+                do {
+                    let state = try await manager.requestAuthorization()
+                    completion.complete(authorized: state == .authorized)
+                } catch {
+                    print("AlarmKitWrapper: Authorization request failed: \(error)")
+                    completion.complete(authorized: false)
+                }
+            @unknown default:
+                completion.complete(authorized: false)
+            }
         }
     }
     
@@ -779,8 +686,16 @@ class AlarmKitKotlinBridge: NSObject, NativeAlarmScheduler {
         return wrapper.isAlarmKitAvailable()
     }
 
-    func hasPendingOccurrence(alarmId: Int64) -> Bool {
-        return wrapper.hasPendingOccurrence(alarmId: alarmId)
+    func hasPendingOccurrence(alarmId: Int64, occurrenceKey: String) -> Bool {
+        return wrapper.hasPendingOccurrence(alarmId: alarmId, occurrenceKey: occurrenceKey)
+    }
+
+    func authorizationStatus() -> String {
+        wrapper.checkAuthorizationStatus()
+    }
+
+    func requestAuthorization(completion: AlarmAuthorizationCompletion) {
+        wrapper.requestAuthorization(completion: completion)
     }
     
     func scheduleAlarm(request: AlarmScheduleRequest, completion: AlarmScheduleCompletion) {
@@ -801,5 +716,17 @@ class AlarmKitKotlinBridge: NSObject, NativeAlarmScheduler {
     
     func snoozeAlarm(alarmId: Int64, minutes: Int32) {
         wrapper.snoozeAlarm(alarmId: alarmId, minutes: minutes)
+    }
+
+    func acknowledgePendingHandoff(payload: String) {
+        if PendingDeeplinkStore.shared.acknowledgePendingDeeplink(payload) {
+            DispatchQueue.main.async {
+                AppDelegate.checkPendingAlarmKitDeeplink()
+            }
+        }
+    }
+
+    func hasPendingHandoff() -> Bool {
+        PendingDeeplinkStore.shared.hasPendingDeeplink()
     }
 }

@@ -43,7 +43,7 @@ import com.mohamedrejeb.calf.ui.gesture.adaptiveClickable
 import com.mohamedrejeb.calf.ui.navigation.AdaptiveTopBar
 import com.mohamedrejeb.calf.ui.navigation.UIKitUIBarButtonItem
 import com.mohamedrejeb.calf.ui.uikit.UIKitImage
-import com.timilehinaregbesola.mathalarm.platform.getApplicationId
+import com.timilehinaregbesola.mathalarm.platform.getAppShareUrl
 import com.timilehinaregbesola.mathalarm.platform.applyPlatformNightMode
 import com.timilehinaregbesola.mathalarm.platform.sendEmail
 import com.timilehinaregbesola.mathalarm.platform.shareText
@@ -219,7 +219,7 @@ fun AppSettingsScreen(
                         ) {
                             shareText(
                                 title = shareTitle,
-                                text = SEND_TEXT + getApplicationId()
+                                text = SEND_TEXT + getAppShareUrl()
                             )
                         }
                     }
@@ -354,8 +354,7 @@ private fun PreviewHelpItem() {
 }
 
 private object AppSettingsScreen {
-    const val SEND_TEXT = "MathAlarm Clock\nSolve math problems to wake up!" +
-            " https://play.google.com/store/apps/details?id="
+    const val SEND_TEXT = "MathAlarm Clock\nSolve math problems to wake up! "
     val HELP_ICON_SIZE = 50.dp
     val APP_BAR_SHADOW = 4.dp
     val SETTINGS_WIDTH = 100.dp
