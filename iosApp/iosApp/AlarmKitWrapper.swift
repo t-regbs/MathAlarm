@@ -151,7 +151,7 @@ struct StopAlarmIntent: LiveActivityIntent {
         // IMPORTANT: Store the deeplink FIRST, before stopping the alarm
         // This ensures the deeplink is available when the app activates
         if let alarmData = AlarmDataStore.shared.retrieve(alarmUUID: alarmUUID) {
-            let deeplinkJson = createDeeplinkJson(from: alarmData)
+            let deeplinkJson = try createDeeplinkJson(from: alarmData)
             PendingDeeplinkStore.shared.setPendingDeeplink(deeplinkJson)
             AlarmDataStore.shared.remove(alarmUUID: alarmUUID)
             print("StopAlarmIntent: Stored pending deeplink for MathScreen")
@@ -168,9 +168,9 @@ struct StopAlarmIntent: LiveActivityIntent {
     }
 }
 
-/// Create deeplink JSON from alarm data
+/// Encode the navigation payload for every AlarmKit and notification entry path.
 @available(iOS 26, *)
-private func createDeeplinkJson(from data: MathAlarmData) -> String {
+func createDeeplinkJson(from data: MathAlarmData) throws -> String {
     let payload: [String: Any] = [
         "alarmId": data.alarmId,
         "hour": data.hour,
@@ -186,13 +186,11 @@ private func createDeeplinkJson(from data: MathAlarmData) -> String {
         "isSaved": true
     ]
 
-    do {
-        let jsonData = try JSONSerialization.data(withJSONObject: payload)
-        return String(data: jsonData, encoding: .utf8) ?? "{}"
-    } catch {
-        print("StopAlarmIntent: Failed to encode deeplink JSON: \(error)")
-        return "{}"
+    let jsonData = try JSONSerialization.data(withJSONObject: payload)
+    guard let json = String(data: jsonData, encoding: .utf8) else {
+        throw CocoaError(.fileReadInapplicableStringEncoding)
     }
+    return json
 }
 
 /// Intent to snooze an alarm
@@ -480,31 +478,38 @@ class AlarmKitWrapperImpl: NSObject {
                            bytes[8], bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]))
     }
 
-    func cancelOccurrence(alarmId: Int64, occurrenceKey: String) {
-        guard #available(iOS 26, *) else { return }
+    func cancelOccurrence(alarmId: Int64, occurrenceKey: String) -> String? {
+        guard #available(iOS 26, *) else { return nil }
         let id = occurrenceUUID(alarmId: alarmId, key: occurrenceKey)
         do {
             let manager = AlarmManager.shared
-            if try manager.alarms.contains(where: { $0.id == id }) { try manager.cancel(id: id) }
-        } catch { print("Failed to cancel occurrence: \(error)") }
+            if try manager.alarms.contains(where: { $0.id == id }) {
+                try manager.cancel(id: id)
+            }
+            AlarmDataStore.shared.remove(alarmUUID: id.uuidString)
+            return nil
+        } catch {
+            print("Failed to cancel occurrence: \(error)")
+            return error.localizedDescription
+        }
     }
 
     /// Cancel an alarm scheduled with AlarmKit
-    func cancelAlarm(alarmId: Int64) {
+    func cancelAlarm(alarmId: Int64) -> String? {
         guard #available(iOS 26, *) else {
             print("AlarmKitWrapper: Cannot cancel - AlarmKit not available")
-            return
+            return nil
         }
-        cancelAlarmKitAlarm(alarmId: alarmId)
+        return cancelAlarmKitAlarm(alarmId: alarmId)
     }
     
     /// Cancel all AlarmKit alarms
-    func cancelAllAlarms() {
+    func cancelAllAlarms() -> String? {
         guard #available(iOS 26, *) else {
             print("AlarmKitWrapper: Cannot cancel all - AlarmKit not available")
-            return
+            return nil
         }
-        cancelAllAlarmKitAlarms()
+        return cancelAllAlarmKitAlarms()
     }
     
     /// Snooze an active alarm
@@ -680,33 +685,51 @@ class AlarmKitWrapperImpl: NSObject {
     }
 
     @available(iOS 26, *)
-    private func cancelAlarmKitAlarm(alarmId: Int64) {
+    private func cancelAlarmKitAlarm(alarmId: Int64) -> String? {
         do {
             let manager = AlarmManager.shared
             // Query OS alarms and persisted metadata so cancellation also works after relaunch.
             let keys = (0...6).map { "day_\($0)" } + ["snooze"]
             let ids = Set(keys.map { occurrenceUUID(alarmId: alarmId, key: $0) })
+            var failures: [String] = []
             for alarm in try manager.alarms {
                 if ids.contains(alarm.id) || AlarmDataStore.shared.retrieve(alarmUUID: alarm.id.uuidString)?.alarmId == alarmId {
-                    try manager.cancel(id: alarm.id)
+                    do {
+                        try manager.cancel(id: alarm.id)
+                        AlarmDataStore.shared.remove(alarmUUID: alarm.id.uuidString)
+                    } catch {
+                        failures.append("\(alarm.id): \(error.localizedDescription)")
+                    }
                 }
             }
-        } catch { print("Failed to cancel alarm: \(error)") }
+            return failures.isEmpty ? nil : failures.joined(separator: "; ")
+        } catch {
+            print("Failed to list alarms for cancellation: \(error)")
+            return error.localizedDescription
+        }
     }
 
     @available(iOS 26, *)
-    private func cancelAllAlarmKitAlarms() {
+    private func cancelAllAlarmKitAlarms() -> String? {
         do {
             let manager = AlarmManager.shared
             // Get current alarms synchronously
             let alarms = try manager.alarms
+            var failures: [String] = []
             for alarm in alarms {
-                try manager.cancel(id: alarm.id)
+                do {
+                    try manager.cancel(id: alarm.id)
+                    AlarmDataStore.shared.remove(alarmUUID: alarm.id.uuidString)
+                } catch {
+                    failures.append("\(alarm.id): \(error.localizedDescription)")
+                }
             }
             
             print("AlarmKitWrapper: Cancelled all alarms")
+            return failures.isEmpty ? nil : failures.joined(separator: "; ")
         } catch {
             print("AlarmKitWrapper: Failed to cancel all alarms - \(error.localizedDescription)")
+            return error.localizedDescription
         }
     }
     
@@ -764,15 +787,15 @@ class AlarmKitKotlinBridge: NSObject, NativeAlarmScheduler {
         wrapper.scheduleAlarm(request: request, completion: completion)
     }
 
-    func cancelOccurrence(alarmId: Int64, occurrenceKey: String) {
+    func cancelOccurrence(alarmId: Int64, occurrenceKey: String) -> String? {
         wrapper.cancelOccurrence(alarmId: alarmId, occurrenceKey: occurrenceKey)
     }
 
-    func cancelAlarm(alarmId: Int64) {
+    func cancelAlarm(alarmId: Int64) -> String? {
         wrapper.cancelAlarm(alarmId: alarmId)
     }
     
-    func cancelAllAlarms() {
+    func cancelAllAlarms() -> String? {
         wrapper.cancelAllAlarms()
     }
     

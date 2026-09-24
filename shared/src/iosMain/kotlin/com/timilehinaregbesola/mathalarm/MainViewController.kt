@@ -16,12 +16,15 @@ import com.timilehinaregbesola.mathalarm.notification.NotificationDeeplinkHolder
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
+import com.timilehinaregbesola.mathalarm.provider.skippedTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.first
+import kotlinx.datetime.TimeZone
+import kotlin.time.Clock
 import org.koin.core.component.KoinComponent
 import platform.UIKit.UIViewController
 
@@ -44,16 +47,40 @@ fun prewarmDatabaseInBackground() {
 fun migrateAlarmSchedules() {
     CoroutineScope(Dispatchers.Main).launch {
         val settings = com.russhwolf.settings.Settings()
-        if (settings.getBoolean("alarm_occurrences_v5", false)) return@launch
+        if (settings.getBoolean("alarm_occurrences_v5", false) &&
+            settings.getBoolean("ios_skip_removed_v1", false)) return@launch
         try {
             val usecases = (object : KoinComponent {}).getKoin().get<com.timilehinaregbesola.mathalarm.framework.Usecases>()
             usecases.command {
-                if (settings.getBoolean("alarm_occurrences_v5", false)) return@command
-                com.timilehinaregbesola.mathalarm.alarm.AlarmSchedulerBridge.cancelAllAlarms()
+                val needsLegacyMigration = !settings.getBoolean("alarm_occurrences_v5", false)
+                val needsSkipRemoval = !settings.getBoolean("ios_skip_removed_v1", false)
+                if (!needsLegacyMigration && !needsSkipRemoval) return@command
+                if (needsLegacyMigration) {
+                    com.timilehinaregbesola.mathalarm.alarm.AlarmSchedulerBridge.cancelAllAlarms()
+                }
+                if (needsSkipRemoval) {
+                    val now = Clock.System.now().toEpochMilliseconds()
+                    getSavedAlarms().first().filter { it.skippedDate != null }.forEach { alarm ->
+                        val skippedTime = alarm.skippedTime(TimeZone.currentSystemDefault())
+                            ?.takeIf { it > now }
+                        val pendingTimes = if (!alarm.repeat && skippedTime != null) {
+                            val savedZone = alarm.scheduleTimeZone?.let(TimeZone::of)
+                                ?: TimeZone.currentSystemDefault()
+                            (alarm.pendingTimes + listOfNotNull(alarm.skippedTime(savedZone)))
+                                .distinct().sorted()
+                        } else alarm.pendingTimes
+                        updateAlarm(alarm.copy(
+                            skippedDate = null,
+                            pendingTimes = pendingTimes,
+                            isOn = alarm.isOn || (!alarm.repeat && skippedTime != null),
+                        ))
+                    }
+                }
                 rescheduleFutureAlarms()
                 val alarms = getSavedAlarms().first()
                 if (alarms.none { it.isOn && it.scheduleError != null }) {
                     settings.putBoolean("alarm_occurrences_v5", true)
+                    settings.putBoolean("ios_skip_removed_v1", true)
                 }
             }
         } catch (e: kotlinx.coroutines.CancellationException) {
@@ -109,6 +136,7 @@ fun MainViewController(): UIViewController {
     
     return ComposeUIViewController(configure = { enforceStrictPlistSanityCheck = false }) {
         val preferences = rememberKoinInject<AlarmPreferencesImpl>()
+        val usecases = rememberKoinInject<com.timilehinaregbesola.mathalarm.framework.Usecases>()
         val lyricist = rememberStrings()
         val isDarkTheme = preferences.shouldUseDarkColors()
         
@@ -130,7 +158,11 @@ fun MainViewController(): UIViewController {
         
         ProvideStrings(lyricist) {
             MathAlarmTheme(darkTheme = isDarkTheme) {
-                NavGraph(preferences, deeplinkInfo)
+                NavGraph(
+                    preferences,
+                    deeplinkInfo,
+                    validateAlarmHandoff = { id -> usecases.findAlarm(id)?.isOn == true },
+                )
             }
         }
     }

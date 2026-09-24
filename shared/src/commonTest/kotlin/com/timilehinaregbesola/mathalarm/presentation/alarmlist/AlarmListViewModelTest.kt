@@ -85,7 +85,8 @@ class AlarmListViewModelTest {
             usecases = usecases,
             permission = permission,
             preferences = preferences,
-            logger = Logger.withTag("AlarmListViewModelTest")
+            logger = Logger.withTag("AlarmListViewModelTest"),
+            skipNextSupported = true,
         )
     }
 
@@ -246,6 +247,25 @@ class AlarmListViewModelTest {
                 .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
 
         viewModel.onEvent(AlarmListEvent.OnUndoSkipClick(alarm.alarmId))
+        advanceUntilIdle()
+
+        usecases.findAlarm(alarm.alarmId)!!.skippedDate shouldBe null
+    }
+
+    @Test
+    fun `skip command is ignored when platform does not support date exceptions`() = runTest {
+        val alarm = Alarm(alarmId = 458, hour = 7, repeat = true,
+            repeatDays = "FTFFFFF", isOn = true, isSaved = true)
+        usecases.addAlarm(alarm)
+        val unsupportedViewModel = AlarmListViewModel(
+            usecases = usecases,
+            permission = permission,
+            preferences = preferences,
+            logger = Logger.withTag("AlarmListViewModelTest"),
+            skipNextSupported = false,
+        )
+
+        unsupportedViewModel.onEvent(AlarmListEvent.OnSkipNextClick(alarm.alarmId))
         advanceUntilIdle()
 
         usecases.findAlarm(alarm.alarmId)!!.skippedDate shouldBe null

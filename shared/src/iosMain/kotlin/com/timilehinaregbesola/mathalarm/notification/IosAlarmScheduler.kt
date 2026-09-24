@@ -139,9 +139,9 @@ class IosAlarmScheduler(
                 title = alarm.title,
                 soundName = alarm.alarmTone,
                 repeatDays = days,
-                // AlarmKit's native countdown bypasses our durable limit.
-                // Controlled snoozes are scheduled from the shared challenge screen instead.
-                snoozeMinutes = if (alarm.maxSnoozes == 0) alarm.snooze else 0,
+                // Snooze runs through the challenge screen. Native countdown needs a
+                // widget extension and cannot enforce the shared snooze rules yet.
+                snoozeMinutes = 0,
                 vibrate = alarm.vibrate,
                 difficulty = alarm.difficulty,
                 repeats = repeating,
@@ -181,8 +181,11 @@ class IosAlarmScheduler(
     }
 
     fun cancelSnooze(alarm: Alarm) {
-        AlarmSchedulerBridge.cancelOccurrence(alarm.alarmId, "snooze")
+        val nativeFailure = runCatching {
+            AlarmSchedulerBridge.cancelOccurrence(alarm.alarmId, "snooze")
+        }.exceptionOrNull()
         notificationCenter.removePendingNotificationRequestsWithIdentifiers(listOf("alarm_${alarm.alarmId}_snooze"))
+        nativeFailure?.let { throw it }
     }
 
     /**
@@ -249,10 +252,14 @@ class IosAlarmScheduler(
 
     /** Keep the independent snooze registration and its delivered notification intact. */
     fun cancelRegularOccurrences(alarm: Alarm) {
-        for (day in 0..6) AlarmSchedulerBridge.cancelOccurrence(alarm.alarmId, "day_$day")
+        val failures = (0..6).mapNotNull { day ->
+            runCatching { AlarmSchedulerBridge.cancelOccurrence(alarm.alarmId, "day_$day") }
+                .exceptionOrNull()?.let { it.message ?: it.toString() }
+        }
         val identifiers = notificationIdentifiersForAlarm(alarm.alarmId)
             .filterNot { it == "alarm_${alarm.alarmId}_snooze" }
         removeNotifications(identifiers)
+        check(failures.isEmpty()) { failures.joinToString("; ") }
     }
 
     /** Cancel all AlarmKit and notification-based occurrences, including snoozes. */
@@ -260,12 +267,14 @@ class IosAlarmScheduler(
         logger.d { "Cancelling alarm: id=${alarm.alarmId}" }
         
         // Cancel AlarmKit alarm if available
-        AlarmSchedulerBridge.cancelAlarm(alarm.alarmId)
+        val nativeFailure = runCatching { AlarmSchedulerBridge.cancelAlarm(alarm.alarmId) }
+            .exceptionOrNull()
         
         // Also cancel notification-based alarm (in case of migration or fallback)
         val identifiers = notificationIdentifiersForAlarm(alarm.alarmId)
         
         removeNotifications(identifiers)
+        nativeFailure?.let { throw it }
         
         logger.d { "Alarm cancelled: id=${alarm.alarmId}" }
     }
@@ -278,11 +287,13 @@ class IosAlarmScheduler(
         logger.d { "Cancelling all alarms" }
         
         // Cancel all AlarmKit alarms
-        AlarmSchedulerBridge.cancelAllAlarms()
+        val nativeFailure = runCatching { AlarmSchedulerBridge.cancelAllAlarms() }
+            .exceptionOrNull()
         
         // Cancel all notification-based alarms
         notificationCenter.removeAllPendingNotificationRequests()
         notificationCenter.removeAllDeliveredNotifications()
+        nativeFailure?.let { throw it }
     }
 
     suspend fun hasPendingOccurrence(alarm: Alarm): Boolean {

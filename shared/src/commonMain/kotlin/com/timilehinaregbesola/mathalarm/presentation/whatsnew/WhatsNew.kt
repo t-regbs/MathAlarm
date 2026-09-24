@@ -40,6 +40,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import cafe.adriel.lyricist.strings
 import com.timilehinaregbesola.mathalarm.domain.model.MathChallenge
+import com.timilehinaregbesola.mathalarm.platform.isIosPlatform
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.ArrowBack
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 
@@ -52,7 +53,7 @@ internal data class FeatureAnnouncement(
 )
 
 internal val announcementCatalog: List<FeatureAnnouncement>
-    @Composable get() = listOf(
+    @Composable get() = listOfNotNull(
         FeatureAnnouncement(
             feature = AnnouncementFeature.MATH_CHALLENGES,
             title = strings.challengeAnnouncementTitle,
@@ -60,13 +61,13 @@ internal val announcementCatalog: List<FeatureAnnouncement>
             steps = listOf(strings.challengeAnnouncementInstructions),
             actionLabel = strings.tryFeature,
         ),
-        FeatureAnnouncement(
+        if (!isIosPlatform()) FeatureAnnouncement(
             feature = AnnouncementFeature.SKIP_NEXT,
             title = strings.skipNext,
             description = strings.skipAnnouncementDescription,
             steps = listOf(strings.skipAnnouncementInstructions, strings.skipAnnouncementUndo),
             actionLabel = strings.viewAlarms,
-        ),
+        ) else null,
         FeatureAnnouncement(
             feature = AnnouncementFeature.SNOOZE_SETTINGS,
             title = strings.snoozeAnnouncementTitle,

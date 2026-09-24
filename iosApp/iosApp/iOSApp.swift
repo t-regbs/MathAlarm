@@ -75,7 +75,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                 
                 // Get alarm data from our store
                 if let alarmData = AlarmDataStore.shared.retrieve(alarmUUID: alarm.id.uuidString) {
-                    let deeplinkJson = createDeeplinkJsonFromData(alarmData)
+                    let deeplinkJson = try createDeeplinkJson(from: alarmData)
                     
                     print("AppDelegate: Setting deeplink for alerting alarm")
                     NotificationDeeplinkHolder.shared.setAlarmDeeplink(json: deeplinkJson)
@@ -90,13 +90,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         } catch {
             print("AppDelegate: Error checking alerting alarms: \(error)")
         }
-    }
-    
-    /// Create deeplink JSON from alarm data
-    @available(iOS 26, *)
-    private static func createDeeplinkJsonFromData(_ data: MathAlarmData) -> String {
-        let vibrateStr = data.vibrate ? "true" : "false"
-        return "{\"alarmId\":\(data.alarmId),\"hour\":\(data.hour),\"minute\":\(data.minute),\"repeat\":false,\"repeatDays\":\"FFFFFFF\",\"isOn\":true,\"difficulty\":\(data.difficulty),\"alarmTone\":\"\(data.alarmTone)\",\"vibrate\":\(vibrateStr),\"snooze\":\(data.snooze),\"title\":\"\(data.title)\",\"isSaved\":true}"
     }
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
@@ -221,21 +214,30 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         
         print("iOSApp: Extracted - alarmId=\(alarmId), tone='\(alarmTone)', vibrate=\(vibrate)")
         
-        // Start alarm audio immediately when notification is tapped
-        // Run on main thread to ensure audio session works correctly
-        print("iOSApp: 🔊 Starting AlarmAudioController...")
-        DispatchQueue.main.async {
-            AlarmAudioController.shared.startAlarm(soundName: alarmTone, vibrate: vibrate)
+        guard alarmId > 0 else {
+            print("iOSApp: Ignoring notification without a valid alarm ID")
+            return
         }
-        
-        // Create JSON string for the alarm - matching AlarmEntity format
-        let vibrateStr = vibrate ? "true" : "false"
-        let alarmJson = "{\"alarmId\":\(alarmId),\"hour\":\(hour),\"minute\":\(minute),\"repeat\":false,\"repeatDays\":\"FFFFFFF\",\"isOn\":true,\"difficulty\":\(difficulty),\"alarmTone\":\"\(alarmTone)\",\"vibrate\":\(vibrateStr),\"snooze\":\(snooze),\"title\":\"\(title)\",\"isSaved\":true}"
-        
-        print("iOSApp: Setting deeplink with JSON = \(alarmJson)")
-        
-        // Set deeplink in Kotlin holder to navigate to MathScreen
-        NotificationDeeplinkHolder.shared.setAlarmDeeplink(json: alarmJson)
+        let alarmData = MathAlarmData(
+            alarmId: alarmId,
+            difficulty: Int32(difficulty),
+            hour: Int32(hour),
+            minute: Int32(minute),
+            snooze: Int32(snooze),
+            vibrate: vibrate,
+            alarmTone: alarmTone,
+            title: title
+        )
+        do {
+            let alarmJson = try createDeeplinkJson(from: alarmData)
+            DispatchQueue.main.async {
+                AlarmAudioController.shared.startAlarm(soundName: alarmTone, vibrate: vibrate)
+            }
+            print("iOSApp: Setting deeplink for alarm \(alarmId)")
+            NotificationDeeplinkHolder.shared.setAlarmDeeplink(json: alarmJson)
+        } catch {
+            print("iOSApp: Unable to encode alarm deeplink: \(error)")
+        }
     }
     
     // Called when notification arrives while app is in foreground
@@ -246,17 +248,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         
         print("iOSApp: 🔔 Notification arrived in foreground!")
         print("iOSApp: userInfo = \(userInfo)")
-        
-        // Start alarm audio immediately when notification arrives in foreground
-        let alarmTone = (userInfo["alarmTone"] as? String) ?? ""
-        let vibrate = (userInfo["vibrate"] as? NSNumber)?.boolValue ?? false
-        
-        print("iOSApp: Starting AlarmAudioController - tone='\(alarmTone)', vibrate=\(vibrate)")
-        
-        // Run on main thread to ensure audio session works
-        DispatchQueue.main.async {
-            AlarmAudioController.shared.startAlarm(soundName: alarmTone, vibrate: vibrate)
-        }
         
         // Also set the deeplink so the UI navigates to MathScreen
         handleAlarmNotification(userInfo: userInfo)

@@ -8,6 +8,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNull
+import kotlin.test.assertFalse
 
 class OverlaySceneStrategyTest {
     private val sheetStrategy = BottomSheetSceneStrategy<String>()
@@ -32,6 +33,18 @@ class OverlaySceneStrategyTest {
         assertEquals(listOf(list, settings), scene.overlaidEntries)
         assertEquals(scene.overlaidEntries, scene.previousEntries)
         assertIs<BottomSheetScene<String>>(sheetStrategy.scene(scene.overlaidEntries))
+    }
+
+    @Test
+    fun nativeSheetPreviewHidesTheEditorButRetainsItsReturnDestination() {
+        val stack = listOf(list, settings, preview)
+        val scene = MathPreviewSceneStrategy<String>(useDialogOverlay = false).scene(stack)!!
+        assertFalse(scene is OverlayScene<*>)
+        assertEquals(listOf(preview), scene.entries)
+        assertEquals(listOf(list, settings), scene.previousEntries)
+        // Closing the preview reveals the same editor, rather than creating a new draft.
+        val restored = assertIs<BottomSheetScene<String>>(sheetStrategy.scene(scene.previousEntries))
+        assertEquals(listOf(settings), restored.entries)
     }
 
     @Test

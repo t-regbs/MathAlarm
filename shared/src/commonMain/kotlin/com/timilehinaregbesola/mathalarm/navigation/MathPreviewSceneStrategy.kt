@@ -14,17 +14,38 @@ import androidx.navigation3.scene.SceneStrategyScope
 import com.timilehinaregbesola.mathalarm.platform.ConfigureMathPreviewWindow
 import com.timilehinaregbesola.mathalarm.platform.mathPreviewDialogProperties
 
-internal class MathPreviewSceneStrategy<T : Any> : SceneStrategy<T> {
+internal class MathPreviewSceneStrategy<T : Any>(
+    private val useDialogOverlay: Boolean = true,
+) : SceneStrategy<T> {
     override fun SceneStrategyScope<T>.calculateScene(entries: List<NavEntry<T>>): Scene<T>? {
         if (entries.size < 2) return null
         val entry = entries.last()
         if (entry.metadata[PREVIEW_KEY] != true) return null
-        return MathPreviewScene(entry, entries.dropLast(1))
+        val previousEntries = entries.dropLast(1)
+        return if (useDialogOverlay) MathPreviewScene(entry, previousEntries)
+        else FullscreenMathPreviewScene(entry, previousEntries)
     }
 
     companion object {
         fun metadata(): Map<String, Any> = mapOf(PREVIEW_KEY to true)
         private const val PREVIEW_KEY = "mathPreview"
+    }
+}
+
+/**
+ * UIKit sheets sit above Compose dialogs. Remove their presentation during an iOS preview,
+ * while retaining the editor entry and its saved state for the return navigation.
+ */
+private data class FullscreenMathPreviewScene<T : Any>(
+    val previewEntry: NavEntry<T>,
+    override val previousEntries: List<NavEntry<T>>,
+) : Scene<T> {
+    override val key: Any = previewEntry.contentKey
+    override val entries: List<NavEntry<T>> = listOf(previewEntry)
+    override val content: @Composable () -> Unit = {
+        Surface(Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+            previewEntry.Content()
+        }
     }
 }
 

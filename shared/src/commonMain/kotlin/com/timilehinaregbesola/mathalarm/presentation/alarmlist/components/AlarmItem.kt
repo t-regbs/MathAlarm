@@ -25,6 +25,7 @@ import com.mohamedrejeb.calf.ui.toggle.AdaptiveSwitch
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.platform.formatAlarmWeekday
+import com.timilehinaregbesola.mathalarm.platform.isIosPlatform
 import com.timilehinaregbesola.mathalarm.presentation.ui.darkPrimaryLight
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.KeyboardArrowDown
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.KeyboardArrowUp
@@ -151,7 +152,7 @@ fun AlarmItem(
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            alarm.skippedDate?.let { date ->
+            alarm.skippedDate?.takeUnless { isIosPlatform() }?.let { date ->
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalArrangement = Arrangement.spacedBy(MaterialTheme.spacing.extraSmall),
@@ -169,7 +170,7 @@ fun AlarmItem(
                 }
             }
             if (expanded) {
-                val canSkipNext = alarm.canSkipNext
+                val canSkipNext = alarm.canSkipNext && !isIosPlatform()
                 HorizontalDivider()
                 Row(
                     modifier = Modifier.fillMaxWidth().height(IntrinsicSize.Min),

@@ -21,8 +21,8 @@
 		A1B2C3D4E5F60718293A4B64 /* alarm_nature.caf in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B59 /* alarm_nature.caf */; };
 		A1B2C3D4E5F60718293A4B65 /* alarm_urgent.caf in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5A /* alarm_urgent.caf */; };
 		ALARMKIT01273AAA24004C7B11 /* AlarmKitWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = ALARMKIT02273AAA24004C7B11 /* AlarmKitWrapper.swift */; };
-		ALARMAUDIO01273AAA24004C7B /* AlarmAudioController.swift in Sources */ = {isa = PBXBuildFile; fileRef = ALARMAUDIO02273AAA24004C7B /* AlarmAudioController.swift */; };
 		B4C0D1E2F3A4051627384950 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B4C0D1E2F3A405162738494F /* LaunchScreen.storyboard */; };
+		C6A5E4D3B2F1098765432101 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = C6A5E4D3B2F1098765432102 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,8 +42,8 @@
 		A1B2C3D4E5F60718293A4B59 /* alarm_nature.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_nature.caf; sourceTree = "<group>"; };
 		A1B2C3D4E5F60718293A4B5A /* alarm_urgent.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_urgent.caf; sourceTree = "<group>"; };
 		ALARMKIT02273AAA24004C7B11 /* AlarmKitWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmKitWrapper.swift; sourceTree = "<group>"; };
-		ALARMAUDIO02273AAA24004C7B /* AlarmAudioController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmAudioController.swift; sourceTree = "<group>"; };
 		B4C0D1E2F3A405162738494F /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
+		C6A5E4D3B2F1098765432102 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,12 +60,12 @@
 		058557D7273AAEEB004C7B11 /* iosApp */ = {
 			isa = PBXGroup;
 			children = (
-				ALARMAUDIO02273AAA24004C7B /* AlarmAudioController.swift */,
 				ALARMKIT02273AAA24004C7B11 /* AlarmKitWrapper.swift */,
 				058557BA273AAA24004C7B11 /* Assets.xcassets */,
 				058557D8273AAEEB004C7B11 /* ContentView.swift */,
 				2152FB032600AC8F00CF470E /* iOSApp.swift */,
 				B4C0D1E2F3A405162738494F /* LaunchScreen.storyboard */,
+				C6A5E4D3B2F1098765432102 /* PrivacyInfo.xcprivacy */,
 				7555FF8C242A565B00829871 /* Info.plist */,
 				A1B2C3D4E5F60718293A4B40 /* Sounds */,
 			);
@@ -184,6 +184,7 @@
 				A1B2C3D4E5F60718293A4B64 /* alarm_nature.caf in Resources */,
 				A1B2C3D4E5F60718293A4B65 /* alarm_urgent.caf in Resources */,
 				B4C0D1E2F3A4051627384950 /* LaunchScreen.storyboard in Resources */,
+				C6A5E4D3B2F1098765432101 /* PrivacyInfo.xcprivacy in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -215,7 +216,6 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				ALARMAUDIO01273AAA24004C7B /* AlarmAudioController.swift in Sources */,
 				ALARMKIT01273AAA24004C7B11 /* AlarmKitWrapper.swift in Sources */,
 				2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */,
 				058557D9273AAEEB004C7B11 /* ContentView.swift in Sources */,
@@ -276,7 +276,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
@@ -331,7 +331,7 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
+				IPHONEOS_DEPLOYMENT_TARGET = 26.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;

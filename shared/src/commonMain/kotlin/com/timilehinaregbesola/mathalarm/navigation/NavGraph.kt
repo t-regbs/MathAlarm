@@ -61,6 +61,7 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.A
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
+import com.timilehinaregbesola.mathalarm.platform.isIosPlatform
 import com.timilehinaregbesola.mathalarm.utils.Destinations.AlarmList
 import com.timilehinaregbesola.mathalarm.utils.Destinations.AlarmMath
 import com.timilehinaregbesola.mathalarm.utils.Destinations.AppSettings
@@ -81,6 +82,7 @@ fun NavGraph(
     preferences: AlarmPreferencesImpl,
     deeplinkInfo: String?,
     onDeeplinkConsumed: () -> Unit = {},
+    validateAlarmHandoff: suspend (Long) -> Boolean = { true },
     reviewVisit: Int = 0,
     onReviewOpportunityChanged: (Boolean) -> Unit = {},
     onRequestReview: () -> Unit = {},
@@ -108,7 +110,7 @@ fun NavGraph(
         NotificationSnoozeEvents.snoozed.collect { alarmId ->
             // A foreground notification can be snoozed while its challenge is visible.
             val matching = backStack.filterIsInstance<AlarmMath>().filter {
-                !it.fromSheet && Json.decodeFromString<AlarmEntity>(it.alarmJson).alarmId == alarmId
+                !it.fromSheet && decodeAlarmHandoff(it.alarmJson)?.alarmId == alarmId
             }
             backStack.removeAll(matching.toSet())
         }
@@ -133,14 +135,20 @@ fun NavGraph(
             maxVerticalPartitions = 1,
         ),
     )
-    val mathPreviewStrategy = remember { MathPreviewSceneStrategy<NavKey>() }
+    val mathPreviewStrategy = remember { MathPreviewSceneStrategy<NavKey>(useDialogOverlay = !isIosPlatform()) }
 
     // Navigate to MathScreen when deeplinkInfo changes (e.g., from notification tap)
     LaunchedEffect(deeplinkInfo) {
         println("NavGraph: LaunchedEffect triggered with deeplinkInfo = $deeplinkInfo")
         deeplinkInfo?.let {
-            println("NavGraph: Navigating to AlarmMath")
-            backStack.add(AlarmMath(it, false))
+            val incoming = decodeAlarmHandoff(it)
+            val alreadyOpen = incoming != null && backStack.filterIsInstance<AlarmMath>().any { key ->
+                !key.fromSheet && decodeAlarmHandoff(key.alarmJson)?.alarmId == incoming.alarmId
+            }
+            if (incoming != null && !alreadyOpen && validateAlarmHandoff(incoming.alarmId)) {
+                println("NavGraph: Navigating to AlarmMath")
+                backStack.add(AlarmMath(it, false))
+            }
             onDeeplinkConsumed()
         }
     }
@@ -318,6 +326,11 @@ fun NavGraph(
         )
     }
 }
+
+internal fun decodeAlarmHandoff(payload: String): AlarmEntity? =
+    runCatching { Json.decodeFromString<AlarmEntity>(payload) }
+        .getOrNull()
+        ?.takeIf { it.alarmId > 0 }
 
 private object NavGraph {
     val ANIM_TRANSITION_DURATION = 700

@@ -7,4 +7,5 @@ interface AudioPlayer {
     fun stop()
     fun reset()
     fun setDataSourceFromString(alarmtone: String)
+    fun setVibrate(enabled: Boolean) = Unit
 }

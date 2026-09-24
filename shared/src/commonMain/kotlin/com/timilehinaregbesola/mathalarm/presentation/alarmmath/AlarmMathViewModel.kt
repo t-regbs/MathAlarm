@@ -196,13 +196,14 @@ class AlarmMathViewModel(
         audioPlayer.stop()
     }
 
-    fun startAlarmWith(tone: String) {
+    fun startAlarmWith(tone: String, vibrate: Boolean = false) {
         try {
             audioPlayer.stop()
         } catch (_: Throwable) {}
         audioPlayer.init()
         audioPlayer.reset()
         audioPlayer.setDataSourceFromString(tone)
+        audioPlayer.setVibrate(vibrate)
         audioPlayer.startAlarmAudio()
     }
 

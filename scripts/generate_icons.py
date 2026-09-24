@@ -5,6 +5,7 @@ Requires Python 3, CairoSVG and Pillow (pip install cairosvg pillow).
 from pathlib import Path
 import io
 import json
+import argparse
 import xml.etree.ElementTree as ET
 import cairosvg
 from PIL import Image, ImageDraw
@@ -15,6 +16,10 @@ SOURCE = ART / 'mathalarm-mark.svg'
 MARK = SOURCE.read_text().split('<g', 1)[1].split('</g>', 1)[0]
 MARK = '<g' + MARK + '</g>'
 BACKGROUND = '#1A1A1A'
+
+parser = argparse.ArgumentParser(description=__doc__)
+parser.add_argument('--ios-launch-only', action='store_true', help='Regenerate only the transparent iOS launch marks')
+args = parser.parse_args()
 
 def svg(background=None, adaptive=False):
     # Center within Android's 66dp circular safe zone on a 108dp canvas.
@@ -37,6 +42,16 @@ def png(path, size, background=None, shape=None, adaptive=False):
     image = image.resize((size, size), Image.Resampling.LANCZOS)
     if background and not shape: image = image.convert('RGB')
     image.save(path)
+
+def generate_ios_launch_icons():
+    launch = ROOT/'iosApp/iosApp/Assets.xcassets/LaunchScreenIcon.imageset'
+    for path in launch.glob('*.png'):
+        png(path, Image.open(path).width)
+
+if args.ios_launch_only:
+    generate_ios_launch_icons()
+    print('Regenerated transparent iOS launch icons from SVG.')
+    raise SystemExit(0)
 
 for name, bg, adaptive in [('mathalarm-icon.svg', BACKGROUND, False), ('mathalarm-adaptive-foreground.svg', None, True)]:
     (ART/name).write_text(svg(bg, adaptive) + '\n')
@@ -83,7 +98,5 @@ for entry in catalog['images']:
     if 'filename' not in entry: entry['filename'] = f'app-icon-{size}.png'
     png(icons/entry['filename'], size, BACKGROUND)
 (icons/'Contents.json').write_text(json.dumps(catalog, indent=2) + '\n')
-launch = ROOT/'iosApp/iosApp/Assets.xcassets/LaunchScreenIcon.imageset'
-for path in launch.glob('*.png'):
-    png(path, Image.open(path).width, '#FFFFFF')
+generate_ios_launch_icons()
 print('Regenerated Android, iOS, shared UI, and store icons from SVG.')

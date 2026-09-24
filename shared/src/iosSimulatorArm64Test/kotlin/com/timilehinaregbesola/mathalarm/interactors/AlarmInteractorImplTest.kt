@@ -87,14 +87,27 @@ class AlarmInteractorImplTest {
         assertTrue("alarm_9_snooze" in removedNotifications.last())
     }
 
-    @Test fun controlledSnoozesCannotUseTheNativeCountdown() = runTest {
+    @Test fun allSnoozesUseTheChallengeScreenInsteadOfNativeCountdown() = runTest {
         val backend = NativeAlarmSchedulerFake()
         AlarmSchedulerBridge.registerScheduler(backend)
         val interactor = AlarmInteractorImpl(Logger.withTag("Test"))
         val alarm = Alarm(alarmId = 11, snooze = 5)
         interactor.schedule(alarm, 2_000_000_000_000)
         interactor.schedule(alarm.copy(maxSnoozes = 0), 2_000_000_000_000)
-        assertEquals(listOf(0, 5), backend.requests.map { it.snoozeMinutes })
+        assertEquals(listOf(0, 0), backend.requests.map { it.snoozeMinutes })
+    }
+
+    @Test fun cancellationFailureIsReportedAndRemainingOccurrencesAreAttempted() = runTest {
+        val backend = NativeAlarmSchedulerFake().apply { cancelFailure = "AlarmKit could not cancel" }
+        AlarmSchedulerBridge.registerScheduler(backend)
+        val removedNotifications = mutableListOf<List<String>>()
+        val scheduler = IosAlarmScheduler(Logger.withTag("Test")) { removedNotifications.add(it) }
+        val alarm = Alarm(alarmId = 12, repeat = true, repeatDays = "FTFFFFF")
+
+        assertFailsWith<IllegalStateException> { scheduler.cancelRegularOccurrences(alarm) }
+        assertEquals((0..6).map { "day_$it" }, backend.cancelledKeys)
+        assertEquals(1, removedNotifications.size)
+        assertFailsWith<IllegalStateException> { scheduler.cancelAlarm(alarm) }
     }
 
     private class NativeAlarmSchedulerFake : NativeAlarmScheduler {
@@ -106,22 +119,32 @@ class AlarmInteractorImplTest {
 
         val requests = mutableListOf<AlarmScheduleRequest>()
         var failure: String? = null
+        var cancelFailure: String? = null
+        val cancelledKeys = mutableListOf<String>()
         override fun scheduleAlarm(request: AlarmScheduleRequest, completion: AlarmScheduleCompletion) {
             requests.add(request)
             scheduledAlarmIds.add(request.alarmId)
             completion.complete(failure == null, failure)
         }
-        override fun cancelOccurrence(alarmId: Long, occurrenceKey: String) {
-            requests.removeAll { it.alarmId == alarmId && it.occurrenceKey == occurrenceKey }
+        override fun cancelOccurrence(alarmId: Long, occurrenceKey: String): String? {
+            cancelledKeys.add(occurrenceKey)
+            if (cancelFailure == null) {
+                requests.removeAll { it.alarmId == alarmId && it.occurrenceKey == occurrenceKey }
+            }
+            return cancelFailure
         }
 
-        override fun cancelAlarm(alarmId: Long) {
-            scheduledAlarmIds.remove(alarmId)
-            requests.removeAll { it.alarmId == alarmId }
+        override fun cancelAlarm(alarmId: Long): String? {
+            if (cancelFailure == null) {
+                scheduledAlarmIds.remove(alarmId)
+                requests.removeAll { it.alarmId == alarmId }
+            }
+            return cancelFailure
         }
 
-        override fun cancelAllAlarms() {
-            scheduledAlarmIds.clear()
+        override fun cancelAllAlarms(): String? {
+            if (cancelFailure == null) scheduledAlarmIds.clear()
+            return cancelFailure
         }
 
         override fun isAlarmKitAvailable(): Boolean = true

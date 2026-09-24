@@ -4,14 +4,12 @@ import co.touchlab.kermit.Logger
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import platform.AVFAudio.AVAudioPlayer
 import platform.AVFAudio.AVAudioSession
 import platform.AVFAudio.AVAudioSessionCategoryPlayback
-import platform.AVFAudio.AVAudioSessionCategoryOptionMixWithOthers
 import platform.AVFAudio.AVAudioSessionModeDefault
 import platform.AVFAudio.setActive
 import platform.AudioToolbox.AudioServicesPlaySystemSound
@@ -32,6 +30,7 @@ object IosAlarmAudioManager {
     private val logger = Logger.withTag("IosAlarmAudioManager")
     private var audioPlayer: AVAudioPlayer? = null
     private var vibrationJob: Job? = null
+    private var soundJob: Job? = null
     private var isAlarmActive = false
     private val scope = CoroutineScope(Dispatchers.Main)
     
@@ -81,6 +80,7 @@ object IosAlarmAudioManager {
      * Stop the alarm
      */
     fun stopAlarm() {
+        if (!isAlarmActive && audioPlayer == null && vibrationJob == null && soundJob == null) return
         logger.d { "Stopping alarm" }
         isAlarmActive = false
         
@@ -91,6 +91,8 @@ object IosAlarmAudioManager {
         // Stop vibration
         vibrationJob?.cancel()
         vibrationJob = null
+        soundJob?.cancel()
+        soundJob = null
         
         // Deactivate audio session
         try {
@@ -131,7 +133,8 @@ object IosAlarmAudioManager {
     private fun playSound(soundName: String, volume: Float) {
         try {
             // Try to find the sound in the app bundle
-            val soundFile = if (soundName.isNotEmpty()) soundName else "alarm_classic"
+            val soundFile = soundName.ifEmpty { "alarm_classic" }
+                .substringBeforeLast('.', soundName.ifEmpty { "alarm_classic" })
             
             // Try different extensions
             val extensions = listOf("caf", "m4a", "mp3", "wav", "aiff")
@@ -145,7 +148,11 @@ object IosAlarmAudioManager {
                 }
             }
             
-            // If custom sound not found, try system sounds
+            if (soundUrl == null && soundFile != "alarm_classic") {
+                soundUrl = NSBundle.mainBundle.URLForResource("alarm_classic", withExtension = "caf")
+            }
+
+            // If bundled sounds are missing, try system sounds
             if (soundUrl == null) {
                 logger.d { "Custom sound not found, trying system sounds..." }
                 // Try various system alarm sound paths (iOS simulator and device paths)
@@ -190,7 +197,7 @@ object IosAlarmAudioManager {
      * Fallback to system sound if no audio file available
      */
     private fun startSystemSoundFallback() {
-        scope.launch {
+        soundJob = scope.launch {
             while (isAlarmActive) {
                 // Play system alert sound repeatedly
                 AudioServicesPlaySystemSound(1005u) // System alert sound
@@ -203,7 +210,7 @@ object IosAlarmAudioManager {
      * Start a vibration pattern for the alarm
      */
     private fun startVibrationPattern() {
-        vibrationJob = scope.launch(Dispatchers.IO) {
+        vibrationJob = scope.launch {
             val feedbackGenerator = UIImpactFeedbackGenerator(style = UIImpactFeedbackStyle.UIImpactFeedbackStyleHeavy)
             feedbackGenerator.prepare()
             

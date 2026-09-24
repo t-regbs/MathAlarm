@@ -67,7 +67,7 @@ git clone https://github.com/t-regbs/MathAlarm.git
 ```
 
 ### Building for iOS
-The iOS app is located in the `iosApp/` directory and consumes the framework produced by `:shared`. Open the Xcode project to build and run on iOS devices/simulators.
+The iOS app supports iPhone and iPad running iOS/iPadOS **26 or later**. It is located in the `iosApp/` directory and consumes the framework produced by `:shared`. Open the Xcode project to build and run on devices or simulators. Use iPad simulators for layout/navigation checks and a physical iPhone for alarm delivery and audio validation.
 
 ## Contribution
 All contributions are welcome. Simply make a PR!

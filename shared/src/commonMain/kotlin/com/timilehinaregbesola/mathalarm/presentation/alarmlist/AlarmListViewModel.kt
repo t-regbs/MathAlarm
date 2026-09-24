@@ -11,6 +11,7 @@ import com.timilehinaregbesola.mathalarm.analytics.trackSafely
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermission
+import com.timilehinaregbesola.mathalarm.platform.isIosPlatform
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.AlarmSortOrder.TIME
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
 import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
@@ -33,6 +34,7 @@ class AlarmListViewModel(
     private val preferences: AlarmPreferencesImpl,
     private val logger: Logger,
     private val analytics: AnalyticsTracker = NoopAnalyticsTracker,
+    private val skipNextSupported: Boolean = !isIosPlatform(),
 ) : ViewModel() {
     val alarms = usecases
         .getSavedAlarms()
@@ -73,6 +75,7 @@ class AlarmListViewModel(
             is AlarmListEvent.OnAddAlarmClick -> sendUiEvent(Navigate(Alarm()))
             is AlarmListEvent.OnAlarmOnChange -> setEnabled(event.alarm, event.isOn)
             is AlarmListEvent.OnSkipNextClick -> launchCommand {
+                if (!skipNextSupported) return@launchCommand
                 val skippedDate = skipNextAlarm(event.alarmId) ?: return@launchCommand
                 analytics.trackSafely(AnalyticsEvents.alarmSkipped)
                 sendUiEvent(ShowSnackbar(
@@ -83,6 +86,7 @@ class AlarmListViewModel(
                 ))
             }
             is AlarmListEvent.OnUndoSkipClick -> launchCommand {
+                if (!skipNextSupported) return@launchCommand
                 skipNextAlarm.undo(event.alarmId, event.skippedDate)
             }
             is AlarmListEvent.OnUndoDeleteClick -> launchCommand {

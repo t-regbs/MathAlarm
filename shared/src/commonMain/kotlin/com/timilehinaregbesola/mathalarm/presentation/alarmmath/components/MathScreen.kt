@@ -65,6 +65,7 @@ import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.platform.PlatformVibrator
 import com.timilehinaregbesola.mathalarm.platform.getDefaultAlarmTone
 import com.timilehinaregbesola.mathalarm.platform.shouldStartMathScreenAlarmAudio
+import com.timilehinaregbesola.mathalarm.platform.isIosPlatform
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmSnack
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.AlarmMathViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathScreenEvent
@@ -110,7 +111,9 @@ fun MathScreen(
     ChallengeBackHandler(enabled = true) {
         if (fromSheet && backStack.size > 1) backStack.removeLastOrNull()
     }
-    val vibrator = remember(alarm.alarmId, alarm.vibrate) { if (alarm.vibrate) PlatformVibrator() else null }
+    val vibrator = remember(alarm.alarmId, alarm.vibrate) {
+        if (alarm.vibrate && !isIosPlatform()) PlatformVibrator() else null
+    }
     LaunchedEffect(alarm.alarmId, alarm.activeAt, fromSheet) {
         viewModel.initializeChallenge(
             alarm = AlarmMapper().mapToDomainModel(alarm),
@@ -155,7 +158,7 @@ fun MathScreen(
         val alarmTone = alarm.alarmTone.ifEmpty { getDefaultAlarmTone() }
         if (alarmTone.isNotEmpty() && shouldStartMathScreenAlarmAudio(fromSheet)) {
             try {
-                viewModel.startAlarmWith(alarmTone)
+                viewModel.startAlarmWith(alarmTone, alarm.vibrate)
             } catch (_: Throwable) {
             }
         } else if (alarmTone.isEmpty()) {

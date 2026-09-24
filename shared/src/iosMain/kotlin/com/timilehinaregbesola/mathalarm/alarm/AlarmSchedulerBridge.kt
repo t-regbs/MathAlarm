@@ -31,9 +31,10 @@ interface AlarmScheduleCompletion {
 
 interface NativeAlarmScheduler {
     fun scheduleAlarm(request: AlarmScheduleRequest, completion: AlarmScheduleCompletion)
-    fun cancelAlarm(alarmId: Long)
-    fun cancelOccurrence(alarmId: Long, occurrenceKey: String)
-    fun cancelAllAlarms()
+    /** Null on success; a message on failure. Cancellation is synchronous in AlarmKit. */
+    fun cancelAlarm(alarmId: Long): String?
+    fun cancelOccurrence(alarmId: Long, occurrenceKey: String): String?
+    fun cancelAllAlarms(): String?
     fun isAlarmKitAvailable(): Boolean
     fun hasPendingOccurrence(alarmId: Long): Boolean
     fun snoozeAlarm(alarmId: Long, minutes: Int)
@@ -54,9 +55,15 @@ object AlarmSchedulerBridge {
             })
         }
     }
-    fun cancelAlarm(alarmId: Long) { nativeScheduler?.cancelAlarm(alarmId) }
-    fun cancelOccurrence(alarmId: Long, key: String) { nativeScheduler?.cancelOccurrence(alarmId, key) }
-    fun cancelAllAlarms() { nativeScheduler?.cancelAllAlarms() }
+    fun cancelAlarm(alarmId: Long) {
+        nativeScheduler?.cancelAlarm(alarmId)?.let { throw IllegalStateException(it) }
+    }
+    fun cancelOccurrence(alarmId: Long, key: String) {
+        nativeScheduler?.cancelOccurrence(alarmId, key)?.let { throw IllegalStateException(it) }
+    }
+    fun cancelAllAlarms() {
+        nativeScheduler?.cancelAllAlarms()?.let { throw IllegalStateException(it) }
+    }
     fun hasPendingOccurrence(alarmId: Long): Boolean = nativeScheduler?.hasPendingOccurrence(alarmId) == true
     fun snoozeAlarm(alarmId: Long, minutes: Int) { nativeScheduler?.snoozeAlarm(alarmId, minutes) }
     val shared: AlarmSchedulerBridge get() = this
