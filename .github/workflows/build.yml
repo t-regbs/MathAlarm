@@ -131,6 +131,14 @@ jobs:
             -destination 'generic/platform=iOS Simulator' \
             -derivedDataPath "$RUNNER_TEMP/mathalarm-ios" CODE_SIGNING_ALLOWED=NO build
           plutil -lint "$RUNNER_TEMP/mathalarm-ios/Build/Products/Debug-iphonesimulator/MathAlarm.app/PrivacyInfo.xcprivacy"
+      - name: Check Release archive packaging
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -configuration Release \
+            -destination 'generic/platform=iOS' \
+            -archivePath "$RUNNER_TEMP/MathAlarm.xcarchive" \
+            -derivedDataPath "$RUNNER_TEMP/mathalarm-ios-release" CODE_SIGNING_ALLOWED=NO archive
+          plutil -lint "$RUNNER_TEMP/MathAlarm.xcarchive/Products/Applications/MathAlarm.app/PrivacyInfo.xcprivacy"
       - name: Upload native reports
         if: always()
         uses: actions/upload-artifact@v4
