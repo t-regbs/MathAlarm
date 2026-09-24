@@ -1,6 +1,6 @@
 # Android in-app reviews
 
-MathAlarm uses Google Play Review 2.0.2 and local Settings storage. No analytics events or backend are involved.
+MathAlarm uses Google Play Review 2.0.2 and local Settings storage for eligibility and cooldown tracking. Android records review request attempts and API outcomes through Firebase Analytics; eligibility does not depend on analytics or a backend. See [Android analytics events](analytics-events.md) for the event definitions and limitations.
 
 ## Eligibility and trigger
 
