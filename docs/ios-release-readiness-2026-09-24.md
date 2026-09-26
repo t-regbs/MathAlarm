@@ -42,6 +42,8 @@ References: [Apple's system button behavior](https://developer.apple.com/documen
 
 Prototype verification: **331 iOS tests** (134 core, 197 shared) passed with zero failures/errors/skips; Swift handoff/recovery persistence checks passed. Tests cover bounded retries, relaunch, stale-token rejection, cancellation invalidation, preserving weekly/snooze registrations, failed snooze retention, and accepted snooze/completion cleanup. The signed Debug iPhone build passed. Standalone native tests initially crashed when calling Apple's app-only notification service; notification removal was isolated for those tests and the final suite passed. These results do not verify locked-device intent execution. [Manual test steps](ios-alarm-recovery-manual-test.md). Logs: `/tmp/mathalarm-ios-recovery-tests.log`, `/tmp/mathalarm-ios-recovery-device-build.log`.
 
+The signed prototype installed successfully on the connected iPhone after retrying a dropped CoreDevice connection. Automatic launch could not establish its required remote XPC service (CoreDevice error 4000); open the installed app manually. No scheduled alarms were created or changed during deployment, and physical recovery remains awaiting the user's test.
+
 ### 1. Make Skip next change the actual iOS delivery date
 
 **Confirmed source defect.** The shared calculator moves the skipped weekday forward seven days, but both iOS backends discard that date for repeating alarms. AlarmKit creates a weekly relative schedule from hour/minute/weekday; the fallback does the same with a repeating calendar trigger. A Monday alarm skipped before Monday can therefore still ring that Monday while the UI says it is skipped.
