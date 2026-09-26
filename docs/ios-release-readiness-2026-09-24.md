@@ -26,6 +26,19 @@ Apple references: [AlarmKit](https://developer.apple.com/documentation/alarmkit)
 
 ## P0 — fix or remove from the release scope
 
+### Lock-screen dismissal bypass — reported 27 September
+
+**User-observed product blocker.** On the locked physical iPhone, sliding the alarm control silenced the system alarm before authentication completed. Unlocking subsequently opened the app and restarted in-app music; abandoning unlock left no audible challenge enforcement. This was reported by the user, not reproduced by agent automation.
+
+Source inspection confirms that `StopAlarmIntent` requests foreground opening, queues the challenge payload, and explicitly stops the native alarm. However, Apple documents that AlarmKit automatically performs the system stop action and treats the intent as additional behavior. The installed SDK also marks custom `stopButton` appearance unused/deprecated from iOS 26.1, and the current API supplies a system stop control. Renaming the control, removing our explicit `manager.stop`, or requiring intent authentication must not be presented as proven prevention of system dismissal.
+
+- [ ] Prototype recovery for an unresolved occurrence: a native follow-up alarm that remains armed until successful math completion or an allowed snooze. Establish whether recovery can be scheduled before foreground authentication; do not depend solely on app activation or a running alarm-update observer.
+- [ ] Persist a distinct occurrence identity and cancel its recovery registrations on completion, snooze, disable, delete, or edit. Bound retries and handle failed registration visibly; avoid stale alarms after completion.
+- [ ] Test locked delivery → slide → abandon authentication; cancel authentication; unlock → wrong/correct answer; app terminated; and follow-up cancellation. A simulator can validate app navigation and recovery state, but does not establish real passcode/Face ID timing, locked-device execution, or audible recovery. Physical checks require manual observation because iPhone Mirroring disconnected during the user's alarm interaction.
+- [ ] Resolve the supported iOS product promise before release. Recovery is a mitigation to evaluate, not evidence that iOS system dismissal can be prohibited.
+
+References: [Apple's system button behavior](https://developer.apple.com/documentation/alarmkit/scheduling-an-alarm-with-alarmkit), [system-provided stop control](https://developer.apple.com/documentation/alarmkit/alarmpresentation/alert-swift.struct), [intent authentication policy](https://developer.apple.com/documentation/appintents/appintent/authenticationpolicy).
+
 ### 1. Make Skip next change the actual iOS delivery date
 
 **Confirmed source defect.** The shared calculator moves the skipped weekday forward seven days, but both iOS backends discard that date for repeating alarms. AlarmKit creates a weekly relative schedule from hour/minute/weekday; the fallback does the same with a repeating calendar trigger. A Monday alarm skipped before Monday can therefore still ring that Monday while the UI says it is skipped.
