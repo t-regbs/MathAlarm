@@ -11,7 +11,7 @@ class ScheduleNextAlarm(
     suspend operator fun invoke(alarm: Alarm): List<Long> {
         require(alarm.repeat && alarm.isOn)
         val times = alarmTimeCalculator.calculateAlarmTimes(alarm).sorted()
-        alarmInteractor.scheduleRepeating(alarm, times)
+        alarmInteractor.scheduleNextRepeating(alarm, times)
         return times
     }
 }

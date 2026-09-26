@@ -138,6 +138,62 @@ class AlarmInteractorImplTest {
         assertTrue(permission.hasExactAlarmPermission())
     }
 
+    @Test fun advancingWeeklyAlarmRetainsBothExistingWeekdaysWithoutRescheduling() = runTest {
+        val backend = NativeAlarmSchedulerFake().apply { failure = "Duplicate registration rejected" }
+        AlarmSchedulerBridge.registerScheduler(backend)
+        val interactor = AlarmInteractorImpl(Logger.withTag("Test"))
+        val monday = LocalDateTime(2030, 1, 7, 7, 0).toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        val saturday = LocalDateTime(2030, 1, 12, 7, 0).toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        val alarm = Alarm(alarmId = 42, hour = 7, repeat = true, repeatDays = "FTFFFFT")
+        backend.markScheduled(42, "day_1")
+        backend.markScheduled(42, "day_6")
+
+        interactor.scheduleNextRepeating(alarm, listOf(monday, saturday))
+
+        assertTrue(backend.requests.isEmpty())
+        assertTrue(backend.hasPendingOccurrence(42, "day_1"))
+        assertTrue(backend.hasPendingOccurrence(42, "day_6"))
+    }
+
+    @Test fun advancingWeeklyAlarmRepairsOnlyTheMissingWeekday() = runTest {
+        val backend = NativeAlarmSchedulerFake()
+        AlarmSchedulerBridge.registerScheduler(backend)
+        val interactor = AlarmInteractorImpl(Logger.withTag("Test"))
+        val monday = LocalDateTime(2030, 1, 7, 7, 0).toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        val saturday = LocalDateTime(2030, 1, 12, 7, 0).toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        val alarm = Alarm(alarmId = 42, hour = 7, repeat = true, repeatDays = "FTFFFFT")
+        backend.markScheduled(42, "day_6")
+        backend.markScheduled(42, "snooze")
+
+        interactor.scheduleNextRepeating(alarm, listOf(monday, saturday))
+
+        assertEquals(listOf("day_1"), backend.requests.map { it.occurrenceKey })
+        assertTrue(backend.requests.single().repeats)
+        assertTrue(backend.hasPendingOccurrence(42, "snooze"))
+    }
+
+    @Test fun repairingMissingWeeklyRegistrationStillReportsSchedulingFailure() = runTest {
+        val backend = NativeAlarmSchedulerFake().apply { failure = "Permission denied" }
+        AlarmSchedulerBridge.registerScheduler(backend)
+        val interactor = AlarmInteractorImpl(Logger.withTag("Test"))
+        assertFailsWith<IllegalStateException> {
+            interactor.scheduleNextRepeating(Alarm(alarmId = 42, repeat = true), listOf(2_000_000_000_000))
+        }
+    }
+
+    @Test fun explicitWeeklyEditsStillSubmitUpdatedSettings() = runTest {
+        val backend = NativeAlarmSchedulerFake()
+        AlarmSchedulerBridge.registerScheduler(backend)
+        val interactor = AlarmInteractorImpl(Logger.withTag("Test"))
+        val monday = LocalDateTime(2030, 1, 7, 7, 0).toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
+        backend.markScheduled(42, "day_1")
+        val alarm = Alarm(alarmId = 42, hour = 7, repeat = true, title = "Updated", pendingTimes = listOf(monday))
+
+        interactor.update(alarm)
+
+        assertEquals("Updated", backend.requests.single().title)
+    }
+
     private class NativeAlarmSchedulerFake : NativeAlarmScheduler {
         private val scheduledKeys = mutableSetOf<Pair<Long, String>>()
 

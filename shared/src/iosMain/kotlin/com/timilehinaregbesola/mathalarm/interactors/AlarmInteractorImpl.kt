@@ -15,6 +15,10 @@ class AlarmInteractorImpl(logger: Logger) : AlarmInteractor {
         times.forEach { scheduler.scheduleOccurrence(alarm, it, repeating = true) }
     }
 
+    override suspend fun scheduleNextRepeating(alarm: Alarm, times: List<Long>) {
+        times.forEach { scheduler.ensureRepeatingOccurrence(alarm, it) }
+    }
+
     override suspend fun scheduleSnooze(alarm: Alarm, timeInMillis: Long) =
         scheduler.scheduleOccurrence(alarm, timeInMillis, snooze = true)
 

@@ -120,6 +120,23 @@ class IosAlarmScheduler(
         }
     }
     
+    /** AlarmKit owns weekly recurrence. Reinstall only a missing weekday after delivery. */
+    suspend fun ensureRepeatingOccurrence(alarm: Alarm, timeInMillis: Long) {
+        val key = regularOccurrenceKey(timeInMillis)
+        if (AlarmSchedulerBridge.isAlarmKitAvailable() &&
+            AlarmSchedulerBridge.hasPendingOccurrence(alarm.alarmId, key)) {
+            logger.d { "Retaining AlarmKit weekly registration: id=${alarm.alarmId}, key=$key" }
+            return
+        }
+        scheduleOccurrence(alarm, timeInMillis, repeating = true)
+    }
+
+    private fun regularOccurrenceKey(timeInMillis: Long): String {
+        val local = Instant.fromEpochMilliseconds(timeInMillis).toLocalDateTime(TimeZone.currentSystemDefault())
+        val day = (local.dayOfWeek.ordinal + 1) % 7
+        return "day_$day"
+    }
+
     /** Schedule exactly this occurrence. Snoozes have their own stable identity. */
     suspend fun scheduleOccurrence(
         alarm: Alarm,
@@ -129,7 +146,7 @@ class IosAlarmScheduler(
     ) {
         val local = Instant.fromEpochMilliseconds(timeInMillis).toLocalDateTime(TimeZone.currentSystemDefault())
         val day = local.dayOfWeek.ordinal.let { (it + 1) % 7 } // shared Sunday-first convention
-        val key = if (snooze) "snooze" else "day_$day"
+        val key = if (snooze) "snooze" else regularOccurrenceKey(timeInMillis)
         val days = "FFFFFFF".toCharArray().apply { this[day] = 'T' }.concatToString()
         if (AlarmSchedulerBridge.isAlarmKitAvailable()) {
             val request = AlarmScheduleRequest(

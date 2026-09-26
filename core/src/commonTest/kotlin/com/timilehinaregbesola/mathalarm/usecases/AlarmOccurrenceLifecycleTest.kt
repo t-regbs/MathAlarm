@@ -165,7 +165,7 @@ class AlarmOccurrenceLifecycleTest {
 
     @Test fun rearmingFailureCannotPreventCurrentAlarmFromRinging() = runTest {
         val failing = object : AlarmInteractor by backend {
-            override suspend fun scheduleRepeating(alarm: Alarm, times: List<Long>) { error("rearm failed") }
+            override suspend fun scheduleNextRepeating(alarm: Alarm, times: List<Long>) { error("rearm failed") }
         }
         repository.addAlarm(alarm.copy(repeat = true, scheduleInitialized = true, pendingTimes = listOf(time(7))))
         ShowAlarm(repository, notifications, ScheduleNextAlarm(failing, calculator))(12, time(7))

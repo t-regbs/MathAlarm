@@ -20,6 +20,9 @@ interface AlarmInteractor {
         times.forEach { schedule(alarm, it) }
     }
 
+    /** Advance after delivery. Native weekly backends may retain existing registrations. */
+    suspend fun scheduleNextRepeating(alarm: Alarm, times: List<Long>) = scheduleRepeating(alarm, times)
+
     suspend fun scheduleSnooze(alarm: Alarm, timeInMillis: Long) = schedule(alarm, timeInMillis)
 
     fun cancelSnooze(alarm: Alarm) = Unit
