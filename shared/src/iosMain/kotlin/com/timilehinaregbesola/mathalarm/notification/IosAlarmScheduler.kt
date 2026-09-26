@@ -201,7 +201,7 @@ class IosAlarmScheduler(
         val nativeFailure = runCatching {
             AlarmSchedulerBridge.cancelOccurrence(alarm.alarmId, "snooze")
         }.exceptionOrNull()
-        notificationCenter.removePendingNotificationRequestsWithIdentifiers(listOf("alarm_${alarm.alarmId}_snooze"))
+        removeNotifications(listOf("alarm_${alarm.alarmId}_snooze"))
         nativeFailure?.let { throw it }
     }
 

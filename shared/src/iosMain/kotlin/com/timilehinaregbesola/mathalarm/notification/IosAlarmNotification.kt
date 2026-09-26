@@ -2,6 +2,7 @@ package com.timilehinaregbesola.mathalarm.notification
 
 import co.touchlab.kermit.Logger
 import platform.UserNotifications.UNUserNotificationCenter
+import com.timilehinaregbesola.mathalarm.alarm.AlarmSchedulerBridge
 
 /**
  * iOS implementation for showing and dismissing alarm notifications.
@@ -14,9 +15,10 @@ import platform.UserNotifications.UNUserNotificationCenter
  * delivered notifications.
  */
 class IosAlarmNotification(
-    private val logger: Logger
+    private val logger: Logger,
+    private val removeDeliveredNotifications: ((List<String>) -> Unit)? = null,
 ) {
-    private val notificationCenter = UNUserNotificationCenter.currentNotificationCenter()
+    private val notificationCenter by lazy { UNUserNotificationCenter.currentNotificationCenter() }
 
     /**
      * Show an alarm notification.
@@ -46,9 +48,11 @@ class IosAlarmNotification(
      */
     fun dismiss(alarmId: Long) {
         logger.d { "IosAlarmNotification.dismiss - alarmId: $alarmId" }
+        AlarmSchedulerBridge.cancelOccurrence(alarmId, "recovery")
         
         val identifiers = buildNotificationIdentifiers(alarmId)
-        notificationCenter.removeDeliveredNotificationsWithIdentifiers(identifiers)
+        removeDeliveredNotifications?.invoke(identifiers)
+            ?: notificationCenter.removeDeliveredNotificationsWithIdentifiers(identifiers)
         
         logger.d { "IosAlarmNotification.dismiss - removed ${identifiers.size} delivered notifications" }
     }

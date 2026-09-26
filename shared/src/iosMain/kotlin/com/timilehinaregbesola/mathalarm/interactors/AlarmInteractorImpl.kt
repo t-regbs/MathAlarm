@@ -4,9 +4,12 @@ import kotlin.time.Clock
 import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.notification.IosAlarmScheduler
+import com.timilehinaregbesola.mathalarm.alarm.AlarmSchedulerBridge
 
-class AlarmInteractorImpl(logger: Logger) : AlarmInteractor {
-    private val scheduler = IosAlarmScheduler(logger)
+class AlarmInteractorImpl(
+    logger: Logger,
+    private val scheduler: IosAlarmScheduler = IosAlarmScheduler(logger),
+) : AlarmInteractor {
 
     override suspend fun schedule(alarm: Alarm, timeInMillis: Long) =
         scheduler.scheduleOccurrence(alarm, timeInMillis)
@@ -19,16 +22,24 @@ class AlarmInteractorImpl(logger: Logger) : AlarmInteractor {
         times.forEach { scheduler.ensureRepeatingOccurrence(alarm, it) }
     }
 
-    override suspend fun scheduleSnooze(alarm: Alarm, timeInMillis: Long) =
+    override suspend fun scheduleSnooze(alarm: Alarm, timeInMillis: Long) {
         scheduler.scheduleOccurrence(alarm, timeInMillis, snooze = true)
+        // Only stop recovery after the replacement snooze was accepted.
+        AlarmSchedulerBridge.cancelOccurrence(alarm.alarmId, "recovery")
+    }
 
     override fun cancel(alarm: Alarm) = scheduler.cancelAlarm(alarm)
 
     override fun cancelRegularOccurrences(alarm: Alarm) = scheduler.cancelRegularOccurrences(alarm)
 
-    override fun cancelSnooze(alarm: Alarm) = scheduler.cancelSnooze(alarm)
+    override fun cancelSnooze(alarm: Alarm) {
+        // Completion calls this before clearing its active occurrence in the database.
+        AlarmSchedulerBridge.cancelOccurrence(alarm.alarmId, "recovery")
+        scheduler.cancelSnooze(alarm)
+    }
 
     override suspend fun update(alarm: Alarm) {
+        AlarmSchedulerBridge.cancelOccurrence(alarm.alarmId, "recovery")
         // Replacing an identifier updates metadata without changing concrete one-time dates.
         val now = Clock.System.now().toEpochMilliseconds()
         if (alarm.repeat) {

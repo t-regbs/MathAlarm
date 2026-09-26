@@ -68,3 +68,69 @@ final class PendingDeeplinkStore {
         peekPendingDeeplink() != nil
     }
 }
+
+/// Bounded recovery belongs to a challenge, not to its weekly registration.
+/// Tokens prevent an in-flight schedule from surviving completion/cancellation.
+final class AlarmRecoveryStore {
+    static let shared = AlarmRecoveryStore()
+    struct Session: Codable, Equatable {
+        let id: UUID
+        var attempt: Int
+        let startedAt: Date
+    }
+    private let defaults: UserDefaults
+    private let key = "MathAlarm.recoverySessions.v1"
+    private let lock = NSLock()
+    init(userDefaults: UserDefaults = .standard) { defaults = userDefaults }
+    private func load() -> [String: Session] {
+        defaults.data(forKey: key).flatMap {
+            try? JSONDecoder().decode([String: Session].self, from: $0)
+        } ?? [:]
+    }
+    private func save(_ sessions: [String: Session]) {
+        defaults.set(try? JSONEncoder().encode(sessions), forKey: key)
+        defaults.synchronize()
+    }
+    func reserve(alarmId: Int64, sourceSession: UUID?, sourceAttempt: Int?, now: Date = Date()) -> Session? {
+        lock.lock(); defer { lock.unlock() }
+        var sessions = load()
+        let alarmKey = String(alarmId)
+        var session: Session
+        if let sourceSession {
+            guard let existing = sessions[alarmKey], existing.id == sourceSession,
+                  existing.attempt == sourceAttempt,
+                  now.timeIntervalSince(existing.startedAt) < 600 else { return nil }
+            session = existing
+        } else {
+            // The intent and app activation can see the same initial delivery.
+            if let existing = sessions[alarmKey], now.timeIntervalSince(existing.startedAt) < 600 {
+                return nil
+            }
+            session = Session(id: UUID(), attempt: 0, startedAt: now)
+        }
+        guard session.attempt < 5 else { return nil }
+        session.attempt += 1
+        sessions[alarmKey] = session
+        save(sessions)
+        return session
+    }
+    func isCurrent(alarmId: Int64, session: Session) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        return load()[String(alarmId)] == session
+    }
+    func accepts(alarmId: Int64, sessionId: UUID, attempt: Int?) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        let session = load()[String(alarmId)]
+        return session?.id == sessionId && session?.attempt == attempt
+    }
+    func cancel(alarmId: Int64) {
+        lock.lock(); defer { lock.unlock() }
+        var sessions = load()
+        sessions.removeValue(forKey: String(alarmId))
+        save(sessions)
+    }
+    func cancelAll() {
+        lock.lock(); defer { lock.unlock() }
+        save([:])
+    }
+}

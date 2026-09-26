@@ -8,6 +8,7 @@ import com.timilehinaregbesola.mathalarm.alarm.AlarmSchedulerBridge
 import com.timilehinaregbesola.mathalarm.alarm.NativeAlarmScheduler
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.notification.IosAlarmScheduler
+import com.timilehinaregbesola.mathalarm.notification.IosAlarmNotification
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermissionImpl
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -192,6 +193,51 @@ class AlarmInteractorImplTest {
         interactor.update(alarm)
 
         assertEquals("Updated", backend.requests.single().title)
+        assertEquals(listOf("recovery"), backend.cancelledKeys)
+    }
+
+    @Test fun challengeDismissalCancelsRecoveryWithoutRemovingWeeklyOrSnooze() {
+        val backend = NativeAlarmSchedulerFake()
+        AlarmSchedulerBridge.registerScheduler(backend)
+        backend.markScheduled(42, "recovery")
+        backend.markScheduled(42, "day_1")
+        backend.markScheduled(42, "snooze")
+        IosAlarmNotification(Logger.withTag("Test")) { }.dismiss(42)
+        assertFalse(backend.hasPendingOccurrence(42, "recovery"))
+        assertTrue(backend.hasPendingOccurrence(42, "day_1"))
+        assertTrue(backend.hasPendingOccurrence(42, "snooze"))
+    }
+
+    @Test fun recoveryCancellationFailureReachesChallengeDismissalCaller() {
+        val backend = NativeAlarmSchedulerFake().apply { cancelFailure = "Cancellation failed" }
+        AlarmSchedulerBridge.registerScheduler(backend)
+        assertFailsWith<IllegalStateException> { IosAlarmNotification(Logger.withTag("Test")) { }.dismiss(42) }
+    }
+
+    @Test fun failedSnoozeDoesNotCancelChallengeRecovery() = runTest {
+        val backend = NativeAlarmSchedulerFake().apply { failure = "Schedule rejected" }
+        AlarmSchedulerBridge.registerScheduler(backend)
+        backend.markScheduled(42, "recovery")
+        assertFailsWith<IllegalStateException> {
+            AlarmInteractorImpl(Logger.withTag("Test")).scheduleSnooze(Alarm(alarmId = 42), 2_000_000_000_000)
+        }
+        assertTrue(backend.hasPendingOccurrence(42, "recovery"))
+        assertTrue(backend.cancelledKeys.isEmpty())
+    }
+
+    @Test fun acceptedSnoozeCancelsRecoveryAndCompletionCancelsBoth() = runTest {
+        val backend = NativeAlarmSchedulerFake()
+        AlarmSchedulerBridge.registerScheduler(backend)
+        backend.markScheduled(42, "recovery")
+        val interactor = AlarmInteractorImpl(Logger.withTag("Test"), IosAlarmScheduler(Logger.withTag("Test")) { })
+        val alarm = Alarm(alarmId = 42)
+        interactor.scheduleSnooze(alarm, 2_000_000_000_000)
+        assertFalse(backend.hasPendingOccurrence(42, "recovery"))
+        assertTrue(backend.hasPendingOccurrence(42, "snooze"))
+        backend.markScheduled(42, "recovery")
+        interactor.cancelSnooze(alarm)
+        assertFalse(backend.hasPendingOccurrence(42, "recovery"))
+        assertFalse(backend.hasPendingOccurrence(42, "snooze"))
     }
 
     private class NativeAlarmSchedulerFake : NativeAlarmScheduler {

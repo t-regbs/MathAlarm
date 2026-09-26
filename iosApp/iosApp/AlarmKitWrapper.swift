@@ -25,6 +25,8 @@ struct MathAlarmData: AlarmMetadata, Codable {
     var alarmTone: String = ""
     var title: String = ""
     var createdAt: Date = Date()
+    var recoverySession: UUID? = nil
+    var recoveryAttempt: Int? = nil
 }
 
 // MARK: - Alarm Data Store (for intents to access)
@@ -94,8 +96,9 @@ struct StopAlarmIntent: LiveActivityIntent {
     static var title: LocalizedStringResource = "Stop Alarm"
     static var description: IntentDescription? = IntentDescription("Stops the alarm and opens the math puzzle")
     
-    // This makes the intent open the app when performed
-    static var openAppWhenRun: Bool { true }
+    // Arm recovery before foreground opening can block on device authentication.
+    static var supportedModes: IntentModes { .background }
+    static var authenticationPolicy: IntentAuthenticationPolicy { .alwaysAllowed }
     
     @Parameter(title: "Alarm ID")
     var alarmUUID: String
@@ -108,29 +111,44 @@ struct StopAlarmIntent: LiveActivityIntent {
         self.alarmUUID = alarmUUID.uuidString
     }
     
-    func perform() async throws -> some IntentResult {
+    @MainActor
+    func perform() async throws -> some IntentResult & OpensIntent {
         print("StopAlarmIntent: Performing for alarm \(alarmUUID)")
         
-        guard let uuid = UUID(uuidString: alarmUUID) else {
+        guard UUID(uuidString: alarmUUID) != nil else {
             print("StopAlarmIntent: Invalid UUID")
             throw AlarmIntentError.invalidAlarmId
         }
         
-        // IMPORTANT: Store the deeplink FIRST, before stopping the alarm
-        // This ensures the deeplink is available when the app activates
+        // Persist navigation before requesting foreground opening.
         if let alarmData = AlarmDataStore.shared.retrieve(alarmUUID: alarmUUID) {
+            if let sessionId = alarmData.recoverySession,
+               !AlarmRecoveryStore.shared.accepts(alarmId: alarmData.alarmId,
+                                                  sessionId: sessionId, attempt: alarmData.recoveryAttempt) {
+                throw AlarmIntentError.invalidAlarmId
+            }
             let deeplinkJson = try createDeeplinkJson(from: alarmData)
             PendingDeeplinkStore.shared.setPendingDeeplink(deeplinkJson)
             print("StopAlarmIntent: Stored pending deeplink for MathScreen")
+            try await AlarmKitWrapperImpl.shared.armRecovery(for: alarmData)
         } else {
             print("StopAlarmIntent: No alarm data found for UUID \(alarmUUID)")
+            throw AlarmIntentError.invalidAlarmId
         }
         
-        // Stop the alarm in AlarmKit
-        let manager = AlarmManager.shared
-        try manager.stop(id: uuid)
-        print("StopAlarmIntent: Alarm stopped")
-        
+        // AlarmKit already performs Stop. Opening is a separate foreground intent.
+        return .result(opensIntent: OpenMathChallengeIntent())
+    }
+}
+
+@available(iOS 26, *)
+struct OpenMathChallengeIntent: AppIntent {
+    static var title: LocalizedStringResource = "Solve Math"
+    static var isDiscoverable: Bool { false }
+    static var supportedModes: IntentModes { .foreground }
+    @MainActor
+    func perform() async throws -> some IntentResult {
+        AppDelegate.checkPendingAlarmKitDeeplink()
         return .result()
     }
 }
@@ -387,6 +405,7 @@ class AlarmKitWrapperImpl: NSObject {
 
     func cancelOccurrence(alarmId: Int64, occurrenceKey: String) -> String? {
         guard #available(iOS 26, *) else { return nil }
+        if occurrenceKey == "recovery" { AlarmRecoveryStore.shared.cancel(alarmId: alarmId) }
         let id = occurrenceUUID(alarmId: alarmId, key: occurrenceKey)
         do {
             let manager = AlarmManager.shared
@@ -592,11 +611,53 @@ class AlarmKitWrapperImpl: NSObject {
     }
 
     @available(iOS 26, *)
+    @MainActor
+    func armRecovery(for data: MathAlarmData) async throws {
+        guard let session = AlarmRecoveryStore.shared.reserve(
+            alarmId: data.alarmId, sourceSession: data.recoverySession,
+            sourceAttempt: data.recoveryAttempt
+        ) else { return }
+        let id = occurrenceUUID(alarmId: data.alarmId, key: "recovery")
+        var recovery = data
+        recovery.recoverySession = session.id
+        recovery.recoveryAttempt = session.attempt
+        AlarmDataStore.shared.store(alarmUUID: id, data: recovery)
+        let solve = AlarmButton(text: "Solve Math", textColor: .mathAlarmGreen, systemImageName: "function")
+        let alert = AlarmPresentation.Alert(
+            title: LocalizedStringResource(stringLiteral: data.title.isEmpty ? "Solve Math" : data.title),
+            stopButton: solve
+        )
+        let configuration = MathAlarmConfiguration.alarm(
+            schedule: .fixed(Date().addingTimeInterval(60)),
+            attributes: AlarmAttributes(presentation: AlarmPresentation(alert: alert),
+                                        metadata: recovery, tintColor: .mathAlarmGreen),
+            stopIntent: StopAlarmIntent(alarmUUID: id),
+            sound: .named(alertSoundName(for: data.alarmTone))
+        )
+        do {
+            _ = try await AlarmManager.shared.schedule(id: id, configuration: configuration)
+            if !AlarmRecoveryStore.shared.isCurrent(alarmId: data.alarmId, session: session) {
+                // Completion can race OS acceptance while schedule is suspended.
+                let stored = AlarmDataStore.shared.retrieve(alarmUUID: id.uuidString)
+                if stored == nil || (stored?.recoverySession == session.id && stored?.recoveryAttempt == session.attempt) {
+                    try AlarmManager.shared.cancel(id: id)
+                    AlarmDataStore.shared.remove(alarmUUID: id.uuidString)
+                }
+            }
+            print("Alarm recovery accepted: alarm=\(data.alarmId), attempt=\(session.attempt)")
+        } catch {
+            print("Alarm recovery failed: \(error)")
+            throw error
+        }
+    }
+
+    @available(iOS 26, *)
     private func cancelAlarmKitAlarm(alarmId: Int64) -> String? {
+        AlarmRecoveryStore.shared.cancel(alarmId: alarmId)
         do {
             let manager = AlarmManager.shared
             // Query OS alarms and persisted metadata so cancellation also works after relaunch.
-            let keys = (0...6).map { "day_\($0)" } + ["snooze"]
+            let keys = (0...6).map { "day_\($0)" } + ["snooze", "recovery"]
             let ids = Set(keys.map { occurrenceUUID(alarmId: alarmId, key: $0) })
             var failures: [String] = []
             for alarm in try manager.alarms {
@@ -618,6 +679,7 @@ class AlarmKitWrapperImpl: NSObject {
 
     @available(iOS 26, *)
     private func cancelAllAlarmKitAlarms() -> String? {
+        AlarmRecoveryStore.shared.cancelAll()
         do {
             let manager = AlarmManager.shared
             // Get current alarms synchronously

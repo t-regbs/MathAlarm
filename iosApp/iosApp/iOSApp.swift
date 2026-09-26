@@ -58,28 +58,33 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
     /// Check for alerting alarms and navigate to MathScreen if found
     @available(iOS 26, *)
     private static func checkAlertingAlarms() {
-        do {
-            let manager = AlarmManager.shared
-            let alarms = try manager.alarms
+        Task { @MainActor in
+            do {
+                let manager = AlarmManager.shared
+                let alarms = try manager.alarms
             
-            // Find any alerting alarm
-            for alarm in alarms where alarm.state == .alerting {
-                print("AppDelegate: Found alerting alarm: \(alarm.id)")
+                // Find any alerting alarm
+                for alarm in alarms where alarm.state == .alerting {
+                    print("AppDelegate: Found alerting alarm: \(alarm.id)")
                 
-                // Get alarm data from our store
-                if let alarmData = AlarmDataStore.shared.retrieve(alarmUUID: alarm.id.uuidString) {
-                    let deeplinkJson = try createDeeplinkJson(from: alarmData)
-                    PendingDeeplinkStore.shared.setPendingDeeplink(deeplinkJson)
+                    // Get alarm data from our store
+                    if let alarmData = AlarmDataStore.shared.retrieve(alarmUUID: alarm.id.uuidString) {
+                        let deeplinkJson = try createDeeplinkJson(from: alarmData)
+                        PendingDeeplinkStore.shared.setPendingDeeplink(deeplinkJson)
                     
-                    // Stop the alarm since user is now in app
-                    try manager.stop(id: alarm.id)
-                    NotificationDeeplinkHolder.shared.setAlarmDeeplink(json: deeplinkJson)
+                        // Stop the alarm since user is now in app
+                        try manager.stop(id: alarm.id)
+                        // A recovery reuses its native ID; stop the delivered alert before
+                        // replacing it, otherwise Stop would silence the new registration.
+                        try await AlarmKitWrapperImpl.shared.armRecovery(for: alarmData)
+                        NotificationDeeplinkHolder.shared.setAlarmDeeplink(json: deeplinkJson)
                     
-                    return  // Handle one alerting alarm at a time
+                        return  // Handle one alerting alarm at a time
+                    }
                 }
+            } catch {
+                print("AppDelegate: Error checking alerting alarms: \(error)")
             }
-        } catch {
-            print("AppDelegate: Error checking alerting alarms: \(error)")
         }
     }
     
