@@ -236,3 +236,11 @@ xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -configuration Releas
 Both Debug and Release app bundles contain no privacy manifest. A distribution-signed archive, App Store validation, and TestFlight processing remain untested. Compiler warnings include the inferred Kotlin framework bundle ID, an imported Compose type mapping, and the always-running Kotlin build phase; they did not fail either build.
 
 Local logs: `/tmp/mathalarm-ios-device-build.log`, `/tmp/mathalarm-ios-release-build.log`, `/tmp/mathalarm-ios-tests-fresh.log`, and `/tmp/mathalarm-ios-launch.log`.
+
+### Follow-up: Maestro simulator interaction, 26 September
+
+- Used Maestro 2.10.0 on iPhone 17 Pro and iPad Pro 11-inch (M5), iOS/iPadOS 26.3. Added repeatable flows in `scripts/maestro/ios/` and a detailed report in [ios-maestro-validation-2026-09-26.md](ios-maestro-validation-2026-09-26.md).
+- iPhone sheet → Test Alarm → Cancel and correct completion both restore a draft with quotes intact. Wrong-answer feedback, tone selection/preview state, and editor dismissal passed on both iPhone and iPad portrait. iPad native share-popover presentation/dismissal also passed.
+- iPad landscape preview return remains unresolved: Maestro reports tapping Cancel, but the editor did not reappear. The native-bar-overlap diagnosis was withdrawn and its proposed change reverted; no application source change was retained. Confirm the actual interaction before choosing a fix.
+- Launch artwork visual verification remains open: the launch recording did not show the mark clearly enough. Check dark iPhone navigation-title contrast as well.
+- Simulator UI checks do not establish audible playback/vibration, real AlarmKit registration/delivery, recurrence, permissions, or interruption recovery. Those physical-device and App Store gates remain open.

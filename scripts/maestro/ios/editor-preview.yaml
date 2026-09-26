@@ -1,0 +1,52 @@
+appId: com.timilehinaregbesola.mathalarm
+---
+- launchApp
+- tapOn:
+    text: "Got it"
+    optional: true
+- assertVisible: "Alarms"
+- tapOn: "Add alarm"
+- assertVisible: "TEST ALARM"
+- tapOn: "Alarm Title"
+- inputText: 'Maestro "Wake" draft'
+- pressKey: Enter
+- assertVisible: "TEST ALARM"
+- assertNotVisible: "Skip next"
+- takeScreenshot: editor-draft
+- tapOn: "TEST ALARM"
+- assertNotVisible: "TEST ALARM"
+- assertNotVisible: "Sheet Grabber"
+- assertVisible: "Cancel"
+- takeScreenshot: preview
+- tapOn: "Cancel"
+- assertVisible: "TEST ALARM"
+- assertVisible: 'Maestro "Wake" draft'
+- tapOn: "TEST ALARM"
+- assertVisible: "Check answer"
+- copyTextFrom: '[0-9]+ [x×÷+−/-] [0-9]+'
+- evalScript: >-
+    ${output.parts = maestro.copiedText.match(/(\d+)\s*([x×÷+−/-])\s*(\d+)/); output.a = Number(output.parts[1]); output.b = Number(output.parts[3]); output.op = output.parts[2]; output.answer = String(output.op == '+' ? output.a + output.b : output.op == 'x' || output.op == '×' ? output.a * output.b : output.op == '÷' || output.op == '/' ? output.a / output.b : output.a - output.b);}
+- tapOn: "="
+- inputText: "999999"
+- tapOn: "Check answer"
+- assertVisible: "Incorrect answer. Try again."
+- takeScreenshot: wrong-answer
+- tapOn: "Clear"
+- tapOn: "="
+- inputText: ${output.answer}
+- tapOn: "Check answer"
+- assertVisible: "TEST ALARM"
+- assertVisible: 'Maestro "Wake" draft'
+- takeScreenshot: completed-preview
+- tapOn: "Classic"
+- assertVisible: "Alarm Sound"
+- tapOn: "Digital"
+- assertVisible: "Stop preview"
+- takeScreenshot: tone-preview
+- tapOn: "Done"
+- assertNotVisible: "Alarm Sound"
+- assertVisible: "Digital"
+- assertVisible: 'Maestro "Wake" draft'
+- takeScreenshot: retained-draft
+- tapOn: "Dismiss"
+- assertVisible: "Alarms"

@@ -1,0 +1,14 @@
+appId: com.timilehinaregbesola.mathalarm
+---
+- launchApp
+- tapOn: "gearshape"
+- assertVisible: "App Settings"
+- scrollUntilVisible:
+    element: "Share"
+    direction: DOWN
+- tapOn: "Share"
+- assertVisible: "dismiss popup"
+- takeScreenshot: ipad-share-popover
+- tapOn:
+    point: "10%,20%"
+- assertVisible: "App Settings"
