@@ -39,15 +39,21 @@ enum PendingDeeplinkStoreSmoke {
         precondition(restoredRecovery.isCurrent(alarmId: 1, session: initial))
         precondition(restoredRecovery.accepts(alarmId: 1, sessionId: initial.id, attempt: 1))
         var current = initial
-        for attempt in 2...5 {
+        for attempt in 2...100 {
             current = restoredRecovery.reserve(alarmId: 1, sourceSession: current.id,
                                                sourceAttempt: current.attempt)!
             precondition(current.attempt == attempt)
         }
         precondition(!restoredRecovery.isCurrent(alarmId: 1, session: initial))
         precondition(!restoredRecovery.accepts(alarmId: 1, sessionId: initial.id, attempt: 1))
-        precondition(restoredRecovery.reserve(alarmId: 1, sourceSession: current.id,
-                                             sourceAttempt: current.attempt) == nil)
+        // Neither the old five-attempt cap nor elapsed time can dismiss a challenge.
+        let tomorrow = Date().addingTimeInterval(24 * 60 * 60)
+        current = AlarmRecoveryStore(userDefaults: defaults).reserve(
+            alarmId: 1, sourceSession: current.id, sourceAttempt: current.attempt, now: tomorrow
+        )!
+        precondition(current.attempt == 101)
+        precondition(restoredRecovery.reserve(alarmId: 1, sourceSession: nil,
+                                             sourceAttempt: nil, now: tomorrow) == nil)
         restoredRecovery.cancel(alarmId: 1)
         precondition(!restoredRecovery.isCurrent(alarmId: 1, session: current))
         precondition(!restoredRecovery.accepts(alarmId: 1, sessionId: current.id, attempt: current.attempt))
@@ -64,7 +70,7 @@ enum PendingDeeplinkStoreSmoke {
         precondition(restoredRecovery.reserve(alarmId: 1, sourceSession: next.id,
                                              sourceAttempt: next.attempt, now: later) == nil)
         precondition(restoredRecovery.reserve(alarmId: 2, sourceSession: nil,
-                                             sourceAttempt: nil, now: later) != nil)
+                                             sourceAttempt: nil, now: later) == nil)
         print("AlarmRecoveryStore smoke test passed")
     }
 }

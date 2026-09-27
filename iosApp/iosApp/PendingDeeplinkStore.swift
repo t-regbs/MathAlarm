@@ -69,7 +69,7 @@ final class PendingDeeplinkStore {
     }
 }
 
-/// Bounded recovery belongs to a challenge, not to its weekly registration.
+/// Recovery belongs to an unresolved challenge, not to its weekly registration.
 /// Tokens prevent an in-flight schedule from surviving completion/cancellation.
 final class AlarmRecoveryStore {
     static let shared = AlarmRecoveryStore()
@@ -98,17 +98,13 @@ final class AlarmRecoveryStore {
         var session: Session
         if let sourceSession {
             guard let existing = sessions[alarmKey], existing.id == sourceSession,
-                  existing.attempt == sourceAttempt,
-                  now.timeIntervalSince(existing.startedAt) < 600 else { return nil }
+                  existing.attempt == sourceAttempt else { return nil }
             session = existing
         } else {
             // The intent and app activation can see the same initial delivery.
-            if let existing = sessions[alarmKey], now.timeIntervalSince(existing.startedAt) < 600 {
-                return nil
-            }
+            guard sessions[alarmKey] == nil else { return nil }
             session = Session(id: UUID(), attempt: 0, startedAt: now)
         }
-        guard session.attempt < 5 else { return nil }
         session.attempt += 1
         sessions[alarmKey] = session
         save(sessions)
