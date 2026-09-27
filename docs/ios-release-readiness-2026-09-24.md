@@ -48,6 +48,8 @@ Physical follow-up, 27 September: after receiving the abandoned-unlock → re-ri
 
 Continuous-recovery update: removed the attempt cap and session expiry without changing the 60-second follow-up interval or cancellation hooks. Swift tests passed through 101 follow-ups, including a restored session advanced a simulated day later, duplicate initial-delivery rejection, stale-token rejection, and cancellation. The signed Debug iPhone build passed. Kotlin code was unchanged in this update; its previously passing 331-test suite was not rerun. Build log: `/tmp/mathalarm-ios-continuous-recovery-build.log`. Extended device checks are listed in the manual-test document.
 
+The continuous-recovery build installed successfully on the connected iPhone after retrying a CoreDevice remote-device allocation error. No test alarms were created or modified during deployment. Its extended physical test remains pending.
+
 ### 1. Make Skip next change the actual iOS delivery date
 
 **Confirmed source defect.** The shared calculator moves the skipped weekday forward seven days, but both iOS backends discard that date for repeating alarms. AlarmKit creates a weekly relative schedule from hour/minute/weekday; the fallback does the same with a repeating calendar trigger. A Monday alarm skipped before Monday can therefore still ring that Monday while the UI says it is skipped.
