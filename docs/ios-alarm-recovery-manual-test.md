@@ -26,3 +26,7 @@ Recovery is a separate fixed AlarmKit alarm, scheduled 60 seconds after the hand
 The prototype depends on iOS executing the background Stop intent while locked. Compile and unit-test success do not prove that behavior. If scheduling fails, the native intent throws and logs the failure; app-level error presentation remains a release task. This is an experiment, not a guarantee that system dismissal cannot bypass maths.
 
 After testing, disable or delete the temporary alarm.
+
+## Recorded result
+
+27 September 2026: the user confirmed **“ok that works”** after receiving the main recovery test steps on the installed iPhone build. This is user-reported success; no per-step timing or agent-observed recording was supplied. The cancellation checks and terminated-app case above remain separate tests.
