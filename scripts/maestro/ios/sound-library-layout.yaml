@@ -1,0 +1,20 @@
+appId: com.timilehinaregbesola.mathalarm
+---
+- launchApp
+- tapOn:
+    text: "Got it"
+    optional: true
+- tapOn: "Add alarm"
+- tapOn: "Orbit"
+- assertVisible: "Alarm sound"
+- assertVisible: "Back"
+- assertVisible: "Done"
+- assertVisible: "Daybreak"
+- assertVisible: "Clear Signal"
+- takeScreenshot: library-layout
+- tapOn: "Rally"
+- takeScreenshot: library-selection
+- tapOn: "Done"
+- assertVisible: "Rally"
+- tapOn: "Dismiss"
+- assertVisible: "Alarms"

@@ -7,10 +7,10 @@ import android.media.RingtoneManager
 import android.net.Uri
 import androidx.activity.result.contract.ActivityResultContract
 
-class PickRingtone(val alarmTone: String) : ActivityResultContract<Int?, Uri?>() {
-    override fun createIntent(context: Context, input: Int?) =
+class PickRingtone : ActivityResultContract<String?, Uri?>() {
+    override fun createIntent(context: Context, input: String?) =
         Intent(RingtoneManager.ACTION_RINGTONE_PICKER).apply {
-            putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, alarmTone)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_EXISTING_URI, input?.let(Uri::parse))
 
             putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_DEFAULT, true)
             putExtra(
@@ -18,7 +18,7 @@ class PickRingtone(val alarmTone: String) : ActivityResultContract<Int?, Uri?>()
                 RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)
             )
 
-            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, true)
+            putExtra(RingtoneManager.EXTRA_RINGTONE_SHOW_SILENT, false)
             putExtra(RingtoneManager.EXTRA_RINGTONE_TYPE, RingtoneManager.TYPE_ALARM)
         }
 

@@ -161,6 +161,17 @@ val ZhMathAlarmStrings = Strings(
     notification = "通知",
     alert = "铃声",
     grantPermission = "授予权限",
+    alarmSound = "闹钟声音",
+    done = "完成",
+    daybreakDescription = "柔和敲击 · 轻柔",
+    orbitDescription = "流动合成音 · 明亮",
+    rallyDescription = "电子节奏 · 持续",
+    glassGardenDescription = "闪亮铃声 · 清澈",
+    steppingStonesDescription = "木质敲击 · 律动",
+    clearSignalDescription = "成对音调 · 鲜明",
+    currentSound = "当前声音",
+    previewSound = "试听",
+    stopSoundPreview = "停止试听",
     permissionsExternalStorageText = { tone ->
         "我们似乎无法播放$tone，可能是因为需要权限。如果您愿意，您可以授予权限。或者，选择不同的声音。这个决定可以在系统设置中更改。"
     }

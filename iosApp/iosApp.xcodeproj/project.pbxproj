@@ -10,20 +10,16 @@
 		058557BB273AAA24004C7B11 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 058557BA273AAA24004C7B11 /* Assets.xcassets */; };
 		058557D9273AAEEB004C7B11 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 058557D8273AAEEB004C7B11 /* ContentView.swift */; };
 		2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2152FB032600AC8F00CF470E /* iOSApp.swift */; };
-		A1B2C3D4E5F60718293A4B51 /* alarm_classic.wav in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B41 /* alarm_classic.wav */; };
-		A1B2C3D4E5F60718293A4B52 /* alarm_gentle.wav in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B42 /* alarm_gentle.wav */; };
-		A1B2C3D4E5F60718293A4B53 /* alarm_digital.wav in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B43 /* alarm_digital.wav */; };
-		A1B2C3D4E5F60718293A4B54 /* alarm_nature.wav in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B44 /* alarm_nature.wav */; };
-		A1B2C3D4E5F60718293A4B55 /* alarm_urgent.wav in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B45 /* alarm_urgent.wav */; };
-		A1B2C3D4E5F60718293A4B61 /* alarm_classic.caf in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B56 /* alarm_classic.caf */; };
-		A1B2C3D4E5F60718293A4B62 /* alarm_gentle.caf in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B57 /* alarm_gentle.caf */; };
-		A1B2C3D4E5F60718293A4B63 /* alarm_digital.caf in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B58 /* alarm_digital.caf */; };
-		A1B2C3D4E5F60718293A4B64 /* alarm_nature.caf in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B59 /* alarm_nature.caf */; };
-		A1B2C3D4E5F60718293A4B65 /* alarm_urgent.caf in Resources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F60718293A4B5A /* alarm_urgent.caf */; };
 		ALARMKIT01273AAA24004C7B11 /* AlarmKitWrapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = ALARMKIT02273AAA24004C7B11 /* AlarmKitWrapper.swift */; };
 		C6A5E4D3B2F1098765432103 /* PendingDeeplinkStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6A5E4D3B2F1098765432104 /* PendingDeeplinkStore.swift */; };
 		B4C0D1E2F3A4051627384950 /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = B4C0D1E2F3A405162738494F /* LaunchScreen.storyboard */; };
 		C6A5E4D3B2F1098765432101 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = C6A5E4D3B2F1098765432102 /* PrivacyInfo.xcprivacy */; };
+		EE54222328378572DB85563F /* alarm_daybreak.caf in Resources */ = {isa = PBXBuildFile; fileRef = E9ED480B8F47EAB53C019108 /* alarm_daybreak.caf */; };
+		B1AEE1B2AA51B904088AD5ED /* alarm_orbit.caf in Resources */ = {isa = PBXBuildFile; fileRef = F57A8C88DBB066B43D70C5DD /* alarm_orbit.caf */; };
+		5860812A34B23777D66F1426 /* alarm_rally.caf in Resources */ = {isa = PBXBuildFile; fileRef = 7481EEA0A42FD03140009F4E /* alarm_rally.caf */; };
+		9D5D80DBD427E0449699CF99 /* alarm_glass_garden.caf in Resources */ = {isa = PBXBuildFile; fileRef = 10E6206169027E757FB98BD1 /* alarm_glass_garden.caf */; };
+		9E632BAE75B5791116B0CF90 /* alarm_stepping_stones.caf in Resources */ = {isa = PBXBuildFile; fileRef = 13EB47DE62D4220697483723 /* alarm_stepping_stones.caf */; };
+		F0F41579D5719FD0924F2BA9 /* alarm_clear_signal.caf in Resources */ = {isa = PBXBuildFile; fileRef = 6EE78FFDB69AD7AD931F2675 /* alarm_clear_signal.caf */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -32,20 +28,16 @@
 		2152FB032600AC8F00CF470E /* iOSApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = iOSApp.swift; sourceTree = "<group>"; };
 		7555FF7B242A565900829871 /* MathAlarm.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = MathAlarm.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		7555FF8C242A565B00829871 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		A1B2C3D4E5F60718293A4B41 /* alarm_classic.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = alarm_classic.wav; sourceTree = "<group>"; };
-		A1B2C3D4E5F60718293A4B42 /* alarm_gentle.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = alarm_gentle.wav; sourceTree = "<group>"; };
-		A1B2C3D4E5F60718293A4B43 /* alarm_digital.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = alarm_digital.wav; sourceTree = "<group>"; };
-		A1B2C3D4E5F60718293A4B44 /* alarm_nature.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = alarm_nature.wav; sourceTree = "<group>"; };
-		A1B2C3D4E5F60718293A4B45 /* alarm_urgent.wav */ = {isa = PBXFileReference; lastKnownFileType = audio.wav; path = alarm_urgent.wav; sourceTree = "<group>"; };
-		A1B2C3D4E5F60718293A4B56 /* alarm_classic.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_classic.caf; sourceTree = "<group>"; };
-		A1B2C3D4E5F60718293A4B57 /* alarm_gentle.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_gentle.caf; sourceTree = "<group>"; };
-		A1B2C3D4E5F60718293A4B58 /* alarm_digital.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_digital.caf; sourceTree = "<group>"; };
-		A1B2C3D4E5F60718293A4B59 /* alarm_nature.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_nature.caf; sourceTree = "<group>"; };
-		A1B2C3D4E5F60718293A4B5A /* alarm_urgent.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_urgent.caf; sourceTree = "<group>"; };
 		ALARMKIT02273AAA24004C7B11 /* AlarmKitWrapper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AlarmKitWrapper.swift; sourceTree = "<group>"; };
 		C6A5E4D3B2F1098765432104 /* PendingDeeplinkStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PendingDeeplinkStore.swift; sourceTree = "<group>"; };
 		B4C0D1E2F3A405162738494F /* LaunchScreen.storyboard */ = {isa = PBXFileReference; lastKnownFileType = file.storyboard; name = LaunchScreen.storyboard; path = Base.lproj/LaunchScreen.storyboard; sourceTree = "<group>"; };
 		C6A5E4D3B2F1098765432102 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		E9ED480B8F47EAB53C019108 /* alarm_daybreak.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_daybreak.caf; sourceTree = "<group>"; };
+		F57A8C88DBB066B43D70C5DD /* alarm_orbit.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_orbit.caf; sourceTree = "<group>"; };
+		7481EEA0A42FD03140009F4E /* alarm_rally.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_rally.caf; sourceTree = "<group>"; };
+		10E6206169027E757FB98BD1 /* alarm_glass_garden.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_glass_garden.caf; sourceTree = "<group>"; };
+		13EB47DE62D4220697483723 /* alarm_stepping_stones.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_stepping_stones.caf; sourceTree = "<group>"; };
+		6EE78FFDB69AD7AD931F2675 /* alarm_clear_signal.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_clear_signal.caf; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -78,16 +70,12 @@
 		A1B2C3D4E5F60718293A4B40 /* Sounds */ = {
 			isa = PBXGroup;
 			children = (
-				A1B2C3D4E5F60718293A4B41 /* alarm_classic.wav */,
-				A1B2C3D4E5F60718293A4B42 /* alarm_gentle.wav */,
-				A1B2C3D4E5F60718293A4B43 /* alarm_digital.wav */,
-				A1B2C3D4E5F60718293A4B44 /* alarm_nature.wav */,
-				A1B2C3D4E5F60718293A4B45 /* alarm_urgent.wav */,
-				A1B2C3D4E5F60718293A4B56 /* alarm_classic.caf */,
-				A1B2C3D4E5F60718293A4B57 /* alarm_gentle.caf */,
-				A1B2C3D4E5F60718293A4B58 /* alarm_digital.caf */,
-				A1B2C3D4E5F60718293A4B59 /* alarm_nature.caf */,
-				A1B2C3D4E5F60718293A4B5A /* alarm_urgent.caf */,
+				E9ED480B8F47EAB53C019108 /* alarm_daybreak.caf */,
+				F57A8C88DBB066B43D70C5DD /* alarm_orbit.caf */,
+				7481EEA0A42FD03140009F4E /* alarm_rally.caf */,
+				10E6206169027E757FB98BD1 /* alarm_glass_garden.caf */,
+				13EB47DE62D4220697483723 /* alarm_stepping_stones.caf */,
+				6EE78FFDB69AD7AD931F2675 /* alarm_clear_signal.caf */,
 			);
 			path = Sounds;
 			sourceTree = "<group>";
@@ -176,16 +164,12 @@
 			buildActionMask = 2147483647;
 			files = (
 				058557BB273AAA24004C7B11 /* Assets.xcassets in Resources */,
-				A1B2C3D4E5F60718293A4B51 /* alarm_classic.wav in Resources */,
-				A1B2C3D4E5F60718293A4B52 /* alarm_gentle.wav in Resources */,
-				A1B2C3D4E5F60718293A4B53 /* alarm_digital.wav in Resources */,
-				A1B2C3D4E5F60718293A4B54 /* alarm_nature.wav in Resources */,
-				A1B2C3D4E5F60718293A4B55 /* alarm_urgent.wav in Resources */,
-				A1B2C3D4E5F60718293A4B61 /* alarm_classic.caf in Resources */,
-				A1B2C3D4E5F60718293A4B62 /* alarm_gentle.caf in Resources */,
-				A1B2C3D4E5F60718293A4B63 /* alarm_digital.caf in Resources */,
-				A1B2C3D4E5F60718293A4B64 /* alarm_nature.caf in Resources */,
-				A1B2C3D4E5F60718293A4B65 /* alarm_urgent.caf in Resources */,
+				EE54222328378572DB85563F /* alarm_daybreak.caf in Resources */,
+				B1AEE1B2AA51B904088AD5ED /* alarm_orbit.caf in Resources */,
+				5860812A34B23777D66F1426 /* alarm_rally.caf in Resources */,
+				9D5D80DBD427E0449699CF99 /* alarm_glass_garden.caf in Resources */,
+				9E632BAE75B5791116B0CF90 /* alarm_stepping_stones.caf in Resources */,
+				F0F41579D5719FD0924F2BA9 /* alarm_clear_signal.caf in Resources */,
 				B4C0D1E2F3A4051627384950 /* LaunchScreen.storyboard in Resources */,
 				C6A5E4D3B2F1098765432101 /* PrivacyInfo.xcprivacy in Resources */,
 			);

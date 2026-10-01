@@ -161,6 +161,17 @@ val PaMathAlarmStrings = Strings(
     notification = "ਨੋਟੀਫਿਕੇਸ਼ਨ",
     alert = "ਰਿੰਗਟੋਨ",
     grantPermission = "ਆਗਿਆ ਦਿਓ",
+    alarmSound = "ਅਲਾਰਮ ਦੀ ਆਵਾਜ਼",
+    done = "ਮੁਕੰਮਲ",
+    daybreakDescription = "ਹਲਕੀ ਥਾਪ · ਨਰਮ",
+    orbitDescription = "ਵਹਿੰਦਾ ਸਿੰਥ · ਚਮਕਦਾਰ",
+    rallyDescription = "ਇਲੈਕਟ੍ਰਾਨਿਕ ਲੈਅ · ਲਗਾਤਾਰ",
+    glassGardenDescription = "ਟਿਮਟਿਮਾਉਂਦੀਆਂ ਘੰਟੀਆਂ · ਸਾਫ਼",
+    steppingStonesDescription = "ਲੱਕੜ ਦੀ ਥਾਪ · ਲੈਅਬੱਧ",
+    clearSignalDescription = "ਦੋਹਰੀ ਧੁਨ · ਵੱਖਰੀ",
+    currentSound = "ਮੌਜੂਦਾ ਆਵਾਜ਼",
+    previewSound = "ਸੁਣੋ",
+    stopSoundPreview = "ਪੂਰਵ-ਝਲਕ ਰੋਕੋ",
     permissionsExternalStorageText = { tone ->
         "ਇਹ ਲੱਗਦਾ ਹੈ ਕਿ ਅਸੀਂ $tone ਨਹੀਂ ਚਲਾ ਸਕਦੇ, ਸ਼ਾਇਦ ਕਿਉਂਕਿ ਇੱਕ ਆਗਿਆ ਦੀ ਲੋੜ ਹੈ। ਜੇ ਤੁਸੀਂ ਚਾਹੁੰਦੇ ਹੋ, ਤਾਂ ਤੁਸੀਂ ਆਗਿਆ ਦੇ ਸਕਦੇ ਹੋ। ਬਦਲੇ ਵਿੱਚ, ਇੱਕ ਵੱਖਰਾ ਧੁਨ ਚੁਣੋ। ਇਹ ਫੈਸਲਾ ਸਿਸਟਮ ਸੈਟਿੰਗਜ਼ ਵਿੱਚ ਬਦਲਿਆ ਜਾ ਸਕਦਾ ਹੈ।"
     }

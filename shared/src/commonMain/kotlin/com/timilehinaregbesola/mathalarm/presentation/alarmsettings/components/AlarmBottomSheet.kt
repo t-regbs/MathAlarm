@@ -11,13 +11,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.verticalScroll
@@ -36,7 +32,6 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -52,7 +47,6 @@ import androidx.compose.ui.text.style.TextAlign.Companion.Center
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import cafe.adriel.lyricist.strings
@@ -68,11 +62,12 @@ import com.timilehinaregbesola.mathalarm.platform.areNotificationsEnabled
 import com.timilehinaregbesola.mathalarm.platform.checkRingtonePermissions
 import com.timilehinaregbesola.mathalarm.platform.getRingtoneTitle
 import com.timilehinaregbesola.mathalarm.platform.isIosPlatform
+import com.timilehinaregbesola.mathalarm.platform.alarmSoundPickerKind
+import com.timilehinaregbesola.mathalarm.platform.AlarmSoundPickerKind
+import com.timilehinaregbesola.mathalarm.platform.supportsAlarmVibration
 import com.timilehinaregbesola.mathalarm.platform.openNotificationSettings
-import com.timilehinaregbesola.mathalarm.platform.previewAlarmTone
-import com.timilehinaregbesola.mathalarm.platform.rememberNotificationPermissionHandler
 import com.timilehinaregbesola.mathalarm.platform.rememberRingtonePickerLauncher
-import com.timilehinaregbesola.mathalarm.platform.stopAlarmTonePreview
+import com.timilehinaregbesola.mathalarm.platform.rememberNotificationPermissionHandler
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.DialogArguments
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.MathAlarmDialog
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AddEditAlarmEvent
@@ -97,21 +92,10 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.A
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_CARD_CORNER_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_CARD_HEIGHT
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_TEXT_FONT_SIZE
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_DIALOG_ELEVATION
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_DIALOG_MAX_WIDTH
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_DIALOG_PADDING
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_DIVIDER_ALPHA
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_DIVIDER_START_PADDING
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_HEADER_HEIGHT
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_MAX_HEIGHT
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_ROW_HEIGHT
-import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TONE_PICKER_SEPARATOR_THICKNESS
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Check
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Close
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Notifications
-import com.timilehinaregbesola.mathalarm.presentation.ui.icon.PlayArrow
-import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Stop
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.utils.Destinations.AlarmMath
 import com.timilehinaregbesola.mathalarm.utils.Destinations.SettingsSheet
@@ -143,13 +127,12 @@ fun AlarmBottomSheet(
     }
     val scaffoldState = rememberBottomSheetScaffoldState()
     var showTimePickerDialog by rememberSaveable { mutableStateOf(false) }
-    var showTonePickerDialog by remember { mutableStateOf(false) }
     var showConfirmationDialog by remember { mutableStateOf(false) }
     var showExactAlarmPermissionDialog by remember { mutableStateOf(false) }
     var showPermRequiredDialog by remember { mutableStateOf(false) }
 
     var editingSubPage by remember { mutableStateOf(false) }
-    val hasDraft = viewModel.hasUnsavedChanges || editingSubPage || showTimePickerDialog || showTonePickerDialog
+    val hasDraft = viewModel.hasUnsavedChanges || editingSubPage || showTimePickerDialog
     SideEffect { onDraftStateChange(hasDraft) }
 
     val toneUri = viewModel.tone.value
@@ -166,17 +149,13 @@ fun AlarmBottomSheet(
 
     // Capture string values for use in non-composable callbacks
     val alertTitle = strings.alert
+    val noPickerText = strings.noRingtonePicker
     val storagePermissionTextFn = strings.permissionsExternalStorageText
 
-    // Use platform-abstracted ringtone picker
     val pickToneLauncher = rememberRingtonePickerLauncher { selectedTone ->
-        selectedTone?.let { alert ->
-            checkRingtonePermissions(
-                tones = listOf(alert),
-                unplayableDialogTitle = alertTitle,
-                unplayableDialogMessage = storagePermissionTextFn,
-            )
-            viewModel.onEvent(OnToneChange(alert))
+        selectedTone?.let { tone ->
+            checkRingtonePermissions(listOf(tone), alertTitle, storagePermissionTextFn)
+            viewModel.onEvent(OnToneChange(tone))
         }
     }
 
@@ -234,6 +213,9 @@ fun AlarmBottomSheet(
         showDismissButton = showDismissButton,
         isPane = isPane,
         onSubEditorChanged = { editingSubPage = it },
+        currentTone = viewModel.tone.value,
+        currentToneTitle = toneText.value ?: strings.defaultAlarmTone,
+        onToneChange = { viewModel.onEvent(OnToneChange(it)) },
         topSection = {
             TopSection(
                 selectedDays = viewModel.dayChooser.value,
@@ -244,8 +226,7 @@ fun AlarmBottomSheet(
                 }
             )
         },
-        bottomSection = { onEditChallenge, onEditSnooze ->
-            val noPickerText = strings.noRingtonePicker
+        bottomSection = { onEditChallenge, onEditSnooze, onEditSound ->
             val defaultToneText = strings.defaultAlarmTone
             BottomSettingsSection(
                 onEditChallenge = onEditChallenge,
@@ -264,16 +245,14 @@ fun AlarmBottomSheet(
                     viewModel.onEvent(ToggleVibrate(it))
                 },
                 onToneClick = {
-                    if (isIosPlatform()) {
-                        showTonePickerDialog = true
+                    if (alarmSoundPickerKind() == AlarmSoundPickerKind.BUNDLED_LIBRARY) {
+                        onEditSound()
                     } else {
                         try {
-                            pickToneLauncher.launch(viewModel.tone.value.ifEmpty { null })
-                        } catch (e: Exception) {
-                            Logger.e("error launching tone picker", e)
-                            viewModel.onEvent(
-                                OnToneError(message = noPickerText)
-                            )
+                            checkNotNull(pickToneLauncher).launch(viewModel.tone.value.ifEmpty { null })
+                        } catch (error: Exception) {
+                            Logger.e("error launching tone picker", error)
+                            viewModel.onEvent(OnToneError(message = noPickerText))
                         }
                     }
                 },
@@ -336,25 +315,6 @@ fun AlarmBottomSheet(
                     )
                 }
             }
-            if (showTonePickerDialog) {
-                AlarmTonePickerDialog(
-                    currentTone = viewModel.tone.value,
-                    onDismissRequest = {
-                        stopAlarmTonePreview()
-                        showTonePickerDialog = false
-                    },
-                    onToneSelected = { selectedTone ->
-                        stopAlarmTonePreview()
-                        checkRingtonePermissions(
-                            tones = listOf(selectedTone),
-                            unplayableDialogTitle = alertTitle,
-                            unplayableDialogMessage = storagePermissionTextFn,
-                        )
-                        viewModel.onEvent(OnToneChange(selectedTone))
-                        showTonePickerDialog = false
-                    }
-                )
-            }
             MathAlarmDialog(
                 arguments = DialogArguments(
                     title = strings.alert,
@@ -394,7 +354,7 @@ private fun AlarmBottomSheetContent(
     isPane: Boolean = false,
     onSubEditorChanged: (Boolean) -> Unit = {},
     topSection: @Composable () -> Unit,
-    bottomSection: @Composable (onEditChallenge: () -> Unit, onEditSnooze: () -> Unit) -> Unit,
+    bottomSection: @Composable (onEditChallenge: () -> Unit, onEditSnooze: () -> Unit, onEditSound: () -> Unit) -> Unit,
     onTestClick: () -> Unit,
     onSaveClick: () -> Unit,
     challenge: MathChallenge = MathChallenge(),
@@ -403,6 +363,9 @@ private fun AlarmBottomSheetContent(
     maxSnoozes: Int = 3,
     onChallengeChange: (MathChallenge) -> Unit = {},
     onSnoozeChange: (Boolean, Int, Int) -> Unit = { _, _, _ -> },
+    currentTone: String = "",
+    currentToneTitle: String = "",
+    onToneChange: (String) -> Unit = {},
     dialogSection: @Composable () -> Unit
 ) {
     AlarmSettingsSheetHost(
@@ -414,7 +377,10 @@ private fun AlarmBottomSheetContent(
         onSubEditorChanged = onSubEditorChanged,
         onChallengeApply = onChallengeChange,
         onSnoozeApply = onSnoozeChange,
-    ) { onEditChallenge, onEditSnooze ->
+        currentTone = currentTone,
+        currentToneTitle = currentToneTitle,
+        onToneApply = onToneChange,
+    ) { onEditChallenge, onEditSnooze, onEditSound ->
         with(MaterialTheme) {
             val useFullHeightSheetLayout = isIosPlatform()
             Surface(
@@ -462,7 +428,7 @@ private fun AlarmBottomSheetContent(
                                 SheetSettingsContent(
                                     topSection = topSection,
                                     bottomSection = {
-                                        bottomSection(onEditChallenge, onEditSnooze)
+                                        bottomSection(onEditChallenge, onEditSnooze, onEditSound)
                                     },
                                 )
                             }
@@ -488,7 +454,7 @@ private fun AlarmBottomSheetContent(
                             ) {
                                 SheetSettingsContent(
                                     topSection = topSection,
-                                    bottomSection = { bottomSection(onEditChallenge, onEditSnooze) },
+                                    bottomSection = { bottomSection(onEditChallenge, onEditSnooze, onEditSound) },
                                 )
                             }
                             SheetActionButtons(
@@ -619,7 +585,7 @@ private fun BottomSettingsSection(
     snoozeMinutes: Int = 5,
     onSnoozeToggle: (Boolean) -> Unit = {},
 ) {
-    val showVibrateToggle = !isIosPlatform()
+    val showVibrateToggle = supportsAlarmVibration()
 
     Column(
         modifier = Modifier
@@ -722,169 +688,6 @@ internal fun SheetFooter(
     }
 }
 
-@Composable
-private fun AlarmTonePickerDialog(
-    currentTone: String,
-    onDismissRequest: () -> Unit,
-    onToneSelected: (String) -> Unit,
-) {
-    var pendingTone by remember(currentTone) {
-        mutableStateOf(currentTone.ifEmpty { IosAlarmToneOptions.first().filename })
-    }
-    var previewingTone by remember { mutableStateOf<String?>(null) }
-    val selectAndPreview: (IosAlarmToneOption) -> Unit = { tone ->
-        pendingTone = tone.filename
-        previewAlarmTone(tone.filename)
-        previewingTone = tone.filename
-    }
-
-    DisposableEffect(Unit) {
-        onDispose {
-            stopAlarmTonePreview()
-        }
-    }
-
-    Dialog(onDismissRequest = onDismissRequest) {
-        Surface(
-            modifier = Modifier
-                .fillMaxWidth()
-                .widthIn(max = TONE_PICKER_DIALOG_MAX_WIDTH),
-            shape = MaterialTheme.shapes.extraLarge,
-            color = MaterialTheme.colorScheme.surface,
-            tonalElevation = TONE_PICKER_DIALOG_ELEVATION,
-        ) {
-            Column(
-                modifier = Modifier.padding(TONE_PICKER_DIALOG_PADDING),
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(TONE_PICKER_HEADER_HEIGHT),
-                    verticalAlignment = CenterVertically,
-                ) {
-                    Spacer(modifier = Modifier.size(AlarmBottomSheet.TONE_ACTION_PLACEHOLDER_SIZE))
-                    Text(
-                        modifier = Modifier.weight(1f),
-                        text = "Alarm Sound",
-                        fontSize = 17.sp,
-                        fontWeight = Bold,
-                        textAlign = Center,
-                    )
-                    AdaptiveIconButton(onClick = { onToneSelected(pendingTone) }) {
-                        Icon(
-                            imageVector = Check,
-                            contentDescription = "Done",
-                            tint = MaterialTheme.colorScheme.secondary,
-                        )
-                    }
-                }
-                Spacer(modifier = Modifier.height(MaterialTheme.spacing.small))
-                TonePickerList(
-                    pendingTone = pendingTone,
-                    previewingTone = previewingTone,
-                    selectAndPreview = selectAndPreview,
-                    onPreviewClick = { tone ->
-                        if (previewingTone == tone.filename) {
-                            stopAlarmTonePreview()
-                            previewingTone = null
-                        } else {
-                            selectAndPreview(tone)
-                        }
-                    },
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun TonePickerList(
-    pendingTone: String,
-    previewingTone: String?,
-    selectAndPreview: (IosAlarmToneOption) -> Unit,
-    onPreviewClick: (IosAlarmToneOption) -> Unit,
-) {
-    LazyColumn(
-        modifier = Modifier
-            .fillMaxWidth()
-            .heightIn(max = TONE_PICKER_MAX_HEIGHT),
-    ) {
-        itemsIndexed(IosAlarmToneOptions) { index, tone ->
-            Column {
-                AlarmTonePickerRow(
-                    title = tone.displayName,
-                    selected = tone.filename == pendingTone,
-                    isPreviewing = tone.filename == previewingTone,
-                    onRowClick = {
-                        selectAndPreview(tone)
-                    },
-                    onPreviewClick = {
-                        onPreviewClick(tone)
-                    },
-                )
-                if (index < IosAlarmToneOptions.lastIndex) {
-                    HorizontalDivider(
-                        modifier = Modifier.padding(start = TONE_PICKER_DIVIDER_START_PADDING),
-                        thickness = TONE_PICKER_SEPARATOR_THICKNESS,
-                        color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = TONE_PICKER_DIVIDER_ALPHA),
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun AlarmTonePickerRow(
-    title: String,
-    selected: Boolean,
-    isPreviewing: Boolean,
-    onRowClick: () -> Unit,
-    onPreviewClick: () -> Unit,
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .height(TONE_PICKER_ROW_HEIGHT)
-            .adaptiveClickable(
-                onClick = onRowClick
-            )
-            .padding(
-                start = MaterialTheme.spacing.medium,
-                end = MaterialTheme.spacing.extraSmall,
-            ),
-        verticalAlignment = CenterVertically,
-    ) {
-        if (selected) {
-            Icon(
-                modifier = Modifier
-                    .padding(end = MaterialTheme.spacing.small)
-                    .size(AlarmBottomSheet.TONE_SELECTION_ICON_SIZE),
-                imageVector = Check,
-                contentDescription = "Selected",
-                tint = MaterialTheme.colorScheme.secondary,
-            )
-        } else {
-            Spacer(
-                modifier = Modifier
-                    .padding(end = MaterialTheme.spacing.small)
-                    .size(AlarmBottomSheet.TONE_SELECTION_ICON_SIZE),
-            )
-        }
-        Text(
-            modifier = Modifier.weight(1f),
-            text = title,
-            fontSize = 16.sp,
-        )
-        AdaptiveIconButton(onClick = onPreviewClick) {
-            Icon(
-                imageVector = if (isPreviewing) Stop else PlayArrow,
-                contentDescription = if (isPreviewing) "Stop preview" else "Preview",
-            )
-        }
-    }
-}
-
 @Preview
 @Composable
 private fun BottomSheetPreview() {
@@ -901,7 +704,7 @@ private fun BottomSheetPreview() {
                         onTimeCardClick = {}
                     ) {}
                 },
-                bottomSection = { onEditChallenge, onEditSnooze ->
+                bottomSection = { onEditChallenge, onEditSnooze, onEditSound ->
                     BottomSettingsSection(
                         onEditChallenge = onEditChallenge,
                         onEditSnooze = onEditSnooze,
@@ -911,7 +714,7 @@ private fun BottomSheetPreview() {
                         challenge = MathChallenge(difficulty = 1),
                         onRepeatToggle = {},
                         onVibrateToggle = {},
-                        onToneClick = {},
+                        onToneClick = onEditSound,
                         labelTextField = {
                             LabelTextField(
                                 text = TextFieldValue(),
@@ -927,23 +730,8 @@ private fun BottomSheetPreview() {
     }
 }
 
-private data class IosAlarmToneOption(
-    val filename: String,
-    val displayName: String,
-)
-
-private val IosAlarmToneOptions = listOf(
-    IosAlarmToneOption("alarm_classic", "Classic"),
-    IosAlarmToneOption("alarm_digital", "Digital"),
-    IosAlarmToneOption("alarm_gentle", "Gentle"),
-    IosAlarmToneOption("alarm_nature", "Nature"),
-    IosAlarmToneOption("alarm_urgent", "Urgent"),
-)
-
 private object AlarmBottomSheet {
     val HEADER_ICON_SIZE = 32.dp
-    val TONE_ACTION_PLACEHOLDER_SIZE = 48.dp
-    val TONE_SELECTION_ICON_SIZE = 22.dp
     val TIME_CARD_HEIGHT = 150.dp
     val NO_ELEVATION = 0.dp
     val TIME_CARD_CORNER_SIZE = 24.dp
@@ -954,13 +742,4 @@ private object AlarmBottomSheet {
     val SAVE_BUTTON_FONT_SIZE = 14.sp
     val SAVE_BUTTON_TOP_PADDING = 12.dp
     val SETTINGS_CONTENT_MAX_WIDTH = 640.dp
-    val TONE_PICKER_DIALOG_MAX_WIDTH = 360.dp
-    val TONE_PICKER_DIALOG_PADDING = 12.dp
-    val TONE_PICKER_DIALOG_ELEVATION = 6.dp
-    val TONE_PICKER_HEADER_HEIGHT = 44.dp
-    val TONE_PICKER_MAX_HEIGHT = 360.dp
-    val TONE_PICKER_ROW_HEIGHT = 56.dp
-    val TONE_PICKER_DIVIDER_START_PADDING = 16.dp
-    val TONE_PICKER_SEPARATOR_THICKNESS = 1.dp
-    const val TONE_PICKER_DIVIDER_ALPHA = 0.35f
 }

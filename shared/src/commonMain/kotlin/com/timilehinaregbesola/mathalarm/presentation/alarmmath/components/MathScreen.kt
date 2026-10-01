@@ -65,7 +65,7 @@ import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.platform.PlatformVibrator
 import com.timilehinaregbesola.mathalarm.platform.getDefaultAlarmTone
 import com.timilehinaregbesola.mathalarm.platform.shouldStartMathScreenAlarmAudio
-import com.timilehinaregbesola.mathalarm.platform.isIosPlatform
+import com.timilehinaregbesola.mathalarm.platform.supportsAlarmVibration
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmSnack
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.AlarmMathViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathScreenEvent
@@ -114,7 +114,7 @@ fun MathScreen(
         if (fromSheet && backStack.size > 1) backStack.removeLastOrNull()
     }
     val vibrator = remember(alarm.alarmId, alarm.vibrate) {
-        if (alarm.vibrate && !isIosPlatform()) PlatformVibrator() else null
+        if (alarm.vibrate && supportsAlarmVibration()) PlatformVibrator() else null
     }
     LaunchedEffect(alarm.alarmId, alarm.activeAt, fromSheet, handoffPayload) {
         val ready = viewModel.initializeChallenge(

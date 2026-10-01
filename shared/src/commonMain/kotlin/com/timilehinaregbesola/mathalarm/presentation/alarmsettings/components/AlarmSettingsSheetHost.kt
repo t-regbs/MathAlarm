@@ -18,6 +18,7 @@ internal enum class AlarmSettingsPage {
     Main,
     Challenge,
     Snooze,
+    Sound,
 }
 
 private val pageSaver = Saver<AlarmSettingsPage, String>(
@@ -36,7 +37,10 @@ internal fun AlarmSettingsSheetHost(
     onChallengeApply: (MathChallenge) -> Unit,
     onSnoozeApply: (Boolean, Int, Int) -> Unit,
     onSubEditorChanged: (Boolean) -> Unit = {},
-    content: @Composable (onEditChallenge: () -> Unit, onEditSnooze: () -> Unit) -> Unit,
+    currentTone: String = "",
+    currentToneTitle: String = "",
+    onToneApply: (String) -> Unit = {},
+    content: @Composable (onEditChallenge: () -> Unit, onEditSnooze: () -> Unit, onEditSound: () -> Unit) -> Unit,
 ) {
     var page by rememberSaveable(stateSaver = pageSaver) { mutableStateOf(AlarmSettingsPage.Main) }
     SideEffect { onSubEditorChanged(page != AlarmSettingsPage.Main) }
@@ -53,12 +57,22 @@ internal fun AlarmSettingsSheetHost(
                 AlarmSettingsPage.Main -> content(
                     { page = AlarmSettingsPage.Challenge },
                     { page = AlarmSettingsPage.Snooze },
+                    { page = AlarmSettingsPage.Sound },
                 )
                 AlarmSettingsPage.Challenge -> ChallengeEditor(
                     initial = challenge.normalized(),
                     onDismiss = returnToMain,
                     onApply = {
                         onChallengeApply(it)
+                        returnToMain()
+                    },
+                )
+                AlarmSettingsPage.Sound -> AlarmSoundEditor(
+                    currentTone = currentTone,
+                    currentToneTitle = currentToneTitle,
+                    onDismiss = returnToMain,
+                    onApply = {
+                        onToneApply(it)
                         returnToMain()
                     },
                 )

@@ -25,10 +25,6 @@ enum PendingDeeplinkStoreSmoke {
         precondition(relaunched.acknowledgePendingDeeplink(second))
         precondition(!relaunched.hasPendingDeeplink())
 
-        defaults.set(first, forKey: "MathAlarm.pendingAlarmKitDeeplink")
-        precondition(relaunched.peekPendingDeeplink() == first)
-        precondition(relaunched.acknowledgePendingDeeplink(first))
-        precondition(!relaunched.hasPendingDeeplink())
         print("PendingDeeplinkStore smoke test passed")
 
         let recovery = AlarmRecoveryStore(userDefaults: defaults)
@@ -46,7 +42,7 @@ enum PendingDeeplinkStoreSmoke {
         }
         precondition(!restoredRecovery.isCurrent(alarmId: 1, session: initial))
         precondition(!restoredRecovery.accepts(alarmId: 1, sessionId: initial.id, attempt: 1))
-        // Neither the old five-attempt cap nor elapsed time can dismiss a challenge.
+        // Many attempts or elapsed time cannot dismiss an unresolved challenge.
         let tomorrow = Date().addingTimeInterval(24 * 60 * 60)
         current = AlarmRecoveryStore(userDefaults: defaults).reserve(
             alarmId: 1, sourceSession: current.id, sourceAttempt: current.attempt, now: tomorrow
@@ -64,7 +60,7 @@ enum PendingDeeplinkStoreSmoke {
         _ = restoredRecovery.reserve(alarmId: 2, sourceSession: nil, sourceAttempt: nil)
         restoredRecovery.cancel(alarmId: 1)
         precondition(restoredRecovery.reserve(alarmId: 2, sourceSession: nil, sourceAttempt: nil) == nil)
-        restoredRecovery.cancelAll()
+        restoredRecovery.cancel(alarmId: 2)
         precondition(restoredRecovery.reserve(alarmId: 2, sourceSession: nil, sourceAttempt: nil) != nil)
         let later = Date().addingTimeInterval(601)
         precondition(restoredRecovery.reserve(alarmId: 1, sourceSession: next.id,

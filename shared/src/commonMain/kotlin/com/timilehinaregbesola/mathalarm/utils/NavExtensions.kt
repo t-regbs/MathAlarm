@@ -12,7 +12,11 @@ sealed interface Destinations : NavKey {
     data object AppSettings : Destinations
 
     @Serializable
-    data class AlarmMath(val alarmJson: String, val fromSheet: Boolean = false) : Destinations
+    data class AlarmMath(
+        val alarmJson: String,
+        val fromSheet: Boolean = false,
+        val handoffJson: String? = null,
+    ) : Destinations
 
     @Serializable
     data class SettingsSheet(val settingsAlarm: String, val isTest: Boolean = false) : Destinations

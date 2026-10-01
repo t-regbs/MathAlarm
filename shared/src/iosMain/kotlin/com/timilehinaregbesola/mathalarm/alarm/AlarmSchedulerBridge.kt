@@ -10,7 +10,6 @@ data class AlarmScheduleRequest(
     val title: String,
     val soundName: String,
     val repeatDays: String,
-    val snoozeMinutes: Int,
     val vibrate: Boolean,
     val difficulty: Int,
     val repeats: Boolean,
@@ -38,12 +37,10 @@ interface NativeAlarmScheduler {
     /** Null on success; a message on failure. Cancellation is synchronous in AlarmKit. */
     fun cancelAlarm(alarmId: Long): String?
     fun cancelOccurrence(alarmId: Long, occurrenceKey: String): String?
-    fun cancelAllAlarms(): String?
     fun isAlarmKitAvailable(): Boolean
     fun hasPendingOccurrence(alarmId: Long, occurrenceKey: String): Boolean
     fun authorizationStatus(): String
     fun requestAuthorization(completion: AlarmAuthorizationCompletion)
-    fun snoozeAlarm(alarmId: Long, minutes: Int)
     fun acknowledgePendingHandoff(payload: String)
     fun hasPendingHandoff(): Boolean
 }
@@ -69,9 +66,6 @@ object AlarmSchedulerBridge {
     fun cancelOccurrence(alarmId: Long, key: String) {
         nativeScheduler?.cancelOccurrence(alarmId, key)?.let { throw IllegalStateException(it) }
     }
-    fun cancelAllAlarms() {
-        nativeScheduler?.cancelAllAlarms()?.let { throw IllegalStateException(it) }
-    }
     fun hasPendingOccurrence(alarmId: Long, occurrenceKey: String): Boolean =
         nativeScheduler?.hasPendingOccurrence(alarmId, occurrenceKey) == true
     fun authorizationStatus(): String = nativeScheduler?.authorizationStatus() ?: "unavailable"
@@ -85,7 +79,6 @@ object AlarmSchedulerBridge {
             override fun complete(authorized: Boolean) = onResult(authorized)
         })
     }
-    fun snoozeAlarm(alarmId: Long, minutes: Int) { nativeScheduler?.snoozeAlarm(alarmId, minutes) }
     fun acknowledgePendingHandoff(payload: String) { nativeScheduler?.acknowledgePendingHandoff(payload) }
     fun hasPendingHandoff(): Boolean = nativeScheduler?.hasPendingHandoff() == true
     val shared: AlarmSchedulerBridge get() = this

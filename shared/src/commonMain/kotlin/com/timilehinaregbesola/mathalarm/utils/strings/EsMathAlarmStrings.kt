@@ -157,6 +157,17 @@ val EsMathAlarmStrings = Strings(
     shareWithOthers = "Echa un vistazo a esta genial aplicación de alarma",
     grantPermission = "Permitir",
     notification = "Notificación",
+    alarmSound = "Sonido de alarma",
+    done = "Listo",
+    daybreakDescription = "Mazas suaves · delicado",
+    orbitDescription = "Sintetizador fluido · brillante",
+    rallyDescription = "Ritmo electrónico · insistente",
+    glassGardenDescription = "Campanas brillantes · claro",
+    steppingStonesDescription = "Mazas de madera · rítmico",
+    clearSignalDescription = "Tonos dobles · definido",
+    currentSound = "Sonido actual",
+    previewSound = "Escuchar",
+    stopSoundPreview = "Detener reproducción",
     permissionsExternalStorageText = { tone ->
         "Parece que no podemos reproducir $tone, probablemente porque se requiere permiso. Si lo deseas, puedes otorgar el permiso. Alternativamente, seleccione un sonido diferente. Esta decisión se puede cambiar en Configuración del sistema."
     },

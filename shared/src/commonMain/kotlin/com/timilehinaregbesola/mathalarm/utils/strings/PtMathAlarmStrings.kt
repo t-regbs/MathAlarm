@@ -159,6 +159,17 @@ val PtMathAlarmStrings = Strings(
     disabledNotificationMessageExtended = "Notificações deste aplicativo estão desativadas. Por favor, vá para as configurações do seu dispositivo e ative-as.",
     grantPermission = "Permitir",
     notification = "Notificação",
+    alarmSound = "Som do alarme",
+    done = "Concluído",
+    daybreakDescription = "Baquetas suaves · delicado",
+    orbitDescription = "Sintetizador fluido · brilhante",
+    rallyDescription = "Ritmo eletrónico · insistente",
+    glassGardenDescription = "Sinos cintilantes · claro",
+    steppingStonesDescription = "Baquetas de madeira · rítmico",
+    clearSignalDescription = "Tons duplos · distinto",
+    currentSound = "Som atual",
+    previewSound = "Ouvir",
+    stopSoundPreview = "Parar prévia",
     permissionsExternalStorageText = {  tone ->
         "Parece que não podemos tocar $tone, provavelmente porque é necessária permissão. Se desejar, você pode conceder a permissão. Como alternativa, selecione um som diferente. Esta decisão pode ser alterada nas configurações do sistema."
     },

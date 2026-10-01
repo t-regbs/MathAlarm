@@ -18,22 +18,6 @@ class AnnouncementFeatureTest {
     }
 
     @Test
-    fun oldMathAcknowledgementShowsLaterFeatures() {
-        val prefs = preferences(MapSettings().apply {
-            putString("mathalarm_last_announcement", "math-challenges-v1")
-        })
-        assertEquals(listOf(AnnouncementFeature.SKIP_NEXT, AnnouncementFeature.SNOOZE_SETTINGS), announcementFeaturesToShow(prefs::hasSeenAnnouncement))
-    }
-
-    @Test
-    fun oldSkipAcknowledgementDoesNotAssumeMathWasSeen() {
-        val prefs = preferences(MapSettings().apply {
-            putString("mathalarm_last_announcement", "skip-next-alarm-v1")
-        })
-        assertEquals(listOf(AnnouncementFeature.MATH_CHALLENGES, AnnouncementFeature.SNOOZE_SETTINGS), announcementFeaturesToShow(prefs::hasSeenAnnouncement))
-    }
-
-    @Test
     fun existingUsersSeeSnoozeSettingsAfterEarlierFeaturesWereSeen() {
         val prefs = preferences()
         prefs.markAnnouncementSeen(AnnouncementFeature.MATH_CHALLENGES.id)

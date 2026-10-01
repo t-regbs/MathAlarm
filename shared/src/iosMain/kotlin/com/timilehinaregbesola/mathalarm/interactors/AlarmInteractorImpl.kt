@@ -1,14 +1,12 @@
 package com.timilehinaregbesola.mathalarm.interactors
 
 import kotlin.time.Clock
-import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.notification.IosAlarmScheduler
 import com.timilehinaregbesola.mathalarm.alarm.AlarmSchedulerBridge
 
 class AlarmInteractorImpl(
-    logger: Logger,
-    private val scheduler: IosAlarmScheduler = IosAlarmScheduler(logger),
+    private val scheduler: IosAlarmScheduler,
 ) : AlarmInteractor {
 
     override suspend fun schedule(alarm: Alarm, timeInMillis: Long) =

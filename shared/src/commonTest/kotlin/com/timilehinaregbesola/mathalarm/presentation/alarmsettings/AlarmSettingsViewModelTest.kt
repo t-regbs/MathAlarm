@@ -15,6 +15,8 @@ import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
 import com.timilehinaregbesola.mathalarm.usecases.*
 import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
+import com.timilehinaregbesola.mathalarm.sound.AlarmSoundCatalog
+import com.timilehinaregbesola.mathalarm.platform.isIosPlatform
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlin.test.AfterTest
@@ -29,6 +31,45 @@ import kotlinx.coroutines.test.*
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AlarmSettingsViewModelTest {
+
+    @Test
+    fun `new iOS alarm defaults to Orbit and saves that tone with its occurrence`() = runTest {
+        if (!isIosPlatform()) return@runTest
+        viewModel.setAlarm(Alarm(isOn = true))
+        viewModel.tone.value shouldBe AlarmSoundCatalog.DEFAULT_SOUND
+        viewModel.hasUnsavedChanges shouldBe false
+        viewModel.eventFlow.test {
+            viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+            awaitItem() shouldBe AlarmSettingsViewModel.UiEvent.SaveAlarm
+        }
+        val saved = usecases.findAlarm(viewModel.currentAlarmId!!)!!
+        saved.alarmTone shouldBe "alarm_orbit"
+        saved.pendingTimes.isNotEmpty() shouldBe true
+        listOf(alarmInteractor.getScheduledAlarms()[saved.alarmId]!!.timeInMillis) shouldBe saved.pendingTimes
+    }
+
+    @Test
+    fun `editing existing alarm preserves its bundled or device selection and occurrence`() = runTest {
+        for ((index, tone) in listOf("alarm_glass_garden", "alarm_daybreak", "content://media/internal/audio/media/42",
+            "content://settings/system/alarm_alert").withIndex()) {
+            val original = Alarm(alarmId = 980L + index, isSaved = true, isOn = true, alarmTone = tone)
+            usecases.addAlarm(original)
+            usecases.scheduleAlarm(original, true)
+            val scheduled = usecases.findAlarm(original.alarmId)!!
+            viewModel = AlarmSettingsViewModel(usecases, permission)
+            viewModel.setAlarm(scheduled)
+            viewModel.tone.value shouldBe tone
+            viewModel.onEvent(AddEditAlarmEvent.EnteredTitle(TextFieldValue("Edited sound fixture")))
+            viewModel.eventFlow.test {
+                viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+                awaitItem() shouldBe AlarmSettingsViewModel.UiEvent.SaveAlarm
+            }
+            val saved = usecases.findAlarm(original.alarmId)!!
+            saved.alarmTone shouldBe tone
+            saved.pendingTimes shouldBe scheduled.pendingTimes
+            listOf(alarmInteractor.getScheduledAlarms()[saved.alarmId]!!.timeInMillis) shouldBe saved.pendingTimes
+        }
+    }
 
     private val permission = AlarmPermissionFake()
     private lateinit var viewModel: AlarmSettingsViewModel

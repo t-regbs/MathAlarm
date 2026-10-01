@@ -12,11 +12,10 @@ class AlarmPreferencesImpl(
     private val settings: Settings
 ) : AlarmPreferences {
     companion object {
-        private const val SEEN_ANNOUNCEMENT_PREFIX = "mathalarm_seen_announcement_"
+        internal const val SEEN_ANNOUNCEMENT_PREFIX = "mathalarm_seen_announcement_"
         private const val ANNOUNCEMENT_CATALOG = "mathalarm_announcement_catalog"
         private const val ANNOUNCEMENT_BATCH = "mathalarm_announcement_batch"
         private const val ANNOUNCEMENT_ID_SEPARATOR = "\n"
-        private const val LAST_ANNOUNCEMENT = "mathalarm_last_announcement"
         const val APP_THEME_OPTION = "mathalarm_theme_option"
         const val ALARM_SORT_ORDER_OPTION = "mathalarm_alarm_sort_order"
     }
@@ -46,12 +45,7 @@ class AlarmPreferencesImpl(
     }
 
     private fun loadSeenAnnouncements(): Set<String> {
-        // The legacy value proves only this feature was seen, not earlier releases.
-        val legacyId = settings.getString(LAST_ANNOUNCEMENT, "")
-        if (legacyId.isNotEmpty()) {
-            settings.putBoolean(SEEN_ANNOUNCEMENT_PREFIX + legacyId, true)
-            settings.remove(LAST_ANNOUNCEMENT)
-        }
+        migrateAlarmPreferences(settings)
         return settings.keys.filter { key ->
             key.startsWith(SEEN_ANNOUNCEMENT_PREFIX) && settings.getBoolean(key, false)
         }.map { it.removePrefix(SEEN_ANNOUNCEMENT_PREFIX) }.toSet()

@@ -1,6 +1,5 @@
 import SwiftUI
 import app
-import UserNotifications
 import AlarmKit
 
 @main
@@ -31,7 +30,7 @@ struct iOSApp: App {
     }
 }
 
-class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDelegate {
+class AppDelegate: NSObject, UIApplicationDelegate {
     
     /// The AlarmKit wrapper instance
     private let alarmKitWrapper = AlarmKitWrapperImpl.shared
@@ -50,9 +49,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         
         // If no pending deeplink, check if there's an alerting alarm
         // (User may have tapped the alert itself, not the stop button)
-        if #available(iOS 26, *) {
-            checkAlertingAlarms()
-        }
+        checkAlertingAlarms()
     }
     
     /// Check for alerting alarms and navigate to MathScreen if found
@@ -69,7 +66,7 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
                 
                     // Get alarm data from our store
                     if let alarmData = AlarmDataStore.shared.retrieve(alarmUUID: alarm.id.uuidString) {
-                        let deeplinkJson = try createDeeplinkJson(from: alarmData)
+                        let deeplinkJson = createDeeplinkJson(from: alarmData)
                         PendingDeeplinkStore.shared.setPendingDeeplink(deeplinkJson)
                     
                         // Stop the alarm since user is now in app
@@ -92,14 +89,6 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         // Register AlarmKit wrapper with Kotlin bridge FIRST
         // This allows Kotlin to use AlarmKit when available (iOS 26+)
         registerAlarmKitBridge()
-        
-        // Set notification delegate EARLY - before Compose UI loads
-        UNUserNotificationCenter.current().delegate = self
-        
-        // Check if app was launched from a notification
-        if let notificationResponse = launchOptions?[.remoteNotification] as? [String: Any] {
-            handleAlarmNotification(userInfo: notificationResponse)
-        }
         
         // Log AlarmKit availability; ask for authorization when saving an alarm.
         let alarmKitAvailable = alarmKitWrapper.isAlarmKitAvailable()
@@ -135,105 +124,5 @@ class AppDelegate: NSObject, UIApplicationDelegate, UNUserNotificationCenterDele
         AlarmSchedulerBridge.shared.registerScheduler(scheduler: kotlinBridge)
         
         print("iOSApp: AlarmKit bridge registered")
-    }
-    
-    // Called when user taps on a notification
-    func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                didReceive response: UNNotificationResponse,
-                                withCompletionHandler completionHandler: @escaping () -> Void) {
-        let userInfo = response.notification.request.content.userInfo
-        let actionIdentifier = response.actionIdentifier
-        
-        print("iOSApp: Notification tapped with action: \(actionIdentifier)")
-        
-        // Handle different actions
-        switch actionIdentifier {
-        case "SNOOZE_ACTION":
-            let alarmId = (userInfo["alarmId"] as? NSNumber)?.int64Value ?? 0
-            IosNotificationSnooze.shared.snooze(alarmId: alarmId) { failure in
-                if failure == nil {
-                    AlarmAudioController.shared.stopAlarm()
-                } else {
-                    self.handleAlarmNotification(userInfo: userInfo)
-                }
-                completionHandler()
-            }
-            return
-            
-        case "DISMISS_ACTION":
-            // Stop the alarm completely
-            AlarmAudioController.shared.stopAlarm()
-            completionHandler()
-            return
-            
-        default:
-            // Default tap or "Solve Math" action - navigate to math screen
-            break
-        }
-        
-        handleAlarmNotification(userInfo: userInfo)
-        completionHandler()
-    }
-    
-    // Handle alarm notification - start audio and set deeplink
-    private func handleAlarmNotification(userInfo: [AnyHashable: Any]) {
-        print("iOSApp: 🔔 handleAlarmNotification called")
-        print("iOSApp: userInfo keys = \(userInfo.keys)")
-        
-        // Extract alarm data
-        let alarmId = (userInfo["alarmId"] as? NSNumber)?.int64Value ?? 0
-        let hour = (userInfo["hour"] as? NSNumber)?.intValue ?? 0
-        let minute = (userInfo["minute"] as? NSNumber)?.intValue ?? 0
-        let difficulty = (userInfo["difficulty"] as? NSNumber)?.intValue ?? 0
-        let snooze = (userInfo["snooze"] as? NSNumber)?.intValue ?? 5
-        let vibrate = (userInfo["vibrate"] as? NSNumber)?.boolValue ?? false
-        let title = (userInfo["title"] as? String) ?? ""
-        let alarmTone = (userInfo["alarmTone"] as? String) ?? ""
-        
-        print("iOSApp: Extracted - alarmId=\(alarmId), tone='\(alarmTone)', vibrate=\(vibrate)")
-        
-        guard alarmId > 0 else {
-            print("iOSApp: Ignoring notification without a valid alarm ID")
-            return
-        }
-        let alarmData = MathAlarmData(
-            alarmId: alarmId,
-            difficulty: Int32(difficulty),
-            hour: Int32(hour),
-            minute: Int32(minute),
-            snooze: Int32(snooze),
-            vibrate: vibrate,
-            alarmTone: alarmTone,
-            title: title
-        )
-        do {
-            let alarmJson = try createDeeplinkJson(from: alarmData)
-            PendingDeeplinkStore.shared.setPendingDeeplink(alarmJson)
-            DispatchQueue.main.async {
-                AlarmAudioController.shared.startAlarm(soundName: alarmTone, vibrate: vibrate)
-            }
-            print("iOSApp: Setting deeplink for alarm \(alarmId)")
-            AppDelegate.checkPendingAlarmKitDeeplink()
-        } catch {
-            print("iOSApp: Unable to encode alarm deeplink: \(error)")
-        }
-    }
-    
-    // Called when notification arrives while app is in foreground
-    func userNotificationCenter(_ center: UNUserNotificationCenter,
-                                willPresent notification: UNNotification,
-                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
-        let userInfo = notification.request.content.userInfo
-        
-        print("iOSApp: 🔔 Notification arrived in foreground!")
-        print("iOSApp: userInfo = \(userInfo)")
-        
-        // Also set the deeplink so the UI navigates to MathScreen
-        handleAlarmNotification(userInfo: userInfo)
-        
-        // Show banner, badge, AND sound (sound as backup in case AlarmAudioController fails)
-        // Our AlarmAudioController provides the full looping alarm, but notification sound
-        // gives us at least something if that fails
-        completionHandler([.banner, .badge, .sound])
     }
 }

@@ -16,6 +16,14 @@ expect fun getRingtoneTitle(alarmTone: String): String
 // Default alarm tone uri as String
 expect fun getDefaultAlarmTone(): String
 
+expect fun supportsSkipNext(): Boolean
+
+expect fun supportsAlarmVibration(): Boolean
+
+enum class AlarmSoundPickerKind { SYSTEM, BUNDLED_LIBRARY }
+
+expect fun alarmSoundPickerKind(): AlarmSoundPickerKind
+
 // Whether MathScreen should start its own alarm audio player.
 // Android keeps notification alarm audio in AlarmService; iOS starts audio from
 // the screen after notification tap because background notification audio is limited.
@@ -58,15 +66,15 @@ val LocalPlatformVibrator = staticCompositionLocalOf<PlatformVibrator?> { null }
  * Platform-specific ringtone picker result handler.
  * Returns the selected ringtone URI as a String, or null if cancelled.
  */
-expect class RingtonePickerLauncher {
+fun interface RingtonePickerLauncher {
     fun launch(currentTone: String?)
 }
 
 /**
- * Remember a ringtone picker launcher that calls [onResult] with the selected tone URI.
+ * A system picker is available only on platforms whose picker kind is SYSTEM.
  */
 @Composable
-expect fun rememberRingtonePickerLauncher(onResult: (String?) -> Unit): RingtonePickerLauncher
+expect fun rememberRingtonePickerLauncher(onResult: (String?) -> Unit): RingtonePickerLauncher?
 
 /**
  * Platform-specific permission handling for notification permissions.
@@ -86,7 +94,7 @@ expect fun checkRingtonePermissions(
     unplayableDialogMessage: (String) -> String
 )
 
-expect fun previewAlarmTone(alarmTone: String)
+expect fun previewAlarmTone(alarmTone: String, onFinished: () -> Unit)
 
 expect fun stopAlarmTonePreview()
 

@@ -40,7 +40,7 @@ import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
 import cafe.adriel.lyricist.strings
 import com.timilehinaregbesola.mathalarm.domain.model.MathChallenge
-import com.timilehinaregbesola.mathalarm.platform.isIosPlatform
+import com.timilehinaregbesola.mathalarm.platform.supportsSkipNext
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.ArrowBack
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 
@@ -61,7 +61,7 @@ internal val announcementCatalog: List<FeatureAnnouncement>
             steps = listOf(strings.challengeAnnouncementInstructions),
             actionLabel = strings.tryFeature,
         ),
-        if (!isIosPlatform()) FeatureAnnouncement(
+        if (supportsSkipNext()) FeatureAnnouncement(
             feature = AnnouncementFeature.SKIP_NEXT,
             title = strings.skipNext,
             description = strings.skipAnnouncementDescription,

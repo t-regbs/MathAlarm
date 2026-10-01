@@ -38,14 +38,14 @@ appId: com.timilehinaregbesola.mathalarm
 - assertVisible: "TEST ALARM"
 - assertVisible: 'Maestro "Wake" draft'
 - takeScreenshot: completed-preview
-- tapOn: "Classic"
-- assertVisible: "Alarm Sound"
-- tapOn: "Digital"
-- assertVisible: "Stop preview"
+- tapOn: "Orbit"
+- assertVisible: "Alarm sound"
+- tapOn: "Rally"
+- assertVisible: "Stop preview Rally"
 - takeScreenshot: tone-preview
 - tapOn: "Done"
-- assertNotVisible: "Alarm Sound"
-- assertVisible: "Digital"
+- assertNotVisible: "Alarm sound"
+- assertVisible: "Rally"
 - assertVisible: 'Maestro "Wake" draft'
 - takeScreenshot: retained-draft
 - tapOn: "Dismiss"

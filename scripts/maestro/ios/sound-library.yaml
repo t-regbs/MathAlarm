@@ -1,0 +1,53 @@
+appId: com.timilehinaregbesola.mathalarm
+---
+- launchApp
+- tapOn:
+    text: "Got it"
+    optional: true
+- tapOn: "Add alarm"
+- tapOn: "Alarm Title"
+- inputText: "Sound library draft"
+- pressKey: Enter
+- tapOn: "Orbit"
+- assertVisible: "Alarm sound"
+- assertVisible: "Soft mallets · gentle"
+- assertVisible: "Electronic rhythm · insistent"
+# Auditioning Daybreak must leave Orbit selected when confirmed.
+- tapOn: "Preview Daybreak"
+- assertVisible: "Stop preview Daybreak"
+- assertNotVisible: "Previewing Daybreak"
+- assertNotVisible: "Stop"
+# The playing row's preview control is the only stop action.
+- tapOn: "Stop preview Daybreak"
+- assertVisible: "Preview Daybreak"
+- tapOn: "Preview Daybreak"
+- assertVisible: "Stop preview Daybreak"
+- takeScreenshot: audition-only
+- extendedWaitUntil:
+    visible: "Preview Daybreak"
+    timeout: 20000
+- tapOn: "Done"
+- assertVisible: "Orbit"
+- assertVisible: "Sound library draft"
+# Back must discard a draft choice.
+- tapOn: "Orbit"
+- tapOn: "Rally"
+- assertVisible: "Stop preview Rally"
+- tapOn: "Back"
+- assertVisible: "Orbit"
+- assertVisible: "Sound library draft"
+# Done commits a draft choice without saving an alarm.
+- tapOn: "Orbit"
+- tapOn: "Rally"
+- takeScreenshot: library-selected
+- tapOn: "Done"
+- assertVisible: "Rally"
+- assertVisible: "Sound library draft"
+# Reopening the page should show the applied choice without resuming audio.
+- tapOn: "Rally"
+- assertVisible: "Preview Rally"
+- assertNotVisible: "Stop preview Rally"
+- tapOn: "Back"
+- assertVisible: "Sound library draft"
+- tapOn: "Dismiss"
+- assertVisible: "Alarms"

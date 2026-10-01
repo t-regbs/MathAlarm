@@ -17,7 +17,7 @@ import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.remember
 import androidx.core.app.ActivityCompat
 import androidx.core.app.NotificationManagerCompat
@@ -71,6 +71,10 @@ actual fun getRingtoneTitle(alarmTone: String): String {
 }
 
 actual fun getDefaultAlarmTone(): String = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString()
+
+actual fun supportsSkipNext(): Boolean = true
+actual fun supportsAlarmVibration(): Boolean = true
+actual fun alarmSoundPickerKind(): AlarmSoundPickerKind = AlarmSoundPickerKind.SYSTEM
 
 actual fun shouldStartMathScreenAlarmAudio(fromSheet: Boolean): Boolean = fromSheet
 
@@ -148,31 +152,14 @@ actual fun getApplicationId(): String = getKoinContext().packageName
 actual fun getAppShareUrl(): String =
     "https://play.google.com/store/apps/details?id=${getApplicationId()}"
 
-actual class RingtonePickerLauncher(
-    private val launchPicker: (String?) -> Unit,
-) {
-    actual fun launch(currentTone: String?) {
-        launchPicker(currentTone)
-    }
-}
-
 @Composable
-actual fun rememberRingtonePickerLauncher(onResult: (String?) -> Unit): RingtonePickerLauncher {
-    // We need to create the launcher dynamically based on the current tone
-    // Using a state-based approach to handle the current tone
-    val currentToneState = remember { mutableStateOf("") }
-
-    val launcher = rememberLauncherForActivityResult(
-        contract = PickRingtone(currentToneState.value)
-    ) { uri ->
-        onResult(uri?.toString())
+actual fun rememberRingtonePickerLauncher(onResult: (String?) -> Unit): RingtonePickerLauncher? {
+    val currentOnResult = rememberUpdatedState(onResult)
+    val launcher = rememberLauncherForActivityResult(contract = PickRingtone()) { uri ->
+        currentOnResult.value(uri?.toString())
     }
-
     return remember(launcher) {
-        RingtonePickerLauncher { tone ->
-            currentToneState.value = tone ?: ""
-            launcher.launch(null)
-        }
+        RingtonePickerLauncher { tone -> launcher.launch(tone) }
     }
 }
 
@@ -276,7 +263,7 @@ actual fun checkRingtonePermissions(
     }
 }
 
-actual fun previewAlarmTone(alarmTone: String) = Unit
+actual fun previewAlarmTone(alarmTone: String, onFinished: () -> Unit) = onFinished()
 
 actual fun stopAlarmTonePreview() = Unit
 

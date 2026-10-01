@@ -147,6 +147,17 @@ data class Strings(
     val alert: String,
     val grantPermission: String,
     val permissionsExternalStorageText: (tone: String) -> String,
+    val alarmSound: String,
+    val done: String,
+    val daybreakDescription: String,
+    val orbitDescription: String,
+    val rallyDescription: String,
+    val glassGardenDescription: String,
+    val steppingStonesDescription: String,
+    val clearSignalDescription: String,
+    val currentSound: String,
+    val previewSound: String,
+    val stopSoundPreview: String,
 )
 
 object Locales {

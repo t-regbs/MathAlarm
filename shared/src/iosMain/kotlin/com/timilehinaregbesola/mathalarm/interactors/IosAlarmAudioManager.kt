@@ -1,6 +1,7 @@
 package com.timilehinaregbesola.mathalarm.interactors
 
 import co.touchlab.kermit.Logger
+import com.timilehinaregbesola.mathalarm.sound.AlarmSoundCatalog
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -8,6 +9,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import platform.AVFAudio.AVAudioPlayer
+import platform.AVFAudio.AVAudioPlayerDelegateProtocol
+import platform.Foundation.NSError
+import platform.darwin.NSObject
 import platform.AVFAudio.AVAudioSession
 import platform.AVFAudio.AVAudioSessionCategoryPlayback
 import platform.AVFAudio.AVAudioSessionModeDefault
@@ -29,33 +33,73 @@ import platform.UIKit.UIImpactFeedbackStyle
 object IosAlarmAudioManager {
     private val logger = Logger.withTag("IosAlarmAudioManager")
     private var audioPlayer: AVAudioPlayer? = null
+    private var previewPlayer: AVAudioPlayer? = null
+    private var previewFinished: (() -> Unit)? = null
+    // AVAudioPlayer holds its delegate weakly; retain it for the manager's lifetime.
+    private val previewDelegate = object : NSObject(), AVAudioPlayerDelegateProtocol {
+        override fun audioPlayerDidFinishPlaying(player: AVAudioPlayer, successfully: Boolean) {
+            if (player == previewPlayer) stopPreview()
+        }
+
+        override fun audioPlayerDecodeErrorDidOccur(player: AVAudioPlayer, error: NSError?) {
+            if (player == previewPlayer) stopPreview()
+        }
+    }
     private var vibrationJob: Job? = null
     private var soundJob: Job? = null
     private var isAlarmActive = false
     private val scope = CoroutineScope(Dispatchers.Main)
     
-    // Bundled alarm sounds (filename without extension)
-    val availableSounds = listOf(
-        AlarmSound("alarm_classic", "Classic Alarm"),
-        AlarmSound("alarm_gentle", "Gentle Wake"),
-        AlarmSound("alarm_digital", "Digital Beep"),
-        AlarmSound("alarm_nature", "Nature Morning"),
-        AlarmSound("alarm_urgent", "Urgent"),
-    )
-    
-    data class AlarmSound(
-        val filename: String,
-        val displayName: String
-    )
-    
+
+    private fun bundledSoundUrl(soundName: String): NSURL? {
+        val name = AlarmSoundCatalog.iosResourceName(soundName)
+        for (candidate in listOf(name, AlarmSoundCatalog.DEFAULT_SOUND).distinct()) {
+            for (extension in listOf("caf", "wav", "m4a", "mp3", "aiff")) {
+                NSBundle.mainBundle.URLForResource(candidate, withExtension = extension)?.let { return it }
+            }
+        }
+        return null
+    }
+
+    fun startPreview(soundName: String, onFinished: () -> Unit) {
+        stopPreview()
+        if (isAlarmActive) { onFinished(); return }
+        previewFinished = onFinished
+        try {
+            val url = bundledSoundUrl(soundName)
+            if (url == null) { stopPreview(); return }
+            configureAudioSession()
+            val player = AVAudioPlayer(contentsOfURL = url, error = null)
+            previewPlayer = player
+            player.delegate = previewDelegate
+            player.numberOfLoops = 0
+            player.volume = 0.75f
+            if (!player.prepareToPlay() || !player.play()) stopPreview()
+        } catch (error: Exception) {
+            stopPreview()
+            logger.e(error) { "Unable to preview alarm sound" }
+        }
+    }
+
+    fun stopPreview() {
+        val finished = previewFinished
+        previewFinished = null
+        previewPlayer?.delegate = null
+        previewPlayer?.stop()
+        previewPlayer = null
+        if (!isAlarmActive) AVAudioSession.sharedInstance().setActive(false, error = null)
+        finished?.invoke()
+    }
+
     /**
      * Start playing alarm audio
      * 
-     * @param soundName The name of the sound to play (from availableSounds), or empty for default
+     * @param soundName The name of the sound to play (from AlarmSoundCatalog), or empty for default
      * @param vibrate Whether to also vibrate
      * @param volume Volume level 0.0 to 1.0
      */
     fun startAlarm(soundName: String = "", vibrate: Boolean = true, volume: Float = 1.0f) {
+        stopPreview()
         if (isAlarmActive) {
             logger.d { "Alarm already active, restarting..." }
             stopAlarm()
@@ -96,7 +140,7 @@ object IosAlarmAudioManager {
         
         // Deactivate audio session
         try {
-            AVAudioSession.sharedInstance().setActive(false, error = null)
+            if (previewPlayer == null) AVAudioSession.sharedInstance().setActive(false, error = null)
         } catch (e: Exception) {
             logger.e(e) { "Error deactivating audio session" }
         }
@@ -132,25 +176,7 @@ object IosAlarmAudioManager {
      */
     private fun playSound(soundName: String, volume: Float) {
         try {
-            // Try to find the sound in the app bundle
-            val soundFile = soundName.ifEmpty { "alarm_classic" }
-                .substringBeforeLast('.', soundName.ifEmpty { "alarm_classic" })
-            
-            // Try different extensions
-            val extensions = listOf("caf", "m4a", "mp3", "wav", "aiff")
-            var soundUrl: NSURL? = null
-            
-            for (ext in extensions) {
-                soundUrl = NSBundle.mainBundle.URLForResource(soundFile, withExtension = ext)
-                if (soundUrl != null) {
-                    logger.d { "Found sound file: $soundFile.$ext" }
-                    break
-                }
-            }
-            
-            if (soundUrl == null && soundFile != "alarm_classic") {
-                soundUrl = NSBundle.mainBundle.URLForResource("alarm_classic", withExtension = "caf")
-            }
+            var soundUrl = bundledSoundUrl(soundName)
 
             // If bundled sounds are missing, try system sounds
             if (soundUrl == null) {
@@ -223,21 +249,4 @@ object IosAlarmAudioManager {
         }
     }
     
-    /**
-     * Snooze the alarm for the specified duration
-     * 
-     * @param minutes Snooze duration in minutes
-     * @param onSnoozeEnd Callback when snooze ends
-     */
-    fun snooze(minutes: Int = 5, onSnoozeEnd: () -> Unit = {}) {
-        stopAlarm()
-        logger.d { "Alarm snoozed for $minutes minutes" }
-        
-        scope.launch {
-            delay(minutes * 60 * 1000L)
-            if (!isAlarmActive) {
-                onSnoozeEnd()
-            }
-        }
-    }
 }

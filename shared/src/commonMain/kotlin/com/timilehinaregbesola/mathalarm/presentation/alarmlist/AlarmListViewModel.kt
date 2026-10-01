@@ -11,7 +11,7 @@ import com.timilehinaregbesola.mathalarm.analytics.trackSafely
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermission
-import com.timilehinaregbesola.mathalarm.platform.isIosPlatform
+import com.timilehinaregbesola.mathalarm.platform.supportsSkipNext
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.AlarmSortOrder.TIME
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
 import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
@@ -34,7 +34,7 @@ class AlarmListViewModel(
     private val preferences: AlarmPreferencesImpl,
     private val logger: Logger,
     private val analytics: AnalyticsTracker = NoopAnalyticsTracker,
-    private val skipNextSupported: Boolean = !isIosPlatform(),
+    private val skipNextSupported: Boolean = supportsSkipNext(),
 ) : ViewModel() {
     val alarms = usecases
         .getSavedAlarms()

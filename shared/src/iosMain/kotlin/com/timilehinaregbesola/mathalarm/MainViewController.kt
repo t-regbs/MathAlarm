@@ -12,18 +12,17 @@ import cafe.adriel.lyricist.rememberStrings
 import com.timilehinaregbesola.mathalarm.di.initKoin
 import com.timilehinaregbesola.mathalarm.di.prewarmDatabase
 import com.timilehinaregbesola.mathalarm.navigation.NavGraph
+import com.timilehinaregbesola.mathalarm.navigation.AlarmHandoff
+import com.timilehinaregbesola.mathalarm.navigation.decodeAlarmHandoff
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.notification.NotificationDeeplinkHolder
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
-import com.timilehinaregbesola.mathalarm.provider.skippedTime
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.flow.first
-import kotlinx.datetime.TimeZone
-import kotlin.time.Clock
 import org.koin.core.component.KoinComponent
 import platform.UIKit.UIViewController
 
@@ -34,6 +33,10 @@ fun doInitKoin() {
     initKoin()
 }
 
+/** Swift uses the shared handoff codec instead of mirroring the database schema. */
+fun createAlarmHandoffJson(alarmId: Long): String =
+    com.timilehinaregbesola.mathalarm.navigation.encodeAlarmHandoff(AlarmHandoff(alarmId))
+
 /**
  * Prewarm the database in background - called after Koin init
  * This initializes Room in background so it's ready when UI needs it
@@ -42,50 +45,17 @@ fun prewarmDatabaseInBackground() {
     prewarmDatabase()
 }
 
-/** Migrate older schedules once, then reconcile missing alarms on each activation. */
+/** Reconcile missing or changed registrations on each activation. */
 fun resumeAlarmSchedules() {
     CoroutineScope(Dispatchers.Main).launch {
         if (NotificationDeeplinkHolder.deeplinkInfo.value != null ||
             com.timilehinaregbesola.mathalarm.alarm.AlarmSchedulerBridge.hasPendingHandoff()) return@launch
-        val settings = com.russhwolf.settings.Settings()
         try {
             val usecases = (object : KoinComponent {}).getKoin().get<com.timilehinaregbesola.mathalarm.framework.Usecases>()
             usecases.command {
                 if (NotificationDeeplinkHolder.deeplinkInfo.value != null ||
                     com.timilehinaregbesola.mathalarm.alarm.AlarmSchedulerBridge.hasPendingHandoff()) return@command
-                val needsLegacyMigration = !settings.getBoolean("alarm_occurrences_v5", false)
-                val needsSkipRemoval = !settings.getBoolean("ios_skip_removed_v1", false)
-                if (!needsLegacyMigration && !needsSkipRemoval) {
-                    rescheduleFutureAlarms.onAppResume(skipWhenNativeCurrent = true)
-                    return@command
-                }
-                if (needsLegacyMigration) {
-                    com.timilehinaregbesola.mathalarm.alarm.AlarmSchedulerBridge.cancelAllAlarms()
-                }
-                if (needsSkipRemoval) {
-                    val now = Clock.System.now().toEpochMilliseconds()
-                    getSavedAlarms().first().filter { it.skippedDate != null }.forEach { alarm ->
-                        val skippedTime = alarm.skippedTime(TimeZone.currentSystemDefault())
-                            ?.takeIf { it > now }
-                        val pendingTimes = if (!alarm.repeat && skippedTime != null) {
-                            val savedZone = alarm.scheduleTimeZone?.let(TimeZone::of)
-                                ?: TimeZone.currentSystemDefault()
-                            (alarm.pendingTimes + listOfNotNull(alarm.skippedTime(savedZone)))
-                                .distinct().sorted()
-                        } else alarm.pendingTimes
-                        updateAlarm(alarm.copy(
-                            skippedDate = null,
-                            pendingTimes = pendingTimes,
-                            isOn = alarm.isOn || (!alarm.repeat && skippedTime != null),
-                        ))
-                    }
-                }
-                rescheduleFutureAlarms()
-                val alarms = getSavedAlarms().first()
-                if (alarms.none { it.isOn && it.scheduleError != null }) {
-                    settings.putBoolean("alarm_occurrences_v5", true)
-                    settings.putBoolean("ios_skip_removed_v1", true)
-                }
+                rescheduleFutureAlarms.onAppResume(skipWhenNativeCurrent = true)
             }
         } catch (e: kotlinx.coroutines.CancellationException) {
             throw e
@@ -99,8 +69,7 @@ fun resumeAlarmSchedules() {
  * iOS Main View Controller - Entry point for the Compose Multiplatform UI
  * 
  * Note: Koin is initialized earlier via doInitKoin() from Swift's App init().
- * Notification categories are registered via IosAlarmScheduler on first access.
- * Notification delegate is set up in Swift AppDelegate for proper timing.
+ * The Swift AppDelegate registers the AlarmKit bridge before alarm delivery.
  */
 @OptIn(
     ExperimentalAnimationApi::class,
@@ -137,7 +106,11 @@ fun MainViewController(): UIViewController {
                         NotificationDeeplinkHolder.acknowledgeDeeplink(payload)
                         resumeAlarmSchedules()
                     },
-                    validateAlarmHandoff = { id -> usecases.findAlarm(id)?.isOn == true },
+                    resolveAlarmHandoff = { payload ->
+                        decodeAlarmHandoff(payload)?.alarmId?.let { usecases.findAlarm(it) }
+                            ?.takeIf { it.isOn }?.let { AlarmMapper().mapFromDomainModel(it) }
+                    },
+                    acknowledgeHandoffWhenReady = true,
                 )
             }
         }

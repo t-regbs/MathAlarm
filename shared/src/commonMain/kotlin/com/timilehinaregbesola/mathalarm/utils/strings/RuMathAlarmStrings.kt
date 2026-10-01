@@ -161,6 +161,17 @@ val RuMathAlarmStrings = Strings(
     grantPermission = "Разрешить",
     notification = "Уведомление",
     taskAlarmPermissionDialogCancel = "Не сейчас",
+    alarmSound = "Звук будильника",
+    done = "Готово",
+    daybreakDescription = "Мягкие удары · нежный",
+    orbitDescription = "Плавный синтезатор · яркий",
+    rallyDescription = "Электронный ритм · настойчивый",
+    glassGardenDescription = "Звонкие колокольчики · чистый",
+    steppingStonesDescription = "Деревянные удары · ритмичный",
+    clearSignalDescription = "Парные тоны · отчётливый",
+    currentSound = "Текущий звук",
+    previewSound = "Прослушать",
+    stopSoundPreview = "Остановить",
     permissionsExternalStorageText = { tone ->
         "Кажется, мы не можем воспроизвести $tone, возможно, потому, что требуется разрешение. Если хотите, можете дать разрешение. Либо выберите другой звук. Это решение можно изменить в настройках системы."
     }

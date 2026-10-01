@@ -3,17 +3,13 @@ package com.timilehinaregbesola.mathalarm.platform
 import com.timilehinaregbesola.mathalarm.alarm.AlarmSchedulerBridge
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import com.timilehinaregbesola.mathalarm.sound.AlarmSoundCatalog
 import kotlinx.cinterop.ExperimentalForeignApi
 import platform.AudioToolbox.AudioServicesPlaySystemSound
 import platform.AudioToolbox.kSystemSoundID_Vibrate
 import platform.Foundation.NSBundle
 import platform.Foundation.NSURL
 import platform.UIKit.UIActivityViewController
-import platform.UIKit.UIAlertAction
-import platform.UIKit.UIAlertActionStyleCancel
-import platform.UIKit.UIAlertActionStyleDefault
-import platform.UIKit.UIAlertController
-import platform.UIKit.UIAlertControllerStyleAlert
 import platform.UIKit.UIApplication
 import platform.UIKit.UIApplicationOpenSettingsURLString
 import platform.UIKit.UIImpactFeedbackGenerator
@@ -43,21 +39,21 @@ actual class PlatformVibrator actual constructor() {
 }
 
 actual fun getRingtoneTitle(alarmTone: String): String {
+    AlarmSoundCatalog.find(alarmTone)?.let { return it.displayName }
     return when {
         alarmTone.isEmpty() -> "Default"
-        alarmTone == "alarm_classic" -> "Classic"
-        alarmTone == "alarm_digital" -> "Digital"
-        alarmTone == "alarm_gentle" -> "Gentle"
-        alarmTone == "alarm_nature" -> "Nature"
-        alarmTone == "alarm_urgent" -> "Urgent"
         alarmTone.contains("/") -> alarmTone.substringAfterLast("/").substringBeforeLast(".")
         else -> "Custom Sound"
     }
 }
 
 actual fun getDefaultAlarmTone(): String {
-    return "alarm_classic"
+    return AlarmSoundCatalog.DEFAULT_SOUND
 }
+
+actual fun supportsSkipNext(): Boolean = false
+actual fun supportsAlarmVibration(): Boolean = false
+actual fun alarmSoundPickerKind(): AlarmSoundPickerKind = AlarmSoundPickerKind.BUNDLED_LIBRARY
 
 actual fun shouldStartMathScreenAlarmAudio(fromSheet: Boolean): Boolean = true
 
@@ -123,56 +119,9 @@ actual fun getApplicationId(): String {
 
 actual fun getAppShareUrl(): String = "https://github.com/t-regbs/MathAlarm"
 
-private val bundledAlarmTones = listOf(
-    "alarm_classic" to "Classic",
-    "alarm_digital" to "Digital",
-    "alarm_gentle" to "Gentle",
-    "alarm_nature" to "Nature",
-    "alarm_urgent" to "Urgent"
-)
-
-actual class RingtonePickerLauncher(
-    private val onResult: (String?) -> Unit
-) {
-    actual fun launch(currentTone: String?) {
-        val alert = UIAlertController.alertControllerWithTitle(
-            title = "Alarm Sound",
-            message = null,
-            preferredStyle = UIAlertControllerStyleAlert
-        )
-
-        bundledAlarmTones.forEach { (tone, title) ->
-            val actionTitle = if (tone == currentTone) "$title ✓" else title
-            alert.addAction(
-                UIAlertAction.actionWithTitle(
-                    title = actionTitle,
-                    style = UIAlertActionStyleDefault
-                ) { _ ->
-                    onResult(tone)
-                }
-            )
-        }
-
-        alert.addAction(
-            UIAlertAction.actionWithTitle(
-                title = "Cancel",
-                style = UIAlertActionStyleCancel,
-                handler = null
-            )
-        )
-
-        UIApplication.sharedApplication.keyWindow?.rootViewController?.presentViewController(
-            alert,
-            animated = true,
-            completion = null
-        )
-    }
-}
-
+// The shared bundled sound editor handles selection on iOS.
 @Composable
-actual fun rememberRingtonePickerLauncher(onResult: (String?) -> Unit): RingtonePickerLauncher {
-    return remember(onResult) { RingtonePickerLauncher(onResult) }
-}
+actual fun rememberRingtonePickerLauncher(onResult: (String?) -> Unit): RingtonePickerLauncher? = null
 
 @Composable
 actual fun rememberNotificationPermissionHandler(onResult: (Boolean) -> Unit): () -> Unit {
@@ -192,16 +141,12 @@ actual fun checkRingtonePermissions(
     // Media library access would need separate handling if using user's music
 }
 
-actual fun previewAlarmTone(alarmTone: String) {
-    com.timilehinaregbesola.mathalarm.interactors.IosAlarmAudioManager.startAlarm(
-        soundName = alarmTone,
-        vibrate = false,
-        volume = 0.75f,
-    )
+actual fun previewAlarmTone(alarmTone: String, onFinished: () -> Unit) {
+    com.timilehinaregbesola.mathalarm.interactors.IosAlarmAudioManager.startPreview(alarmTone, onFinished)
 }
 
 actual fun stopAlarmTonePreview() {
-    com.timilehinaregbesola.mathalarm.interactors.IosAlarmAudioManager.stopAlarm()
+    com.timilehinaregbesola.mathalarm.interactors.IosAlarmAudioManager.stopPreview()
 }
 
 actual fun stopPlatformAlarmAudio() {

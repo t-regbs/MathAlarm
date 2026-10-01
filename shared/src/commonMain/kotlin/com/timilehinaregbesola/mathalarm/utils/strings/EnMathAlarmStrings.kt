@@ -161,6 +161,17 @@ val EnMathAlarmStrings = Strings(
     notification = "Notification",
     alert = "Ringtone",
     grantPermission = "Grant Permission",
+    alarmSound = "Alarm sound",
+    done = "Done",
+    daybreakDescription = "Soft mallets · gentle",
+    orbitDescription = "Flowing synth · bright",
+    rallyDescription = "Electronic rhythm · insistent",
+    glassGardenDescription = "Shimmering bells · clear",
+    steppingStonesDescription = "Wooden mallets · rhythmic",
+    clearSignalDescription = "Paired tones · distinct",
+    currentSound = "Current sound",
+    previewSound = "Preview",
+    stopSoundPreview = "Stop preview",
     permissionsExternalStorageText = { tone ->
         "It seems that we cannot play $tone, probably because a permission is required. If you want, you can grant the permission. Alternatively, select a different sound. This decision can be changed in System Settings."
     }

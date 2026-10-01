@@ -5,7 +5,6 @@ final class PendingDeeplinkStore {
     static let shared = PendingDeeplinkStore()
 
     private let userDefaults: UserDefaults
-    private let pendingDeeplinkKey = "MathAlarm.pendingAlarmKitDeeplink"
     private let queueKey = "MathAlarm.pendingAlarmHandoffs.v1"
     private let lock = NSLock()
 
@@ -19,19 +18,13 @@ final class PendingDeeplinkStore {
     }
 
     private func loadQueue() -> [Handoff] {
-        let saved = userDefaults.data(forKey: queueKey)
+        userDefaults.data(forKey: queueKey)
             .flatMap { try? JSONDecoder().decode([Handoff].self, from: $0) } ?? []
-        if let legacy = userDefaults.string(forKey: pendingDeeplinkKey),
-           !saved.contains(where: { $0.payload == legacy }) {
-            return [Handoff(id: UUID(), payload: legacy)] + saved
-        }
-        return saved
     }
 
     private func saveQueue(_ handoffs: [Handoff]) {
         do {
             userDefaults.set(try JSONEncoder().encode(handoffs), forKey: queueKey)
-            userDefaults.removeObject(forKey: pendingDeeplinkKey)
             userDefaults.synchronize()
         } catch {
             assertionFailure("Could not persist alarm handoff: \(error)")
@@ -124,9 +117,5 @@ final class AlarmRecoveryStore {
         var sessions = load()
         sessions.removeValue(forKey: String(alarmId))
         save(sessions)
-    }
-    func cancelAll() {
-        lock.lock(); defer { lock.unlock() }
-        save([:])
     }
 }

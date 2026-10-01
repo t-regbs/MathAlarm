@@ -18,7 +18,7 @@ Reviewed 24 September 2026 against commit `8fd60fc`. Implementation is on `codex
 
 ## Agreed release scope
 
-- [x] **iOS/iPadOS 26+ for the first release.** Agreed with the user; Debug and Release deployment targets now use 26.0. AlarmKit is the supported delivery backend. The older local-notification implementation remains in source but older OS versions are outside the release scope.
+- [x] **iOS/iPadOS 26+ for the first release.** Agreed with the user; Debug and Release deployment targets now use 26.0. AlarmKit is the sole delivery backend; the obsolete local-notification implementation has been removed.
 - [x] **Support both iPhone and iPad.** Keep device families 1 and 2. Use iPad simulators for layout/navigation checks and the connected physical iPhone for alarm delivery and audio, as agreed with the user. AlarmKit is available on both platforms ([Apple overview](https://developer.apple.com/videos/play/wwdc2025/230/)); simulator results do not establish physical iPad audibility.
 - [ ] **Define the iOS dismissal promise.** AlarmKit's stop control stops the system alarm before the math challenge is solved; this app then starts in-app playback. Test and document what happens if the person leaves/kills the app during that handoff or during the challenge. Do not promise that iOS makes dismissal impossible without solving math.
 
@@ -58,7 +58,7 @@ Evidence: `core/.../provider/AlarmTimeCalculatorImpl.kt:72`, `iosApp/iosApp/Alar
 
 A read-only Foundation/UserNotifications probe on this Mac confirmed that the same Monday 07:00 weekly trigger returns 28 September 2026 at 07:00 BST, with no date exception. Skipping that occurrence requires 5 October instead. This probe verifies trigger calculation, not physical iPhone delivery.
 
-- [x] Hide Skip next on iOS until a native date-exception strategy can preserve indefinite recurrence without relying on the app reopening. The iOS migration clears old skips and restores a future skipped one-time date where applicable. Android retains Skip next.
+- [x] Hide Skip next on iOS until a native date-exception strategy can preserve indefinite recurrence without relying on the app reopening. Android retains Skip next; no iOS migration is needed before its first release.
 - [ ] Verify actual OS registrations/delivery for recurring single-day and multi-day alarms and a pending snooze. Skip/Undo are outside the iOS release scope; a fake bridge that only checks the requested timestamp is insufficient.
 
 ### 2. Use one owner for alarm audio and vibration
@@ -109,7 +109,7 @@ Normal challenge initialization calls `consumeDueOccurrence` → `showAlarm` →
 
 Evidence: `iOSApp.swift:47,73,136`, `AlarmKitWrapper.swift:89,155`, `shared/.../framework/NotificationSnooze.kt:8`.
 
-- [x] Replace the single handoff string with a durable ordered queue, deduplicate identical payloads, migrate legacy pending data, and acknowledge only after the challenge initializes. A Foundation-only Swift smoke test covers queue/relaunch behavior.
+- [x] Replace the single handoff string with a durable ordered queue, deduplicate identical payloads and acknowledge only after the challenge initializes. A Foundation-only Swift smoke test covers queue/relaunch behavior.
 - [x] Retain metadata when a recurring alarm opens the challenge; clean it up on definitive native cancellation/deletion.
 - [ ] Give each AlarmKit delivery a stable occurrence identity, so two unacknowledged deliveries of the *same* recurring alarm cannot coalesce as identical payloads. Then test cold launch, app already open, two simultaneous alarms, lock/unlock, interrupted launch, and the next recurring delivery without editing the alarm.
 
@@ -120,7 +120,7 @@ Evidence: `iOSApp.swift:47,73,136`, `AlarmKitWrapper.swift:89,155`, `shared/.../
 Evidence: `framework/app/permission/AlarmPermissionImpl.kt:19`, `PlatformApis.ios.kt:26,97`, `iOSApp.swift:30,118`, `MainViewController.kt:44`, `AlarmKitWrapper.swift:372`.
 
 - [x] Use AlarmKit authorization as the iOS permission state, request it when saving/enabling rather than on launch, and route denial through the existing permission dialog/Settings action. Verify the full deny → allow UI flow on device.
-- [x] Scope the first release to iOS/iPadOS 26+ AlarmKit; local Time Sensitive notifications are legacy fallback code, not the supported delivery backend.
+- [x] Scope the first release to iOS/iPadOS 26+ AlarmKit; the obsolete local Time Sensitive notification backend has been removed.
 - [x] Run saved/native schedule reconciliation on activation and after handoff acknowledgment. Check each expected weekday/snooze registration so one surviving snooze cannot hide a missing regular alarm; skip an active challenge. Real timezone, revoke/regrant, and interrupted-write checks remain pending.
 - [ ] Test deny → Settings allow, revoke after saving, retry a failed save, timezone travel, DST, and interrupted schedule writes. An enabled card must not falsely imply an OS alarm is armed.
 

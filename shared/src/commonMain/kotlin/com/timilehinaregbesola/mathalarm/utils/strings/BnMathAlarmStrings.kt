@@ -161,6 +161,17 @@ val BnMathAlarmStrings = Strings(
     notification = "বিজ্ঞপ্তি",
     alert = "রিংটোন",
     grantPermission = "অনুমতি দিন",
+    alarmSound = "অ্যালার্মের শব্দ",
+    done = "সম্পন্ন",
+    daybreakDescription = "নরম আঘাত · কোমল",
+    orbitDescription = "প্রবাহিত সিন্থ · উজ্জ্বল",
+    rallyDescription = "ইলেকট্রনিক ছন্দ · অবিরাম",
+    glassGardenDescription = "ঝলমলে ঘণ্টা · স্বচ্ছ",
+    steppingStonesDescription = "কাঠের আঘাত · ছন্দময়",
+    clearSignalDescription = "জোড়া সুর · স্বতন্ত্র",
+    currentSound = "বর্তমান শব্দ",
+    previewSound = "শুনুন",
+    stopSoundPreview = "প্রিভিউ বন্ধ করুন",
     permissionsExternalStorageText = { tone ->
         "মনে হচ্ছে আমরা $tone চালাতে পারছি না, সম্ভবত একটি অনুমতির প্রয়োজন। যদি আপনি চান, আপনি অনুমতি দিতে পারেন। বিকল্পভাবে, একটি ভিন্ন শব্দ নির্বাচন করুন। এই সিদ্ধান্তটি সিস্টেম সেটিংসে পরিবর্তন করা যেতে পারে।"
     }

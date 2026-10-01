@@ -83,7 +83,8 @@ fun NavGraph(
     deeplinkInfo: String?,
     onDeeplinkConsumed: () -> Unit = {},
     onAlarmReady: (String) -> Unit = {},
-    validateAlarmHandoff: suspend (Long) -> Boolean = { true },
+    resolveAlarmHandoff: suspend (String) -> AlarmEntity? = { decodeAlarmSnapshot(it) },
+    acknowledgeHandoffWhenReady: Boolean = false,
     reviewVisit: Int = 0,
     onReviewOpportunityChanged: (Boolean) -> Unit = {},
     onRequestReview: () -> Unit = {},
@@ -100,6 +101,10 @@ fun NavGraph(
         }
     }
     val backStack = rememberNavBackStack(config, AlarmList)
+    var readyAlarmDestinations by remember { mutableStateOf<Set<AlarmMath>>(emptySet()) }
+    LaunchedEffect(backStack.toList()) {
+        readyAlarmDestinations = readyAlarmDestinations.intersect(backStack.filterIsInstance<AlarmMath>().toSet())
+    }
     var savedAlarmForReview by remember(reviewVisit) { mutableStateOf(false) }
     var reviewBlockedByList by remember { mutableStateOf(true) }
     var handledAlarmThisVisit by rememberSaveable(reviewVisit) { mutableStateOf(deeplinkInfo != null) }
@@ -111,7 +116,7 @@ fun NavGraph(
         NotificationSnoozeEvents.snoozed.collect { alarmId ->
             // A foreground notification can be snoozed while its challenge is visible.
             val matching = backStack.filterIsInstance<AlarmMath>().filter {
-                !it.fromSheet && decodeAlarmHandoff(it.alarmJson)?.alarmId == alarmId
+                it.handoff?.alarmId == alarmId
             }
             backStack.removeAll(matching.toSet())
         }
@@ -139,19 +144,25 @@ fun NavGraph(
     val mathPreviewStrategy = remember { MathPreviewSceneStrategy<NavKey>(useDialogOverlay = !isIosPlatform()) }
 
     // Navigate to MathScreen when deeplinkInfo changes (e.g., from notification tap)
-    LaunchedEffect(deeplinkInfo) {
+    LaunchedEffect(deeplinkInfo, readyAlarmDestinations) {
         println("NavGraph: LaunchedEffect triggered with deeplinkInfo = $deeplinkInfo")
         deeplinkInfo?.let {
             val incoming = decodeAlarmHandoff(it)
-            val alreadyOpen = incoming != null && backStack.filterIsInstance<AlarmMath>().any { key ->
-                !key.fromSheet && key.alarmJson == it
-            }
-            if (incoming != null && !alreadyOpen && validateAlarmHandoff(incoming.alarmId)) {
-                println("NavGraph: Navigating to AlarmMath")
-                backStack.add(AlarmMath(it, false))
-                if (!isIosPlatform()) onDeeplinkConsumed()
-            } else if (!alreadyOpen || !isIosPlatform()) {
-                onDeeplinkConsumed()
+            when (alarmHandoffAction(incoming, backStack.filterIsInstance<AlarmMath>(),
+                readyAlarmDestinations, acknowledgeHandoffWhenReady)) {
+                AlarmHandoffAction.OPEN -> {
+                    val alarm = resolveAlarmHandoff(it)
+                    if (alarm == null) {
+                        onDeeplinkConsumed()
+                    } else {
+                        backStack.add(AlarmMath(Json.encodeToString(alarm), handoffJson = it))
+                        if (!acknowledgeHandoffWhenReady) onDeeplinkConsumed()
+                    }
+                }
+                // A hidden challenge has already initialized. Its duplicate must not
+                // hold the durable queue until that challenge becomes visible again.
+                AlarmHandoffAction.ACKNOWLEDGE -> onDeeplinkConsumed()
+                AlarmHandoffAction.WAIT_FOR_READY -> Unit
             }
         }
     }
@@ -246,7 +257,10 @@ fun NavGraph(
                     backStack = backStack,
                     alarm = alarmObject,
                     fromSheet = it.fromSheet,
-                    onAlarmReady = { onAlarmReady(it.alarmJson) },
+                    onAlarmReady = {
+                        readyAlarmDestinations = readyAlarmDestinations + it
+                        onAlarmReady(it.handoffJson ?: it.alarmJson)
+                    },
                     handoffPayload = deeplinkInfo,
                 )
             }
@@ -331,11 +345,6 @@ fun NavGraph(
         )
     }
 }
-
-internal fun decodeAlarmHandoff(payload: String): AlarmEntity? =
-    runCatching { Json.decodeFromString<AlarmEntity>(payload) }
-        .getOrNull()
-        ?.takeIf { it.alarmId > 0 }
 
 private object NavGraph {
     val ANIM_TRANSITION_DURATION = 700

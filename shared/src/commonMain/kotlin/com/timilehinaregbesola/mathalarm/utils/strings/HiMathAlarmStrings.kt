@@ -161,6 +161,17 @@ val HiMathAlarmStrings = Strings(
     notification = "सूचना",
     alert = "रिंगटोन",
     grantPermission = "अनुमति दें",
+    alarmSound = "अलार्म की ध्वनि",
+    done = "पूर्ण",
+    daybreakDescription = "हल्की थाप · सौम्य",
+    orbitDescription = "बहता सिंथ · उज्ज्वल",
+    rallyDescription = "इलेक्ट्रॉनिक लय · लगातार",
+    glassGardenDescription = "झिलमिलाती घंटियाँ · स्पष्ट",
+    steppingStonesDescription = "लकड़ी की थाप · लयबद्ध",
+    clearSignalDescription = "दोहरी ध्वनि · अलग",
+    currentSound = "वर्तमान ध्वनि",
+    previewSound = "सुनें",
+    stopSoundPreview = "पूर्वावलोकन रोकें",
     permissionsExternalStorageText = { tone ->
         "ऐसा लगता है कि हम $tone नहीं चला सकते, शायद क्योंकि अनुमति की आवश्यकता है। यदि आप चाहें तो अनुमति दे सकते हैं। वैकल्पिक रूप से, एक अलग ध्वनि चुनें। यह निर्णय सिस्टम सेटिंग्स में बदला जा सकता है।"
     }

@@ -161,6 +161,17 @@ val DeMathAlarmStrings = Strings(
     notification = "Benachrichtigung",
     alert = "Klingelton",
     grantPermission = "Berechtigung erteilen",
+    alarmSound = "Alarmton",
+    done = "Fertig",
+    daybreakDescription = "Sanfte Schlägel · ruhig",
+    orbitDescription = "Fließender Synth · hell",
+    rallyDescription = "Elektronischer Rhythmus · eindringlich",
+    glassGardenDescription = "Schimmernde Glocken · klar",
+    steppingStonesDescription = "Holzschlägel · rhythmisch",
+    clearSignalDescription = "Tonpaare · markant",
+    currentSound = "Aktueller Ton",
+    previewSound = "Anhören",
+    stopSoundPreview = "Vorschau stoppen",
     permissionsExternalStorageText = { tone ->
         "Es scheint, dass wir $tone nicht abspielen können, wahrscheinlich weil eine Erlaubnis erforderlich ist. Wenn Sie möchten, können Sie die Erlaubnis erteilen. Alternativ können Sie einen anderen Ton auswählen. Diese Entscheidung kann in den Systemeinstellungen geändert werden."
     }

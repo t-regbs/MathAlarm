@@ -10,22 +10,13 @@ import co.touchlab.kermit.platformLogWriter
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermission
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermissionImpl
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmDatabase
-import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_2_3
-import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_3_4
-import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_5_6
-import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_6_7
-import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_8_9
-import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_7_8
-import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_4_5
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractorImpl
 import com.timilehinaregbesola.mathalarm.interactors.AudioPlayer
 import com.timilehinaregbesola.mathalarm.interactors.IosAudioPlayer
 import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractor
 import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractorImpl
-import com.timilehinaregbesola.mathalarm.notification.IosAlarmNotification
 import com.timilehinaregbesola.mathalarm.notification.IosAlarmScheduler
-import com.timilehinaregbesola.mathalarm.notification.NotificationActionDelegate
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -52,45 +43,24 @@ val iosModule = module {
         Room.databaseBuilder<AlarmDatabase>(
             name = dbFile
         )
-            .addMigrations(
-                MIGRATION_2_3,
-                MIGRATION_3_4,
-                MIGRATION_4_5,
-                MIGRATION_5_6,
-                MIGRATION_6_7,
-                MIGRATION_7_8,
-                MIGRATION_8_9,
-            )
             .setDriver(BundledSQLiteDriver())
             .build()
     }
     
     single { get<AlarmDatabase>().alarmDatabaseDao }
     
-    // iOS Alarm Scheduler - schedules notifications
+    // AlarmKit scheduler shared by both interactors
     single { IosAlarmScheduler(getWith("IosAlarmScheduler")) }
-    
-    // iOS Alarm Notification - handles showing/dismissing delivered notifications
-    single { IosAlarmNotification(getWith("IosAlarmNotification")) }
-    
-    // Notification Action Delegate - handles snooze/dismiss actions from notifications
-    single { 
-        NotificationActionDelegate(
-            appCoroutineScope = get(),
-            usecases = get(),
-            logger = getWith("NotificationActionDelegate")
-        )
-    }
     
     // iOS Audio Player
     single<AudioPlayer> { IosAudioPlayer(getWith("IosAudioPlayer")) }
     
     // Alarm Interactor (iOS implementation)
-    single<AlarmInteractor> { AlarmInteractorImpl(getWith("AlarmInteractorImpl")) }
+    single<AlarmInteractor> { AlarmInteractorImpl(get()) }
     
     // Notification Interactor (iOS implementation)
     single<NotificationInteractor> {
-        NotificationInteractorImpl(getWith("NotificationInteractorImpl"))
+        NotificationInteractorImpl(get())
     }
     
     // Alarm Permission (iOS doesn't need exact alarm permission)
@@ -132,7 +102,7 @@ fun prewarmDatabase() {
                 val database: AlarmDatabase by inject()
             }
             // Trigger lazy initialization by accessing the database
-            // This runs the Room builder and migrations off the main thread
+            // This runs the Room builder off the main thread
             helper.database.alarmDatabaseDao
             println("IosModule: Database prewarmed successfully")
         } catch (e: Exception) {
