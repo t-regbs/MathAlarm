@@ -13,7 +13,10 @@ import com.timilehinaregbesola.mathalarm.fake.AudioPlayerFake
 import com.timilehinaregbesola.mathalarm.fake.DateTimeProviderFake
 import com.timilehinaregbesola.mathalarm.fake.NotificationInteractorFake
 import com.timilehinaregbesola.mathalarm.framework.Usecases
+import com.timilehinaregbesola.mathalarm.framework.unresolvedOccurrenceForDelivery
+import com.timilehinaregbesola.mathalarm.framework.isUnresolvedOccurrence
 import com.timilehinaregbesola.mathalarm.framework.snoozeFromNotification
+import com.timilehinaregbesola.mathalarm.framework.consumeDueOccurrence
 import kotlin.test.assertFailsWith
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
@@ -386,11 +389,23 @@ class AlarmMathViewModelTest {
         usecases.addAlarm(alarm)
         val vm = AlarmMathViewModel(usecases, audioPlayer, Logger.withTag("progressRetry"), ChallengeProgressStore(settings))
         vm.initializeChallenge(alarm, false) shouldBe false
+        val firstFailure = vm.state.value
+        firstFailure.problems.isNotEmpty() shouldBe true
+        firstFailure.occurrenceId shouldBe "998:1000"
+        firstFailure.answerText shouldBe ""
+        audioPlayer.isPlaying shouldBe false
         vm.initializeChallenge(alarm, false) shouldBe false
+        vm.state.value.problems shouldBe firstFailure.problems
+        vm.state.value.currentProblem shouldBe firstFailure.currentProblem
+        vm.state.value.answerText shouldBe firstFailure.answerText
+        vm.state.value.occurrenceId shouldBe firstFailure.occurrenceId
+        vm.state.value.startedAt shouldBe firstFailure.startedAt
         progressStore.load(998, 1000) shouldBe null
         reject = false
         vm.initializeChallenge(alarm, false) shouldBe true
-        progressStore.load(998, 1000)!!.problems shouldBe vm.state.value.problems
+        vm.state.value.problems shouldBe firstFailure.problems
+        vm.state.value.startedAt shouldBe firstFailure.startedAt
+        progressStore.load(998, 1000)!!.problems shouldBe firstFailure.problems
     }
 
     @Test
@@ -467,6 +482,163 @@ class AlarmMathViewModelTest {
         progressStore.load(999, 1000) shouldBe real.state.value.let {
             ChallengeProgressStore.Progress(1000, it.problems, it.questionIndex, it.startedAt, it.incorrectAnswers)
         }
+    }
+
+    @Test
+    fun `final acceptance write failure retains answer problem identity and recovery until retry`() = runTest {
+        var rejectWrite = true
+        var recoveryCancellations = 0
+        val faultSource = object : com.timilehinaregbesola.mathalarm.data.AlarmDataSource by dataSource {
+            override suspend fun updateAlarm(alarm: Alarm) {
+                if (rejectWrite) error("final acceptance storage unavailable")
+                dataSource.updateAlarm(alarm)
+            }
+        }
+        val faultRepository = AlarmRepository(faultSource)
+        val backend = object : AlarmInteractor by alarmInteractor {
+            override fun cancelRecovery(alarm: Alarm) { recoveryCancellations++ }
+        }
+        val commands = usecases.copy(completeAlarm =
+            CompleteAlarm(faultRepository, backend, notificationInteractor, dateTimeProvider))
+        val vm = AlarmMathViewModel(commands, audioPlayer, Logger.withTag("finalWriteRetry"), progressStore)
+        val alarm = Alarm(alarmId = 1010, activeAt = 1000, isOn = true, isSaved = true)
+        commands.addAlarm(alarm)
+        vm.initializeChallenge(alarm, false) shouldBe true
+        val initial = vm.state.value
+        val progress = progressStore.load(1010, 1000)
+        val problem = vm.currentProblem!!
+        val answer = "  ${problem.answer}  "
+        vm.onEvent(MathScreenEvent.EnteredAnswer(answer))
+        vm.submitAnswer(initial.questionIndex, problem)
+        // Native input while finishing cannot replace the submitted answer.
+        vm.onEvent(MathScreenEvent.EnteredAnswer("different"))
+        vm.submitAnswer(initial.questionIndex, problem)
+        advanceUntilIdle()
+        vm.state.value.readiness shouldBe ChallengeReadiness.READY
+        vm.state.value.finishing shouldBe false
+        vm.state.value.answerText shouldBe answer
+        vm.state.value.currentProblem shouldBe problem
+        vm.state.value.problems shouldBe initial.problems
+        vm.state.value.occurrenceId shouldBe initial.occurrenceId
+        vm.state.value.questionIndex shouldBe initial.questionIndex
+        vm.state.value.startedAt shouldBe initial.startedAt
+        vm.state.value.results.map { it.outcome } shouldBe listOf(ChallengeOutcome.Failure(AlarmErrorMessage.DISMISS))
+        progressStore.load(1010, 1000) shouldBe progress
+        commands.findAlarm(1010) shouldBe alarm
+        recoveryCancellations shouldBe 0
+        val failureId = vm.state.value.results.single().id
+        vm.acknowledgeResult(failureId)
+        vm.state.value.results shouldBe emptyList()
+        rejectWrite = false
+        vm.submitAnswer(initial.questionIndex, problem)
+        vm.submitAnswer(initial.questionIndex, problem)
+        advanceUntilIdle()
+        vm.state.value.readiness shouldBe ChallengeReadiness.RESOLVED
+        vm.state.value.answerText shouldBe ""
+        vm.state.value.results.map { it.outcome } shouldBe listOf(ChallengeOutcome.Completed)
+        commands.findAlarm(1010)!!.activeAt shouldBe null
+        progressStore.load(1010, 1000) shouldBe null
+        recoveryCancellations shouldBe 1
+        vm.acknowledgeResult(vm.state.value.results.single().id)
+        vm.state.value.results shouldBe emptyList()
+        vm.close()
+        recoveryCancellations shouldBe 1
+    }
+
+    @Test
+    fun `captured index rejects stale duplicate even when adjacent problems are identical`() = runTest {
+        val alarm = Alarm(alarmId = 1011, activeAt = 1000, isOn = true, isSaved = true, questionCount = 2)
+        val repeated = MathProblem(MathProblemOperator.Add, 1, 1, 2)
+        usecases.addAlarm(alarm)
+        progressStore.save(1011, ChallengeProgressStore.Progress(1000, listOf(repeated, repeated), 0, startedAt = 1234))
+        viewModel.initializeChallenge(alarm, false) shouldBe true
+        viewModel.onEvent(MathScreenEvent.EnteredAnswer("2"))
+        viewModel.submitAnswer(0, repeated)
+        viewModel.state.value.questionIndex shouldBe 1
+        viewModel.onEvent(MathScreenEvent.EnteredAnswer("2"))
+        viewModel.submitAnswer(0, repeated)
+        advanceUntilIdle()
+        viewModel.state.value.questionIndex shouldBe 1
+        viewModel.state.value.answerText shouldBe "2"
+        viewModel.state.value.results shouldBe emptyList()
+        usecases.findAlarm(1011)!!.activeAt shouldBe 1000L
+        progressStore.load(1011, 1000)!!.questionIndex shouldBe 1
+        viewModel.submitAnswer(1, repeated)
+        viewModel.submitAnswer(1, repeated)
+        advanceUntilIdle()
+        viewModel.state.value.results.map { it.outcome } shouldBe listOf(ChallengeOutcome.Completed)
+        usecases.findAlarm(1011)!!.activeAt shouldBe null
+    }
+
+    @Test
+    fun `ordered real sessions retain independent progress audio and recovery through observer cleanup`() = runTest {
+        var audioStops = 0
+        val recovered = mutableListOf<Long>()
+        val audio = object : com.timilehinaregbesola.mathalarm.interactors.AudioPlayer by audioPlayer {
+            override fun stop() { audioStops++; audioPlayer.stop() }
+        }
+        val backend = object : AlarmInteractor by alarmInteractor {
+            override fun cancelRecovery(alarm: Alarm) { recovered.add(alarm.alarmId) }
+        }
+        val commands = usecases.copy(completeAlarm = CompleteAlarm(repository, backend, notificationInteractor, dateTimeProvider))
+        val coordinator = com.timilehinaregbesola.mathalarm.application.ChallengeCoordinator(commands, audio,
+            Logger.withTag("orderedIsolation"), progressStore, analytics)
+        fun owner() = AlarmMathViewModel(commands, audio, Logger.withTag("orderedOwner"), progressStore, analytics, coordinator)
+        val first = Alarm(alarmId = 1012, activeAt = 1000, isOn = true, isSaved = true, questionCount = 2)
+        val second = first.copy(alarmId = 1013, activeAt = 2000)
+        commands.addAlarm(first); commands.addAlarm(second)
+        val preview = owner(); val a = owner(); val aReplacement = owner(); val b = owner()
+        preview.initializeChallenge(Alarm(alarmTone = "draft tone"), true) shouldBe true
+        audioPlayer.isPlaying shouldBe true
+        a.initializeChallenge(first, false) shouldBe true
+        val firstProblem = a.currentProblem!!
+        a.onEvent(MathScreenEvent.EnteredAnswer(firstProblem.answer.toString()))
+        a.submitAnswer(0, firstProblem)
+        val firstProgress = progressStore.load(1012, 1000)!!
+        firstProgress.questionIndex shouldBe 1
+        val beforeRemoval = audioStops
+        a.close()
+        preview.stopPreview(); preview.close()
+        audioStops shouldBe beforeRemoval
+        recovered shouldBe emptyList()
+        aReplacement.initializeChallenge(first, false) shouldBe true
+        aReplacement.state.value.problems shouldBe firstProgress.problems
+        aReplacement.state.value.questionIndex shouldBe 1
+        b.initializeChallenge(second, false) shouldBe false
+        audioStops shouldBe beforeRemoval
+        progressStore.load(1013, 2000) shouldBe null
+        commands.findAlarm(1013)!!.activeAt shouldBe 2000L
+        aReplacement.completeAlarm(first)
+        advanceUntilIdle()
+        recovered shouldBe listOf(1012L)
+        progressStore.load(1012, 1000) shouldBe null
+        b.initializeChallenge(second, false) shouldBe true
+        val secondProgress = progressStore.load(1013, 2000)!!
+        val afterSecondStart = audioStops
+        // Retained stale owner actions cannot resolve or silence the next real session.
+        aReplacement.completeAlarm(first)
+        aReplacement.onEvent(MathScreenEvent.OnSnoozeClick(first.alarmId))
+        advanceUntilIdle()
+        audioStops shouldBe afterSecondStart
+        recovered shouldBe listOf(1012L)
+        commands.findAlarm(1013)!!.activeAt shouldBe 2000L
+        progressStore.load(1013, 2000) shouldBe secondProgress
+        aReplacement.close()
+        a.close(); preview.close()
+        audioStops shouldBe afterSecondStart
+        recovered shouldBe listOf(1012L)
+        b.close()
+        audioStops shouldBe afterSecondStart
+        commands.findAlarm(1013)!!.activeAt shouldBe 2000L
+        progressStore.load(1013, 2000) shouldBe secondProgress
+        val bReplacement = owner()
+        bReplacement.initializeChallenge(second, false) shouldBe true
+        bReplacement.state.value.problems shouldBe secondProgress.problems
+        bReplacement.completeAlarm(second)
+        advanceUntilIdle()
+        recovered shouldBe listOf(1012L, 1013L)
+        progressStore.load(1013, 2000) shouldBe null
+        audioPlayer.isPlaying shouldBe false
     }
 
     @AfterTest
@@ -798,6 +970,103 @@ class AlarmMathViewModelTest {
         usecases.addAlarm(Alarm(alarmId = 914, isOn = true, isSaved = true, scheduleInitialized = true, pendingTimes = listOf(2000)))
         usecases.snoozeFromNotification(914, 1000) shouldBe false
         usecases.findAlarm(914)!!.snoozeCount shouldBe 0
+    }
+
+    @Test fun `later repeating deliveries coalesce only to authoritative unresolved occurrence`() = runTest {
+        val alarm = Alarm(alarmId = 4001, isOn = true, repeat = true, activeAt = 1000,
+            pendingTimes = listOf(2000, 3000), scheduleInitialized = true)
+        usecases.addAlarm(alarm)
+        val progress = ChallengeProgressStore.Progress(1000, listOf(MathProblem(MathProblemOperator.Add, 1, 1, 2)), 0, 1234)
+        progressStore.save(4001, progress)
+        usecases.unresolvedOccurrenceForDelivery(4001, 2000) shouldBe 1000L
+        usecases.findAlarm(4001) shouldBe alarm.copy(pendingTimes = listOf(3000))
+        progressStore.load(4001, 1000) shouldBe progress
+        usecases.unresolvedOccurrenceForDelivery(4001, 2000) shouldBe 1000L
+        usecases.findAlarm(4001)!!.pendingTimes shouldBe listOf(3000)
+        usecases.unresolvedOccurrenceForDelivery(4001, 99_000) shouldBe 1000L
+        usecases.unresolvedOccurrenceForDelivery(4001, null) shouldBe 1000L
+        usecases.unresolvedOccurrenceForDelivery(4001, 999) shouldBe null
+        usecases.isUnresolvedOccurrence(4001, 1000) shouldBe true
+        usecases.completeAlarm(4001, expectedActiveAt = 1000) shouldBe true
+        usecases.unresolvedOccurrenceForDelivery(4001, 99_000) shouldBe null
+        usecases.isUnresolvedOccurrence(4001, 1000) shouldBe false
+        usecases.command { consumeDueOccurrence(4001, now = 2000) }!!.activeAt shouldBe null
+        usecases.showAlarm(4001, 2000)
+        usecases.findAlarm(4001)!!.activeAt shouldBe null
+        usecases.findAlarm(4001)!!.pendingTimes shouldBe listOf(3000)
+    }
+
+    @Test fun `coalescing write failure retains original delivery identity for authoritative retry`() = runTest {
+        var reject = true
+        val faultSource = object : com.timilehinaregbesola.mathalarm.data.AlarmDataSource by dataSource {
+            override suspend fun updateAlarm(alarm: Alarm) {
+                if (reject) error("coalescing storage unavailable")
+                dataSource.updateAlarm(alarm)
+            }
+        }
+        val commands = usecases.copy(updateAlarm = UpdateAlarm(AlarmRepository(faultSource)))
+        val alarm = Alarm(alarmId = 4005, isOn = true, repeat = true, activeAt = 1000,
+            pendingTimes = listOf(2000, 3000), scheduleInitialized = true)
+        commands.addAlarm(alarm)
+        assertFailsWith<IllegalStateException> { commands.unresolvedOccurrenceForDelivery(4005, 2000) }
+        commands.findAlarm(4005) shouldBe alarm
+        commands.isUnresolvedOccurrence(4005, 1000) shouldBe true
+        reject = false
+        commands.unresolvedOccurrenceForDelivery(4005, 2000) shouldBe 1000L
+        commands.findAlarm(4005) shouldBe alarm.copy(pendingTimes = listOf(3000))
+    }
+
+    @Test fun `post accepted database read outage never downgrades completion or snooze`() = runTest {
+        for (snooze in listOf(false, true)) {
+            var accepted = false
+            var readsAfterAcceptance = 0
+            val readFault = object : com.timilehinaregbesola.mathalarm.data.AlarmDataSource by dataSource {
+                override suspend fun findAlarm(id: Long): Alarm? {
+                    if (accepted) { readsAfterAcceptance++; error("storage read unavailable after acceptance") }
+                    return dataSource.findAlarm(id)
+                }
+            }
+            val commands = usecases.copy(
+                findAlarm = FindAlarm(AlarmRepository(readFault)),
+                completeAlarm = CompleteAlarm(repository, alarmInteractor, notificationInteractor, dateTimeProvider,
+                    onCompleted = { accepted = true }),
+                snoozeAlarm = SnoozeAlarm(dateTimeProvider, notificationInteractor, alarmInteractor, repository,
+                    onSnoozed = { accepted = true }),
+            )
+            var stops = 0
+            val audio = object : com.timilehinaregbesola.mathalarm.interactors.AudioPlayer by audioPlayer {
+                override fun stop() { stops++; audioPlayer.stop() }
+            }
+            val vm = AlarmMathViewModel(commands, audio, Logger.withTag("postAcceptanceRead"), progressStore)
+            val alarm = Alarm(alarmId = if (snooze) 4007 else 4006, isOn = true, isSaved = true, activeAt = 1000)
+            commands.addAlarm(alarm)
+            vm.initializeChallenge(alarm, false) shouldBe true
+            val before = stops
+            if (snooze) vm.onEvent(MathScreenEvent.OnSnoozeClick(alarm.alarmId))
+            else vm.completeAlarm(alarm)
+            advanceUntilIdle()
+            accepted shouldBe true
+            readsAfterAcceptance shouldBe 0
+            vm.state.value.readiness shouldBe ChallengeReadiness.RESOLVED
+            vm.state.value.results.map { it.outcome } shouldBe listOf(if (snooze) ChallengeOutcome.Snoozed else ChallengeOutcome.Completed)
+            if (com.timilehinaregbesola.mathalarm.platform.isIosPlatform()) stops shouldBe before + 1
+            audioPlayer.isPlaying shouldBe false
+            repository.findAlarm(alarm.alarmId)!!.activeAt shouldBe null
+            progressStore.load(alarm.alarmId, 1000) shouldBe null
+            vm.acknowledgeResult(vm.state.value.results.single().id)
+            vm.state.value.results shouldBe emptyList()
+            vm.close()
+        }
+    }
+
+    @Test fun `disabled and independent one time alarms do not coalesce into native stale tokens`() = runTest {
+        usecases.addAlarm(Alarm(alarmId = 4002, isOn = false, repeat = true, activeAt = 1000))
+        usecases.addAlarm(Alarm(alarmId = 4003, isOn = true, repeat = false, activeAt = 1000))
+        usecases.unresolvedOccurrenceForDelivery(4002, 2000) shouldBe null
+        usecases.isUnresolvedOccurrence(4002, 1000) shouldBe false
+        usecases.unresolvedOccurrenceForDelivery(4003, 2000) shouldBe null
+        usecases.isUnresolvedOccurrence(4003, 1000) shouldBe true
+        usecases.unresolvedOccurrenceForDelivery(4004, 2000) shouldBe null
     }
 
 }

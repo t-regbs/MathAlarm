@@ -266,13 +266,18 @@ class AlarmInteractorImplTest {
         assertTrue(backend.cancelledKeys.isEmpty())
     }
 
-    @Test fun acceptedSnoozeCancelsRecoveryAndCompletionCancelsBoth() = runTest {
+    @Test fun nativeSnoozeAcceptancePreservesRecoveryUntilApplicationPersistsAcceptance() = runTest {
         val backend = NativeAlarmSchedulerFake()
         AlarmSchedulerBridge.registerScheduler(backend)
         backend.markScheduled(42, "recovery")
         val interactor = AlarmInteractorImpl(IosAlarmScheduler(Logger.withTag("Test")))
         val alarm = Alarm(alarmId = 42)
         interactor.scheduleSnooze(alarm, 2_000_000_000_000)
+        assertTrue(backend.hasPendingOccurrence(42, "recovery"))
+        assertTrue(backend.hasPendingOccurrence(42, "snooze"))
+        assertTrue(backend.cancelledKeys.isEmpty())
+        // Core invokes this only after its authoritative accepted-state write.
+        interactor.cancelRecovery(alarm)
         assertFalse(backend.hasPendingOccurrence(42, "recovery"))
         assertTrue(backend.hasPendingOccurrence(42, "snooze"))
         backend.markScheduled(42, "recovery")

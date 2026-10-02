@@ -24,8 +24,7 @@ class AlarmInteractorImpl(
 
     override suspend fun scheduleSnooze(alarm: Alarm, timeInMillis: Long) {
         scheduler.scheduleOccurrence(alarm, timeInMillis, snooze = true)
-        // Only stop recovery after the replacement snooze was accepted.
-        AlarmSchedulerBridge.cancelOccurrence(alarm.alarmId, "recovery")
+        // Core cancels recovery only after the accepted snooze is durable.
     }
 
     override fun cancel(alarm: Alarm) = scheduler.cancelAlarm(alarm)

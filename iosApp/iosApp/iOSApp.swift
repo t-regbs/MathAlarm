@@ -22,43 +22,82 @@ struct iOSApp: App {
             #endif
             if newPhase == .active {
                 // Check for pending AlarmKit deeplinks when app becomes active
-                AppDelegate.checkPendingAlarmKitDeeplink()
-                IosApplication.shared.resumeAlarmSchedules()
+                AppDelegate.checkPendingAlarmKitDeeplink(restoreUnresolved: true)
             }
         }
     }
 }
 
+/// Native lifecycle status only. Kotlin remains authoritative for occurrence state.
+@MainActor
+final class NativeDeliveryRestoration: ObservableObject {
+    static let shared = NativeDeliveryRestoration()
+    @Published private(set) var ready = false
+    @Published private(set) var loading = false
+    @Published private(set) var failure: AlarmErrorMessage?
+
+    fileprivate func begin() {
+        ready = false
+        loading = true
+        failure = nil
+    }
+    fileprivate func finish(error: AlarmErrorMessage? = nil) {
+        failure = error
+        loading = false
+        ready = error == nil
+        NotificationCenter.default.post(name: .mathAlarmPendingDelivery, object: nil)
+    }
+}
+
+@MainActor
 class AppDelegate: NSObject, UIApplicationDelegate {
     
     /// The AlarmKit wrapper instance
     private let alarmKitWrapper = AlarmKitWrapperImpl.shared
     
     private static var restorationStarted = false
-    private static var restorationFinished = false
-    static var pendingDeliveryRestorationFinished: Bool { restorationFinished }
+    static var pendingDeliveryRestorationFinished: Bool { NativeDeliveryRestoration.shared.ready }
 
     /// Check for pending AlarmKit deeplinks and process them
     /// Called when app becomes active (from scenePhase change)
-    static func checkPendingAlarmKitDeeplink() {
+    static func checkPendingAlarmKitDeeplink(restoreUnresolved: Bool = false) {
         #if DEBUG
         if SharedBridgeVerification.enabled { return }
         #endif
-        if !restorationFinished {
+        if restoreUnresolved || !pendingDeliveryRestorationFinished {
             guard !restorationStarted else { return }
             restorationStarted = true
+            NativeDeliveryRestoration.shared.begin()
             IosApplication.shared.restoreUnresolvedHandoffs { payloads, succeeded in
-                guard succeeded.boolValue else {
-                    // Leave all deliveries unacknowledged; the next activation retries storage.
-                    restorationStarted = false
-                    return
+                // The approved Kotlin facade invokes this callback with
+                // withContext(Dispatchers.Main). Assert that contract at the bridge.
+                MainActor.assumeIsolated {
+                    guard succeeded.boolValue else {
+                        // Preserve queue and drafts. The native failure remains visible
+                        // until explicit retry or a later lifecycle refresh succeeds.
+                        restorationStarted = false
+                        NativeDeliveryRestoration.shared.finish(error: .initialization)
+                        return
+                    }
+                    guard PendingDeeplinkStore.shared.restoreUnresolvedHandoffs(payloads) else {
+                        restorationStarted = false
+                        NativeDeliveryRestoration.shared.finish(error: .update)
+                        return
+                    }
+                    Task { @MainActor in
+                        await AlarmKitWrapperImpl.shared.restoreRecoveryForUnresolved(payloads: payloads)
+                        await AlarmKitWrapperImpl.shared.collectAlertingDeliveries()
+                        restorationStarted = false
+                        NativeDeliveryRestoration.shared.finish()
+                        checkPendingAlarmKitDeeplink()
+                        IosApplication.shared.resumeAlarmSchedules()
+                    }
                 }
-                PendingDeeplinkStore.shared.restoreUnresolvedHandoffs(payloads)
-                restorationFinished = true
-                checkPendingAlarmKitDeeplink()
             }
             return
         }
+        guard !restorationStarted else { return }
+        Task { @MainActor in await AlarmKitWrapperImpl.shared.collectAlertingDeliveries() }
         // Keep the oldest handoff until its challenge has initialized.
         if let pendingJson = PendingDeeplinkStore.shared.peekPendingDeeplink() {
             print("AppDelegate: Found pending AlarmKit deeplink, setting it now")
@@ -71,42 +110,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         
         // If no pending deeplink, check if there's an alerting alarm
         // (User may have tapped the alert itself, not the stop button)
-        checkAlertingAlarms()
-    }
-    
-    /// Check for alerting alarms and navigate to MathScreen if found
-    @available(iOS 26, *)
-    private static func checkAlertingAlarms() {
-        Task { @MainActor in
-            do {
-                let manager = AlarmManager.shared
-                let alarms = try manager.alarms
-            
-                // Find any alerting alarm
-                for alarm in alarms where alarm.state == .alerting {
-                    print("AppDelegate: Found alerting alarm: \(alarm.id)")
-                
-                    // Get alarm data from our store
-                    if let alarmData = AlarmDataStore.shared.retrieve(alarmUUID: alarm.id.uuidString) {
-                        let delivery = identifiedDelivery(from: alarmData, registrationID: alarm.id.uuidString)
-                        let deeplinkJson = createDeeplinkJson(from: delivery)
-                        PendingDeeplinkStore.shared.setPendingDeeplink(deeplinkJson)
-                    
-                        // Stop the alarm since user is now in app
-                        try manager.stop(id: alarm.id)
-                        // A recovery reuses its native ID; stop the delivered alert before
-                        // replacing it, otherwise Stop would silence the new registration.
-                        try await AlarmKitWrapperImpl.shared.armRecovery(for: delivery)
-                        IosApplication.shared.deliverPendingHandoff(payload: deeplinkJson)
-                        NotificationCenter.default.post(name: .mathAlarmPendingDelivery, object: nil)
-                    
-                        return  // Handle one alerting alarm at a time
-                    }
-                }
-            } catch {
-                print("AppDelegate: Error checking alerting alarms: \(error)")
-            }
-        }
+        // collectAlertingDeliveries above publishes any newly retained head.
     }
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
@@ -129,7 +133,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
         // Check for pending AlarmKit deeplink (in case app was launched from AlarmKit)
         // Shared services were initialized before constructing any view.
         DispatchQueue.main.async {
-            AppDelegate.checkPendingAlarmKitDeeplink()
+            AppDelegate.checkPendingAlarmKitDeeplink(restoreUnresolved: true)
         }
         
         return true

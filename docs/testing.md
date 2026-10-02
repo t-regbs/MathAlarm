@@ -100,11 +100,11 @@ output. `result.json` records audibility as **not measured**.
 
 ## Production native UI and shared bridge checks
 
-Milestones 1–4 use the production `app` framework and the production Debug app,
+Milestones 1–5 use the production `app` framework and the production Debug app,
 with pinned Kotlin/Swift ObservableViewModel 1.1.0 and NativeCoroutines 1.0.6.
 See [migration baseline](native-ui-migration-baseline-2026-10-02.md) and
 [progress and lifecycle decisions](native-ui-migration-progress.md) for measured
-results and the Milestone 5 handoff.
+results and the Milestone 6 handoff.
 
 Run the host/native suites (including the renderer tests now in `androidApp`) and build Android:
 
@@ -133,24 +133,43 @@ python3 -B scripts/verify_ios_shared_bridge.py --udid DISPOSABLE_SIMULATOR_UDID 
 
 The explicit `--verify-shared-bridge` Debug launch path mounts a real SwiftUI owner
 and observed child in a UIKit window, using `SharedFeatures` and `IosApplication`.
-Twelve groups check bootstrap/handoff identity, generated state observation, the actual
-production `NativeSessionOwners` with compact/expanded/compact layout replacement,
-multiple retained drafts and native repeat/challenge/snooze/sound destinations, staged sound selection and owner-scoped preview playback, validation retry/duplicate saves/accepted-result acknowledgement and list delete/undo/clear, durable ordered delivery
-preservation without readiness/acknowledgement, typed validation without persistence,
-suspend/Flow cancellation, independent automatic mounted-owner cleanup, and explicit
-factory/window cleanup. Disabled fixture alarms are saved and cleaned up; no alarm registration or real occurrence is created. It uses an
-isolated native queue, and terminates its test app afterward. Use a
-disposable simulator because installing the app and bootstrapping its isolated
-storage are part of the check. Delete that simulator afterward.
+Twenty groups check bootstrap/handoff identity, generated state observation, the actual
+production `NativeSessionOwners` with compact/expanded/detail replacement, multiple
+retained drafts/routes, staged tone choices and permission guards; editor validation,
+duplicate guards, result acknowledgement, cancellation and structural owner cleanup.
+Milestone 5 adds actual native answer-field focus/placeholder/keyboard/input binding and native maths preview validation/progress/cancellation/completion,
+real readiness before exact queue acknowledgement, ordered different-alarm replay,
+return to the identical draft after accepted resolution, failed command retry,
+duplicate completion/snooze guards and acknowledged unresolved progress restoration.
+The runner terminates the first process after acknowledgement and progress persistence,
+then launches `--verify-m5-restoration` in a fresh process to compare every problem,
+index, start time and incorrect count before accepted resolution.
+
+Earlier groups save disabled fixtures. M5 groups use production Room, shared
+usecases/coordinator and native owners with a controlled `NativeAlarmScheduler`;
+they do not register physical AlarmKit alarms. Native recovery requests are captured
+at the service boundary; the separate Foundation smoke checks queue writes,
+registration reservations, repair, cancellation failures, restart, DST and continuous
+recovery token behavior. Use a disposable simulator: fixtures alter its app storage.
+The runner cleans fixtures and terminates its app; delete the simulator afterward.
 
 `SKIP_KOTLIN_BUILD=YES` permits a Swift-only iteration against an already generated
 framework; it does not establish verification of changed Kotlin source. A final
 bridge check must rebuild normally. The harness is excluded from Release and does
 not replace an Xcode unit/UI target (Milestone 7) or physical reliability checks.
-The normal iOS root is entirely SwiftUI. Native list/editor/nested settings and sound-tone preview are implemented. Maths Test Alarm and real challenge remain explicitly labelled Milestone 5 development screens; app settings remain Milestone 6. Real pending deliveries
-are restored/replayed and retained **without** native initialization or acknowledgement
-until Milestone 5 implements readiness. Do not use this development build to evaluate
-completed alarm UX or install it over a physical-device alarm setup for release testing.
+The normal iOS root is entirely SwiftUI. Native list/editor/nested settings, tone
+preview, maths preview and delivered challenge are implemented. App-wide settings
+and remaining presentation parity belong to Milestone 6. Native launch/activation
+restores durable unresolved occurrences independently of the delivery queue. Failed
+readiness keeps the exact delivery queued; accepted readiness persists unresolved
+progress before acknowledging the exact head. One unresolved challenge per repeating
+alarm coalesces later alerts through shared durable association; different alarms
+remain ordered. See the Milestone 5 progress record for failure-ordering decisions.
+
+Simulator checks do not establish physical AlarmKit delivery, audible playback,
+locked/background AppIntents, continuous recovery, Bluetooth/DND routing, fold
+transitions, minimum supported iOS 26.0 compatibility or release readiness. Preserve
+those gates in the release-readiness and manual recovery documents.
 
 Check the freshly rebuilt framework and resolved native graph as well as source:
 

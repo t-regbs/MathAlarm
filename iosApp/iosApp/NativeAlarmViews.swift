@@ -289,6 +289,7 @@ private struct NativeEditorNavigation: View {
     @State private var path: [NativeEditorDestination] = []
     @State private var pathInitialized = false
     @StateObject private var navigationObserver: NativeNavigationObserver
+    private var observer: Int { navigationObserver.generation }
 
     init(session: NativeEditorSession, sessions: NativeWindowSessions, requestingPermission: Bool,
          onDestinationAppeared: ((String, Int, NativeEditorDestination?) -> Void)?) {
@@ -305,34 +306,57 @@ private struct NativeEditorNavigation: View {
                 requestingPermission: requestingPermission, onDestinationAppeared: { destination in
                     Task { @MainActor in
                         await Task.yield()
-                        guard sessions.ownsNavigation(id: session.id, observer: navigationObserver.generation),
+                        guard sessions.ownsNavigation(id: session.id, observer: observer),
                               sessions.editorPaths[session.id]?.last == destination else { return }
-                        onDestinationAppeared?(session.id, navigationObserver.generation, destination)
+                        onDestinationAppeared?(session.id, observer, destination)
                     }
                 })
         }
-        .onAppear { sessions.beginNavigation(id: session.id, observer: navigationObserver.generation) }
+        .onAppear {
+            sessions.beginNavigation(id: session.id, observer: observer)
+            // Cached NavigationStacks can reappear without re-running their task.
+            Task { @MainActor in await restorePath() }
+        }
         .onDisappear {
-            sessions.endNavigation(id: session.id, observer: navigationObserver.generation)
-            pathInitialized = false
+            // SwiftUI may emit disappearance for a cached stack while its nested
+            // native controller remains visible. Selection/window end or a newer
+            // stack generation revokes ownership; this signal cannot do so.
+            trace("disappeared")
         }
-        .task {
-            guard !pathInitialized else { return }
-            await Task.yield()
-            guard !Task.isCancelled,
-                  sessions.ownsNavigation(id: session.id, observer: navigationObserver.generation) else { return }
-            path = sessions.editorPaths[session.id] ?? []
-            pathInitialized = true
-        }
+        .task(id: observer) { await restorePath() }
         .onChange(of: path) { value in
-            guard pathInitialized, sessions.editorPaths[session.id] != value else { return }
-            sessions.setEditorPath(value, id: session.id, observer: navigationObserver.generation)
+            guard pathInitialized, sessions.ownsNavigation(id: session.id, observer: observer),
+                  sessions.editorPaths[session.id] != value else { trace("local write ignored"); return }
+            trace("local write accepted")
+            sessions.setEditorPath(value, id: session.id, observer: observer)
         }
         .onChange(of: sessions.editorPaths[session.id] ?? []) { value in
-            guard pathInitialized, path != value,
-                  sessions.ownsNavigation(id: session.id, observer: navigationObserver.generation) else { return }
+            guard sessions.ownsNavigation(id: session.id, observer: observer) else { trace("retained write rejected"); return }
+            guard pathInitialized else {
+                Task { @MainActor in await restorePath() }
+                return
+            }
+            guard path != value else { return }
+            trace("retained write accepted")
             path = value
         }
+    }
+
+    private func restorePath() async {
+        guard sessions.ownsNavigation(id: session.id, observer: observer) else { trace("hydration rejected"); return }
+        pathInitialized = false
+        await Task.yield()
+        guard !Task.isCancelled, sessions.ownsNavigation(id: session.id, observer: observer) else { trace("hydration cancelled"); return }
+        path = sessions.editorPaths[session.id] ?? []
+        pathInitialized = true
+        trace("hydrated")
+    }
+
+    private func trace(_ action: String) {
+        #if DEBUG
+        guard SharedBridgeVerification.enabled else { return }
+        print("BRIDGE TRACE navigation \(action) id=\(session.id) observer=\(observer) owned=\(sessions.ownsNavigation(id: session.id, observer: observer)) initialized=\(pathInitialized) local=\(path) retained=\(sessions.editorPaths[session.id] ?? [])")
+        #endif
     }
 }
 
@@ -409,7 +433,7 @@ struct NativeEditorSubpage: View {
                     })
                 }
             case .preview:
-                NativeDevelopmentScreen(title: NativeStrings.text("Test Alarm"), milestone: 5)
+                NativeMathPreview(editorID: sessionID, sessions: sessions)
             }
         }
         .scrollDismissesKeyboard(.interactively)
@@ -427,36 +451,79 @@ struct NativeDevelopmentScreen: View {
 }
 
 @MainActor
-struct NativePendingDelivery: View {
+struct NativeMathPreview: View {
+    let editorID: String
     @ObservedObject var sessions: NativeWindowSessions
+    @State private var presentationGeneration: Int?
     var body: some View {
         Group {
-            if let session = sessions.challenge { NativeChallengeDevelopment(model: session.model) }
-            else {
-                ContentUnavailableView("Pending alarm delivery", systemImage: "exclamationmark.triangle",
-                    description: Text("This delivery could not be decoded. It remains in the durable queue; no alarm has been acknowledged or resolved."))
+            if let preview = sessions.previews[editorID] {
+                NativeOwnedChallenge(session: preview, sessions: sessions)
+            } else {
+                ProgressView("Preparing challenge…")
             }
         }
-        .navigationTitle("Pending alarm")
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Return to development app") { sessions.deliveryPresented = false }
+        .navigationBarBackButtonHidden()
+        .onAppear {
+            sessions.openPreview(editorID: editorID)
+            presentationGeneration = sessions.beginPreviewPresentation(editorID: editorID)
+        }
+        .onDisappear {
+            if let generation = presentationGeneration {
+                sessions.endPreviewPresentation(editorID: editorID, generation: generation)
             }
         }
     }
 }
 
 @MainActor
-struct NativeChallengeDevelopment: View {
-    @ObservedViewModel var model: AlarmMathViewModel
+struct NativeOwnedChallenge: View {
+    let session: NativeChallengeSession
+    @ObservedObject var sessions: NativeWindowSessions
     var body: some View {
-        Form {
-            Section("Native challenge — Milestone 5 pending") {
-                Text("The native challenge is not ready in this development build. This delivery remains unacknowledged in the durable queue.")
-                Text("Returning or closing the app does not complete, snooze or silence an unresolved alarm. Existing native recovery remains active.")
+        let result = sessions.challengeFailures[session.id]
+        let failure = (result?.outcome as? ChallengeOutcome.Failure)?.error
+        NativeChallengeView(model: session.model, preview: session.isPreview,
+            retryInitialization: { sessions.initialize(session: session) },
+            cancelPreview: session.editorID.map { editorID in { sessions.closePreview(editorID: editorID, expectedSessionID: session.id) } },
+            returnFromStale: { sessions.returnFromStaleOccurrence(sessionID: session.id) },
+            failure: failure, failureResultID: result?.id,
+            retryFailure: result.flatMap { result in
+                failure == .incorrectAnswer || failure == .staleOccurrence ? nil : {
+                    sessions.retryChallengeFailure(session: session, resultID: result.id)
+                }
+            },
+            dismissFailure: result.map { result in {
+                sessions.dismissChallengeFailure(id: session.id, resultID: result.id)
+            } })
+            .id(session.id)
+    }
+}
+
+@MainActor
+struct NativePendingDelivery: View {
+    @ObservedObject var sessions: NativeWindowSessions
+    var body: some View {
+        Group {
+            if let session = sessions.challenge {
+                NativeOwnedChallenge(session: session, sessions: sessions)
+            } else {
+                ContentUnavailableView {
+                    Label("Pending alarm delivery", systemImage: "exclamationmark.triangle")
+                } description: {
+                    Text("Delivery could not be decoded. It remains queued for retry.")
+                } actions: {
+                    Button("Try again") { sessions.retryDelivery() }
+                    Button("Return to alarms") { sessions.deliveryPresented = false }
+                }
             }
-            if let alarm = model.state.alarm {
-                Section("Alarm") { Text(alarm.title) }
+        }
+        .safeAreaInset(edge: .bottom) {
+            if sessions.handoffWriteFailed {
+                VStack {
+                    Text("Unable to retain delivery acknowledgement. Try again.")
+                    Button("Try again") { sessions.retryDelivery() }
+                }.padding().background(.regularMaterial)
             }
         }
     }

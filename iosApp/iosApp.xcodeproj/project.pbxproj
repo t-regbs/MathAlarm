@@ -29,6 +29,7 @@
 		D4A000000000000000000003 /* NativeSoundPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A000000000000000000004 /* NativeSoundPicker.swift */; };
 		D4A000000000000000000005 /* NativeStrings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A000000000000000000006 /* NativeStrings.swift */; };
 		D4A000000000000000000007 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = D4A000000000000000000008 /* Localizable.xcstrings */; };
+		D5A000000000000000000001 /* NativeChallengeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A000000000000000000002 /* NativeChallengeViews.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -54,6 +55,7 @@
 		D4A000000000000000000004 /* NativeSoundPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSoundPicker.swift; sourceTree = "<group>"; };
 		D4A000000000000000000006 /* NativeStrings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeStrings.swift; sourceTree = "<group>"; };
 		D4A000000000000000000008 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
+		D5A000000000000000000002 /* NativeChallengeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeChallengeViews.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,6 +81,7 @@
 				D3A000000000000000000002 /* NativeRootSessions.swift */,
 				D4A000000000000000000002 /* NativeEditorControls.swift */,
 				D4A000000000000000000004 /* NativeSoundPicker.swift */,
+				D5A000000000000000000002 /* NativeChallengeViews.swift */,
 				D4A000000000000000000006 /* NativeStrings.swift */,
 				D4A000000000000000000008 /* Localizable.xcstrings */,
 				D3A000000000000000000004 /* NativeAlarmViews.swift */,
@@ -252,6 +255,7 @@
 				D3A000000000000000000001 /* NativeRootSessions.swift in Sources */,
 				D4A000000000000000000001 /* NativeEditorControls.swift in Sources */,
 				D4A000000000000000000003 /* NativeSoundPicker.swift in Sources */,
+				D5A000000000000000000001 /* NativeChallengeViews.swift in Sources */,
 				D4A000000000000000000005 /* NativeStrings.swift in Sources */,
 				D3A000000000000000000003 /* NativeAlarmViews.swift in Sources */,
 				058557D9273AAEEB004C7B11 /* ContentView.swift in Sources */,

@@ -4,6 +4,12 @@ import Foundation
 /// A native delivery token is separate from the database's authoritative activeAt.
 /// Weekly registration UUIDs repeat; date-specific tokens must not collapse next week's delivery.
 enum NativeAlarmDeliveryIdentity {
+    /// The shared application has already validated whether an unresolved repeating
+    /// occurrence should own this delivery. This adapter preserves raw identity on nil.
+    static func selectedOccurrence(deliveredAt: Int64?, authoritativeUnresolvedAt: Int64?) -> Int64? {
+        authoritativeUnresolvedAt ?? deliveredAt
+    }
+
     static func identifier(registrationID: String, scheduledAtMilliseconds: Int64?,
                            occurrenceKey: String?, hour: Int, minute: Int,
                            now: Date = Date(), calendar: Calendar = .current) -> String {
@@ -49,6 +55,7 @@ final class PendingDeeplinkStore {
     private let userDefaults: UserDefaults
     private let queueKey = "MathAlarm.pendingAlarmHandoffs.v1"
     private let lock = NSLock()
+    private let persist: ((Data) -> Bool)?
 
     private struct Handoff: Codable {
         let id: UUID
@@ -86,8 +93,9 @@ final class PendingDeeplinkStore {
         return first == second
     }
 
-    init(userDefaults: UserDefaults = .standard) {
+    init(userDefaults: UserDefaults = .standard, persist: ((Data) -> Bool)? = nil) {
         self.userDefaults = userDefaults
+        self.persist = persist
     }
 
     private func loadQueue() -> [Handoff] {
@@ -95,27 +103,37 @@ final class PendingDeeplinkStore {
             .flatMap { try? JSONDecoder().decode([Handoff].self, from: $0) } ?? []
     }
 
-    private func saveQueue(_ handoffs: [Handoff]) {
+    private func saveQueue(_ handoffs: [Handoff]) -> Bool {
         do {
-            userDefaults.set(try JSONEncoder().encode(handoffs), forKey: queueKey)
+            let encoded = try JSONEncoder().encode(handoffs)
+            if let persist { return persist(encoded) }
+            let previous = userDefaults.data(forKey: queueKey)
+            userDefaults.set(encoded, forKey: queueKey)
+            if userDefaults.synchronize() && userDefaults.data(forKey: queueKey) == encoded { return true }
+            // Failed persistence must not advance the in-process head either.
+            userDefaults.set(previous, forKey: queueKey)
             userDefaults.synchronize()
+            return false
         } catch {
-            assertionFailure("Could not persist alarm handoff: \(error)")
+            print("Could not persist alarm handoff: \(error)")
+            return false
         }
     }
 
-    func setPendingDeeplink(_ json: String) {
+    @discardableResult
+    func setPendingDeeplink(_ json: String) -> Bool {
         lock.lock()
         defer { lock.unlock() }
         var handoffs = loadQueue()
-        guard !handoffs.contains(where: { $0.payload == json }) else { return }
+        guard !handoffs.contains(where: { $0.payload == json }) else { return true }
         handoffs.append(Handoff(id: UUID(), payload: json))
-        saveQueue(handoffs)
+        return saveQueue(handoffs)
     }
 
     /// Restored acknowledged occurrences take priority while existing queue order stays intact.
     /// Their authoritative activeAt makes restoration idempotent across process launches.
-    func restoreUnresolvedHandoffs(_ payloads: [String]) {
+    @discardableResult
+    func restoreUnresolvedHandoffs(_ payloads: [String]) -> Bool {
         lock.lock()
         defer { lock.unlock() }
         let queued = loadQueue()
@@ -134,11 +152,11 @@ final class PendingDeeplinkStore {
                 restored.append(Handoff(id: UUID(), payload: payload))
             }
         }
-        saveQueue(restored + queued.filter { queued in
-            !restored.contains(where: {
-                $0.id == queued.id || sameOccurrence($0.payload, queued.payload) ||
-                    (occurrence($0.payload)?.alarmId == legacyAlarmId(queued.payload) && legacyAlarmId(queued.payload) != nil)
-            })
+        return saveQueue(restored + queued.filter { queued in
+            // Coalesced weekly alerts can share activeAt while retaining distinct
+            // delivery IDs. Only the selected/enriched queue UUID moved to the prefix;
+            // every later delivery stays queued until its own readiness acknowledgement.
+            !restored.contains(where: { $0.id == queued.id })
         })
     }
 
@@ -155,8 +173,25 @@ final class PendingDeeplinkStore {
         var handoffs = loadQueue()
         guard handoffs.first?.payload == json else { return false }
         handoffs.removeFirst()
-        saveQueue(handoffs)
-        return true
+        return saveQueue(handoffs)
+    }
+
+    /// Authoritative coalescing can enrich the exact head while preserving its UUID
+    /// and all later queue entries. Replacement is neither readiness nor acknowledgement.
+    func replacePendingHead(expectedPayload: String, replacement: String) -> Bool {
+        lock.lock()
+        defer { lock.unlock() }
+        var handoffs = loadQueue()
+        guard let head = handoffs.first, head.payload == expectedPayload else { return false }
+        if expectedPayload == replacement { return true }
+        handoffs[0] = Handoff(id: head.id, payload: replacement)
+        return saveQueue(handoffs)
+    }
+
+    /// Removal is permitted only after authoritative shared validation declares
+    /// this exact head obsolete. Failed or incomplete readiness is never rejection.
+    func rejectObsoletePendingDeeplink(_ json: String) -> Bool {
+        acknowledgePendingDeeplink(json)
     }
 
     func hasPendingDeeplink() -> Bool {
@@ -172,21 +207,58 @@ final class AlarmRecoveryStore {
         let id: UUID
         var attempt: Int
         let startedAt: Date
+        // Old tokens predate registration acknowledgement and decode as accepted.
+        // A new reservation survives a crash before native acceptance and can be repaired.
+        var registrationAccepted: Bool
+        let activeAtMilliseconds: Int64?
+
+        init(id: UUID, attempt: Int, startedAt: Date, registrationAccepted: Bool = true,
+             activeAtMilliseconds: Int64? = nil) {
+            self.id = id
+            self.attempt = attempt
+            self.startedAt = startedAt
+            self.registrationAccepted = registrationAccepted
+            self.activeAtMilliseconds = activeAtMilliseconds
+        }
+        private enum CodingKeys: String, CodingKey { case id, attempt, startedAt, registrationAccepted, activeAtMilliseconds }
+        init(from decoder: Decoder) throws {
+            let values = try decoder.container(keyedBy: CodingKeys.self)
+            id = try values.decode(UUID.self, forKey: .id)
+            attempt = try values.decode(Int.self, forKey: .attempt)
+            startedAt = try values.decode(Date.self, forKey: .startedAt)
+            registrationAccepted = try values.decodeIfPresent(Bool.self, forKey: .registrationAccepted) ?? true
+            activeAtMilliseconds = try values.decodeIfPresent(Int64.self, forKey: .activeAtMilliseconds)
+        }
+
+        func matches(_ other: Session) -> Bool {
+            id == other.id && attempt == other.attempt && startedAt == other.startedAt
+        }
     }
     private let defaults: UserDefaults
     private let key = "MathAlarm.recoverySessions.v1"
     private let lock = NSLock()
-    init(userDefaults: UserDefaults = .standard) { defaults = userDefaults }
+    private let persist: ((Data) -> Bool)?
+    init(userDefaults: UserDefaults = .standard, persist: ((Data) -> Bool)? = nil) {
+        defaults = userDefaults
+        self.persist = persist
+    }
     private func load() -> [String: Session] {
         defaults.data(forKey: key).flatMap {
             try? JSONDecoder().decode([String: Session].self, from: $0)
         } ?? [:]
     }
-    private func save(_ sessions: [String: Session]) {
-        defaults.set(try? JSONEncoder().encode(sessions), forKey: key)
+    private func save(_ sessions: [String: Session]) -> Bool {
+        guard let encoded = try? JSONEncoder().encode(sessions) else { return false }
+        if let persist { return persist(encoded) }
+        let previous = defaults.data(forKey: key)
+        defaults.set(encoded, forKey: key)
+        if defaults.synchronize() && defaults.data(forKey: key) == encoded { return true }
+        defaults.set(previous, forKey: key)
         defaults.synchronize()
+        return false
     }
-    func reserve(alarmId: Int64, sourceSession: UUID?, sourceAttempt: Int?, now: Date = Date()) -> Session? {
+    func reserve(alarmId: Int64, sourceSession: UUID?, sourceAttempt: Int?, now: Date = Date(),
+                 activeAtMilliseconds: Int64? = nil) -> Session? {
         lock.lock(); defer { lock.unlock() }
         var sessions = load()
         let alarmKey = String(alarmId)
@@ -198,12 +270,12 @@ final class AlarmRecoveryStore {
         } else {
             // The intent and app activation can see the same initial delivery.
             guard sessions[alarmKey] == nil else { return nil }
-            session = Session(id: UUID(), attempt: 0, startedAt: now)
+            session = Session(id: UUID(), attempt: 0, startedAt: now, activeAtMilliseconds: activeAtMilliseconds)
         }
         session.attempt += 1
+        session.registrationAccepted = false
         sessions[alarmKey] = session
-        save(sessions)
-        return session
+        return save(sessions) ? session : nil
     }
     /// A rejected native registration must not consume the retry token. A newer accepted
     /// attempt or explicit cancellation always wins over this rollback.
@@ -216,27 +288,51 @@ final class AlarmRecoveryStore {
         guard sessions[alarmKey] == reservation else { return false }
         if let sourceSession, let sourceAttempt,
            sourceSession == reservation.id, sourceAttempt == reservation.attempt - 1 {
-            sessions[alarmKey] = Session(id: sourceSession, attempt: sourceAttempt, startedAt: reservation.startedAt)
+            sessions[alarmKey] = Session(id: sourceSession, attempt: sourceAttempt, startedAt: reservation.startedAt,
+                                        activeAtMilliseconds: reservation.activeAtMilliseconds)
         } else if sourceSession == nil && reservation.attempt == 1 {
             sessions.removeValue(forKey: alarmKey)
         } else { return false }
-        save(sessions)
-        return true
+        return save(sessions)
     }
 
     func isCurrent(alarmId: Int64, session: Session) -> Bool {
         lock.lock(); defer { lock.unlock() }
-        return load()[String(alarmId)] == session
+        return load()[String(alarmId)]?.matches(session) == true
+    }
+    func current(alarmId: Int64) -> Session? {
+        lock.lock(); defer { lock.unlock() }
+        return load()[String(alarmId)]
+    }
+    @discardableResult
+    func markRegistrationAccepted(alarmId: Int64, reservation: Session) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        var sessions = load()
+        guard var current = sessions[String(alarmId)], current.matches(reservation) else { return false }
+        current.registrationAccepted = true
+        sessions[String(alarmId)] = current
+        return save(sessions)
+    }
+    /// Failed native cancellation leaves the unresolved token available for repair.
+    /// A newer delivery/reservation always wins over this rollback.
+    @discardableResult
+    func restoreAfterFailedCancellation(alarmId: Int64, session: Session) -> Bool {
+        lock.lock(); defer { lock.unlock() }
+        var sessions = load()
+        guard sessions[String(alarmId)] == nil else { return false }
+        sessions[String(alarmId)] = session
+        return save(sessions)
     }
     func accepts(alarmId: Int64, sessionId: UUID, attempt: Int?) -> Bool {
         lock.lock(); defer { lock.unlock() }
         let session = load()[String(alarmId)]
         return session?.id == sessionId && session?.attempt == attempt
     }
-    func cancel(alarmId: Int64) {
+    @discardableResult
+    func cancel(alarmId: Int64) -> Bool {
         lock.lock(); defer { lock.unlock() }
         var sessions = load()
         sessions.removeValue(forKey: String(alarmId))
-        save(sessions)
+        return save(sessions)
     }
 }

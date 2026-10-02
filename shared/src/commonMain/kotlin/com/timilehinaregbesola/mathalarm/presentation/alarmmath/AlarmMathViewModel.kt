@@ -31,6 +31,7 @@ class AlarmMathViewModel internal constructor(
     val state: kotlinx.coroutines.flow.StateFlow<ChallengeState> = mutable.asStateFlow()
     private var session: ChallengeSession? = null
     private var observation: Job? = null
+    private var previewAudioEnabled = true
     val currentAlarm get() = state.value.alarm
     val questionCount get() = state.value.questionCount.coerceAtLeast(1)
     val currentProblem get() = state.value.currentProblem
@@ -51,6 +52,7 @@ class AlarmMathViewModel internal constructor(
         if (isClosed) { if (preview) coordinator.closePreview(opened); return false }
         observation?.cancel()
         session = opened
+        if (preview && !previewAudioEnabled) coordinator.closePreview(opened)
         mutable.value = opened.state.value
         observation = viewModelScope.coroutineScope.launch { opened.state.collect { mutable.value = it } }
         return opened.state.value.readiness == ChallengeReadiness.READY
@@ -69,11 +71,20 @@ class AlarmMathViewModel internal constructor(
         current?.let { mutable.value = it.state.value }
     }
 
+    /** Native buttons capture the rendered index as well as the problem. */
+    fun submitAnswer(questionIndex: Int, problem: MathProblem) {
+        if (isClosed) return
+        session?.let { coordinator.submit(it, problem, questionIndex); mutable.value = it.state.value }
+    }
+
+    fun retryAudio() { if (!isClosed) { previewAudioEnabled = true; session?.let(coordinator::retryAudio) } }
+
     fun acknowledgeResult(id: Long) { session?.let { it.acknowledge(id); mutable.value = it.state.value } }
-    fun stopPreview() { session?.let { coordinator.closePreview(it) } }
+    fun stopPreview() { previewAudioEnabled = false; session?.let { coordinator.closePreview(it) } }
     fun completeAlarm(alarm: Alarm, preview: Boolean = false) {
         if (isClosed) return
-        session?.takeIf { it.state.value.alarm?.alarmId == alarm.alarmId && it.state.value.preview == preview }?.let { coordinator.finish(it, false) }
+        session?.takeIf { it.state.value.alarm?.alarmId == alarm.alarmId && it.state.value.preview == preview &&
+            (preview || it.state.value.alarm?.activeAt == alarm.activeAt) }?.let { coordinator.finish(it, false) }
     }
 
     override fun onCleared() {

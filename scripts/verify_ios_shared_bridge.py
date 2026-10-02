@@ -12,7 +12,7 @@ REQUIRED_CHECKS = (
     'typed edits and Swift Observation',
     'production editor owner survives compact-expanded-compact layout',
     'production detail and nested destination replacement retain drafts',
-    'production challenge placeholder preserves durable ordered deliveries',
+    'failed readiness preserves durable ordered deliveries',
     'native editor subpages and staged sound survive presentation replacement',
     'native validation retry duplicate save result acknowledgement and list undo',
     'typed validation result without persistence',
@@ -20,6 +20,14 @@ REQUIRED_CHECKS = (
     'native Flow cancellation leaves owner and state alive',
     'mounted StateViewModel cleanup leaves durable queue unchanged',
     'production session-end and window cleanup preserve unresolved delivery',
+    'native maths preview validation progress cancellation and retained route',
+    'native answer focus keyboard placeholder and UITextField insertion update shared raw answer',
+    'native preview accepted completion returns to identical unsaved draft and nested route',
+    'real accepted completion returns to identical retained draft nested route staged sound and permission guard',
+    'native readiness before exact acknowledgement and ordered delivery interruption',
+    'acknowledged unresolved restoration preserves exact challenge progress',
+    'native accepted completion snooze retry duplicates and result acknowledgement',
+    'process restart after acknowledgement restores exact durable progress',
 )
 
 
@@ -36,38 +44,43 @@ def main():
     args = parser.parse_args()
     subprocess.run(['xcrun', 'simctl', 'install', args.udid, str(args.app)], check=True)
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    command = ['xcrun', 'simctl', 'launch', '--console', '--terminate-running-process', args.udid,
-               'com.timilehinaregbesola.mathalarm', '--verify-shared-bridge']
-    process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    selector = selectors.DefaultSelector()
-    selector.register(process.stdout, selectors.EVENT_READ)
-    passed = False
     captured = b''
-    deadline = time.monotonic() + 60
-    try:
-        with args.output.open('wb') as log:
-            while time.monotonic() < deadline and process.poll() is None:
-                for key, _ in selector.select(timeout=1):
-                    chunk = key.fileobj.read1(65536)
-                    if not chunk:
-                        continue
-                    log.write(chunk)
-                    log.flush()
-                    captured += chunk
-                    if b'SHARED_BRIDGE_VERIFICATION_PASSED' in captured:
-                        passed = True
+    with args.output.open('wb') as log:
+        for phase in ([], ['--verify-m5-restoration']):
+            command = ['xcrun', 'simctl', 'launch', '--console', '--terminate-running-process', args.udid,
+                       'com.timilehinaregbesola.mathalarm', '--verify-shared-bridge', *phase]
+            process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+            selector = selectors.DefaultSelector()
+            selector.register(process.stdout, selectors.EVENT_READ)
+            passed = False
+            phase_output = b''
+            deadline = time.monotonic() + 110
+            try:
+                while time.monotonic() < deadline and process.poll() is None:
+                    for key, _ in selector.select(timeout=1):
+                        chunk = key.fileobj.read1(65536)
+                        if not chunk:
+                            continue
+                        log.write(chunk)
+                        log.flush()
+                        captured += chunk
+                        phase_output += chunk
+                        if b'SHARED_BRIDGE_VERIFICATION_PASSED' in phase_output:
+                            passed = True
+                            break
+                    if passed:
                         break
-                if passed:
-                    break
-    finally:
-        selector.close()
-        subprocess.run(['xcrun', 'simctl', 'terminate', args.udid,
-                        'com.timilehinaregbesola.mathalarm'], check=False, capture_output=True)
-        if process.poll() is None:
-            process.terminate()
-        process.wait(timeout=5)
-    if not passed:
-        raise SystemExit(f'Production bridge verification failed; inspect {args.output}')
+            finally:
+                selector.close()
+                # A separate application process must read persisted progress, never the
+                # coordinator's retained in-memory session from the first launch.
+                subprocess.run(['xcrun', 'simctl', 'terminate', args.udid,
+                                'com.timilehinaregbesola.mathalarm'], check=False, capture_output=True)
+                if process.poll() is None:
+                    process.terminate()
+                process.wait(timeout=5)
+            if not passed:
+                raise SystemExit(f'Production bridge verification failed in {phase}; inspect {args.output}')
     missing = missing_checks(captured)
     if missing:
         raise SystemExit(f'Production bridge checks missing {missing}; inspect {args.output}')

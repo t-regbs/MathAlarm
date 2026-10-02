@@ -43,8 +43,6 @@ struct NativeEditorControls: View {
         Section {
             NavigationLink("Test Alarm", value: NativeEditorDestination.preview)
                 .accessibilityIdentifier("editor-test-alarm")
-        } footer: {
-            Text("Test Alarm is scheduled for Milestone 5. Your draft is retained.")
         }
     }
 

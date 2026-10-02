@@ -6,11 +6,14 @@ import com.timilehinaregbesola.mathalarm.alarm.NativeAlarmScheduler
 import com.timilehinaregbesola.mathalarm.coroutines.AppCoroutineScope
 import com.timilehinaregbesola.mathalarm.di.initKoin
 import com.timilehinaregbesola.mathalarm.framework.Usecases
+import com.timilehinaregbesola.mathalarm.framework.unresolvedOccurrenceForDelivery
+import com.timilehinaregbesola.mathalarm.framework.isUnresolvedOccurrence
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmDatabase
 import com.timilehinaregbesola.mathalarm.navigation.AlarmHandoff
 import com.timilehinaregbesola.mathalarm.navigation.decodeAlarmHandoff
 import com.timilehinaregbesola.mathalarm.navigation.encodeAlarmHandoff
 import com.timilehinaregbesola.mathalarm.notification.NotificationDeeplinkHolder
+import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -25,6 +28,8 @@ import org.koin.core.component.KoinComponent
  * work without constructing a UIViewController. Call native entry points on Main.
  * The DI container and repositories stay private to Kotlin.
  */
+enum class AlarmHandoffDisposition { INITIALIZE, OBSOLETE, DEFERRED, INVALID }
+
 object IosApplication {
     private val dependencies = object : KoinComponent {}
     private var initialized = false
@@ -75,6 +80,33 @@ object IosApplication {
 
     /** Pure DTO decoding; parsing does not accept, consume or acknowledge a delivery. */
     fun decodeAlarmHandoffJson(payload: String): AlarmHandoff? = decodeAlarmHandoff(payload)
+
+    /** A malformed payload is retained; obsolete saved identities are explicitly rejected. */
+    @NativeCoroutines
+    suspend fun handoffDisposition(payload: String): AlarmHandoffDisposition {
+        val handoff = decodeAlarmHandoff(payload) ?: return AlarmHandoffDisposition.INVALID
+        return dependencies.getKoin().get<Usecases>().command {
+            val alarm = findAlarm(handoff.alarmId) ?: return@command AlarmHandoffDisposition.OBSOLETE
+            if (!alarm.isOn) return@command AlarmHandoffDisposition.OBSOLETE
+            val timestamp = handoff.activeAt
+            val activeAt = alarm.activeAt
+            when {
+                timestamp == null || timestamp == activeAt -> AlarmHandoffDisposition.INITIALIZE
+                activeAt != null && timestamp < activeAt -> AlarmHandoffDisposition.OBSOLETE
+                activeAt != null -> AlarmHandoffDisposition.DEFERRED
+                timestamp in alarm.pendingTimes || timestamp == alarm.snoozedUntil -> AlarmHandoffDisposition.INITIALIZE
+                else -> AlarmHandoffDisposition.OBSOLETE
+            }
+        }
+    }
+
+    @NativeCoroutines
+    suspend fun unresolvedOccurrenceForDelivery(alarmId: Long, deliveredAt: Long?): Long? =
+        dependencies.getKoin().get<Usecases>().unresolvedOccurrenceForDelivery(alarmId, deliveredAt)
+
+    @NativeCoroutines
+    suspend fun isUnresolvedOccurrence(alarmId: Long, activeAt: Long): Boolean =
+        dependencies.getKoin().get<Usecases>().isUnresolvedOccurrence(alarmId, activeAt)
 
     fun reportRecoveryFailure(alarmId: Long) =
         com.timilehinaregbesola.mathalarm.application.AlarmApplicationStatus.reportRecoveryFailure(alarmId)

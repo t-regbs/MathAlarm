@@ -19,6 +19,9 @@ class ShowAlarm(
             val expected = if (snoozed) saved.snoozedUntil == triggerAt else triggerAt in saved.pendingTimes
             if (!expected && saved.activeAt != triggerAt) return // obsolete or canceled broadcast
         }
+        // Progress and recovery are keyed per alarm. Serialize overlapping occurrences:
+        // the unresolved occurrence remains authoritative and later delivery stays pending.
+        if (saved.activeAt != null && triggerAt != null && saved.activeAt != triggerAt) return
         val active = triggerAt ?: saved.activeAt ?: Clock.System.now().toEpochMilliseconds()
         val alarm = saved.copy(
             activeAt = active,
@@ -39,7 +42,9 @@ class ShowAlarm(
         if (alarm.repeat && saved.activeAt != active) {
             try {
                 val times = scheduleNextAlarm(alarm)
-                alarmRepository.updateAlarm(alarm.copy(pendingTimes = times, scheduleError = null))
+                alarmRepository.updateAlarm(alarm.copy(
+                    pendingTimes = (alarm.pendingTimes.filter { it > active } + times).distinct().sorted(),
+                    scheduleError = null))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

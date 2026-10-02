@@ -82,6 +82,67 @@ enum PendingDeeplinkStoreSmoke {
         precondition(store.acknowledgePendingDeeplink(unresolved))
         precondition(store.peekPendingDeeplink() == unknownVersion2)
         precondition(store.acknowledgePendingDeeplink(unknownVersion2))
+        // Failed readiness/ack writes keep the exact head and all later identities.
+        store.setPendingDeeplink(alreadyDelivered)
+        store.setPendingDeeplink(laterOccurrence)
+        store.setPendingDeeplink(second)
+        let beforeFailedReadiness = defaults.data(forKey: "MathAlarm.pendingAlarmHandoffs.v1")!
+        let failedQueueWrites = PendingDeeplinkStore(userDefaults: defaults, persist: { _ in false })
+        precondition(!failedQueueWrites.acknowledgePendingDeeplink(alreadyDelivered))
+        precondition(!failedQueueWrites.restoreUnresolvedHandoffs([unresolved]))
+        precondition(!failedQueueWrites.setPendingDeeplink("{\"alarmId\":3}"))
+        precondition(defaults.data(forKey: "MathAlarm.pendingAlarmHandoffs.v1") == beforeFailedReadiness)
+        precondition(!store.rejectObsoletePendingDeeplink(laterOccurrence))
+        precondition(store.rejectObsoletePendingDeeplink(alreadyDelivered))
+        precondition(store.peekPendingDeeplink() == laterOccurrence)
+        precondition(store.acknowledgePendingDeeplink(laterOccurrence))
+        precondition(store.peekPendingDeeplink() == second)
+        precondition(store.acknowledgePendingDeeplink(second))
+        // Authoritative coalescing changes only the exact head's payload. Its
+        // persisted queue UUID and every later entry survive failure and success.
+        let rawLater = "{\"alarmId\":1,\"activeAt\":999999,\"version\":2,\"deliveryId\":\"next-week\"}"
+        let coalescedLater = "{\"alarmId\":1,\"activeAt\":1000,\"version\":2,\"deliveryId\":\"next-week\"}"
+        store.setPendingDeeplink(rawLater)
+        store.setPendingDeeplink(second)
+        let beforeReplacement = defaults.data(forKey: "MathAlarm.pendingAlarmHandoffs.v1")!
+        precondition(!failedQueueWrites.replacePendingHead(expectedPayload: rawLater, replacement: coalescedLater))
+        precondition(defaults.data(forKey: "MathAlarm.pendingAlarmHandoffs.v1") == beforeReplacement)
+        precondition(!store.replacePendingHead(expectedPayload: second, replacement: coalescedLater))
+        precondition(store.replacePendingHead(expectedPayload: rawLater, replacement: coalescedLater))
+        let previousEntries = try! JSONSerialization.jsonObject(with: beforeReplacement) as! [[String: String]]
+        let replacedEntries = try! JSONSerialization.jsonObject(with: defaults.data(forKey: "MathAlarm.pendingAlarmHandoffs.v1")!) as! [[String: String]]
+        precondition(replacedEntries[0]["id"] == previousEntries[0]["id"])
+        precondition(replacedEntries[0]["payload"] == coalescedLater)
+        precondition(replacedEntries[1] == previousEntries[1])
+        precondition(store.acknowledgePendingDeeplink(coalescedLater))
+        precondition(store.peekPendingDeeplink() == second)
+        precondition(store.acknowledgePendingDeeplink(second))
+        // Restoring one unresolved occurrence does not acknowledge other weekly
+        // delivery tokens coalesced to that same authoritative occurrence.
+        store.setPendingDeeplink(alreadyDelivered)
+        store.setPendingDeeplink(coalescedLater)
+        store.setPendingDeeplink(second)
+        let beforeCoalescedRestoration = defaults.data(forKey: "MathAlarm.pendingAlarmHandoffs.v1")!
+        let originalCoalescedEntries = try! JSONSerialization.jsonObject(with: beforeCoalescedRestoration) as! [[String: String]]
+        precondition(store.restoreUnresolvedHandoffs([unresolved]))
+        let afterCoalescedRestoration = try! JSONSerialization.jsonObject(with: defaults.data(forKey: "MathAlarm.pendingAlarmHandoffs.v1")!) as! [[String: String]]
+        precondition(afterCoalescedRestoration == originalCoalescedEntries)
+        let relaunchedCoalescedQueue = PendingDeeplinkStore(userDefaults: defaults)
+        precondition(relaunchedCoalescedQueue.restoreUnresolvedHandoffs([unresolved]))
+        for payload in [alreadyDelivered, coalescedLater, second] {
+            precondition(relaunchedCoalescedQueue.peekPendingDeeplink() == payload)
+            precondition(relaunchedCoalescedQueue.acknowledgePendingDeeplink(payload))
+        }
+        // After acknowledgement and process death, unresolved authoritative sessions
+        // restore independently and in occurrence order, ahead of later deliveries.
+        let unresolvedSecond = "{\"alarmId\":2,\"activeAt\":1500}"
+        store.setPendingDeeplink(laterOccurrence)
+        PendingDeeplinkStore(userDefaults: defaults).restoreUnresolvedHandoffs([unresolved, unresolvedSecond])
+        let restartedAfterAcknowledgement = PendingDeeplinkStore(userDefaults: defaults)
+        for payload in [unresolved, unresolvedSecond, laterOccurrence] {
+            precondition(restartedAfterAcknowledgement.peekPendingDeeplink() == payload)
+            precondition(restartedAfterAcknowledgement.acknowledgePendingDeeplink(payload))
+        }
         print("PendingDeeplinkStore smoke test passed")
 
         var calendar = Calendar(identifier: .gregorian)
@@ -99,6 +160,17 @@ enum PendingDeeplinkStoreSmoke {
         precondition(UUID(uuidString: initialIdentity) != nil)
         precondition(initialIdentity == duplicateIdentity)
         precondition(initialIdentity != laterIdentity)
+        // Multiple later native weeks retain distinct delivery IDs while shared
+        // authoritative confirmation can select the same unresolved challenge.
+        precondition(NativeAlarmDeliveryIdentity.selectedOccurrence(deliveredAt: 999999,
+            authoritativeUnresolvedAt: 1000) == 1000)
+        precondition(NativeAlarmDeliveryIdentity.selectedOccurrence(deliveredAt: 1999999,
+            authoritativeUnresolvedAt: 1000) == 1000)
+        // A stale native token alone cannot coalesce; nil shared selection keeps raw identity.
+        precondition(NativeAlarmDeliveryIdentity.selectedOccurrence(deliveredAt: 999999,
+            authoritativeUnresolvedAt: nil) == 999999)
+        precondition(NativeAlarmDeliveryIdentity.selectedOccurrence(deliveredAt: nil,
+            authoritativeUnresolvedAt: 1000) == 1000)
         let fixedIdentity = NativeAlarmDeliveryIdentity.identifier(
             registrationID: "snooze", scheduledAtMilliseconds: 1000, occurrenceKey: "snooze",
             hour: 7, minute: 0, now: sunday, calendar: calendar)
@@ -184,6 +256,41 @@ enum PendingDeeplinkStoreSmoke {
                                                   sourceSession: retriedFollowup.id,
                                                   sourceAttempt: retriedFollowup.attempt))
         precondition(!recovery.isCurrent(alarmId: 3, session: laterAccepted))
+        // Crash before OS acceptance leaves a durable pending reservation; a repair
+        // reuses its token/attempt instead of replacing another alarm's recovery.
+        let pendingAcceptance = recovery.reserve(alarmId: 4, sourceSession: nil, sourceAttempt: nil,
+                                                 activeAtMilliseconds: 4000)!
+        precondition(!pendingAcceptance.registrationAccepted)
+        precondition(pendingAcceptance.activeAtMilliseconds == 4000)
+        let afterCrash = AlarmRecoveryStore(userDefaults: defaults)
+        precondition(afterCrash.current(alarmId: 4) == pendingAcceptance)
+        let failedRecoveryWrites = AlarmRecoveryStore(userDefaults: defaults, persist: { _ in false })
+        precondition(failedRecoveryWrites.reserve(alarmId: 5, sourceSession: nil, sourceAttempt: nil) == nil)
+        // Native acceptance followed by a failed token write keeps pending evidence.
+        precondition(!failedRecoveryWrites.markRegistrationAccepted(alarmId: 4, reservation: pendingAcceptance))
+        precondition(afterCrash.current(alarmId: 4) == pendingAcceptance)
+        precondition(!failedRecoveryWrites.cancel(alarmId: 4))
+        precondition(afterCrash.isCurrent(alarmId: 4, session: pendingAcceptance))
+        precondition(afterCrash.markRegistrationAccepted(alarmId: 4, reservation: pendingAcceptance))
+        precondition(afterCrash.current(alarmId: 4)?.registrationAccepted == true)
+        let otherAlarm = recovery.reserve(alarmId: 5, sourceSession: nil, sourceAttempt: nil)!
+        // Native cancellation failure can restore the original unresolved token.
+        let beforeCancellation = afterCrash.current(alarmId: 4)!
+        precondition(afterCrash.cancel(alarmId: 4))
+        precondition(afterCrash.restoreAfterFailedCancellation(alarmId: 4, session: beforeCancellation))
+        precondition(afterCrash.isCurrent(alarmId: 4, session: beforeCancellation))
+        precondition(afterCrash.isCurrent(alarmId: 5, session: otherAlarm))
+        precondition(afterCrash.cancel(alarmId: 4))
+        let newerToken = afterCrash.reserve(alarmId: 4, sourceSession: nil, sourceAttempt: nil)!
+        precondition(!afterCrash.restoreAfterFailedCancellation(alarmId: 4, session: beforeCancellation))
+        precondition(afterCrash.isCurrent(alarmId: 4, session: newerToken))
+        // Existing on-device recovery JSON remains readable without a migration.
+        let legacyToken = UUID()
+        let legacyJSON = "{\"6\":{\"id\":\"\(legacyToken.uuidString)\",\"attempt\":9,\"startedAt\":0}}"
+        defaults.set(Data(legacyJSON.utf8), forKey: "MathAlarm.recoverySessions.v1")
+        let legacy = AlarmRecoveryStore(userDefaults: defaults).current(alarmId: 6)!
+        precondition(legacy.id == legacyToken && legacy.attempt == 9 && legacy.registrationAccepted)
+        precondition(legacy.activeAtMilliseconds == nil)
         print("AlarmRecoveryStore smoke test passed")
     }
 }

@@ -1,6 +1,7 @@
 import SwiftUI
 import KMPObservableViewModelSwiftUI
 import app
+import KMPNativeCoroutinesAsync
 
 extension Notification.Name {
     static let mathAlarmPendingDelivery = Notification.Name("MathAlarm.nativePendingDelivery")
@@ -21,6 +22,9 @@ struct NativeChallengeSession: Identifiable {
     let id: String
     let payload: String
     let model: AlarmMathViewModel
+    var editorID: String? = nil
+    var previewAlarm: Alarm? = nil
+    var isPreview: Bool { editorID != nil }
 }
 
 /// Stable session IDs and factory references live above split/stack/detail branches.
@@ -28,6 +32,8 @@ struct NativeChallengeSession: Identifiable {
 @MainActor
 final class NativeWindowSessions: ObservableObject {
     private let pendingStore: PendingDeeplinkStore
+    private let restoreRecovery: ([String]) async -> Void
+    private let inspectDelivery: (String) async throws -> AlarmHandoffDisposition
     private var windowEnded = false
     private let windowID = UUID().uuidString
     @Published private(set) var editors: [NativeEditorSession] = []
@@ -42,11 +48,28 @@ final class NativeWindowSessions: ObservableObject {
     @Published private(set) var challenges: [NativeChallengeSession] = []
     @Published private(set) var pendingPayload: String?
     @Published var deliveryPresented = false
+    @Published private(set) var previews: [String: NativeChallengeSession] = [:]
+    @Published private(set) var challengeFailures: [String: ChallengeResult] = [:]
+    @Published private(set) var handoffWriteFailed = false
+    private var initializationTasks: [String: Task<Void, Never>] = [:]
+    private var replayTask: Task<Void, Never>?
+    private var advanceAfterDismiss = false
+    private var previewPresentations: [String: Int] = [:]
+    private var nextPreviewPresentation = 0
+
 
     var selectedEditor: NativeEditorSession? { editors.first { $0.id == selectedEditorID } }
+    var deliveryReplayInFlight: Bool { replayTask != nil }
 
-    init(pendingStore: PendingDeeplinkStore = .shared) {
+    init(pendingStore: PendingDeeplinkStore = .shared,
+         inspectDelivery: @escaping (String) async throws -> AlarmHandoffDisposition = { payload in
+             try await asyncFunction(for: IosApplication.shared.handoffDisposition(payload: payload))
+         }, restoreRecovery: @escaping ([String]) async -> Void = { payloads in
+             await AlarmKitWrapperImpl.shared.restoreRecoveryForUnresolved(payloads: payloads)
+         }) {
         self.pendingStore = pendingStore
+        self.restoreRecovery = restoreRecovery
+        self.inspectDelivery = inspectDelivery
     }
 
     @discardableResult
@@ -74,7 +97,11 @@ final class NativeWindowSessions: ObservableObject {
         guard !windowEnded else { return }
         guard editors.contains(where: { $0.id == id }) else { return }
         if selectedEditorID != id {
-            if let previous = selectedEditorID { navigationObservers.removeValue(forKey: previous) }
+            if let previous = selectedEditorID {
+                navigationObservers.removeValue(forKey: previous)
+                previewPresentations.removeValue(forKey: previous)
+                previews[previous]?.model.stopPreview()
+            }
             selectedEditorID = id
         }
     }
@@ -99,7 +126,10 @@ final class NativeWindowSessions: ObservableObject {
         // An old observer must not clear the retained path of an inactive draft.
         guard selectedEditorID == id, editors.contains(where: { $0.id == id }) else { return }
         if let observer, !ownsNavigation(id: id, observer: observer) { return }
+        let leavingPreview = editorPaths[id]?.last == .preview && path.last != .preview
         editorPaths[id] = path
+        if leavingPreview { closePreview(editorID: id, returning: false) }
+        if path.last == .preview { openPreview(editorID: id) }
     }
 
     func soundSelection(sessionID: String) -> NativeSoundSelection? { soundSelections[sessionID] }
@@ -131,6 +161,7 @@ final class NativeWindowSessions: ObservableObject {
         guard let editor = editors.first(where: { $0.id == id }),
               acceptedSave || !editor.model.state.isSaving else { return }
         permissionRequests.remove(id)
+        closePreview(editorID: id, returning: false)
         soundSelections.removeValue(forKey: id)?.finish()
         SharedFeatures.shared.closeEditor(sessionId: id)
         editors.removeAll { $0.id == id }
@@ -145,6 +176,12 @@ final class NativeWindowSessions: ObservableObject {
     func closeWindow() {
         guard !windowEnded else { return }
         windowEnded = true
+        replayTask?.cancel()
+        initializationTasks.values.forEach { $0.cancel() }
+        initializationTasks.removeAll()
+        previews.values.forEach { SharedFeatures.shared.closeChallenge(sessionId: $0.id) }
+        previews.removeAll()
+        challengeFailures.removeAll()
         soundSelections.values.forEach { $0.finish() }
         editors.forEach { SharedFeatures.shared.closeEditor(sessionId: $0.id) }
         challenges.forEach { SharedFeatures.shared.closeChallenge(sessionId: $0.id) }
@@ -160,30 +197,277 @@ final class NativeWindowSessions: ObservableObject {
         deliveryPresented = false
     }
 
+    /// Replay is owned above navigation, never by a visible screen's task.
     func refreshPendingDelivery() {
-        guard !windowEnded else { return }
-        guard let payload = pendingStore.peekPendingDeeplink() else { return }
-        // An initialized unresolved challenge may not be replaced by a later handoff.
-        if let challenge, challenge.model.state.readiness == .ready { return }
-        // Current real delivery has priority. Later queued items remain in persisted order.
-        guard pendingPayload != payload else { return }
-        pendingPayload = payload
-        if let decoded = IosApplication.shared.decodeAlarmHandoffJson(payload: payload) {
-            let occurrence = decoded.activeAt.map { String($0.int64Value) } ?? decoded.deliveryId ?? "legacy"
-            let id = "native-window/\(windowID)/occurrence/\(decoded.alarmId)/\(occurrence)"
-            if let retained = challenges.first(where: { $0.id == id }) { challenge = retained }
-            else {
-                let retained = NativeChallengeSession(id: id, payload: payload,
-                    model: SharedFeatures.shared.challenge(sessionId: id))
-                challenges.append(retained)
-                challenge = retained
+        guard !windowEnded, replayTask == nil else { return }
+        if let challenge, challenge.model.state.readiness == .ready || challenge.model.state.finishing {
+            deliveryPresented = true
+            guard !challenge.model.state.finishing else { return }
+            replayTask = Task { @MainActor [weak self] in
+                guard let self else { return }
+                defer { self.replayTask = nil }
+                while !self.windowEnded, !Task.isCancelled, !challenge.model.isClosed,
+                      challenge.model.state.readiness == .ready, !challenge.model.state.finishing,
+                      let payload = self.pendingStore.peekPendingDeeplink(),
+                      let decoded = IosApplication.shared.decodeAlarmHandoffJson(payload: payload),
+                      let alarm = challenge.model.state.alarm, alarm.alarmId == decoded.alarmId {
+                    var associated = payload
+                    if let deliveredAt = decoded.activeAt, let activeAt = alarm.activeAt,
+                       deliveredAt.int64Value > activeAt.int64Value, let deliveryID = decoded.deliveryId {
+                        do {
+                            let selected = try await asyncFunction(for: IosApplication.shared.unresolvedOccurrenceForDelivery(
+                                alarmId: alarm.alarmId, deliveredAt: deliveredAt))
+                            guard !self.windowEnded, !Task.isCancelled, !challenge.model.isClosed,
+                                  selected?.int64Value == activeAt.int64Value else { return }
+                            associated = IosApplication.shared.createAlarmHandoffJson(alarmId: alarm.alarmId,
+                                deliveryId: deliveryID, activeAt: selected)
+                            guard self.pendingStore.replacePendingHead(expectedPayload: payload, replacement: associated) else {
+                                self.handoffWriteFailed = true
+                                return
+                            }
+                        } catch {
+                            // Raw delivery remains queued; expose the failed association
+                            // alongside the active challenge instead of silently hiding it.
+                            self.handoffWriteFailed = true
+                            return
+                        }
+                    }
+                    guard self.acceptReadyDelivery(session: challenge, restoredPayload: associated) else { return }
+                }
             }
-        } else {
-            challenge = nil
+            return
         }
-        // M3 does not initialize/consume/acknowledge this delivery. M5 must await
-        // successful native challenge readiness before acknowledging the queue.
+        replayTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer { self.replayTask = nil }
+            while !self.windowEnded, !Task.isCancelled, let payload = self.pendingStore.peekPendingDeeplink() {
+                do {
+                    let disposition = try await self.inspectDelivery(payload)
+                    guard !self.windowEnded, !Task.isCancelled else { return }
+                    if disposition == .obsolete {
+                        guard self.pendingStore.rejectObsoletePendingDeeplink(payload) else {
+                            self.handoffWriteFailed = true
+                            self.pendingPayload = payload
+                            self.deliveryPresented = true
+                            return
+                        }
+                        if self.challenge?.payload == payload { self.retireUnreadyDelivery() }
+                        self.pendingPayload = nil
+                        IosApplication.shared.acknowledgeHandoff(payload: payload)
+                        continue
+                    }
+                    self.presentDelivery(payload: payload)
+                    return
+                } catch {
+                    // Authoritative loading failed. No readiness, rejection or acknowledgement.
+                    self.presentDelivery(payload: payload)
+                    return
+                }
+            }
+            if self.challenge == nil && self.pendingStore.peekPendingDeeplink() == nil {
+                self.pendingPayload = nil
+                self.deliveryPresented = false
+            }
+        }
+    }
+
+    private func retireUnreadyDelivery() {
+        guard let outgoing = challenge, outgoing.model.state.readiness != .ready,
+              !outgoing.model.state.finishing else { return }
+        initializationTasks.removeValue(forKey: outgoing.id)?.cancel()
+        SharedFeatures.shared.closeChallenge(sessionId: outgoing.id)
+        challenges.removeAll { $0.id == outgoing.id }
+        challengeFailures.removeValue(forKey: outgoing.id)
+        challenge = nil
+    }
+
+    private func presentDelivery(payload: String) {
+        if challenge?.payload != payload { retireUnreadyDelivery() }
+        pendingPayload = payload
         deliveryPresented = true
+        guard let decoded = IosApplication.shared.decodeAlarmHandoffJson(payload: payload) else { return }
+        let occurrence = decoded.activeAt.map { String($0.int64Value) } ?? decoded.deliveryId ?? "legacy"
+        let id = "native-window/\(windowID)/occurrence/\(decoded.alarmId)/\(occurrence)"
+        if let retained = challenges.first(where: { $0.id == id }) { challenge = retained }
+        else {
+            let retained = NativeChallengeSession(id: id, payload: payload, model: SharedFeatures.shared.challenge(sessionId: id))
+            challenges.append(retained)
+            challenge = retained
+        }
+        if let challenge { initialize(session: challenge) }
+    }
+
+    /// Test uses the editor's semantic draft snapshot. It cannot touch native delivery state.
+    func openPreview(editorID: String) {
+        guard !windowEnded, previews[editorID] == nil,
+              selectedEditorID == editorID, editorPaths[editorID]?.last == .preview,
+              let editor = editors.first(where: { $0.id == editorID }), !editor.model.isClosed else { return }
+        editor.model.onEvent(event: AddEditAlarmEvent.OnTestClick.shared)
+        guard let result = editor.model.state.results.last(where: { $0.event is AlarmSettingsViewModel.UiEventTestAlarm }),
+              let event = result.event as? AlarmSettingsViewModel.UiEventTestAlarm else { return }
+        let id = "maths-preview/\(editorID)/\(UUID().uuidString)"
+        let preview = NativeChallengeSession(id: id, payload: "", model: SharedFeatures.shared.challenge(sessionId: id),
+            editorID: editorID, previewAlarm: event.alarm)
+        previews[editorID] = preview
+        editor.model.acknowledgeResult(id: result.id)
+        initialize(session: preview)
+    }
+
+    func initialize(session: NativeChallengeSession) {
+        guard !windowEnded, !session.model.isClosed, initializationTasks[session.id] == nil else { return }
+        initializationTasks[session.id] = Task { @MainActor [weak self] in
+            guard let self else { return }
+            defer { self.initializationTasks.removeValue(forKey: session.id) }
+            do {
+                let ready: KotlinBoolean
+                if let draft = session.previewAlarm {
+                    ready = try await asyncFunction(for: session.model.initializeChallenge(alarm: draft, preview: true))
+                } else if let decoded = IosApplication.shared.decodeAlarmHandoffJson(payload: session.payload) {
+                    ready = try await asyncFunction(for: session.model.initializeOccurrence(alarmId: decoded.alarmId, activeAt: decoded.activeAt))
+                } else { return }
+                guard !self.windowEnded, !Task.isCancelled, !session.model.isClosed else { return }
+                self.receiveChallengeResults(id: session.id)
+                if ready.boolValue {
+                    if (self.challengeFailures[session.id]?.outcome as? ChallengeOutcome.Failure)?.error == .initialization {
+                        self.challengeFailures.removeValue(forKey: session.id)
+                    }
+                    if !session.isPreview {
+                        self.acceptReadyDelivery(session: session)
+                        DispatchQueue.main.async { self.refreshPendingDelivery() }
+                    }
+                }
+            } catch {
+                // Cancelled observations cannot accept a handoff. Shared work may still finish.
+            }
+        }
+    }
+
+    @discardableResult
+    private func acceptReadyDelivery(session: NativeChallengeSession, restoredPayload: String? = nil) -> Bool {
+        let payload = restoredPayload ?? session.payload
+        guard challenge?.id == session.id, session.model.state.readiness == .ready, !session.model.state.finishing,
+              session.model.state.occurrenceId != nil,
+              let decoded = IosApplication.shared.decodeAlarmHandoffJson(payload: payload),
+              let alarm = session.model.state.alarm, alarm.alarmId == decoded.alarmId,
+              (decoded.activeAt == nil && (decoded.version == 1 || payload == session.payload)) ||
+              decoded.activeAt?.int64Value == alarm.activeAt?.int64Value else { return false }
+        guard pendingStore.acknowledgePendingDeeplink(payload) else {
+            // A replaced head can never be consumed by this completion callback.
+            handoffWriteFailed = pendingStore.peekPendingDeeplink() == payload
+            return false
+        }
+        handoffWriteFailed = false
+        IosApplication.shared.acknowledgeHandoff(payload: payload)
+        Task { @MainActor in await self.restoreRecovery([payload]) }
+        return true
+    }
+
+    func retryDelivery() {
+        guard !windowEnded else { return }
+        handoffWriteFailed = false
+        if let challenge {
+            if challenge.model.state.readiness == .ready { refreshPendingDelivery() }
+            else { initialize(session: challenge) }
+        } else { refreshPendingDelivery() }
+    }
+
+    /// Owners consume retained IDs; borrowed children never turn dismissal into resolution.
+    func receiveChallengeResults(id: String) {
+        guard !windowEnded, let session = (challenges + Array(previews.values)).first(where: { $0.id == id }),
+              !session.model.isClosed else { return }
+        for result in session.model.state.results {
+            if result.outcome is ChallengeOutcome.Failure {
+                challengeFailures[id] = result
+                session.model.acknowledgeResult(id: result.id)
+            } else if result.outcome is ChallengeOutcome.Completed || result.outcome is ChallengeOutcome.Snoozed {
+                guard session.model.state.readiness == .resolved else { continue }
+                session.model.acknowledgeResult(id: result.id)
+                if let editorID = session.editorID { closePreview(editorID: editorID) }
+                else {
+                    SharedFeatures.shared.closeChallenge(sessionId: id)
+                    challenges.removeAll { $0.id == id }
+                    challengeFailures.removeValue(forKey: id)
+                    if challenge?.id == id {
+                        challenge = nil
+                        pendingPayload = nil
+                        deliveryPresented = false
+                        advanceAfterDismiss = true
+                    }
+                }
+                return
+            }
+        }
+    }
+
+    func returnFromStaleOccurrence(sessionID: String) {
+        guard let current = challenge, current.id == sessionID,
+              current.model.state.readiness == .error, current.model.state.error == .staleOccurrence else { return }
+        retireUnreadyDelivery()
+        pendingPayload = nil
+        deliveryPresented = false
+        advanceAfterDismiss = true
+    }
+
+    func presentationEnded() {
+        guard advanceAfterDismiss else { return }
+        advanceAfterDismiss = false
+        refreshPendingDelivery()
+    }
+
+    func dismissChallengeFailure(id: String, resultID: Int64) {
+        guard challengeFailures[id]?.id == resultID else { return }
+        challengeFailures.removeValue(forKey: id)
+    }
+
+    func retryChallengeFailure(session: NativeChallengeSession, resultID: Int64) {
+        guard !session.model.isClosed, challengeFailures[session.id]?.id == resultID,
+              let failure = challengeFailures[session.id]?.outcome as? ChallengeOutcome.Failure else { return }
+        dismissChallengeFailure(id: session.id, resultID: resultID)
+        switch failure.error {
+        case .initialization: initialize(session: session)
+        case .tone: session.model.retryAudio()
+        case .dismiss:
+            if let alarm = session.model.state.alarm { session.model.completeAlarm(alarm: alarm, preview: session.isPreview) }
+        case .snooze:
+            if let alarm = session.model.state.alarm {
+                session.model.onEvent(event: MathScreenEvent.OnSnoozeClick(alarm: alarm.alarmId, preview: session.isPreview))
+            }
+        case .recovery:
+            Task { @MainActor in await self.restoreRecovery([session.payload]) }
+        case .update:
+            if let problem = session.model.state.currentProblem {
+                session.model.submitAnswer(questionIndex: session.model.state.questionIndex, problem: problem)
+            }
+        default: break // Incorrect answers are retried with the answer controls.
+        }
+    }
+
+    func beginPreviewPresentation(editorID: String) -> Int {
+        nextPreviewPresentation += 1
+        let generation = nextPreviewPresentation
+        guard selectedEditorID == editorID, editorPaths[editorID]?.last == .preview else { return generation }
+        previewPresentations[editorID] = generation
+        if let preview = previews[editorID], preview.model.state.readiness == .ready { preview.model.retryAudio() }
+        return generation
+    }
+
+    func endPreviewPresentation(editorID: String, generation: Int) {
+        guard previewPresentations[editorID] == generation else { return }
+        previewPresentations.removeValue(forKey: editorID)
+        previews[editorID]?.model.stopPreview()
+    }
+
+    func closePreview(editorID: String, returning: Bool = true, expectedSessionID: String? = nil) {
+        if let expectedSessionID, previews[editorID]?.id != expectedSessionID { return }
+        guard let preview = previews.removeValue(forKey: editorID) else { return }
+        previewPresentations.removeValue(forKey: editorID)
+        initializationTasks.removeValue(forKey: preview.id)?.cancel()
+        SharedFeatures.shared.closeChallenge(sessionId: preview.id)
+        challengeFailures.removeValue(forKey: preview.id)
+        if returning, selectedEditorID == editorID {
+            var path = editorPaths[editorID] ?? []
+            if path.last == .preview { path.removeLast(); setEditorPath(path, id: editorID) }
+        }
     }
 
     isolated deinit {
@@ -191,7 +475,7 @@ final class NativeWindowSessions: ObservableObject {
         // durable occurrence, cancel application commands or silence application audio.
         let editorIDs = editors.map(\.id)
         let sounds = Array(soundSelections.values)
-        let challengeIDs = challenges.map(\.id)
+        let challengeIDs = challenges.map(\.id) + previews.values.map(\.id)
         DispatchQueue.main.async {
             sounds.forEach { $0.finish() }
             editorIDs.forEach { SharedFeatures.shared.closeEditor(sessionId: $0) }
@@ -228,8 +512,8 @@ struct NativeSessionOwners: View {
             ForEach(sessions.editors) { session in
                 NativeEditorOwner(model: session.model, sessionID: session.id, sessions: sessions).id(session.id)
             }
-            ForEach(sessions.challenges) { session in
-                NativeChallengeOwner(model: session.model).id(session.id)
+            ForEach(sessions.challenges + Array(sessions.previews.values)) { session in
+                NativeChallengeOwner(model: session.model, sessionID: session.id, sessions: sessions).id(session.id)
             }
         }
         .frame(width: 0, height: 0)
@@ -255,8 +539,12 @@ struct NativeEditorOwner: View {
 @MainActor
 struct NativeChallengeOwner: View {
     @StateViewModel var model: AlarmMathViewModel
+    let sessionID: String
+    @ObservedObject var sessions: NativeWindowSessions
     var body: some View {
         let _ = model
         Color.clear
+            .onAppear { sessions.receiveChallengeResults(id: sessionID) }
+            .onChange(of: model.state.results.map(\.id)) { sessions.receiveChallengeResults(id: sessionID) }
     }
 }

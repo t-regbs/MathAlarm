@@ -10,10 +10,10 @@ internal suspend fun Usecases.consumeDueOccurrence(
     now: Long = Clock.System.now().toEpochMilliseconds(),
 ): Alarm? {
     val current = findAlarm(alarmId) ?: return null
-    if (current.isOn && current.scheduleInitialized) {
+    if (current.isOn && current.scheduleInitialized && current.activeAt == null) {
         val snoozed = current.snoozedUntil?.takeIf { it <= now }
-        val regular = current.pendingTimes.filter { it <= now }.maxOrNull()
-        val due = listOfNotNull(snoozed, regular).maxOrNull()
+        val regular = current.pendingTimes.filter { it <= now }.minOrNull()
+        val due = listOfNotNull(snoozed, regular).minOrNull()
         if (due != null && due > (current.activeAt ?: Long.MIN_VALUE)) {
             showAlarm(current.alarmId, due, snoozed = due == snoozed)
         }

@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
-"""Verify the Milestone 4 native catalog, source keys and packaged resources.
+"""Verify the Milestone 4/5 native catalog, source keys and packaged resources.
 
 This static gate complements Xcode catalog compilation and mounted/device checks.
-It deliberately excludes Milestone 5/6 development placeholder copy.
+It deliberately excludes Milestone 6 development placeholder copy.
 """
 import argparse
 from collections import Counter
@@ -13,7 +13,7 @@ import re
 
 LOCALES = frozenset("en es de ru pt hi pa bn zh".split())
 SOURCE_FILES = ("NativeAlarmViews.swift", "NativeEditorControls.swift",
-                "NativeSoundPicker.swift", "NativeStrings.swift", "ContentView.swift")
+                "NativeSoundPicker.swift", "NativeChallengeViews.swift", "NativeStrings.swift", "ContentView.swift")
 REQUIRED_PLURALS = {
     "en": {"one", "other"}, "es": {"one", "other"},
     "de": {"one", "other"}, "ru": {"one", "few", "many", "other"},
@@ -29,13 +29,10 @@ def presentation_keys(source):
     This is intentionally a bounded Swift source audit, not a Swift parser.
     String interpolation formats are separately checked by the plural contract.
     """
-    if "struct NativeDevelopmentScreen:" in source:
-        start = source.index("struct NativeDevelopmentScreen:")
-        end = source.index("enum NativeAlarmPresentation", start)
-        source = source[:start] + source[end:]
+    source = re.sub(r"^struct NativeDevelopmentScreen:.*?^}", "", source, flags=re.S | re.M)
     source = re.sub(r"/\*.*?\*/", "", source, flags=re.S)
     source = re.sub(r"//[^\n]*", "", source)
-    calls = (r"(?:\b(?:Text|Button|Toggle|Picker|Section|ProgressView|ContentUnavailableView|"
+    calls = (r"(?:\b(?:Text|TextField|Label|Button|Toggle|Picker|Section|ProgressView|ContentUnavailableView|"
              r"LabeledContent|Menu|DatePicker|NSLocalizedString|rangePicker)|"
              r"\.navigationTitle|\.confirmationDialog|\.alert)\(\s*" + SWIFT_STRING)
     keys = set(re.findall(calls, source))
@@ -49,7 +46,7 @@ def presentation_keys(source):
     for names in re.findall(r"let names = \[(.*?)\]", source):
         keys.update(re.findall(SWIFT_STRING, names))
     # Empty separators and locale-formatted operand ranges are not catalog keys.
-    return {key for key in keys if key.strip() and "\\(" not in key}
+    return {key for key in keys if key.strip() and "\\(" not in key and key not in {"+", "−", "×", "÷"}}
 
 
 def format_arguments(value):
@@ -97,7 +94,8 @@ def violations(root):
                for filename in SOURCE_FILES}
     errors = catalog_violations(catalog, sources)
     project = (root / "iosApp/iosApp.xcodeproj/project.pbxproj").read_text()
-    for reference in ("Localizable.xcstrings in Resources", "NativeStrings.swift in Sources"):
+    for reference in ("Localizable.xcstrings in Resources", "NativeStrings.swift in Sources",
+                      "NativeChallengeViews.swift in Sources"):
         if reference not in project:
             errors.append(f"Missing Xcode build phase reference: {reference}")
     regions = re.search(r"knownRegions = \((.*?)\);", project, flags=re.S)
@@ -122,7 +120,7 @@ def main():
         for error in errors:
             print(error)
         return 1
-    print("Native Milestone 4 localization passed: nine locales, plurals, source keys and packaged resources")
+    print("Native Milestone 4/5 localization passed: nine locales, plurals, source keys and packaged resources")
     return 0
 
 

@@ -3,6 +3,7 @@ package com.timilehinaregbesola.mathalarm.usecases
 import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
+import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractor
 import com.timilehinaregbesola.mathalarm.interactors.scheduleOccurrences
 import com.timilehinaregbesola.mathalarm.provider.AlarmTimeCalculator
 import kotlinx.coroutines.CancellationException
@@ -13,7 +14,10 @@ import kotlinx.datetime.TimeZone
 class ScheduleAlarm(
     private val alarmRepository: AlarmRepository,
     private val alarmInteractor: AlarmInteractor,
-    private val alarmTimeCalculator: AlarmTimeCalculator
+    private val alarmTimeCalculator: AlarmTimeCalculator,
+    private val notificationInteractor: NotificationInteractor? = null,
+    private val onCleanupFailure: (Long, Exception) -> Unit = { _, _ -> },
+    private val onCleanupSuccess: (Long) -> Unit = {},
 ) {
     suspend operator fun invoke(alarm: Alarm, reschedule: Boolean) {
         val saved = if (alarm.alarmId == 0L) {
@@ -26,9 +30,10 @@ class ScheduleAlarm(
             isOn = times.isNotEmpty(),
             pendingTimes = times,
             scheduleInitialized = true,
-            snoozedUntil = null,
-            activeAt = null,
-            snoozeCount = 0,
+            // Keep authoritative unresolved state through native acceptance and storage.
+            snoozedUntil = saved.snoozedUntil,
+            activeAt = saved.activeAt,
+            snoozeCount = saved.snoozeCount,
             skippedDate = null,
             scheduleError = Alarm.SCHEDULING_IN_PROGRESS,
             scheduleTimeZone = TimeZone.currentSystemDefault().id
@@ -42,8 +47,11 @@ class ScheduleAlarm(
                 alarmInteractor.cancelSnooze(saved)
             }
             alarmInteractor.scheduleOccurrences(planned, times)
-            alarmInteractor.cancelRecovery(saved)
-            alarmRepository.updateAlarm(planned.copy(scheduleError = null))
+            val accepted = planned.copy(activeAt = null, snoozedUntil = null, snoozeCount = 0,
+                scheduleError = AlarmCommandJournal.cleanup(null))
+            alarmRepository.updateAlarm(accepted)
+            AlarmCommandJournal.cleanupAccepted(accepted, alarmRepository, alarmInteractor,
+                notifications = notificationInteractor, onFailure = onCleanupFailure, onSuccess = onCleanupSuccess)
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

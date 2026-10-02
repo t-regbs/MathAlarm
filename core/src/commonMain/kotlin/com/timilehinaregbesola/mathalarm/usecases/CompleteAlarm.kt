@@ -16,6 +16,8 @@ class CompleteAlarm(
     private val alarmInteractor: AlarmInteractor,
     private val notificationInteractor: NotificationInteractor,
     private val dateTimeProvider: DateTimeProvider = DateTimeProviderImpl(),
+    private val onCleanupFailure: (Long, Exception) -> Unit = { _, _ -> },
+    private val onCleanupSuccess: (Long) -> Unit = {},
     private val onCompleted: () -> Unit = {},
 ) {
     suspend operator fun invoke(alarmId: Long, expectedActiveAt: Long? = null): Boolean {
@@ -27,7 +29,10 @@ class CompleteAlarm(
         if (expectedActiveAt != null && alarm.activeAt != expectedActiveAt) return false
         val now = dateTimeProvider.getCurrentDateTime()
             .toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
-        val pending = alarm.pendingTimes.filter { it > now }
+        // Known later repeating deliveries remain valid while presentation is serialized,
+        // even if their wall-clock time passed while this occurrence was unresolved.
+        val pendingAfter = if (alarm.repeat) alarm.activeAt ?: now else now
+        val pending = alarm.pendingTimes.filter { it > pendingAfter }
         val hasRemaining = if (alarm.scheduleInitialized) {
             pending.isNotEmpty()
         } else {
@@ -43,10 +48,13 @@ class CompleteAlarm(
             scheduleError = if (alarm.repeat || hasRemaining) alarm.scheduleError else null
         )
         alarmInteractor.cancelSnooze(alarm)
-        alarmInteractor.cancelRecovery(alarm)
-        if (!updated.isOn) alarmInteractor.cancel(alarm)
-        alarmRepository.updateAlarm(updated)
-        notificationInteractor.dismiss(alarmId)
+        // Native cancellation may fail, but must not cancel unresolved recovery before
+        // the accepted resolution is durable. A failed write retains the active occurrence.
+        if (!updated.isOn) alarmInteractor.cancelRegularOccurrences(alarm)
+        val accepted = updated.copy(scheduleError = AlarmCommandJournal.cleanup(updated.scheduleError))
+        alarmRepository.updateAlarm(accepted)
+        AlarmCommandJournal.cleanupAccepted(accepted, alarmRepository, alarmInteractor,
+            notificationInteractor, onCleanupFailure, onCleanupSuccess)
         if (alarm.activeAt != null) onCompleted()
         return true
     }

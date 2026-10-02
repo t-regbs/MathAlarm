@@ -79,7 +79,13 @@ val commonModule = module {
     // Usecases
     single {
         val deleteAlarm = DeleteAlarm(get(), get(), get())
-        val rescheduleFutureAlarms = RescheduleFutureAlarms(get(), get(), get())
+        val cleanupFailure: (Long, Exception) -> Unit = { id, error ->
+            Logger.e(error) { "Accepted alarm cleanup remains pending" }
+            com.timilehinaregbesola.mathalarm.application.AlarmApplicationStatus.reportRecoveryFailure(id)
+        }
+        val rescheduleFutureAlarms = RescheduleFutureAlarms(get(), get(), get(),
+            notificationInteractor = get(), onCleanupFailure = cleanupFailure,
+            onCleanupSuccess = { com.timilehinaregbesola.mathalarm.application.AlarmApplicationStatus.clearRecoveryFailure(it) })
         val reviewEligibility by lazy { get<ReviewEligibilityStore>() }
         val analytics by lazy { get<AnalyticsTracker>() }
         Usecases(
@@ -89,19 +95,22 @@ val commonModule = module {
             findAlarm = FindAlarm(get()),
             getSavedAlarms = GetSavedAlarms(get()),
             updateAlarm = UpdateAlarm(get(), get()),
-            scheduleAlarm = ScheduleAlarm(get(), get(), get()),
+            scheduleAlarm = ScheduleAlarm(get(), get(), get(), notificationInteractor = get(), onCleanupFailure = cleanupFailure,
+            onCleanupSuccess = { com.timilehinaregbesola.mathalarm.application.AlarmApplicationStatus.clearRecoveryFailure(it) }),
             completeAlarm = CompleteAlarm(get(), get(), get(), get(), onCompleted = {
                 // Optional review bookkeeping must never turn a successful dismissal into an error.
                 runCatching { reviewEligibility.recordAlarmCompleted() }
                     .onFailure { Logger.w(it) { "Unable to record review eligibility" } }
                 runCatching { analytics.trackSafely(AnalyticsEvents.alarmCompleted) }
-            }),
+            }, onCleanupFailure = cleanupFailure,
+            onCleanupSuccess = { com.timilehinaregbesola.mathalarm.application.AlarmApplicationStatus.clearRecoveryFailure(it) }),
             rescheduleFutureAlarms = rescheduleFutureAlarms,
             scheduleNextAlarm = get(),
             showAlarm = ShowAlarm(get(), get(), get()),
             snoozeAlarm = SnoozeAlarm(get(), get(), get(), get(), onSnoozed = {
                 runCatching { analytics.trackSafely(AnalyticsEvents.alarmSnoozed) }
-            }),
+            }, onCleanupFailure = cleanupFailure,
+            onCleanupSuccess = { com.timilehinaregbesola.mathalarm.application.AlarmApplicationStatus.clearRecoveryFailure(it) }),
             cancelAlarm = CancelAlarm(get()),
             skipNextAlarm = SkipNextAlarm(get(), get(), rescheduleFutureAlarms),
             applicationScope = get<AppCoroutineScope>(),

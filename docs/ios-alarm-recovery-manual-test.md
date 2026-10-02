@@ -33,3 +33,16 @@ After testing, disable or delete the temporary alarm.
 27 September 2026: the user confirmed **“ok that works”** after receiving the main recovery test steps on the installed iPhone build. This is user-reported success; no per-step timing or agent-observed recording was supplied. The cancellation checks and terminated-app case above remain separate tests.
 
 The confirmed build initially had a five-follow-up cap and ten-minute session expiry. The user subsequently chose continuous recovery until the challenge is solved; both limits were removed. Extended physical testing of the updated behavior remains pending.
+
+
+## Milestone 5 physical follow-up (still open)
+
+The [native Milestone 5 record](native-ui-migration-milestone-5-2026-10-02.md) covers implementation, controlled scheduling, native token persistence faults and simulator process restart. The earlier paragraph about app-level failure presentation describes the prototype: current native challenge/restore flows present shared initialization/recovery failures and allow retry. Physical behavior below remains unverified.
+
+- Deliver an alarm, advance partway, acknowledge its handoff, then terminate/relaunch before resolution. Check identical questions, index, start time and incorrect count; recovery must continue independently of an empty native queue.
+- Keep a repeating alarm unresolved across its next actual repeating cycle without editing/rescheduling it. The later date-specific token must join the same challenge, preserve exact progress and retire only its matching known schedule timestamp. Complete once; a legacy handoff must not recreate the already coalesced delivery. This requires multi-day evidence, not clock simulation.
+- Deliver a different alarm while the first is unresolved. Check stable ordered presentation, independent durable occurrence/recovery evidence and one real audio owner. Resolve/snooze the first; only its recovery/playback stops, and the second remains reachable.
+- Interrupt multiple dirty drafts, a nested route, staged tone and maths preview. Resolve the real occurrence and verify return to the same draft/settings/route; preview cleanup must not cancel real recovery.
+- Repeat with locked/background/terminated Stop intents, denied/revoked permission, Bluetooth/DND routing and sustained continuous recovery. Record timing, device/runtime, source commit, acoustic evidence and cancellation outcomes separately.
+
+Do not treat the simulator's controlled scheduler or token-chain smoke as proof of native physical delivery, audibility or uninterrupted recovery.
