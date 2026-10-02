@@ -1,7 +1,6 @@
 # Native UI migration progress — 2 October 2026
 
-The approved plan remains the architectural authority. Milestones 1–2 are complete; Compose renderers and the iOS Compose root remain until Milestone 3. This is not native feature parity or release-readiness evidence.
-
+The [approved plan](native-ui-migration-plan.md) remains the architectural authority. Milestones 1–3 satisfy their documented gates. Compose is Android-owned, shared production code is renderer-free, and iOS now starts and renders entirely with SwiftUI. Later native feature screens remain explicitly incomplete; this is not full parity or a release-readiness claim. The Milestones 1–2 sections below retain their historical implementation/verification snapshot; the Milestone 3 record describes the current source. The [baseline](native-ui-migration-baseline-2026-10-02.md) separates existing failures, historical physical-device evidence and migration results. The [experiment archive](research/native-ui-interop-2026-10-02/README.md) remains results-only.
 
 ## Milestone gates
 
@@ -9,9 +8,9 @@ The approved plan remains the architectural authority. Milestones 1–2 are comp
 | --- | --- | --- |
 | 1 — Establish the baseline | **COMPLETE** | Concrete inventory/parity matrix, original test results and limitations, supported toolchain/device matrix, focused initialization-retry and delivery-identity regressions |
 | 2 — Independent shared presentation and operations | **COMPLETE** | Existing suites and focused regressions pass; resolved Kotlin/Swift bridge versions agree; production Swift observation/cancellation/cleanup/identity checks pass; renderer consumers build; accepted work/session ownership and UI-free startup are verified |
-| 3 — Extract Android UI and replace iOS root | **Not started** | Compose lives in Android UI, shared builds without renderer dependencies, native SwiftUI root builds/launches through UI-free bootstrap, editor owners survive detail/layout replacement |
+| 3 — Extract Android UI and replace iOS root | **COMPLETE** | Compose lives in Android UI, shared builds without renderer dependencies, native SwiftUI root builds/launches through UI-free bootstrap, editor owners survive detail/layout replacement |
 
-The final verification record below ties completion to the approved gates: feature contracts contain no Compose/UI types; existing Android consumers build; the production bootstrap and bridge checks work without constructing a Compose controller; observer-removal regressions preserve accepted commands and real sessions; pinned Kotlin/Swift dependencies resolve and work together. Renderer removal and the SwiftUI root remain Milestone 3.
+The final verification record below ties completion to the approved gates: feature contracts contain no Compose/UI types; existing Android consumers build; the production bootstrap and bridge checks work without constructing a Compose controller; observer-removal regressions preserve accepted commands and real sessions; pinned Kotlin/Swift dependencies resolve and work together. Those Milestone 2 results are retained below; the completed renderer extraction and native root have their own Milestone 3 verification record.
 
 ## Implemented shared contracts
 
@@ -135,9 +134,9 @@ history). No new failure remains in the final suites. No schema file changed.
 
 Final unskipped Xcode builds passed: Debug simulator framework/app (`/tmp/mathalarm-migration-final-xcode-debug.log`, Kotlin build 1m15s) and unsigned generic-device Release framework/app (`/tmp/mathalarm-migration-final-xcode-release.log`, Kotlin build 6m). All seven production runtime groups passed in `build/ios-shared-bridge.log`; both final framework headers passed the infrastructure/export audit. The disposable verification simulators were deleted, preserving the existing user simulator.
 
-**Milestone 2 is complete:** toolkit-free feature contracts and adapted Android consumers, UI-free bootstrap, observer-independent accepted work/session ownership, pinned resolved bridges and actual production Swift observation/cancellation/cleanup/retained-identity checks satisfy the approved gate. Production runtime checks use iOS 26.5 with Xcode 27.0; minimum supported iOS 26.0 runtime validation remains open. This historical Milestone 2 result does not claim audible output, AlarmKit physical delivery, distribution signing or TestFlight/archive completion. Milestone 3 has not started.
+**Milestone 2 is complete:** toolkit-free feature contracts and adapted Android consumers, UI-free bootstrap, observer-independent accepted work/session ownership, pinned resolved bridges and actual production Swift observation/cancellation/cleanup/retained-identity checks satisfy the approved gate. Production runtime checks use iOS 26.5 with Xcode 27.0; minimum supported iOS 26.0 runtime validation remains open. This historical Milestone 2 result does not claim audible output, AlarmKit physical delivery, distribution signing or TestFlight/archive completion. Milestone 3 completion is recorded separately below.
 
-## Concrete handoff for Milestone 3
+## Milestone 2 handoff (completed by the Milestone 3 record below)
 
 1. Move the current Compose screens/components/navigation/theme/resources/catalogs and renderer tests to `androidApp`, preserving their new aggregate-state consumers. Keep UI localization extensions, `TextFieldValue`, formatted time, route types and platform presentation launchers in native UI packages.
 2. Remove shared renderer dependencies, the obsolete Swift export configuration and CALF framework export after Android extraction. Preserve the framework name `app`, domain DTOs, feature state APIs, Koin runtime ownership and application services.
@@ -146,6 +145,59 @@ Final unskipped Xcode builds passed: Debug simulator framework/app (`/tmp/mathal
 5. Own real challenges by retained occurrence identity. Decode native payloads with `IosApplication.decodeAlarmHandoffJson` and call the identity-only `initializeOccurrence` API. Bind replacement views to the application session, prioritize real deliveries without discarding editor drafts, and acknowledge native deliveries only after actual readiness. Native view/task cleanup cancels observation, not the unresolved alarm.
 6. Carry the production Swift interop harness into CI/native owner tests. Continue testing real owner removal, cancellation and retained identity after dependency changes; an offscreen host or historical experiment result does not establish the production gate.
 7. Build/launch Android and the new SwiftUI root, check shared dependency/import boundaries, and verify draft retention during actual compact/expanded transitions. Full native parity remains Milestones 4–6; no Compose fallback should be introduced on iOS.
+
+## Milestone 3 implementation and verification
+
+The extraction keeps the approved architecture: `core` owns domain contracts; `shared` owns application operations, data, platform service adapters and feature ViewModels; `androidApp` owns Compose; `iosApp` owns SwiftUI presentation and navigation. Framework name `app` and the pinned bridge/toolchain versions remain unchanged. There is no iOS Compose fallback.
+
+### Changes against the approved scope
+
+- Compose screens, components, theme, navigation, nine Lyricist catalogs, renderer helpers and seven renderer test classes moved into `androidApp`, with their packages, route identities and test tags preserved. Shared handoff codecs and domain calculations remain in Kotlin. Android platform presentation launchers/dialogs/ringtone picking moved alongside their callers; service adapters remain below UI.
+- Original UI resource bytes moved into Android drawables/assets. The pinned Compose resource plugin does not generate resources for the AGP 9 Android application module, so Android uses `R.drawable` and the native asset manager. All 32 tracked source assets remain byte-identical; sound resources and IDs were not changed. The icon generation script targets Android resources.
+- Shared Compose/CALF/Lyricist/navigation renderer dependencies, resource generation, CALF export and obsolete Swift export DSL were removed. Explicit `koin-core-viewmodel` and the already resolved Lifecycle 2.11.0 replace transitive renderer dependencies. Obsolete iOS controller/presentation entry points and unused UI navigation events were removed. Native service implementations are hidden from Swift export while established contracts/bootstrap remain available.
+- The SwiftUI root starts through `IosApplication`, renders the shared list model and uses native split/stack navigation. List actions, result/error presentation, deletion confirmation and undo use shared events. Editor, sound, preview, challenge and settings development screens clearly state their later milestone status. No save, challenge readiness or real-delivery acknowledgement is simulated.
+- A window registry owns stable editor/session IDs and retained per-editor routes above detail/layout branches. Always-mounted `@StateViewModel` owners retain factory models; children use `@ObservedViewModel`. Switching details or nested routes does not close a draft. Explicit discard closes its factory session; window end closes retained factory keys. Native navigation generations reject outgoing stack writes, and restored routes hydrate only after destination registration. No shared ViewModel is constructed in `body`.
+- Native unresolved-occurrence restoration completes before queue replay is presented. Pending real deliveries retain their persisted queue order and identity. The M3 challenge owner remains idle and unacknowledged until M5 establishes authoritative readiness. Cancelling observations or removing native owners does not complete/snooze a real occurrence, stop application audio, erase progress, or cancel accepted commands.
+
+No database name, schema migration, preference key, announcement ID, registration identity, legacy handoff format or persisted progress format changed. Archived experiments remain results-only; verification was extended in the production app and scripts.
+
+### Verification and baseline comparison
+
+The original baseline had no reproduced assertion failures (417 Android / 339 iOS). The fresh M1–2 starting implementation documented 440 Android / 363 iOS. The extraction keeps all 440 Android tests: core 136, shared 172, Android app 132. The iOS suites contain core 135 and shared 188 (323 total); the difference is exactly the 40 renderer cases moved from shared to Android, rather than deleted behavior coverage. All final reports have zero failures/errors/skips.
+
+Integration caught and corrected Android resource-generation assumptions, formerly transitive ViewModel dependencies, Swift actor cleanup compilation and native nested-route restoration. The mounted routing check also caught a test assumption: SwiftUI can retain the root without repeating `onAppear` after pop. Verification now checks the settled native visible stack/title field for that transition; nested routes still require appearances from the current rendering generation.
+
+### Milestone 3 final gate evidence
+
+| Check | Final result / evidence |
+| --- | --- |
+| Full shared/core/Android suites and Android Debug/test APKs | Passed, `/tmp/mathalarm-m3-final-tests-build.log`; totals 440 Android / 323 iOS as explained above |
+| Final affected source after shared API/export cleanup | Shared Android 172, app 132, shared iOS 188 and `assembleDebug` passed, `/tmp/mathalarm-m3-final-affected-tests.log`; unchanged core reports remain 136 Android / 135 iOS |
+| Moved renderer tests | All 40 passed in Android app; seven classes; route/tag/resource audit passed |
+| Android representative navigation/layout | Three instrumentation tests passed on API 35: compact familiar sheet; expanded editor/settings draft protection; hidden draft after activity recreation. Logs `/tmp/mathalarm-m3-android-compact.log` and `/tmp/mathalarm-m3-android-expanded.log`; screenshot evidence `build/native-ui-m3/android/`. Emulator size/density restored after checks |
+| Shared source, graph and framework exports | `verify_native_ui_boundaries.py` passed against final simulator `app.framework` and `/tmp/mathalarm-m3-dependencies.log`; no Compose/CALF/Lyricist renderer dependencies/imports/exports; feature/bootstrap APIs present and infrastructure hidden |
+| Normal unskipped iOS Debug framework/app | Xcode build passed, `/tmp/mathalarm-m3-xcode-debug.log`, Xcode 27.0 / iOS 26.5; no Kotlin skip or Compose fallback |
+| Production mounted Swift ownership/navigation | **10 groups passed on iPhone and iPad**, `build/ios-shared-bridge-m3.log` and `build/ios-shared-bridge-m3-ipad.log`. Both runs use the production owner layer and native editor stack, two retained drafts, nested sound/challenge routes, compact/expanded/detail replacement, visible pop-to-editor title, Swift observation, Flow/suspend cancellation, explicit closure and actual mounted/window cleanup |
+| Native queue/recovery regression checks | Foundation queue, delivery identity and recovery smoke passed; retained native idle challenge queue bytes/order remain identical through observer/window cleanup; shared accepted-command/progress/audio/recovery suites pass |
+| Verification scripts | 10 Python tests passed, including transcript completeness and renderer boundary regressions |
+| Normal native root launch/visual inspection | Final app launched on iPhone 17 Pro and iPad Pro 11-inch M5; native list/empty/sidebar/detail and safe areas inspected. Screenshots `build/native-ui-m3/ios-iphone-root.png` and `ios-ipad-root.png` |
+| Physical alarm, minimum iOS 26.0, archive/distribution | Not established by this milestone. Current-source Release/device/archive was not rerun; prior M2 unsigned build is historical evidence only |
+
+**Milestone 3 is complete against its approved gate.** Android rendering is confined to `androidApp`, shared builds and exports without UI renderers, the production iOS root builds and launches entirely in SwiftUI, and mounted native owner checks preserve editor identity through layout/detail/nested-destination replacement. No architectural deviation or bridge version change was required. All new iOS presentation is SwiftUI. The two disposable verification simulators and test emulator are cleaned up after verification, preserving the existing user simulator and physical devices.
+
+### Reviewable commit boundaries
+
+Milestone 1 (`41a97c7`) records the approved plan, baseline and retained research. Milestone 2 (`ef7136c`) records shared contracts, operation ownership, UI-free startup and the adapted existing Compose consumers. Its boundary was reconstructed in a temporary checkout without changing the completed working files, then freshly verified: 440 Android / 363 iOS tests, Android Debug build, native framework link, normal Xcode Debug build, all seven production Swift bridge groups and native queue/delivery/recovery smoke passed. Logs: `/tmp/mathalarm-milestone-commits/m2-verification.log`, `m2-xcode.log` and `m2-bridge.log`. The staged tree was checked byte-for-byte against that tested checkout.
+
+The following Milestone 3 commit contains the Android extraction, renderer dependency removal, native SwiftUI root/owners and extended production verification documented above. Its functional source matches the already verified final implementation. IDE state, Firebender files, old Kotlin error-log deletions, Xcode user state and Android release mapping remain outside these commits. No physical device was changed; the additional boundary-verification simulator was removed.
+
+### Concrete Milestone 4 handoff
+
+1. Complete the native editor/time/weekday/repeat/challenge/snooze controls using the existing retained `AlarmEditorState` and semantic events. Keep cursor, marked text, focus, keyboard and formatting native; keep normalization/validation in Kotlin.
+2. Implement accepted save/result navigation and failure/retry/duplicate guards. Saving ends a factory session only after accepted shared results are handled; hiding or replacing details does not. Preserve multiple retained drafts and per-session nested routes.
+3. Replace sound/preview development destinations with native sound selection and preview ownership. Preserve stable bundled/system sound IDs and grant real-delivery audio priority. Do not turn the M3 idle real-delivery placeholder into a preview.
+4. Extend mounted production verification and iPhone/iPad layout tests around full editor destinations, result acknowledgement and draft preservation. Keep Android renderer suites and tablet instrumentation passing.
+5. Keep real challenge readiness/queue acknowledgement for M5 and settings/localization/accessibility parity for M6. Continue the physical/release matrix below; simulator passes do not close it.
 
 ## Remaining physical/release evidence
 

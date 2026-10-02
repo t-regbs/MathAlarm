@@ -14,7 +14,7 @@ struct iOSApp: App {
     
     var body: some Scene {
         WindowGroup {
-            ContentView().ignoresSafeArea()
+            ContentView()
         }
         .onChange(of: scenePhase) { newPhase in
             #if DEBUG
@@ -36,6 +36,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     
     private static var restorationStarted = false
     private static var restorationFinished = false
+    static var pendingDeliveryRestorationFinished: Bool { restorationFinished }
 
     /// Check for pending AlarmKit deeplinks and process them
     /// Called when app becomes active (from scenePhase change)
@@ -64,6 +65,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
             
             // Set the deeplink in Kotlin holder
             IosApplication.shared.deliverPendingHandoff(payload: pendingJson)
+            NotificationCenter.default.post(name: .mathAlarmPendingDelivery, object: nil)
             return
         }
         
@@ -96,6 +98,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
                         // replacing it, otherwise Stop would silence the new registration.
                         try await AlarmKitWrapperImpl.shared.armRecovery(for: delivery)
                         IosApplication.shared.deliverPendingHandoff(payload: deeplinkJson)
+                        NotificationCenter.default.post(name: .mathAlarmPendingDelivery, object: nil)
                     
                         return  // Handle one alerting alarm at a time
                     }

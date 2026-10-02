@@ -98,15 +98,15 @@ instrumentation results and a machine-readable result. `audio_started` proves
 that the playback path reached `MediaPlayer.start`; it does **not** measure acoustic
 output. `result.json` records audibility as **not measured**.
 
-## Production shared UI bridge checks
+## Production native UI and shared bridge checks
 
-Milestones 1–2 use the production `app` framework and the production Debug app,
+Milestones 1–3 use the production `app` framework and the production Debug app,
 with pinned Kotlin/Swift ObservableViewModel 1.1.0 and NativeCoroutines 1.0.6.
 See [migration baseline](native-ui-migration-baseline-2026-10-02.md) and
 [progress and lifecycle decisions](native-ui-migration-progress.md) for measured
-results and the Milestone 3 handoff.
+results and the Milestone 4 handoff.
 
-Run the host/native suites and build Android:
+Run the host/native suites (including the renderer tests now in `androidApp`) and build Android:
 
 ```sh
 ./gradlew :core:testAndroidHostTest :shared:testAndroidHostTest \
@@ -114,6 +114,7 @@ Run the host/native suites and build Android:
   :shared:iosSimulatorArm64Test :androidApp:assembleDebug --continue
 ./gradlew :shared:dependencies --configuration iosSimulatorArm64CompileKlibraries
 python3 -B -m unittest discover -s scripts -p '*_test.py'
+python3 -B scripts/verify_native_ui_boundaries.py
 swiftc -module-cache-path /tmp/mathalarm-swift-module-cache \
   iosApp/iosApp/PendingDeeplinkStore.swift iosApp/tests/PendingDeeplinkStoreSmoke.swift \
   -o /tmp/mathalarm-handoff-smoke
@@ -131,7 +132,13 @@ python3 -B scripts/verify_ios_shared_bridge.py --udid DISPOSABLE_SIMULATOR_UDID 
 
 The explicit `--verify-shared-bridge` Debug launch path mounts a real SwiftUI owner
 and observed child in a UIKit window, using `SharedFeatures` and `IosApplication`.
-Seven groups check bootstrap/handoff identity, generated state observation, retained editor identity through detail replacement, typed validation without persistence, suspend/Flow cancellation, mounted-owner removal and explicit factory cleanup. It creates no alarm registration or real occurrence, terminates its test app afterward. Use a
+Ten groups check bootstrap/handoff identity, generated state observation, the actual
+production `NativeSessionOwners` with compact/expanded/compact layout replacement,
+multiple retained drafts and nested native destinations, durable ordered delivery
+preservation without readiness/acknowledgement, typed validation without persistence,
+suspend/Flow cancellation, independent automatic mounted-owner cleanup, and explicit
+factory/window cleanup. It creates no alarm registration or real occurrence, uses an
+isolated native queue, and terminates its test app afterward. Use a
 disposable simulator because installing the app and bootstrapping its isolated
 storage are part of the check. Delete that simulator afterward.
 
@@ -139,7 +146,21 @@ storage are part of the check. Delete that simulator afterward.
 framework; it does not establish verification of changed Kotlin source. A final
 bridge check must rebuild normally. The harness is excluded from Release and does
 not replace an Xcode unit/UI target (Milestone 7) or physical reliability checks.
-The normal iOS renderer remains Compose until Milestone 3; the bootstrap and bridge harness do not construct that renderer.
+The normal iOS root is entirely SwiftUI. Editor, sound, Test Alarm, real challenge
+and settings development screens explicitly remain incomplete. Real pending deliveries
+are restored/replayed and retained **without** native initialization or acknowledgement
+until Milestone 5 implements readiness. Do not use this development build to evaluate
+completed alarm UX or install it over a physical-device alarm setup for release testing.
+
+Check the freshly rebuilt framework and resolved native graph as well as source:
+
+```sh
+./gradlew :shared:dependencies --configuration iosSimulatorArm64CompileKlibraries \
+  > /tmp/mathalarm-native-dependencies.log
+python3 -B scripts/verify_native_ui_boundaries.py \
+  --framework shared/build/bin/iosSimulatorArm64/debugFramework/app.framework \
+  --dependencies /tmp/mathalarm-native-dependencies.log
+```
 
 Retained native session owners must call `SharedFeatures.closeEditor(sessionId)`
 or `closeChallenge(sessionId)` when the session actually ends; layout/detail

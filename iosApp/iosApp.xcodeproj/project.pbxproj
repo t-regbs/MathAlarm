@@ -23,6 +23,8 @@
 		D2D1C0B0A001000000000001 /* SharedBridgeVerification.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2D1C0B0A001000000000002 /* SharedBridgeVerification.swift */; };
 		D2D1C0B0A001000000000003 /* KMPObservableViewModelSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = D2D1C0B0A001000000000004 /* KMPObservableViewModelSwiftUI */; };
 		D2D1C0B0A001000000000005 /* KMPNativeCoroutinesAsync in Frameworks */ = {isa = PBXBuildFile; productRef = D2D1C0B0A001000000000006 /* KMPNativeCoroutinesAsync */; };
+		D3A000000000000000000001 /* NativeRootSessions.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3A000000000000000000002 /* NativeRootSessions.swift */; };
+		D3A000000000000000000003 /* NativeAlarmViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3A000000000000000000004 /* NativeAlarmViews.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -42,6 +44,8 @@
 		13EB47DE62D4220697483723 /* alarm_stepping_stones.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_stepping_stones.caf; sourceTree = "<group>"; };
 		6EE78FFDB69AD7AD931F2675 /* alarm_clear_signal.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_clear_signal.caf; sourceTree = "<group>"; };
 		D2D1C0B0A001000000000002 /* SharedBridgeVerification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedBridgeVerification.swift; sourceTree = "<group>"; };
+		D3A000000000000000000002 /* NativeRootSessions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeRootSessions.swift; sourceTree = "<group>"; };
+		D3A000000000000000000004 /* NativeAlarmViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeAlarmViews.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -64,6 +68,8 @@
 				ALARMKIT02273AAA24004C7B11 /* AlarmKitWrapper.swift */,
 				C6A5E4D3B2F1098765432104 /* PendingDeeplinkStore.swift */,
 				058557BA273AAA24004C7B11 /* Assets.xcassets */,
+				D3A000000000000000000002 /* NativeRootSessions.swift */,
+				D3A000000000000000000004 /* NativeAlarmViews.swift */,
 				058557D8273AAEEB004C7B11 /* ContentView.swift */,
 				2152FB032600AC8F00CF470E /* iOSApp.swift */,
 				B4C0D1E2F3A405162738494F /* LaunchScreen.storyboard */,
@@ -209,7 +215,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd \"$SRCROOT/..\"\n\nif [ \"$SKIP_KOTLIN_BUILD\" = \"YES\" ]; then\n  test -f \"shared/build/xcode-frameworks/$CONFIGURATION/$SDK_NAME/app.framework/app\" || exit 1\n  exit 0\nfi\n\nCOMPOSE_IOS_PLATFORM=\"$PLATFORM_NAME\"\nCOMPOSE_IOS_ARCHS=\"$CURRENT_ARCH\"\n\nif [ -z \"$COMPOSE_IOS_ARCHS\" ] || [ \"$COMPOSE_IOS_ARCHS\" = \"undefined_arch\" ]; then\n  case \"$SDK_NAME\" in\n    iphonesimulator*) COMPOSE_IOS_ARCHS=\"arm64\" ;;\n    iphoneos*) COMPOSE_IOS_ARCHS=\"arm64\" ;;\n    *) COMPOSE_IOS_ARCHS=\"$ARCHS\" ;;\n  esac\nfi\n\n./gradlew \\\n  -Pcompose.ios.resources.platform=\"$COMPOSE_IOS_PLATFORM\" \\\n  -Pcompose.ios.resources.archs=\"$COMPOSE_IOS_ARCHS\" \\\n  :shared:embedAndSignAppleFrameworkForXcode\n\n";
+			shellScript = "cd \"$SRCROOT/..\"\n\nif [ \"$SKIP_KOTLIN_BUILD\" = \"YES\" ]; then\n  test -f \"shared/build/xcode-frameworks/$CONFIGURATION/$SDK_NAME/app.framework/app\" || exit 1\n  exit 0\nfi\n\n./gradlew :shared:embedAndSignAppleFrameworkForXcode\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -222,6 +228,8 @@
 				ALARMKIT01273AAA24004C7B11 /* AlarmKitWrapper.swift in Sources */,
 				C6A5E4D3B2F1098765432103 /* PendingDeeplinkStore.swift in Sources */,
 				2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */,
+				D3A000000000000000000001 /* NativeRootSessions.swift in Sources */,
+				D3A000000000000000000003 /* NativeAlarmViews.swift in Sources */,
 				058557D9273AAEEB004C7B11 /* ContentView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

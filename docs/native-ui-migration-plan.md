@@ -1,6 +1,6 @@
 # MathAlarm native UI migration plan
 
-**Decision approved on 2 October 2026. Milestones 1–2 are complete against their documented gates; Milestone 3 has not started. [Implementation progress and handoff](native-ui-migration-progress.md).**
+**Decision approved on 2 October 2026. Milestones 1–3 are complete against their documented gates; Milestone 4 is the next implementation scope. [Implementation progress and handoff](native-ui-migration-progress.md).**
 
 MathAlarm will keep Clean Architecture and MVVM, share Kotlin domain, application, data, and feature ViewModel logic through KMP, and present that logic with **Compose on Android and SwiftUI on iOS**. The shared boundary includes the ViewModels. Native code owns navigation, controls, layout, accessibility, and visual presentation.
 

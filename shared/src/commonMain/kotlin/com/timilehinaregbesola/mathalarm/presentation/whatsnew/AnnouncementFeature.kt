@@ -1,7 +1,9 @@
 package com.timilehinaregbesola.mathalarm.presentation.whatsnew
 
 /** Keep released features in order and retain their IDs across app versions. */
-internal enum class AnnouncementFeature(val id: String) {
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
+enum class AnnouncementFeature(val id: String) {
     MATH_CHALLENGES("math-challenges-v1"),
     SKIP_NEXT("skip-next-alarm-v1"),
     SNOOZE_SETTINGS("snooze-settings-v1"),

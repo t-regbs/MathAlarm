@@ -6,8 +6,6 @@ import com.timilehinaregbesola.mathalarm.alarm.NativeAlarmScheduler
 import com.timilehinaregbesola.mathalarm.coroutines.AppCoroutineScope
 import com.timilehinaregbesola.mathalarm.di.initKoin
 import com.timilehinaregbesola.mathalarm.framework.Usecases
-import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
-import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmDatabase
 import com.timilehinaregbesola.mathalarm.navigation.AlarmHandoff
 import com.timilehinaregbesola.mathalarm.navigation.decodeAlarmHandoff
@@ -77,17 +75,6 @@ object IosApplication {
 
     /** Pure DTO decoding; parsing does not accept, consume or acknowledge a delivery. */
     fun decodeAlarmHandoffJson(payload: String): AlarmHandoff? = decodeAlarmHandoff(payload)
-
-    /** Temporary Compose adapter; never consumes a second occurrence while resolving metadata. */
-    internal suspend fun resolveAlarmHandoff(payload: String): AlarmEntity? {
-        val handoff = decodeAlarmHandoff(payload) ?: return null
-        val alarm = dependencies.getKoin().get<Usecases>().findAlarm(handoff.alarmId)
-            ?.takeIf { it.isOn } ?: return null
-        val expected = handoff.activeAt
-        if (expected != null && expected != alarm.activeAt &&
-            expected !in alarm.pendingTimes && expected != alarm.snoozedUntil) return null
-        return AlarmMapper().mapFromDomainModel(alarm.copy(activeAt = expected ?: alarm.activeAt))
-    }
 
     fun reportRecoveryFailure(alarmId: Long) =
         com.timilehinaregbesola.mathalarm.application.AlarmApplicationStatus.reportRecoveryFailure(alarmId)

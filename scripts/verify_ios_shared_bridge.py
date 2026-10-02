@@ -7,7 +7,23 @@ import subprocess
 import time
 
 
+REQUIRED_CHECKS = (
+    'UI-free bootstrap, versioned codec and identity-only missing-occurrence result',
+    'typed edits and Swift Observation',
+    'production editor owner survives compact-expanded-compact layout',
+    'production detail and nested destination replacement retain drafts',
+    'production challenge placeholder preserves durable ordered deliveries',
+    'typed validation result without persistence',
+    'native suspend cancellation leaves later authoritative result retained',
+    'native Flow cancellation leaves owner and state alive',
+    'mounted StateViewModel cleanup leaves durable queue unchanged',
+    'production session-end and window cleanup preserve unresolved delivery',
+)
 
+
+def missing_checks(captured: bytes) -> list[str]:
+    lines = captured.decode('utf-8', errors='replace').splitlines()
+    return [check for check in REQUIRED_CHECKS if f'BRIDGE PASS {check}' not in lines]
 
 
 def main():
@@ -50,7 +66,10 @@ def main():
         process.wait(timeout=5)
     if not passed:
         raise SystemExit(f'Production bridge verification failed; inspect {args.output}')
-    print(f'Production bridge verification passed (7 check groups); log: {args.output}')
+    missing = missing_checks(captured)
+    if missing:
+        raise SystemExit(f'Production bridge checks missing {missing}; inspect {args.output}')
+    print(f'Production bridge verification passed ({len(REQUIRED_CHECKS)} check groups); log: {args.output}')
 
 
 if __name__ == '__main__':

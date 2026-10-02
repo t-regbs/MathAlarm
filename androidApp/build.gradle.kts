@@ -3,7 +3,12 @@ plugins {
     alias(libs.plugins.google.services)
     alias(libs.plugins.crashlytics.gradle)
     alias(libs.plugins.compose.compiler)
-    alias(libs.plugins.composeMultiplatform)
+    alias(libs.plugins.serialization)
+    alias(libs.plugins.ksp)
+}
+
+ksp {
+    arg("lyricist.generateStringsProperty", "true")
 }
 
 android {
@@ -64,6 +69,7 @@ android {
 }
 
 dependencies {
+    ksp(libs.lyricist.processor)
     implementation(libs.play.review)
     implementation(project(":shared"))
     implementation(project(":core"))
@@ -72,6 +78,13 @@ dependencies {
     implementation(libs.foundation)
     implementation(libs.material3)
     implementation(libs.ui)
+    implementation(libs.haze)
+    implementation(libs.calf.ui)
+    implementation(libs.ui.tooling.preview)
+    implementation(libs.compottie.lite)
+    implementation(libs.jetbrains.navigation3.ui)
+    implementation(libs.jetbrains.lifecycle.viewmodel.navigation3)
+    implementation(libs.compose.material3.adaptive.navigation3)
     implementation(libs.androidx.activity.compose)
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.core.ktx)
@@ -88,6 +101,8 @@ dependencies {
     implementation(platform(libs.koin.bom))
     implementation(libs.koin.android)
     implementation(libs.koin.core)
+    implementation(libs.koin.compose)
+    implementation(libs.koin.compose.viewmodel)
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.analytics)
@@ -96,6 +111,8 @@ dependencies {
 
     testImplementation(libs.androidx.sqlite.driver.android)
     testImplementation(libs.junit)
+    testImplementation(kotlin("test-junit"))
+    testImplementation(libs.kotest.assertions)
     testImplementation(libs.coroutines.test)
     testImplementation(libs.robolectric)
     testImplementation(libs.androidx.core)

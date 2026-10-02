@@ -87,7 +87,7 @@ for path in (ROOT/res).glob('mipmap-*/ic_launcher_foreground.png'): path.unlink(
 for path in (ROOT/res).glob('mipmap-*/icon.png'):
     png(path, Image.open(path).width)
 png(res/'drawable/icon.png', 512)
-png(Path('shared/src/commonMain/composeResources/drawable/icon.png'), 512)
+png(Path('androidApp/src/main/res/drawable/icon.png'), 512)
 for path in ['androidApp/src/main/ic_launcher-playstore.png', 'fastlane/metadata/android/en-US/images/icon.png']:
     png(Path(path), 512, BACKGROUND)
 png(ART/'mathalarm-icon-1024.png', 1024, BACKGROUND)
@@ -99,4 +99,4 @@ for entry in catalog['images']:
     png(icons/entry['filename'], size, BACKGROUND)
 (icons/'Contents.json').write_text(json.dumps(catalog, indent=2) + '\n')
 generate_ios_launch_icons()
-print('Regenerated Android, iOS, shared UI, and store icons from SVG.')
+print('Regenerated Android, iOS, and store icons from SVG.')
