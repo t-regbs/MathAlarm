@@ -18,12 +18,6 @@ import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractor
 import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractorImpl
 import com.timilehinaregbesola.mathalarm.notification.IosAlarmScheduler
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.launch
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
 import platform.Foundation.NSDocumentDirectory
@@ -33,7 +27,7 @@ import platform.Foundation.NSUserDomainMask
 /**
  * iOS-specific Koin module
  */
-val iosModule = module {
+internal val iosModule = module {
     single<AnalyticsTracker> { NoopAnalyticsTracker }
     // Room Database for iOS - uses lazy initialization
     // The database will only be built when first injected
@@ -81,33 +75,10 @@ val iosModule = module {
  * Initialize Koin for iOS.
  * Called once from Swift's App init() before UI loads.
  */
-fun initKoin() {
+internal fun initKoin() {
     println("IosModule: Initializing Koin")
     startKoin {
         modules(commonModule, iosModule)
-    }
-}
-
-/**
- * Prewarm the database in background.
- * Call this after Koin init to initialize Room on a background thread,
- * so it's ready when the UI needs it.
- * 
- */
-fun prewarmDatabase() {
-    CoroutineScope(Dispatchers.IO).launch {
-        try {
-            println("IosModule: Prewarming database in background")
-            val helper = object : KoinComponent {
-                val database: AlarmDatabase by inject()
-            }
-            // Trigger lazy initialization by accessing the database
-            // This runs the Room builder off the main thread
-            helper.database.alarmDatabaseDao
-            println("IosModule: Database prewarmed successfully")
-        } catch (e: Exception) {
-            println("IosModule: Database prewarm failed: ${e.message}")
-        }
     }
 }
 

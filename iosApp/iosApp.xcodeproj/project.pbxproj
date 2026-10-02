@@ -20,6 +20,9 @@
 		9D5D80DBD427E0449699CF99 /* alarm_glass_garden.caf in Resources */ = {isa = PBXBuildFile; fileRef = 10E6206169027E757FB98BD1 /* alarm_glass_garden.caf */; };
 		9E632BAE75B5791116B0CF90 /* alarm_stepping_stones.caf in Resources */ = {isa = PBXBuildFile; fileRef = 13EB47DE62D4220697483723 /* alarm_stepping_stones.caf */; };
 		F0F41579D5719FD0924F2BA9 /* alarm_clear_signal.caf in Resources */ = {isa = PBXBuildFile; fileRef = 6EE78FFDB69AD7AD931F2675 /* alarm_clear_signal.caf */; };
+		D2D1C0B0A001000000000001 /* SharedBridgeVerification.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2D1C0B0A001000000000002 /* SharedBridgeVerification.swift */; };
+		D2D1C0B0A001000000000003 /* KMPObservableViewModelSwiftUI in Frameworks */ = {isa = PBXBuildFile; productRef = D2D1C0B0A001000000000004 /* KMPObservableViewModelSwiftUI */; };
+		D2D1C0B0A001000000000005 /* KMPNativeCoroutinesAsync in Frameworks */ = {isa = PBXBuildFile; productRef = D2D1C0B0A001000000000006 /* KMPNativeCoroutinesAsync */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -38,6 +41,7 @@
 		10E6206169027E757FB98BD1 /* alarm_glass_garden.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_glass_garden.caf; sourceTree = "<group>"; };
 		13EB47DE62D4220697483723 /* alarm_stepping_stones.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_stepping_stones.caf; sourceTree = "<group>"; };
 		6EE78FFDB69AD7AD931F2675 /* alarm_clear_signal.caf */ = {isa = PBXFileReference; lastKnownFileType = file; path = alarm_clear_signal.caf; sourceTree = "<group>"; };
+		D2D1C0B0A001000000000002 /* SharedBridgeVerification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedBridgeVerification.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -45,6 +49,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D2D1C0B0A001000000000003 /* KMPObservableViewModelSwiftUI in Frameworks */,
+				D2D1C0B0A001000000000005 /* KMPNativeCoroutinesAsync in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -54,6 +60,7 @@
 		058557D7273AAEEB004C7B11 /* iosApp */ = {
 			isa = PBXGroup;
 			children = (
+				D2D1C0B0A001000000000002 /* SharedBridgeVerification.swift */,
 				ALARMKIT02273AAA24004C7B11 /* AlarmKitWrapper.swift */,
 				C6A5E4D3B2F1098765432104 /* PendingDeeplinkStore.swift */,
 				058557BA273AAA24004C7B11 /* Assets.xcassets */,
@@ -120,6 +127,10 @@
 			);
 			dependencies = (
 			);
+			packageProductDependencies = (
+				D2D1C0B0A001000000000004 /* KMPObservableViewModelSwiftUI */,
+				D2D1C0B0A001000000000006 /* KMPNativeCoroutinesAsync */,
+			);
 			name = iosApp;
 			productName = iosApp;
 			productReference = 7555FF7B242A565900829871 /* MathAlarm.app */;
@@ -150,6 +161,10 @@
 			);
 			mainGroup = 7555FF72242A565900829871;
 			productRefGroup = 7555FF7C242A565900829871 /* Products */;
+			packageReferences = (
+				D2D1C0B0A001000000000007 /* KMP-ObservableViewModel */,
+				D2D1C0B0A001000000000008 /* KMP-NativeCoroutines */,
+			);
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
@@ -194,7 +209,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "cd \"$SRCROOT/..\"\n\nCOMPOSE_IOS_PLATFORM=\"$PLATFORM_NAME\"\nCOMPOSE_IOS_ARCHS=\"$CURRENT_ARCH\"\n\nif [ -z \"$COMPOSE_IOS_ARCHS\" ] || [ \"$COMPOSE_IOS_ARCHS\" = \"undefined_arch\" ]; then\n  case \"$SDK_NAME\" in\n    iphonesimulator*) COMPOSE_IOS_ARCHS=\"arm64\" ;;\n    iphoneos*) COMPOSE_IOS_ARCHS=\"arm64\" ;;\n    *) COMPOSE_IOS_ARCHS=\"$ARCHS\" ;;\n  esac\nfi\n\n./gradlew \\\n  -Pcompose.ios.resources.platform=\"$COMPOSE_IOS_PLATFORM\" \\\n  -Pcompose.ios.resources.archs=\"$COMPOSE_IOS_ARCHS\" \\\n  :shared:embedAndSignAppleFrameworkForXcode\n";
+			shellScript = "cd \"$SRCROOT/..\"\n\nif [ \"$SKIP_KOTLIN_BUILD\" = \"YES\" ]; then\n  test -f \"shared/build/xcode-frameworks/$CONFIGURATION/$SDK_NAME/app.framework/app\" || exit 1\n  exit 0\nfi\n\nCOMPOSE_IOS_PLATFORM=\"$PLATFORM_NAME\"\nCOMPOSE_IOS_ARCHS=\"$CURRENT_ARCH\"\n\nif [ -z \"$COMPOSE_IOS_ARCHS\" ] || [ \"$COMPOSE_IOS_ARCHS\" = \"undefined_arch\" ]; then\n  case \"$SDK_NAME\" in\n    iphonesimulator*) COMPOSE_IOS_ARCHS=\"arm64\" ;;\n    iphoneos*) COMPOSE_IOS_ARCHS=\"arm64\" ;;\n    *) COMPOSE_IOS_ARCHS=\"$ARCHS\" ;;\n  esac\nfi\n\n./gradlew \\\n  -Pcompose.ios.resources.platform=\"$COMPOSE_IOS_PLATFORM\" \\\n  -Pcompose.ios.resources.archs=\"$COMPOSE_IOS_ARCHS\" \\\n  :shared:embedAndSignAppleFrameworkForXcode\n\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -203,6 +218,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D2D1C0B0A001000000000001 /* SharedBridgeVerification.swift in Sources */,
 				ALARMKIT01273AAA24004C7B11 /* AlarmKitWrapper.swift in Sources */,
 				C6A5E4D3B2F1098765432103 /* PendingDeeplinkStore.swift in Sources */,
 				2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */,
@@ -409,6 +425,30 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
+/* Begin XCRemoteSwiftPackageReference section */
+		D2D1C0B0A001000000000007 /* KMP-ObservableViewModel */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/rickclephas/KMP-ObservableViewModel.git";
+			requirement = { kind = exactVersion; version = 1.1.0; };
+		};
+		D2D1C0B0A001000000000008 /* KMP-NativeCoroutines */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/rickclephas/KMP-NativeCoroutines.git";
+			requirement = { kind = exactVersion; version = 1.0.6; };
+		};
+/* End XCRemoteSwiftPackageReference section */
+/* Begin XCSwiftPackageProductDependency section */
+		D2D1C0B0A001000000000004 /* KMPObservableViewModelSwiftUI */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D2D1C0B0A001000000000007 /* KMP-ObservableViewModel */;
+			productName = KMPObservableViewModelSwiftUI;
+		};
+		D2D1C0B0A001000000000006 /* KMPNativeCoroutinesAsync */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = D2D1C0B0A001000000000008 /* KMP-NativeCoroutines */;
+			productName = KMPNativeCoroutinesAsync;
+		};
+/* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 7555FF73242A565900829871 /* Project object */;
 }

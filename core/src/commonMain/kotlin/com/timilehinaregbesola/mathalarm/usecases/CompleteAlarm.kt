@@ -9,6 +9,8 @@ import com.timilehinaregbesola.mathalarm.provider.DateTimeProviderImpl
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class CompleteAlarm(
     private val alarmRepository: AlarmRepository,
     private val alarmInteractor: AlarmInteractor,
@@ -41,6 +43,7 @@ class CompleteAlarm(
             scheduleError = if (alarm.repeat || hasRemaining) alarm.scheduleError else null
         )
         alarmInteractor.cancelSnooze(alarm)
+        alarmInteractor.cancelRecovery(alarm)
         if (!updated.isOn) alarmInteractor.cancel(alarm)
         alarmRepository.updateAlarm(updated)
         notificationInteractor.dismiss(alarmId)

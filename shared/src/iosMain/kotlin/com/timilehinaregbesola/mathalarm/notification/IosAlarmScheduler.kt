@@ -9,6 +9,8 @@ import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
 /** AlarmKit is the delivery backend for the iOS/iPadOS 26+ app. */
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class IosAlarmScheduler(private val logger: Logger) {
     /** AlarmKit owns weekly recurrence. Reinstall only a missing weekday after delivery. */
     suspend fun ensureRepeatingOccurrence(alarm: Alarm, timeInMillis: Long) {

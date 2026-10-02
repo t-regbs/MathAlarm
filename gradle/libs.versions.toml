@@ -1,4 +1,6 @@
 [versions]
+observableViewModel = "1.1.0"
+nativeCoroutines = "1.0.6"
 play-review = "2.0.2"
 haze = "1.7.3"
 # @keep
@@ -46,6 +48,8 @@ calf = "0.14.0"
 sqlite = "2.7.1"
 
 [libraries]
+observable-viewmodel = { module = "com.rickclephas.kmp:kmp-observableviewmodel-core", version.ref = "observableViewModel" }
+native-coroutines-annotations = { module = "com.rickclephas.kmp:kmp-nativecoroutines-annotations", version.ref = "nativeCoroutines" }
 play-review = { module = "com.google.android.play:review", version.ref = "play-review" }
 haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx_activity_compose" }
@@ -100,6 +104,7 @@ ui-tooling-preview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", v
 calf-ui = { module = "com.mohamedrejeb.calf:calf-ui", version.ref = "calf" }
 
 [plugins]
+native-coroutines = { id = "com.rickclephas.kmp.nativecoroutines", version.ref = "nativeCoroutines" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 android-gradle = { id = "com.android.application", version.ref = "android_gradle_plugin" }
 crashlytics-gradle = { id = "com.google.firebase.crashlytics", version.ref = "crashlytics_plugin" }

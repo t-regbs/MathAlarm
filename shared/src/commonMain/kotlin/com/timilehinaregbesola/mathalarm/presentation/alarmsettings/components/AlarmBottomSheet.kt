@@ -1,5 +1,6 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components
 
+import com.timilehinaregbesola.mathalarm.utils.resolve
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmPermissionDialog
 
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +33,7 @@ import androidx.compose.foundation.layout.imePadding
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -100,8 +102,7 @@ import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import com.timilehinaregbesola.mathalarm.utils.Destinations.AlarmMath
 import com.timilehinaregbesola.mathalarm.utils.Destinations.SettingsSheet
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.flow.collectLatest
-import kotlinx.coroutines.launch
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.withContext
 import kotlinx.datetime.LocalTime
 import kotlinx.datetime.format
@@ -122,6 +123,11 @@ fun AlarmBottomSheet(
     onDraftStateChange: (Boolean) -> Unit = {},
     onAlarmSaved: () -> Unit = {},
 ) {
+    val state by viewModel.state.collectAsState()
+    var titleField by rememberSaveable(stateSaver = TextFieldValue.Saver) { mutableStateOf(TextFieldValue(state.alarmTitle)) }
+    LaunchedEffect(state.alarmTitle) {
+        if (titleField.text != state.alarmTitle) titleField = TextFieldValue(state.alarmTitle)
+    }
     LaunchedEffect(Unit) {
         viewModel.setAlarm(AlarmMapper().mapToDomainModel(alarm))
     }
@@ -132,10 +138,10 @@ fun AlarmBottomSheet(
     var showPermRequiredDialog by remember { mutableStateOf(false) }
 
     var editingSubPage by remember { mutableStateOf(false) }
-    val hasDraft = viewModel.hasUnsavedChanges || editingSubPage || showTimePickerDialog
+    val hasDraft = state.hasUnsavedChanges || editingSubPage || showTimePickerDialog
     SideEffect { onDraftStateChange(hasDraft) }
 
-    val toneUri = viewModel.tone.value
+    val toneUri = state.tone
     val toneText = remember(toneUri) { mutableStateOf<String?>(null) }
     LaunchedEffect(toneUri) {
         if (toneUri.isNotEmpty()) {
@@ -149,7 +155,6 @@ fun AlarmBottomSheet(
 
     // Capture string values for use in non-composable callbacks
     val alertTitle = strings.alert
-    val noPickerText = strings.noRingtonePicker
     val storagePermissionTextFn = strings.permissionsExternalStorageText
 
     val pickToneLauncher = rememberRingtonePickerLauncher { selectedTone ->
@@ -175,32 +180,42 @@ fun AlarmBottomSheet(
     val errorStrings = strings
     val notifyAlarmSaved by rememberUpdatedState(onAlarmSaved)
     LaunchedEffect(errorStrings) {
-        viewModel.eventFlow.collectLatest { event ->
+        viewModel.state.collect { current ->
+          for (result in current.results) {
+            val event = result.event
             when (event) {
                 AlarmSettingsViewModel.UiEvent.RequestExactAlarmPermission -> showExactAlarmPermissionDialog = true
                 is AlarmSettingsViewModel.UiEvent.ShowError -> {
                     scaffoldState.snackbarHostState.showSnackbar(message = event.error.resolve(errorStrings))
                 }
                 is AlarmSettingsViewModel.UiEvent.SaveAlarm -> {
+                    viewModel.acknowledgeResult(result.id)
                     if (currentCloseEditor()) notifyAlarmSaved()
                 }
+                is AlarmSettingsViewModel.UiEvent.ValidationFailed -> {
+                    scaffoldState.snackbarHostState.showSnackbar(message = errorStrings.alarmSaveFailed)
+                }
                 is AlarmSettingsViewModel.UiEvent.TestAlarm -> {
-                    launch(Dispatchers.Default) {
+                    withContext(Dispatchers.Default) {
                         val alarmEntity = AlarmMapper().mapFromDomainModel(event.alarm)
                         val json = Json.encodeToString(alarmEntity)
                         withContext(Dispatchers.Main) {
+                            // Navigation removes this observer; acknowledge while its owner is still active.
+                            viewModel.acknowledgeResult(result.id)
                             backstack.add(AlarmMath(alarmJson = json, fromSheet = true))
                         }
                     }
                 }
             }
+            viewModel.acknowledgeResult(result.id)
+          }
         }
     }
     AlarmBottomSheetContent(
-        challenge = viewModel.challenge.value,
-        snoozeEnabled = viewModel.snoozeEnabled.value,
-        snoozeMinutes = viewModel.snoozeMinutes,
-        maxSnoozes = viewModel.maxSnoozes.value,
+        challenge = state.challenge,
+        snoozeEnabled = state.snoozeEnabled,
+        snoozeMinutes = state.snoozeMinutes,
+        maxSnoozes = state.maxSnoozes,
         onSnoozeChange = { enabled, minutes, maximum ->
             viewModel.onEvent(ToggleSnooze(enabled))
             viewModel.onEvent(AddEditAlarmEvent.ChangeSnoozeDuration(minutes))
@@ -213,13 +228,15 @@ fun AlarmBottomSheet(
         showDismissButton = showDismissButton,
         isPane = isPane,
         onSubEditorChanged = { editingSubPage = it },
-        currentTone = viewModel.tone.value,
+        currentTone = state.tone,
         currentToneTitle = toneText.value ?: strings.defaultAlarmTone,
         onToneChange = { viewModel.onEvent(OnToneChange(it)) },
         topSection = {
             TopSection(
-                selectedDays = viewModel.dayChooser.value,
-                currentTime = viewModel.alarmTime.value.formattedTime,
+                selectedDays = state.dayChooser,
+                currentTime = LocalTime(state.alarmTime.hour.coerceIn(0, 23), state.alarmTime.minute.coerceIn(0, 59)).format(
+                    LocalTime.Format { amPmHour(); char(':'); minute(); char(' '); amPmMarker("AM", "PM") }
+                ),
                 onTimeCardClick = { showTimePickerDialog = true },
                 onSelectedDaysChanged = {
                     viewModel.onEvent(ToggleDayChooser(it))
@@ -231,13 +248,13 @@ fun AlarmBottomSheet(
             BottomSettingsSection(
                 onEditChallenge = onEditChallenge,
                 onEditSnooze = onEditSnooze,
-                repeatWeekly = viewModel.repeatWeekly.value,
-                snoozeEnabled = viewModel.snoozeEnabled.value,
+                repeatWeekly = state.repeatWeekly,
+                snoozeEnabled = state.snoozeEnabled,
                 onSnoozeToggle = { viewModel.onEvent(ToggleSnooze(it)) },
-                maxSnoozes = viewModel.maxSnoozes.value,
-                snoozeMinutes = viewModel.snoozeMinutes,
-                vibrate = viewModel.vibrate.value,
-                challenge = viewModel.challenge.value,
+                maxSnoozes = state.maxSnoozes,
+                snoozeMinutes = state.snoozeMinutes,
+                vibrate = state.vibrate,
+                challenge = state.challenge,
                 onRepeatToggle = {
                     viewModel.onEvent(ToggleRepeat(it))
                 },
@@ -249,18 +266,19 @@ fun AlarmBottomSheet(
                         onEditSound()
                     } else {
                         try {
-                            checkNotNull(pickToneLauncher).launch(viewModel.tone.value.ifEmpty { null })
+                            checkNotNull(pickToneLauncher).launch(state.tone.ifEmpty { null })
                         } catch (error: Exception) {
                             Logger.e("error launching tone picker", error)
-                            viewModel.onEvent(OnToneError(message = noPickerText))
+                            viewModel.onEvent(OnToneError)
                         }
                     }
                 },
                 labelTextField = {
                     LabelTextField(
-                        text = viewModel.alarmTitle.value,
+                        text = titleField,
                         onValueChange = { newValue ->
-                            viewModel.onEvent(EnteredTitle(newValue))
+                            titleField = newValue
+                            viewModel.onEvent(EnteredTitle(newValue.text))
                         },
                         label = { Text(strings.alarmTitle) },
                         placeholder = { Text(strings.goodDay) },
@@ -280,7 +298,7 @@ fun AlarmBottomSheet(
                 isDialogOpen = showExactAlarmPermissionDialog,
                 onCloseDialog = { showExactAlarmPermissionDialog = false },
             )
-            with(viewModel.alarmTime.value) {
+            with(state.alarmTime) {
                 if (showTimePickerDialog) {
                     TimePickerDialog(
                         embedded = isPane,
@@ -294,19 +312,11 @@ fun AlarmBottomSheet(
                             showTimePickerDialog = false
                         },
                         onConfirm = { newTime ->
-                            val tf = LocalTime.Format {
-                                amPmHour()
-                                char(':')
-                                minute()
-                                char(' ')
-                                amPmMarker("AM", "PM")
-                            }
                             viewModel.onEvent(
                                 AddEditAlarmEvent.ChangeTime(
                                     TimeState(
                                         hour = newTime.hour,
-                                        minute = newTime.minute,
-                                        formattedTime = newTime.format(tf)
+                                        minute = newTime.minute
                                     ),
                                 ),
                             )

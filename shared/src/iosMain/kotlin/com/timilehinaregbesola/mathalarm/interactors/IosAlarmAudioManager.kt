@@ -29,7 +29,8 @@ import platform.UIKit.UIImpactFeedbackStyle
  * Handles continuous alarm audio playback with vibration.
  * This is a singleton that manages the alarm state independently of the UI.
  */
-@OptIn(ExperimentalForeignApi::class)
+@OptIn(ExperimentalForeignApi::class, kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 object IosAlarmAudioManager {
     private val logger = Logger.withTag("IosAlarmAudioManager")
     private var audioPlayer: AVAudioPlayer? = null

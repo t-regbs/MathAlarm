@@ -3,6 +3,8 @@ package com.timilehinaregbesola.mathalarm.framework.app.permission
 /**
  * Platform-abstracted interface for checking and managing alarm permissions.
  */
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 interface AlarmPermission {
     /**
      * Verifies if the permission to schedule exact alarms is granted.

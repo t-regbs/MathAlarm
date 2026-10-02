@@ -5,6 +5,8 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
 import kotlinx.coroutines.CancellationException
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class UpdateAlarm(
     private val alarmRepository: AlarmRepository,
     private val interactor: AlarmInteractor? = null

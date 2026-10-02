@@ -10,9 +10,9 @@ import androidx.compose.ui.graphics.ColorFilter
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.tooling.preview.Preview
 import com.timilehinaregbesola.mathalarm.presentation.ui.fabShape
+import org.jetbrains.compose.resources.painterResource
 import mathalarm.app.generated.resources.Res
 import mathalarm.app.generated.resources.fab_icon
-import org.jetbrains.compose.resources.painterResource
 
 @ExperimentalMaterial3Api
 @Composable

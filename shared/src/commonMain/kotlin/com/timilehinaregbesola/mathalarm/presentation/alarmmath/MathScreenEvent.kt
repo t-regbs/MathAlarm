@@ -9,5 +9,5 @@ sealed class MathScreenEvent {
 
     data class EnteredAnswer(val value: String) : MathScreenEvent()
 
-    data class OnToneError(val message: String) : MathScreenEvent()
+    object OnToneError : MathScreenEvent()
 }

@@ -234,7 +234,7 @@ class AlarmInteractorImplTest {
         interactor.update(alarm)
 
         assertEquals("Updated", backend.requests.single().title)
-        assertEquals(listOf("recovery"), backend.cancelledKeys)
+        assertTrue(backend.cancelledKeys.isEmpty())
     }
 
     @Test fun challengeDismissalCancelsRecoveryWithoutRemovingWeeklyOrSnooze() {
@@ -277,8 +277,24 @@ class AlarmInteractorImplTest {
         assertTrue(backend.hasPendingOccurrence(42, "snooze"))
         backend.markScheduled(42, "recovery")
         interactor.cancelSnooze(alarm)
+        assertTrue(backend.hasPendingOccurrence(42, "recovery"))
+        interactor.cancelRecovery(alarm)
         assertFalse(backend.hasPendingOccurrence(42, "recovery"))
         assertFalse(backend.hasPendingOccurrence(42, "snooze"))
+    }
+
+    @Test fun metadataUpdateAndSnoozeSettingDoNotResolveAnActiveRecovery() = runTest {
+        val backend = NativeAlarmSchedulerFake()
+        AlarmSchedulerBridge.registerScheduler(backend)
+        backend.markScheduled(42, "recovery")
+        val interactor = AlarmInteractorImpl(IosAlarmScheduler(Logger.withTag("ActiveEdit")))
+        val time = 2_000_000_000_000L
+        val alarm = Alarm(alarmId = 42, isOn = true, activeAt = 1000, pendingTimes = listOf(time), snooze = 0)
+        interactor.update(alarm)
+        interactor.cancelSnooze(alarm)
+        assertTrue(backend.hasPendingOccurrence(42, "recovery"))
+        assertEquals(time, backend.requests.single().timeInMillis)
+        assertEquals(listOf("snooze"), backend.cancelledKeys)
     }
 
     private class NativeAlarmSchedulerFake : NativeAlarmScheduler {

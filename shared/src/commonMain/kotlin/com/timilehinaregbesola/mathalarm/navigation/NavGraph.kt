@@ -20,6 +20,7 @@ import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneSt
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.DisposableEffect
@@ -38,7 +39,6 @@ import com.timilehinaregbesola.mathalarm.analytics.trackSafely
 import com.timilehinaregbesola.mathalarm.framework.NotificationSnoozeEvents
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.presentation.whatsnew.AnnouncementFeature
-import com.timilehinaregbesola.mathalarm.presentation.whatsnew.announcementFeaturesToShow
 import com.timilehinaregbesola.mathalarm.presentation.whatsnew.WhatsNewDialog
 import com.timilehinaregbesola.mathalarm.presentation.whatsnew.announcementCatalog
 import androidx.compose.ui.ExperimentalComposeUiApi
@@ -59,6 +59,12 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.ListD
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AppSettingsViewModel
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AppSettingsOperation
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.DialogArguments
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.MathAlarmDialog
+import cafe.adriel.lyricist.strings
+import org.koin.compose.viewmodel.koinViewModel
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
 import com.timilehinaregbesola.mathalarm.platform.isIosPlatform
@@ -90,6 +96,12 @@ fun NavGraph(
     onRequestReview: () -> Unit = {},
     analytics: AnalyticsTracker = NoopAnalyticsTracker,
 ) {
+    // One window owner serves settings and announcement consumers across native routes.
+    val settingsViewModel: AppSettingsViewModel = koinViewModel()
+    val settingsState by settingsViewModel.state.collectAsState()
+    val announcementFailure = settingsState.failures.firstOrNull {
+        it.operation == AppSettingsOperation.ANNOUNCEMENT
+    }
     val config = SavedStateConfiguration {
         serializersModule = SerializersModule {
             polymorphic(NavKey::class) {
@@ -144,7 +156,7 @@ fun NavGraph(
     val mathPreviewStrategy = remember { MathPreviewSceneStrategy<NavKey>(useDialogOverlay = !isIosPlatform()) }
 
     // Navigate to MathScreen when deeplinkInfo changes (e.g., from notification tap)
-    LaunchedEffect(deeplinkInfo, readyAlarmDestinations) {
+    LaunchedEffect(deeplinkInfo, readyAlarmDestinations, backStack.lastOrNull()) {
         println("NavGraph: LaunchedEffect triggered with deeplinkInfo = $deeplinkInfo")
         deeplinkInfo?.let {
             val incoming = decodeAlarmHandoff(it)
@@ -273,8 +285,10 @@ fun NavGraph(
                         }
                     },
                     pref = preferences,
+                    viewModel = settingsViewModel,
                     onWhatsNew = {
-                        announcementIds = preferences.latestAnnouncementBatch(catalog.map { it.feature.id })
+                        settingsViewModel.refreshAnnouncements()
+                        announcementIds = settingsViewModel.state.value.announcementIds
                     },
                 )
             }
@@ -301,10 +315,9 @@ fun NavGraph(
     LaunchedEffect(canShowAnnouncement, destination) {
         if (canShowAnnouncement && destination == AlarmList && !automaticAnnouncementOffered) {
             automaticAnnouncementOffered = true
-            preferences.latestAnnouncementBatch(catalog.map { it.feature.id })
             if (announcementIds == null) {
-                announcementIds = announcementFeaturesToShow(preferences::hasSeenAnnouncement)
-                    .map { it.id }.takeIf { it.isNotEmpty() }
+                announcementIds = settingsState.unseenAnnouncementIds
+                    .takeIf { it.isNotEmpty() }
             }
         }
     }
@@ -313,7 +326,8 @@ fun NavGraph(
     }.orEmpty()
     val reviewOpportunity = savedAlarmForReview && destination == AlarmList &&
         deeplinkInfo == null && !containsRealAlarm && !handledAlarmThisVisit &&
-        !reviewBlockedByList && automaticAnnouncementOffered && sessionAnnouncements.isEmpty()
+        !reviewBlockedByList && automaticAnnouncementOffered && sessionAnnouncements.isEmpty() &&
+        announcementFailure == null
     SideEffect { onReviewOpportunityChanged(reviewOpportunity) }
     DisposableEffect(Unit) {
         onDispose { onReviewOpportunityChanged(false) }
@@ -328,7 +342,7 @@ fun NavGraph(
     if (canShowAnnouncement && sessionAnnouncements.isNotEmpty()) {
         WhatsNewDialog(
             announcements = sessionAnnouncements,
-            onSeen = preferences::markAnnouncementSeen,
+            onSeen = settingsViewModel::acknowledgeAnnouncement,
             onDismiss = { announcementIds = null },
             onTryFeature = { feature ->
                 announcementIds = null
@@ -342,6 +356,19 @@ fun NavGraph(
                     }
                 }
             },
+        )
+    }
+    announcementFailure?.let { failure ->
+        MathAlarmDialog(
+            arguments = DialogArguments(
+                title = strings.alert,
+                text = strings.preferenceUpdateFailed,
+                confirmText = strings.ok,
+                dismissText = null,
+                onConfirmAction = { settingsViewModel.acknowledgeFailure(failure.id) },
+            ),
+            isDialogOpen = canShowAnnouncement,
+            onDismissRequest = { settingsViewModel.acknowledgeFailure(failure.id) },
         )
     }
 }

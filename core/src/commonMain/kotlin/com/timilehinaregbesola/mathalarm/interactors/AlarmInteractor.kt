@@ -27,6 +27,9 @@ interface AlarmInteractor {
 
     fun cancelSnooze(alarm: Alarm) = Unit
 
+    /** Cancel unresolved recovery only as part of an accepted resolution/invalidation. */
+    fun cancelRecovery(alarm: Alarm) = Unit
+
     /**
      * Cancels an alarm.
      *

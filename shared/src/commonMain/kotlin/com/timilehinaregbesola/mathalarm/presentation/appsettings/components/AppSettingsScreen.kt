@@ -21,11 +21,20 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.MaterialTheme.typography
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import org.koin.compose.viewmodel.koinViewModel
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AppSettingsViewModel
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AppSettingsOperation
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -80,8 +89,20 @@ fun AppSettingsScreen(
     pref: AlarmPreferencesImpl,
     onBackPress: () -> Unit,
     onWhatsNew: () -> Unit = {},
+    viewModel: AppSettingsViewModel = koinViewModel(),
 ) {
+    val state by viewModel.state.collectAsState()
     val isDark = pref.shouldUseDarkColors()
+    val snackbar = remember { SnackbarHostState() }
+    val failureText = strings.preferenceUpdateFailed
+    LaunchedEffect(viewModel, failureText) {
+        viewModel.state.collect { current ->
+            for (failure in current.failures.filterNot { it.operation == AppSettingsOperation.ANNOUNCEMENT }) {
+                snackbar.showSnackbar(failureText)
+                viewModel.acknowledgeFailure(failure.id)
+            }
+        }
+    }
     val themeOptions = listOf(
         Triple(strings.light, WbSunny, LIGHT),
         Triple(strings.dark, DarkMode, DARK),
@@ -91,14 +112,15 @@ fun AppSettingsScreen(
         CREATION to strings.creationOrder,
         TIME to strings.timeOrder
     )
-    val selectedThemeOption = themeOptions.first { it.third == pref.themeState.value }
-    val selectedSortOption = sortOptions.first { it.first == pref.alarmSortOrderState.value }
+    val selectedThemeOption = themeOptions.first { it.third == state.theme }
+    val selectedSortOption = sortOptions.first { it.first == state.sortOrder }
     val onSelectionChange = { newTheme: Theme ->
-        pref.updateAppTheme(newTheme)
-        applyPlatformNightMode(newTheme)
+        viewModel.selectTheme(newTheme)
+        applyPlatformNightMode(viewModel.state.value.theme)
     }
     Surface(modifier = Modifier.fillMaxSize()) {
         Scaffold(
+            snackbarHost = { SnackbarHost(snackbar) },
             topBar = {
                 AdaptiveTopBar(
                     modifier = Modifier.shadow(APP_BAR_SHADOW),
@@ -173,7 +195,7 @@ fun AppSettingsScreen(
                             selectedOption = selectedSortOption,
                             isDark = isDark,
                             optionWidth = SORT_SETTINGS_WIDTH,
-                            onOptionSelected = { pref.updateAlarmSortOrder(it.first) }
+                            onOptionSelected = { viewModel.selectSortOrder(it.first) }
                         ) { option, isSelected ->
                             Text(
                                 text = option.second,

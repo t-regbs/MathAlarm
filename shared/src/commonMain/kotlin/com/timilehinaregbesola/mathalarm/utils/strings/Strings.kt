@@ -49,6 +49,8 @@ data class Strings(
     val alarmScheduleFailed: String,
     val alarmSaveFailed: String,
     val alarmUpdateFailed: String,
+    val preferenceUpdateFailed: String,
+    val retry: String,
     val alarmDismissFailed: String,
     val alarmSnoozeFailed: String,
     val incorrectAnswer: String,

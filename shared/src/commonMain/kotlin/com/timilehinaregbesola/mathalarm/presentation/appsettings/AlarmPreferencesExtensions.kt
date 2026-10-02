@@ -2,6 +2,8 @@ package com.timilehinaregbesola.mathalarm.presentation.appsettings
 
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 
 /**
  * Returns whether dark colors should be used based on the current theme preference.
@@ -10,7 +12,7 @@ import androidx.compose.runtime.Composable
  */
 @Composable
 fun AlarmPreferencesImpl.shouldUseDarkColors(): Boolean {
-    val themePreference = themeState.value
+    val themePreference by themeState.collectAsState()
     return when (themePreference) {
         AlarmPreferences.Theme.LIGHT -> false
         AlarmPreferences.Theme.DARK -> true

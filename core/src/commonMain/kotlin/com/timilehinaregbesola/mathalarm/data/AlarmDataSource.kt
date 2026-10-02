@@ -3,6 +3,8 @@ package com.timilehinaregbesola.mathalarm.data
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import kotlinx.coroutines.flow.Flow
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 interface AlarmDataSource {
     suspend fun addAlarm(alarm: Alarm): Long
 

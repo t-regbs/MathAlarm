@@ -4,12 +4,12 @@ import androidx.compose.foundation.Image
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import mathalarm.app.generated.resources.Res
 import io.github.alexzhirkevich.compottie.Compottie.IterateForever
 import io.github.alexzhirkevich.compottie.LottieCompositionSpec
 import io.github.alexzhirkevich.compottie.animateLottieCompositionAsState
 import io.github.alexzhirkevich.compottie.rememberLottieComposition
 import io.github.alexzhirkevich.compottie.rememberLottiePainter
-import mathalarm.app.generated.resources.Res
 
 @Composable
 fun Loader(modifier: Modifier = Modifier) {

@@ -98,6 +98,56 @@ instrumentation results and a machine-readable result. `audio_started` proves
 that the playback path reached `MediaPlayer.start`; it does **not** measure acoustic
 output. `result.json` records audibility as **not measured**.
 
+## Production shared UI bridge checks
+
+Milestones 1–2 use the production `app` framework and the production Debug app,
+with pinned Kotlin/Swift ObservableViewModel 1.1.0 and NativeCoroutines 1.0.6.
+See [migration baseline](native-ui-migration-baseline-2026-10-02.md) and
+[progress and lifecycle decisions](native-ui-migration-progress.md) for measured
+results and the Milestone 3 handoff.
+
+Run the host/native suites and build Android:
+
+```sh
+./gradlew :core:testAndroidHostTest :shared:testAndroidHostTest \
+  :androidApp:testDebugUnitTest :core:iosSimulatorArm64Test \
+  :shared:iosSimulatorArm64Test :androidApp:assembleDebug --continue
+./gradlew :shared:dependencies --configuration iosSimulatorArm64CompileKlibraries
+python3 -B -m unittest discover -s scripts -p '*_test.py'
+swiftc -module-cache-path /tmp/mathalarm-swift-module-cache \
+  iosApp/iosApp/PendingDeeplinkStore.swift iosApp/tests/PendingDeeplinkStoreSmoke.swift \
+  -o /tmp/mathalarm-handoff-smoke
+/tmp/mathalarm-handoff-smoke
+```
+
+Create a disposable iOS 26+ simulator, build the `iosApp` Xcode scheme Debug for
+that simulator with normal Kotlin framework compilation, then run:
+
+```sh
+python3 -B scripts/verify_ios_shared_bridge.py --udid DISPOSABLE_SIMULATOR_UDID \
+  --app /absolute/DerivedData/Build/Products/Debug-iphonesimulator/MathAlarm.app \
+  --output build/ios-shared-bridge.log
+```
+
+The explicit `--verify-shared-bridge` Debug launch path mounts a real SwiftUI owner
+and observed child in a UIKit window, using `SharedFeatures` and `IosApplication`.
+Seven groups check bootstrap/handoff identity, generated state observation, retained editor identity through detail replacement, typed validation without persistence, suspend/Flow cancellation, mounted-owner removal and explicit factory cleanup. It creates no alarm registration or real occurrence, terminates its test app afterward. Use a
+disposable simulator because installing the app and bootstrapping its isolated
+storage are part of the check. Delete that simulator afterward.
+
+`SKIP_KOTLIN_BUILD=YES` permits a Swift-only iteration against an already generated
+framework; it does not establish verification of changed Kotlin source. A final
+bridge check must rebuild normally. The harness is excluded from Release and does
+not replace an Xcode unit/UI target (Milestone 7) or physical reliability checks.
+The normal iOS renderer remains Compose until Milestone 3; the bootstrap and bridge harness do not construct that renderer.
+
+Retained native session owners must call `SharedFeatures.closeEditor(sessionId)`
+or `closeChallenge(sessionId)` when the session actually ends; layout/detail
+replacement only replaces observers. A challenge owner closing never resolves a
+real alarm. Regression tests also check accepted saves/completion/initialization
+after owner cancellation, failed readiness/progress writes and retry, stable
+occurrence/delivery identity, stale guards, and preview/audio cleanup arbitration.
+
 ## CI
 
 Every PR, including a PR targeting `codex/**`, runs host suites and API 35

@@ -42,13 +42,15 @@ import org.koin.core.parameter.parametersOf
 import org.koin.core.scope.Scope
 import org.koin.dsl.module
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 val commonModule = module {
     // Mappers
     single { AlarmMapper() }
     single { AppThemeOptionsMapper() }
     
     // Coroutine Scope - replaces GlobalScope usage
-    single { AppCoroutineScope() }
+    single { AppCoroutineScope(kotlinx.coroutines.Dispatchers.Main.immediate) }
     
     // DateTime Provider
     single<DateTimeProvider> { DateTimeProviderImpl() }
@@ -102,6 +104,7 @@ val commonModule = module {
             }),
             cancelAlarm = CancelAlarm(get()),
             skipNextAlarm = SkipNextAlarm(get(), get(), rescheduleFutureAlarms),
+            applicationScope = get<AppCoroutineScope>(),
         )
     }
     
@@ -109,7 +112,10 @@ val commonModule = module {
     viewModel { AlarmListViewModel(get(), get(), get(), getWith("AlarmListViewModel"), get()) }
     single { ChallengeProgressStore(get()) }
     viewModel { AlarmSettingsViewModel(get(), get(), get()) }
-    viewModel { AlarmMathViewModel(get(), get(), getWith("AlarmMathViewModel"), get(), get()) }
+    single { com.timilehinaregbesola.mathalarm.application.ChallengeCoordinator(get(), get(), getWith("ChallengeCoordinator"), get(), get(), { com.timilehinaregbesola.mathalarm.platform.getDefaultAlarmTone() }, { com.timilehinaregbesola.mathalarm.platform.PlatformPreviewVibration() }) }
+    viewModel { AlarmMathViewModel(get(), get(), getWith("AlarmMathViewModel"), get(), get(), get()) }
+    viewModel { com.timilehinaregbesola.mathalarm.presentation.appsettings.AppSettingsViewModel(get<AlarmPreferencesImpl>(),
+        listOf("math-challenges-v1") + (if (com.timilehinaregbesola.mathalarm.platform.supportsSkipNext()) listOf("skip-next-alarm-v1") else emptyList()) + listOf("snooze-settings-v1")) }
 }
 
 /**

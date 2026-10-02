@@ -8,6 +8,8 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 import kotlin.time.Duration.Companion.minutes
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class SnoozeAlarm(
     private val dateTimeProvider: DateTimeProvider,
     private val notificationInteractor: NotificationInteractor,

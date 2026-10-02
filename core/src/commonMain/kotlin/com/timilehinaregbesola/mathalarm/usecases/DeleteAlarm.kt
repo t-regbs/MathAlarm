@@ -5,6 +5,8 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
 import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractor
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class DeleteAlarm(
     private val alarmRepository: AlarmRepository,
     private val alarmInteractor: AlarmInteractor,

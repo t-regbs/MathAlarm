@@ -8,6 +8,8 @@ import com.timilehinaregbesola.mathalarm.provider.AlarmTimeCalculator
 import kotlinx.coroutines.CancellationException
 import kotlinx.datetime.TimeZone
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class ScheduleAlarm(
     private val alarmRepository: AlarmRepository,
     private val alarmInteractor: AlarmInteractor,
@@ -34,13 +36,21 @@ class ScheduleAlarm(
         // Persist the desired occurrences first so interrupted scheduling can be recovered.
         alarmRepository.updateAlarm(planned)
         try {
-            if (reschedule) alarmInteractor.cancel(saved)
+            if (reschedule) {
+                // Keep unresolved recovery alive until the replacement schedule is accepted.
+                alarmInteractor.cancelRegularOccurrences(saved)
+                alarmInteractor.cancelSnooze(saved)
+            }
             alarmInteractor.scheduleOccurrences(planned, times)
+            alarmInteractor.cancelRecovery(saved)
             alarmRepository.updateAlarm(planned.copy(scheduleError = null))
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            alarmRepository.updateAlarm(planned.copy(scheduleError = e.message ?: "Unable to schedule alarm"))
+            alarmRepository.updateAlarm(planned.copy(
+                activeAt = saved.activeAt, snoozeCount = saved.snoozeCount, snoozedUntil = saved.snoozedUntil,
+                scheduleError = e.message ?: "Unable to schedule alarm"
+            ))
             throw e
         }
     }

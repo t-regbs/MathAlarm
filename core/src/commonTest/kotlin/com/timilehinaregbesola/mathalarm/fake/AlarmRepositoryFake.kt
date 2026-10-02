@@ -5,6 +5,8 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.flow
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class AlarmRepositoryFake : AlarmDataSource {
 
     private val alarmMap: MutableMap<Long, Alarm> = mutableMapOf()

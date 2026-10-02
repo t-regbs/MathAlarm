@@ -32,10 +32,10 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.Empty
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.EmptyScreen.EMPTY_TEXT_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.EmptyScreen.EMPTY_TEXT_TOP_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
+import org.jetbrains.compose.resources.painterResource
 import mathalarm.app.generated.resources.Res
 import mathalarm.app.generated.resources.fab_icon
 import mathalarm.app.generated.resources.search_icon
-import org.jetbrains.compose.resources.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 
 @ExperimentalMaterial3Api

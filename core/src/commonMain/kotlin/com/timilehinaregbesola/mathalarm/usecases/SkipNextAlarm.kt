@@ -9,6 +9,8 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class SkipNextAlarm(
     private val alarmRepository: AlarmRepository,
     private val alarmTimeCalculator: AlarmTimeCalculator,

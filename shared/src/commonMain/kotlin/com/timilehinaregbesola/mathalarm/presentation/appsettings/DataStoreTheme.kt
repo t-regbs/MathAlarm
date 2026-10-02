@@ -5,6 +5,8 @@ package com.timilehinaregbesola.mathalarm.presentation.appsettings
  *
  * @property id the theme id
  */
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 enum class DataStoreTheme(val id: Int) {
 
     /**

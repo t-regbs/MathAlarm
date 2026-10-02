@@ -9,6 +9,8 @@ import kotlin.time.Clock
 import kotlin.time.Instant
 
 /** Local review eligibility. A request attempt never implies that a review was submitted. */
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class ReviewEligibilityStore(
     private val settings: Settings,
     private val now: () -> Instant = { Clock.System.now() },

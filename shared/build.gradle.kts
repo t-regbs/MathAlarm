@@ -10,6 +10,7 @@ plugins {
     alias(libs.plugins.composeMultiplatform)
     alias(libs.plugins.kotlinMultiplatform)
     alias(libs.plugins.ksp)
+    alias(libs.plugins.native.coroutines)
     alias(libs.plugins.androidx.room)
 }
 
@@ -51,6 +52,8 @@ kotlin {
             baseName = "app"
             isStatic = true
             export(libs.calf.ui)
+            export(project(":core"))
+            export(libs.observable.viewmodel)
         }
     }
     
@@ -70,6 +73,7 @@ kotlin {
     }
 
     sourceSets {
+        all { languageSettings.optIn("kotlinx.cinterop.ExperimentalForeignApi") }
         androidMain.dependencies {
             implementation(libs.androidx.activity.compose)
             implementation(libs.androidx.appcompat)
@@ -78,7 +82,9 @@ kotlin {
         commonMain {
             kotlin.srcDir("build/generated/ksp/metadata/commonMain/kotlin")
             dependencies {
-                implementation(project(":core"))
+                api(project(":core"))
+                api(libs.observable.viewmodel)
+                implementation(libs.native.coroutines.annotations)
                 implementation(libs.runtime)
                 implementation(libs.foundation)
                 implementation(libs.material3)
@@ -144,4 +150,24 @@ afterEvaluate {
 // Ensure all KSP tasks run after common metadata KSP
 tasks.matching { it.name.startsWith("ksp") && it.name != "kspCommonMainKotlinMetadata" }.configureEach {
     dependsOn(tasks.named("kspCommonMainKotlinMetadata"))
+}
+
+// Room emits public *_Impl subclasses. Refine those generated native declarations
+// together with their HiddenFromObjC ports so database infrastructure is never a
+// Swift API. Runs after KSP (including cached KSP outputs) and before compilation.
+// This changes export visibility only; generated SQL/schema/runtime remain intact.
+tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile>().configureEach {
+    doFirst {
+        listOf("iosArm64", "iosSimulatorArm64").forEach { target ->
+            fileTree("build/generated/ksp/$target/${target}Main/kotlin") {
+                include("**/AlarmDatabase_Impl.kt", "**/AlarmDao_Impl.kt", "**/AlarmDatabaseConstructor.kt")
+            }.forEach { source ->
+                val annotation = "@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)\n@kotlin.native.HiddenFromObjC\n"
+                val content = source.readText()
+                if (!content.contains("@kotlin.native.HiddenFromObjC")) {
+                    source.writeText(content.replace("public class ", annotation + "public class ").replace("public actual object ", annotation + "public actual object "))
+                }
+            }
+        }
+    }
 }

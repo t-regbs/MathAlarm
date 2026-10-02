@@ -1,5 +1,6 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmlist.components
 
+import com.timilehinaregbesola.mathalarm.utils.resolve
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.layout.Box
@@ -73,9 +74,9 @@ import com.timilehinaregbesola.mathalarm.utils.UiEvent.ShowSnackbar
 import com.timilehinaregbesola.mathalarm.utils.UiEvent.SnackbarAction
 import com.timilehinaregbesola.mathalarm.utils.getTimeLeft
 import kotlinx.serialization.json.Json
+import org.jetbrains.compose.resources.painterResource
 import mathalarm.app.generated.resources.Res
 import mathalarm.app.generated.resources.fab_icon
-import org.jetbrains.compose.resources.painterResource
 import org.koin.compose.viewmodel.koinViewModel
 
 @ExperimentalAnimationApi
@@ -91,8 +92,8 @@ fun ListDisplayScreen(
     onReviewBlockedChanged: (Boolean) -> Unit = {},
 ) {
     val protectDraft by rememberUpdatedState(hasUnsavedEditorChanges)
-    val alarms by viewModel.alarms.collectAsState()
-    val alarmPermission = viewModel.permission
+    val listState by viewModel.state.collectAsState()
+    val alarms = listState.alarms.takeUnless { listState.loading }
     var deleteAllAlarmsDialog by remember { mutableStateOf(false) }
     val snackbarHoststate = remember {
         SnackbarHostState()
@@ -137,7 +138,9 @@ fun ListDisplayScreen(
 
     val errorStrings = strings
     LaunchedEffect(errorStrings, useTwoPanes) {
-        viewModel.uiEvent.collect { event ->
+        viewModel.state.collect { state ->
+          for (outcome in state.results) {
+            val event = outcome.event
             when (event) {
                 is ShowError -> {
                     snackbarHoststate.showSnackbar(message = event.error.resolve(errorStrings))
@@ -146,8 +149,17 @@ fun ListDisplayScreen(
                     val result = snackbarHoststate.showSnackbar(
                         message = event.skippedDate?.let {
                             errorStrings.skippedAlarmOn(formatShortDate(it, errorStrings.dateLocale))
-                        } ?: event.message,
-                        actionLabel = if (event.actionType == SnackbarAction.UNDO_SKIP) errorStrings.undoSkip else event.action,
+                        } ?: when (event.code) {
+                            com.timilehinaregbesola.mathalarm.utils.UiEvent.ListMessage.DELETED -> "Alarm Deleted"
+                            com.timilehinaregbesola.mathalarm.utils.UiEvent.ListMessage.EMPTY -> "There are no alarms to clear"
+                            com.timilehinaregbesola.mathalarm.utils.UiEvent.ListMessage.SCHEDULED -> "${errorStrings.alarmSet} ${event.alarm?.copy(skippedDate = null, scheduleInitialized = false, snoozedUntil = null)?.getTimeLeft().orEmpty()}"
+                            com.timilehinaregbesola.mathalarm.utils.UiEvent.ListMessage.SKIPPED -> ""
+                        },
+                        actionLabel = when (event.actionType) {
+                            SnackbarAction.UNDO_SKIP -> errorStrings.undoSkip
+                            SnackbarAction.UNDO_DELETE -> errorStrings.undo
+                            null -> null
+                        },
                         withDismissAction = true,
                         duration = SnackbarDuration.Short
                     )
@@ -179,6 +191,8 @@ fun ListDisplayScreen(
 
                 else -> Unit
             }
+            viewModel.acknowledgeResult(outcome.id)
+          }
         }
     }
 
@@ -259,7 +273,7 @@ fun ListDisplayScreen(
                                 onEditAlarm = {
                                     isLoading = true
                                     checkPermissionAndPerformAction(
-                                        value = alarmPermission.hasExactAlarmPermission(),
+                                        value = viewModel.canSchedule,
                                         action = { viewModel.onEvent(OnEditAlarmClick(it)) },
                                         onPermissionAbsent = { showPermissionDialog = true },
                                     )
@@ -273,12 +287,11 @@ fun ListDisplayScreen(
                                 onUndoSkip = { viewModel.onEvent(OnUndoSkipClick(it.alarmId, it.skippedDate)) },
                                 onScheduleAlarm = { curAlarm: Alarm, b: Boolean ->
                                     checkPermissionAndPerformAction(
-                                        value = alarmPermission.hasExactAlarmPermission(),
+                                        value = viewModel.canSchedule,
                                         action = {
                                             viewModel.scheduleAlarm(
                                                 alarm = curAlarm,
                                                 reschedule = b,
-                                                message = "$alarmSetText ${curAlarm.copy(skippedDate = null, scheduleInitialized = false, snoozedUntil = null).getTimeLeft()}",
                                             )
                                         },
                                         onPermissionAbsent = { showPermissionDialog = true },
@@ -298,7 +311,7 @@ fun ListDisplayScreen(
                                 onClick = {
                                     isLoading = true
                                     checkPermissionAndPerformAction(
-                                        value = alarmPermission.hasExactAlarmPermission(),
+                                        value = viewModel.canSchedule,
                                         action = { viewModel.onEvent(OnAddAlarmClick) },
                                         onPermissionAbsent = { showPermissionDialog = true },
                                     )

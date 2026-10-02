@@ -15,9 +15,15 @@ import com.timilehinaregbesola.mathalarm.usecases.SkipNextAlarm
 import com.timilehinaregbesola.mathalarm.usecases.SnoozeAlarm
 import com.timilehinaregbesola.mathalarm.usecases.UpdateAlarm
 
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 data class Usecases(
     val addAlarm: AddAlarm,
     val clearAlarms: ClearAlarms,
@@ -33,8 +39,12 @@ data class Usecases(
     val snoozeAlarm: SnoozeAlarm,
     val cancelAlarm: CancelAlarm,
     val skipNextAlarm: SkipNextAlarm,
+    internal val applicationScope: CoroutineScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate),
 ) {
     private val commandMutex = Mutex()
+
+    /** Accepted work belongs to the application, never to an observer or screen task. */
+    internal fun launchCommand(block: suspend Usecases.() -> Unit) = applicationScope.launch { block() }
 
     /** Serialize UI, receiver and recovery commands across database and OS scheduling. */
     suspend fun <T> command(block: suspend Usecases.() -> T): T = commandMutex.withLock { block() }

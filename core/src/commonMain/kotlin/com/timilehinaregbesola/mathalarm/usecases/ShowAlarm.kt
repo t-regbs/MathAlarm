@@ -5,6 +5,8 @@ import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractor
 import kotlinx.coroutines.CancellationException
 import kotlin.time.Clock
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class ShowAlarm(
     private val alarmRepository: AlarmRepository,
     private val notificationInteractor: NotificationInteractor,

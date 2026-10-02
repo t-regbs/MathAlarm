@@ -4,6 +4,8 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
 import com.timilehinaregbesola.mathalarm.provider.AlarmTimeCalculator
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class ScheduleNextAlarm(
     private val alarmInteractor: AlarmInteractor,
     private val alarmTimeCalculator: AlarmTimeCalculator,

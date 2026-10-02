@@ -1,11 +1,14 @@
 package com.timilehinaregbesola.mathalarm.presentation.appsettings
 
-import androidx.compose.runtime.mutableStateOf
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import co.touchlab.kermit.Logger
 import com.russhwolf.settings.Settings
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.AlarmSortOrder
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.Theme
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class AlarmPreferencesImpl(
     private val mapper: AppThemeOptionsMapper,
     private val logger: Logger,
@@ -20,17 +23,18 @@ class AlarmPreferencesImpl(
         const val ALARM_SORT_ORDER_OPTION = "mathalarm_alarm_sort_order"
     }
 
-    private val seenAnnouncements = mutableStateOf(loadSeenAnnouncements())
+    private val seenAnnouncements = MutableStateFlow(loadSeenAnnouncements())
+    override val seenAnnouncementIds = seenAnnouncements.asStateFlow()
 
-    fun hasSeenAnnouncement(id: String): Boolean = id in seenAnnouncements.value
+    override fun hasSeenAnnouncement(id: String): Boolean = id in seenAnnouncements.value
 
-    fun markAnnouncementSeen(id: String) {
+    override fun markAnnouncementSeen(id: String) {
         settings.putBoolean(SEEN_ANNOUNCEMENT_PREFIX + id, true)
         seenAnnouncements.value = seenAnnouncements.value + id
     }
 
     /** Freeze the relevant features for this update, even after they are acknowledged. */
-    fun latestAnnouncementBatch(catalogIds: List<String>): List<String> {
+    override fun latestAnnouncementBatch(catalogIds: List<String>): List<String> {
         val catalog = catalogIds.joinToString(ANNOUNCEMENT_ID_SEPARATOR)
         if (!settings.hasKey(ANNOUNCEMENT_BATCH) || settings.getString(ANNOUNCEMENT_CATALOG, "") != catalog) {
             val unseen = catalogIds.filterNot(::hasSeenAnnouncement)
@@ -51,19 +55,21 @@ class AlarmPreferencesImpl(
         }.map { it.removePrefix(SEEN_ANNOUNCEMENT_PREFIX) }.toSet()
     }
 
-    val themeState = mutableStateOf(loadAppThemeFromStorage())
-    val alarmSortOrderState = mutableStateOf(loadAlarmSortOrderFromStorage())
+    private val theme = MutableStateFlow(loadAppThemeFromStorage())
+    override val themeState = theme.asStateFlow()
+    private val sortOrder = MutableStateFlow(loadAlarmSortOrderFromStorage())
+    override val alarmSortOrderState = sortOrder.asStateFlow()
 
     override fun updateAppTheme(theme: Theme) {
         settings.putInt(APP_THEME_OPTION, mapper.toDataStore(theme).id)
-        themeState.value = theme
+        this.theme.value = theme
     }
 
     override fun loadAppTheme(): Theme = themeState.value
 
     override fun updateAlarmSortOrder(sortOrder: AlarmSortOrder) {
         settings.putInt(ALARM_SORT_ORDER_OPTION, sortOrder.ordinal)
-        alarmSortOrderState.value = sortOrder
+        this.sortOrder.value = sortOrder
     }
 
     override fun loadAlarmSortOrder(): AlarmSortOrder = alarmSortOrderState.value

@@ -27,6 +27,11 @@ struct MathAlarmData: AlarmMetadata, Codable {
     var createdAt: Date = Date()
     var recoverySession: UUID? = nil
     var recoveryAttempt: Int? = nil
+    // Optional fields preserve decoding of existing persisted registration metadata.
+    var occurrenceKey: String? = nil
+    var scheduledAtMilliseconds: Int64? = nil
+    var deliveryId: String? = nil
+    var activeAtMilliseconds: Int64? = nil
 }
 
 // MARK: - Alarm Data Store (for intents to access)
@@ -127,10 +132,11 @@ struct StopAlarmIntent: LiveActivityIntent {
                                                   sessionId: sessionId, attempt: alarmData.recoveryAttempt) {
                 throw AlarmIntentError.invalidAlarmId
             }
-            let deeplinkJson = createDeeplinkJson(from: alarmData)
+            let delivery = identifiedDelivery(from: alarmData, registrationID: alarmUUID)
+            let deeplinkJson = createDeeplinkJson(from: delivery)
             PendingDeeplinkStore.shared.setPendingDeeplink(deeplinkJson)
             print("StopAlarmIntent: Stored pending deeplink for MathScreen")
-            try await AlarmKitWrapperImpl.shared.armRecovery(for: alarmData)
+            try await AlarmKitWrapperImpl.shared.armRecovery(for: delivery)
         } else {
             print("StopAlarmIntent: No alarm data found for UUID \(alarmUUID)")
             throw AlarmIntentError.invalidAlarmId
@@ -156,7 +162,30 @@ struct OpenMathChallengeIntent: AppIntent {
 /// AlarmKit metadata stays native; navigation uses the shared identity-only contract.
 @available(iOS 26, *)
 func createDeeplinkJson(from data: MathAlarmData) -> String {
-    MainViewControllerKt.createAlarmHandoffJson(alarmId: data.alarmId)
+    precondition(data.deliveryId != nil, "Identify a delivery before publishing its handoff")
+    return IosApplication.shared.createAlarmHandoffJson(
+        alarmId: data.alarmId, deliveryId: data.deliveryId!,
+        activeAt: data.activeAtMilliseconds.map { KotlinLong(value: $0) })
+}
+
+/// Recovery copies this token, so re-ringing/replaying restores the same occurrence session.
+@available(iOS 26, *)
+func identifiedDelivery(from data: MathAlarmData, registrationID: String) -> MathAlarmData {
+    var delivery = data
+    if delivery.deliveryId == nil {
+        let deliveredNow = Date()
+        // Older persisted metadata has no occurrence date/key; retain legacy authoritative lookup.
+        if data.occurrenceKey != nil || data.scheduledAtMilliseconds != nil {
+            delivery.activeAtMilliseconds = NativeAlarmDeliveryIdentity.occurrenceMilliseconds(
+                scheduledAtMilliseconds: data.scheduledAtMilliseconds, occurrenceKey: data.occurrenceKey,
+                hour: Int(data.hour), minute: Int(data.minute), now: deliveredNow)
+        }
+        delivery.deliveryId = data.recoverySession?.uuidString ?? NativeAlarmDeliveryIdentity.identifier(
+            registrationID: registrationID, scheduledAtMilliseconds: data.scheduledAtMilliseconds,
+            occurrenceKey: data.occurrenceKey, hour: Int(data.hour), minute: Int(data.minute), now: deliveredNow
+        )
+    }
+    return delivery
 }
 
 enum AlarmIntentError: Error, LocalizedError {
@@ -346,10 +375,10 @@ class AlarmKitWrapperImpl: NSObject {
                 let alarmUUID = self.occurrenceUUID(alarmId: alarmId, key: request.occurrenceKey)
                 
                 // Create the time for the schedule
-                let time = Alarm.Schedule.Relative.Time(hour: Int(hour), minute: Int(minute))
+                let time = AlarmKit.Alarm.Schedule.Relative.Time(hour: Int(hour), minute: Int(minute))
                 print("AlarmKitWrapper: Created time - hour: \(hour), minute: \(minute)")
                 
-                let schedule: Alarm.Schedule
+                let schedule: AlarmKit.Alarm.Schedule
                 if repeats && !weekdays.isEmpty {
                     schedule = .relative(.init(time: time, repeats: .weekly(Array(weekdays))))
                 } else {
@@ -379,7 +408,9 @@ class AlarmKitWrapperImpl: NSObject {
                     snooze: 0,
                     vibrate: vibrate,
                     alarmTone: soundName,
-                    title: alertTitle
+                    title: alertTitle,
+                    occurrenceKey: request.occurrenceKey,
+                    scheduledAtMilliseconds: repeats ? nil : request.timeInMillis
                 )
                 
                 // Store alarm data so intents can access it when alarm fires
@@ -473,8 +504,21 @@ class AlarmKitWrapperImpl: NSObject {
                     AlarmDataStore.shared.remove(alarmUUID: id.uuidString)
                 }
             }
+            if AlarmRecoveryStore.shared.isCurrent(alarmId: data.alarmId, session: session) {
+                IosApplication.shared.clearRecoveryFailure(alarmId: data.alarmId)
+            }
             print("Alarm recovery accepted: alarm=\(data.alarmId), attempt=\(session.attempt)")
         } catch {
+            if AlarmRecoveryStore.shared.rollbackReservation(
+                alarmId: data.alarmId, reservation: session,
+                sourceSession: data.recoverySession, sourceAttempt: data.recoveryAttempt) {
+                if data.recoverySession != nil {
+                    AlarmDataStore.shared.store(alarmUUID: id, data: data)
+                } else {
+                    AlarmDataStore.shared.remove(alarmUUID: id.uuidString)
+                }
+                IosApplication.shared.reportRecoveryFailure(alarmId: data.alarmId)
+            }
             print("Alarm recovery failed: \(error)")
             throw error
         }

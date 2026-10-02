@@ -7,6 +7,8 @@ import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class RoomAlarmDataSource(
     private val alarmDao: AlarmDao,
     private val mapper: AlarmMapper

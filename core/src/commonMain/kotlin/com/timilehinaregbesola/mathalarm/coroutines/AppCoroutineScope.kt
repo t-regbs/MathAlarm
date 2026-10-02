@@ -16,6 +16,8 @@ import kotlin.coroutines.CoroutineContext
  * - Can be properly cancelled if needed during app shutdown
  * 
  */
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class AppCoroutineScope(
     private val dispatcher: CoroutineDispatcher = Dispatchers.Default
 ) : CoroutineScope {

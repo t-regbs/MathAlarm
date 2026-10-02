@@ -5,6 +5,8 @@ import com.timilehinaregbesola.mathalarm.domain.model.mathChallenge
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.domain.util.DomainMapper
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class AlarmMapper : DomainMapper<AlarmEntity, Alarm> {
     override fun mapToDomainModel(model: AlarmEntity): Alarm {
         val challenge = MathChallenge(

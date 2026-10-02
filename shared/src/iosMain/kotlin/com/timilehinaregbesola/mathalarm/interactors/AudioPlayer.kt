@@ -3,6 +3,8 @@ package com.timilehinaregbesola.mathalarm.interactors
 import co.touchlab.kermit.Logger
 
 /** Screen playback shares the same owner as native notification entry. */
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class IosAudioPlayer(
     private val logger: Logger,
 ) : AudioPlayer {

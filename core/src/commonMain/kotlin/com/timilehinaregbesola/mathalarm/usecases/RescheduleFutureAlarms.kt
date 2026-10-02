@@ -11,6 +11,8 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.first
 import kotlinx.datetime.TimeZone
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class RescheduleFutureAlarms(
     private val alarmRepository: AlarmRepository,
     private val alarmInteractor: AlarmInteractor,

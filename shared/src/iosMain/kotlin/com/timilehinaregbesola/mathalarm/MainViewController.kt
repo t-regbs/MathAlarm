@@ -10,7 +10,6 @@ import androidx.compose.ui.window.ComposeUIViewController
 import cafe.adriel.lyricist.ProvideStrings
 import cafe.adriel.lyricist.rememberStrings
 import com.timilehinaregbesola.mathalarm.di.initKoin
-import com.timilehinaregbesola.mathalarm.di.prewarmDatabase
 import com.timilehinaregbesola.mathalarm.navigation.NavGraph
 import com.timilehinaregbesola.mathalarm.navigation.AlarmHandoff
 import com.timilehinaregbesola.mathalarm.navigation.decodeAlarmHandoff
@@ -25,45 +24,6 @@ import kotlinx.coroutines.InternalCoroutinesApi
 import kotlinx.coroutines.launch
 import org.koin.core.component.KoinComponent
 import platform.UIKit.UIViewController
-
-/**
- * Initialize Koin early - called from Swift App init() before UI loads.
- */
-fun doInitKoin() {
-    initKoin()
-}
-
-/** Swift uses the shared handoff codec instead of mirroring the database schema. */
-fun createAlarmHandoffJson(alarmId: Long): String =
-    com.timilehinaregbesola.mathalarm.navigation.encodeAlarmHandoff(AlarmHandoff(alarmId))
-
-/**
- * Prewarm the database in background - called after Koin init
- * This initializes Room in background so it's ready when UI needs it
- */
-fun prewarmDatabaseInBackground() {
-    prewarmDatabase()
-}
-
-/** Reconcile missing or changed registrations on each activation. */
-fun resumeAlarmSchedules() {
-    CoroutineScope(Dispatchers.Main).launch {
-        if (NotificationDeeplinkHolder.deeplinkInfo.value != null ||
-            com.timilehinaregbesola.mathalarm.alarm.AlarmSchedulerBridge.hasPendingHandoff()) return@launch
-        try {
-            val usecases = (object : KoinComponent {}).getKoin().get<com.timilehinaregbesola.mathalarm.framework.Usecases>()
-            usecases.command {
-                if (NotificationDeeplinkHolder.deeplinkInfo.value != null ||
-                    com.timilehinaregbesola.mathalarm.alarm.AlarmSchedulerBridge.hasPendingHandoff()) return@command
-                rescheduleFutureAlarms.onAppResume(skipWhenNativeCurrent = true)
-            }
-        } catch (e: kotlinx.coroutines.CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            co.touchlab.kermit.Logger.e(e) { "Alarm recovery failed" }
-        }
-    }
-}
 
 /**
  * iOS Main View Controller - Entry point for the Compose Multiplatform UI
@@ -99,17 +59,12 @@ fun MainViewController(): UIViewController {
                     preferences,
                     deeplinkInfo,
                     onDeeplinkConsumed = {
-                        deeplinkInfo?.let(NotificationDeeplinkHolder::acknowledgeDeeplink)
-                        resumeAlarmSchedules()
+                        deeplinkInfo?.let(IosApplication::acknowledgeHandoff)
                     },
                     onAlarmReady = { payload ->
-                        NotificationDeeplinkHolder.acknowledgeDeeplink(payload)
-                        resumeAlarmSchedules()
+                        IosApplication.acknowledgeHandoff(payload)
                     },
-                    resolveAlarmHandoff = { payload ->
-                        decodeAlarmHandoff(payload)?.alarmId?.let { usecases.findAlarm(it) }
-                            ?.takeIf { it.isOn }?.let { AlarmMapper().mapFromDomainModel(it) }
-                    },
+                    resolveAlarmHandoff = IosApplication::resolveAlarmHandoff,
                     acknowledgeHandoffWhenReady = true,
                 )
             }

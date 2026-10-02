@@ -5,6 +5,8 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.notification.IosAlarmScheduler
 import com.timilehinaregbesola.mathalarm.alarm.AlarmSchedulerBridge
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class AlarmInteractorImpl(
     private val scheduler: IosAlarmScheduler,
 ) : AlarmInteractor {
@@ -31,13 +33,14 @@ class AlarmInteractorImpl(
     override fun cancelRegularOccurrences(alarm: Alarm) = scheduler.cancelRegularOccurrences(alarm)
 
     override fun cancelSnooze(alarm: Alarm) {
-        // Completion calls this before clearing its active occurrence in the database.
-        AlarmSchedulerBridge.cancelOccurrence(alarm.alarmId, "recovery")
         scheduler.cancelSnooze(alarm)
     }
 
-    override suspend fun update(alarm: Alarm) {
+    override fun cancelRecovery(alarm: Alarm) {
         AlarmSchedulerBridge.cancelOccurrence(alarm.alarmId, "recovery")
+    }
+
+    override suspend fun update(alarm: Alarm) {
         // Replacing an identifier updates metadata without changing concrete one-time dates.
         val now = Clock.System.now().toEpochMilliseconds()
         if (alarm.repeat) {

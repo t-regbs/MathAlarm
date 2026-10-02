@@ -1,5 +1,8 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmmath.components
 
+import androidx.compose.runtime.collectAsState
+import com.timilehinaregbesola.mathalarm.presentation.alarmmath.ChallengeOutcome
+import com.timilehinaregbesola.mathalarm.utils.resolve
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement.Center
 import androidx.compose.foundation.layout.Arrangement.spacedBy
@@ -37,7 +40,6 @@ import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.getValue
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -57,15 +59,10 @@ import androidx.compose.ui.unit.sp
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import cafe.adriel.lyricist.strings
-import co.touchlab.kermit.Logger
 import com.mohamedrejeb.calf.ui.button.AdaptiveButton as Button
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
-import com.timilehinaregbesola.mathalarm.platform.PlatformVibrator
-import com.timilehinaregbesola.mathalarm.platform.getDefaultAlarmTone
-import com.timilehinaregbesola.mathalarm.platform.shouldStartMathScreenAlarmAudio
-import com.timilehinaregbesola.mathalarm.platform.supportsAlarmVibration
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmSnack
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.AlarmMathViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.MathScreenEvent
@@ -80,19 +77,17 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathS
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ANSWER_FIELD_HEIGHT
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.ANSWER_FIELD_HORIZONTAL_PADDING
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.BUTTON_SECTION_HORIZONTAL_PADDING
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.DEFAULT_VIBRATION_PATTERN
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.INITIAL_INDICATOR_PROGRESS
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.MATH_CONTENT_MAX_WIDTH
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.MAX_ANSWER_CHARS
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.PROGRESS_INDICATOR_HEIGHT
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.PROGRESS_LABEL
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.QUESTION_FONT_SIZE
-import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen.REPEAT_INDEFINITELY
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.presentation.ui.shapes
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.InternalCoroutinesApi
-import kotlinx.coroutines.flow.collectLatest
 import androidx.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
 
@@ -113,9 +108,6 @@ fun MathScreen(
     ChallengeBackHandler(enabled = true) {
         if (fromSheet && backStack.size > 1) backStack.removeLastOrNull()
     }
-    val vibrator = remember(alarm.alarmId, alarm.vibrate) {
-        if (alarm.vibrate && supportsAlarmVibration()) PlatformVibrator() else null
-    }
     LaunchedEffect(alarm.alarmId, alarm.activeAt, fromSheet, handoffPayload) {
         val ready = viewModel.initializeChallenge(
             alarm = AlarmMapper().mapToDomainModel(alarm),
@@ -127,7 +119,8 @@ fun MathScreen(
         SnackbarHostState()
     }
     val keyboardController = LocalSoftwareKeyboardController.current
-    val progress = viewModel.questionIndex.value.toFloat() / viewModel.questionCount
+    val challenge by viewModel.state.collectAsState()
+    val progress = challenge.questionIndex.toFloat() / challenge.questionCount.coerceAtLeast(1)
     val animatedProgress by animateFloatAsState(
         targetValue = progress,
         animationSpec = ProgressAnimationSpec,
@@ -135,59 +128,45 @@ fun MathScreen(
     )
     val errorStrings = strings
     LaunchedEffect(errorStrings) {
-        viewModel.eventFlow.collectLatest { event ->
-            when (event) {
-                is AlarmMathViewModel.UiEvent.ShowError -> {
-                    snackbarHostState.showSnackbar(message = event.error.resolve(errorStrings))
+        viewModel.state.collect { state ->
+            for (result in state.results) {
+                when (val outcome = result.outcome) {
+                    is ChallengeOutcome.Failure -> snackbarHostState.showSnackbar(message = outcome.error.resolve(errorStrings))
+                    ChallengeOutcome.Completed, ChallengeOutcome.Snoozed -> {
+                        keyboardController?.hide()
+                        if (backStack.size > 1) backStack.removeLastOrNull()
+                    }
                 }
-                is AlarmMathViewModel.UiEvent.CompleteAndClose -> {
-                    viewModel.completeAlarm(AlarmMapper().mapToDomainModel(alarm), preview = fromSheet)
-                }
-                is AlarmMathViewModel.UiEvent.Close -> {
-                    if (backStack.size > 1) backStack.removeLastOrNull()
-                }
-                is AlarmMathViewModel.UiEvent.StopVibrateAndHideKeyboard -> {
-                    vibrator?.cancel()
-                    keyboardController?.hide()
-                }
+                viewModel.acknowledgeResult(result.id)
             }
         }
     }
-
-    DisposableEffect(true) {
-        if (alarm.vibrate) {
-            vibrator?.startWaveform(DEFAULT_VIBRATION_PATTERN, REPEAT_INDEFINITELY)
+    if (challenge.readiness == com.timilehinaregbesola.mathalarm.presentation.alarmmath.ChallengeReadiness.ERROR) {
+        val retryScope = androidx.compose.runtime.rememberCoroutineScope()
+        Column(Modifier.fillMaxSize(), verticalArrangement = Center, horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally) {
+            Text((challenge.error ?: com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage.INITIALIZATION).resolve(errorStrings))
+            TextButton(onClick = {
+                retryScope.launch {
+                    if (viewModel.initializeChallenge(AlarmMapper().mapToDomainModel(alarm), fromSheet) && !fromSheet) onAlarmReady()
+                }
+            }) { Text(strings.retry) }
         }
-        val alarmTone = alarm.alarmTone.ifEmpty { getDefaultAlarmTone() }
-        if (alarmTone.isNotEmpty() && shouldStartMathScreenAlarmAudio(fromSheet)) {
-            try {
-                viewModel.startAlarmWith(alarmTone, alarm.vibrate)
-            } catch (_: Throwable) {
-            }
-        } else if (alarmTone.isEmpty()) {
-            Logger.d("Tone not available")
-            viewModel.onEvent(MathScreenEvent.OnToneError("Tone not available"))
-        }
-        onDispose {
-            vibrator?.cancel()
-            if (fromSheet) viewModel.stopPreview()
-        }
+        return
     }
-
-    val problem = viewModel.currentProblem ?: return
+    val problem = challenge.currentProblem ?: return
     MathScreenContent(
         snackbarHostState = snackbarHostState,
         onClosePreview = if (fromSheet) ({ backStack.removeLastOrNull() }) else null,
         question = buildQuestionString(problem),
         questionProgress = if (viewModel.questionCount > 1) {
-            strings.questionProgress(viewModel.questionIndex.value + 1, viewModel.questionCount)
+            strings.questionProgress(challenge.questionIndex + 1, viewModel.questionCount)
         } else {
             null
         },
         animatedProgress = animatedProgress,
         inputField = {
             MathInputField(
-                value = viewModel.answerText.value,
+                value = challenge.answerText,
                 onDonePressed = {
                     viewModel.onEvent(OnEnterClick(problem))
                 },
@@ -465,11 +444,9 @@ private object MathScreen {
     val ACTION_SPACING = 12.dp
     val PRIMARY_ACTION_MIN_HEIGHT = 56.dp
     val SECONDARY_ACTION_MIN_HEIGHT = 48.dp
-    val DEFAULT_VIBRATION_PATTERN = longArrayOf(0, 1000, 3000)
     const val INITIAL_INDICATOR_PROGRESS = 0.1f
     const val MAX_ANSWER_CHARS = 8
     const val PROGRESS_LABEL = "ProgressBar"
-    const val REPEAT_INDEFINITELY = 0
     val PROGRESS_INDICATOR_HEIGHT = 10.dp
     val QUESTION_FONT_SIZE = 70.sp
     val ANSWER_FIELD_HORIZONTAL_PADDING = 56.dp
