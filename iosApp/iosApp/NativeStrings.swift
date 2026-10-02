@@ -1,4 +1,5 @@
 import Foundation
+import UIKit
 import app
 
 /// Native presentation only: shared semantic values remain authoritative.
@@ -80,5 +81,14 @@ enum NativeStrings {
         if error == .tone { return text("Tone Unavailable") }
         if error == .incorrectAnswer { return text("Incorrect answer. Try again.") }
         return text("Couldn’t update alarm. Try again.")
+    }
+}
+
+/// Feedback is emitted when native presentation receives a new result, rather
+/// than by observing visibility or acknowledging a shared operation.
+@MainActor
+enum NativeAccessibility {
+    static func announce(_ message: String) {
+        UIAccessibility.post(notification: .announcement, argument: message)
     }
 }

@@ -1,6 +1,6 @@
 # MathAlarm native UI migration plan
 
-**Decision approved on 2 October 2026. Milestones 1–5 are complete against their documented implementation gates; Milestone 5 physical recovery and release gates remain open. Milestone 6 is the next implementation scope. [Implementation progress and handoff](native-ui-migration-progress.md).**
+**Decision approved on 2 October 2026. Milestones 1–6 are complete against their documented implementation/simulator gates; physical recovery and release gates remain open. Milestone 7 is the next implementation scope. [Implementation progress and handoff](native-ui-migration-progress.md).**
 
 MathAlarm will keep Clean Architecture and MVVM, share Kotlin domain, application, data, and feature ViewModel logic through KMP, and present that logic with **Compose on Android and SwiftUI on iOS**. The shared boundary includes the ViewModels. Native code owns navigation, controls, layout, accessibility, and visual presentation.
 
@@ -184,6 +184,8 @@ Resolve stable delivery identity and retry readiness before enabling real handof
 Complete theme/sort, What's New, feedback/share and all remaining localized presentation. Preserve native capability visibility and Android-only review/Skip Next behavior. Replace any remaining iOS Compose animation/resource usage with appropriate native assets or views. Finish launch visuals and accessibility across every screen.
 
 **Gate:** every feature in the parity table is implemented natively on iOS; nine locale catalogs and sound resources are packaged; permission and sharing flows behave correctly on iPhone/iPad; no omitted feature is disguised by a development placeholder.
+
+**Implementation/simulator gate satisfied:** see the [Milestone 6 parity and verification record](native-ui-migration-milestone-6-2026-10-02.md). Available native permission guard/return and sharing flows pass on both form factors. First-install OS authorization, configured-Mail client behavior, VoiceOver spoken/focus behavior, live window resizing, minimum-runtime and physical/release acceptance remain explicitly unverified; simulator completion does not close those gates.
 
 ### Milestone 7 Enforce boundaries and integrate CI
 

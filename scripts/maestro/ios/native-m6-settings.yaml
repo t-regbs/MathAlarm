@@ -1,0 +1,102 @@
+# English, disposable iPhone/iPad, no configured email account. No share target is
+# selected and no feedback is sent. The flow restores the theme/sort defaults.
+appId: com.timilehinaregbesola.mathalarm
+---
+- launchApp
+- runFlow:
+    when:
+      visible:
+        id: announcementGotIt
+    commands:
+      - tapOn:
+          id: announcementGotIt
+- runFlow:
+    when:
+      notVisible:
+        id: app-settings
+    commands:
+      - tapOn: "More"
+- tapOn: "Settings"
+- assertVisible: "App Settings"
+- tapOn:
+    id: appThemePicker
+- tapOn: "Dark"
+- tapOn:
+    id: alarmSortPicker
+- tapOn: "Time"
+- takeScreenshot: native-settings-dark
+- tapOn:
+    id: whatsNewButton
+- assertVisible: "More ways to wake up"
+- takeScreenshot: native-announcement-maths
+- tapOn:
+    id: announcementNext
+- assertVisible: "Snooze on your terms"
+- takeScreenshot: native-announcement-snooze
+- tapOn:
+    id: announcementSnoozeExample
+    point: "90%,50%"
+- assertVisible: "Off"
+- takeScreenshot: native-announcement-snooze-off
+- tapOn:
+    id: announcementSnoozeExample
+    point: "90%,50%"
+- tapOn:
+    id: announcementGotIt
+- tapOn:
+    id: appSettingsDone
+- stopApp
+- launchApp
+- assertNotVisible:
+    id: announcementGotIt
+- runFlow:
+    when:
+      notVisible:
+        id: app-settings
+    commands:
+      - tapOn: "More"
+- tapOn: "Settings"
+- assertVisible: "Dark"
+- assertVisible: "Time"
+- takeScreenshot: native-settings-after-restart
+- tapOn:
+    id: whatsNewButton
+- assertVisible: "More ways to wake up"
+- tapOn:
+    id: announcementGotIt
+- tapOn:
+    id: shareButton
+- assertVisible: "Close|dismiss popup"
+- waitForAnimationToEnd
+- takeScreenshot: native-share-active-scene
+- runFlow:
+    when:
+      visible: "Close"
+    commands:
+      - tapOn: "Close"
+- runFlow:
+    when:
+      visible: "dismiss popup"
+    commands:
+      - tapOn:
+          point: "5%,20%"
+- assertVisible:
+    id: appSettingsDone
+- assertVisible: "App Settings"
+- tapOn:
+    id: feedbackButton
+- assertVisible: "No email app is available. Email aregbestimi@gmail.com to send feedback."
+- takeScreenshot: native-feedback-unavailable
+- tapOn: "OK"
+- tapOn:
+    id: appThemePicker
+- tapOn: "Light"
+- takeScreenshot: native-settings-light
+- tapOn:
+    id: appThemePicker
+- tapOn: "System"
+- tapOn:
+    id: alarmSortPicker
+- tapOn: "Creation Order"
+- tapOn:
+    id: appSettingsDone

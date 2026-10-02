@@ -1,0 +1,44 @@
+# Fresh disposable simulator only: AlarmKit authorization must be undetermined or
+# denied. Cancel/deny every request. Do not run on an authorized/physical device.
+# No alarm is accepted or registered and the unsaved fixture is discarded.
+appId: com.timilehinaregbesola.mathalarm
+---
+- launchApp:
+    permissions:
+      all: unset
+- runFlow:
+    when:
+      visible:
+        id: announcementGotIt
+    commands:
+      - tapOn:
+          id: announcementGotIt
+- tapOn:
+    id: add-alarm
+- tapOn:
+    id: editor-title
+- inputText: "Native M6 permission denial"
+- tapOn:
+    id: editor-keyboard-done
+- tapOn:
+    id: save-alarm
+- assertVisible: "Permission Required"
+- takeScreenshot: native-permission-guard
+- tapOn: "Keep editing"
+- assertVisible: "Native M6 permission denial"
+- tapOn:
+    id: save-alarm
+- tapOn: "Allow alarms"
+- runFlow:
+    when:
+      visible: "Don’t Allow|Don't Allow"
+    commands:
+      - takeScreenshot: native-alarmkit-permission
+      - tapOn: "Don’t Allow|Don't Allow"
+- assertVisible: "Permission Required"
+- tapOn: "Keep editing"
+- assertVisible: "Native M6 permission denial"
+- takeScreenshot: native-permission-denied-retained-draft
+- tapOn:
+    id: discard-draft
+- tapOn: "Discard changes"

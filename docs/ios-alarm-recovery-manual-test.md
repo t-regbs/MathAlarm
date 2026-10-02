@@ -46,3 +46,12 @@ The [native Milestone 5 record](native-ui-migration-milestone-5-2026-10-02.md) c
 - Repeat with locked/background/terminated Stop intents, denied/revoked permission, Bluetooth/DND routing and sustained continuous recovery. Record timing, device/runtime, source commit, acoustic evidence and cancellation outcomes separately.
 
 Do not treat the simulator's controlled scheduler or token-chain smoke as proof of native physical delivery, audibility or uninterrupted recovery.
+
+
+## Milestone 6 native presentation follow-up
+
+The [Milestone 6 record](native-ui-migration-milestone-6-2026-10-02.md) records native app settings, announcements, feedback/share, nine-locale catalogs and packaged sounds, plus current simulator presentation/client evidence. It supersedes renderer-era placeholder and keyboard descriptions only where runtime evidence is listed. Theme changes and supplementary presentation preserve retained drafts, routes, staged tones and permission guards; delivery/restoration/audio boundaries remain application-owned.
+
+These implementation checks do not close physical delivery or release acceptance. Recheck actual permission denial/revocation/regrant and configured Mail cancellation/errors, iPhone/iPad portrait/landscape and live window resizing, VoiceOver spoken traversal/focus/announcements, minimum iOS 26.0, and native launch cold-start timing. For delivered alarms, keep every Milestone 5 physical continuous-recovery, acoustic/Bluetooth/DND, background/locked/terminated handoff and multi-day coalescing check above. Add interruption of app settings and an unacknowledged announcement; resolve/snooze authoritatively, then verify the same draft, nested route, staged sound and announcement page return without incidental acknowledgement. Do not send feedback or share content to an external recipient merely to test presentation.
+
+Milestone 7 owns permanent XCTest/UI targets, reproducible CI/packaging checks and approved cleanup. Milestone 8 owns physical reliability, signed archive/TestFlight/privacy/store review and release acceptance. Simulator passes are not release readiness.

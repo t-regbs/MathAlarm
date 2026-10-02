@@ -1,0 +1,118 @@
+# Disposable English simulator; run with OS maximum accessibility text already set.
+# Unsaved draft only. Preview controls are inspected without playback; no alarm is saved.
+appId: com.timilehinaregbesola.mathalarm
+---
+- setOrientation: PORTRAIT
+- runFlow:
+    when:
+      visible:
+        id: announcementGotIt
+    commands:
+      - tapOn:
+          id: announcementGotIt
+- tapOn:
+    id: add-alarm
+- tapOn:
+    id: editor-title
+- inputText: 'M6 maximum text sound draft'
+- tapOn:
+    id: editor-keyboard-done
+- scrollUntilVisible:
+    element:
+      id: editor-sound
+    direction: DOWN
+- tapOn:
+    id: editor-sound
+- assertVisible:
+    id: sound-done
+- scrollUntilVisible:
+    element:
+      id: preview-alarm_daybreak
+    direction: DOWN
+    centerElement: true
+- assertVisible:
+    id: tone-alarm_daybreak
+- assertVisible:
+    id: preview-alarm_daybreak
+- waitForAnimationToEnd
+- takeScreenshot: native-max-type-sound-daybreak
+- scrollUntilVisible:
+    element:
+      id: preview-alarm_orbit
+    direction: DOWN
+    centerElement: true
+- assertVisible:
+    id: tone-alarm_orbit
+- assertVisible:
+    id: preview-alarm_orbit
+- waitForAnimationToEnd
+- takeScreenshot: native-max-type-sound-orbit
+- scrollUntilVisible:
+    element:
+      id: preview-alarm_rally
+    direction: DOWN
+    centerElement: true
+- assertVisible:
+    id: tone-alarm_rally
+- assertVisible:
+    id: preview-alarm_rally
+- waitForAnimationToEnd
+- takeScreenshot: native-max-type-sound-rally
+- scrollUntilVisible:
+    element:
+      id: preview-alarm_glass_garden
+    direction: DOWN
+    centerElement: true
+- assertVisible:
+    id: tone-alarm_glass_garden
+- assertVisible:
+    id: preview-alarm_glass_garden
+- waitForAnimationToEnd
+- takeScreenshot: native-max-type-sound-glass_garden
+- scrollUntilVisible:
+    element:
+      id: preview-alarm_stepping_stones
+    direction: DOWN
+    centerElement: true
+- assertVisible:
+    id: tone-alarm_stepping_stones
+- assertVisible:
+    id: preview-alarm_stepping_stones
+- waitForAnimationToEnd
+- takeScreenshot: native-max-type-sound-stepping_stones
+- scrollUntilVisible:
+    element:
+      id: preview-alarm_clear_signal
+    direction: DOWN
+    centerElement: true
+- assertVisible:
+    id: tone-alarm_clear_signal
+- assertVisible:
+    id: preview-alarm_clear_signal
+- waitForAnimationToEnd
+- takeScreenshot: native-max-type-sound-clear_signal
+- tapOn:
+    id: tone-alarm_clear_signal
+- takeScreenshot: native-max-type-sound-clear-selected
+- tapOn:
+    id: sound-done
+- scrollUntilVisible:
+    element:
+      id: editor-sound
+    direction: DOWN
+- assertVisible: ".*Clear Signal.*"
+- takeScreenshot: native-max-type-sound-applied-to-draft
+- scrollUntilVisible:
+    element:
+      id: editor-title
+    direction: UP
+- assertVisible: 'M6 maximum text sound draft'
+- tapOn:
+    id: discard-draft
+- tapOn: "Discard changes"
+- assertVisible:
+    id: add-alarm
+- assertNotVisible:
+    id: save-alarm
+- waitForAnimationToEnd
+- takeScreenshot: native-max-type-sound-discarded

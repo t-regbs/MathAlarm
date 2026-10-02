@@ -1,0 +1,73 @@
+# Asserts the native editor/preview Done accessories with software-keyboard captures.
+# Only an unsaved draft/preview is changed; no alarm is scheduled or saved.
+appId: com.timilehinaregbesola.mathalarm
+---
+- launchApp
+- runFlow:
+    when:
+      visible:
+        id: announcementGotIt
+    commands:
+      - tapOn:
+          id: announcementGotIt
+- tapOn:
+    id: add-alarm
+- tapOn:
+    id: editor-title
+- inputText: 'Native M6 "Keyboard" draft'
+- assertVisible:
+    id: editor-keyboard-done
+- waitForAnimationToEnd
+- takeScreenshot: native-editor-software-keyboard
+- tapOn:
+    id: editor-keyboard-done
+- assertVisible: 'Native M6 "Keyboard" draft'
+- assertNotVisible:
+    id: editor-keyboard-done
+- scrollUntilVisible:
+    element:
+      id: editor-test-alarm
+    direction: DOWN
+- tapOn:
+    id: editor-test-alarm
+- scrollUntilVisible:
+    element:
+      id: challenge-answer
+    direction: DOWN
+- assertVisible:
+    id: challenge-answer
+- tapOn:
+    id: challenge-answer
+- inputText: "999999"
+- assertVisible:
+    id: challenge-keyboard-done
+- waitForAnimationToEnd
+- assertVisible:
+    id: challenge-answer
+- takeScreenshot: native-preview-software-keyboard
+- tapOn:
+    id: challenge-keyboard-done
+- assertNotVisible:
+    id: challenge-keyboard-done
+- scrollUntilVisible:
+    element:
+      id: challenge-submit
+    direction: DOWN
+- tapOn:
+    id: challenge-submit
+- scrollUntilVisible:
+    element:
+      text: "Incorrect answer. Try again."
+    direction: DOWN
+- assertVisible: "Incorrect answer. Try again."
+- takeScreenshot: native-preview-wrong-answer
+- tapOn:
+    id: challenge-cancel-preview
+- scrollUntilVisible:
+    element:
+      id: editor-title
+    direction: UP
+- assertVisible: 'Native M6 "Keyboard" draft'
+- tapOn:
+    id: discard-draft
+- tapOn: "Discard changes"

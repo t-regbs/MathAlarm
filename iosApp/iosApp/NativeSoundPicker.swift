@@ -162,6 +162,8 @@ struct NativeSoundPicker: View {
                         }
                         .buttonStyle(.borderless)
                         .accessibilityLabel(Text(NativeStrings.text(selection.previewingTone == sound.id ? "Stop preview" : "Preview")) + Text(" ") + Text(sound.displayName))
+                        .accessibilityHint(selection.previewingTone == sound.id
+                            ? Text("Stop preview") : Text("Preview this tone without changing your selection."))
                         .accessibilityIdentifier("preview-\(sound.id)")
                     }
                 }
@@ -201,6 +203,9 @@ struct NativeSoundPicker: View {
         .onDisappear { if let presentation { selection.endPresentation(presentation) } }
         .onChange(of: scenePhase) { _, value in
             if value != .active, let presentation { selection.stopPresentation(presentation) }
+        }
+        .onChange(of: selection.previewMessage) { _, value in
+            if let value { NativeAccessibility.announce(NativeStrings.text(value)) }
         }
     }
 

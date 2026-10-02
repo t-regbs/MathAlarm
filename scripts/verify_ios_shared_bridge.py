@@ -28,6 +28,10 @@ REQUIRED_CHECKS = (
     'acknowledged unresolved restoration preserves exact challenge progress',
     'native accepted completion snooze retry duplicates and result acknowledgement',
     'process restart after acknowledgement restores exact durable progress',
+    'native settings all themes/sorts use persisted keys while two drafts, nested route, staged sound and permission guard retain owners',
+    'native announcement IDs/page survive interruption without acknowledgement; explicit browse/Got it persist and latest batch reopens',
+    'production settings share presents in the tapped active scene with iPad anchor, cancellation/error callbacks; unavailable feedback handler reports failure using injected mailto opener',
+    'fresh process restores theme/sort and announcement acknowledgement while latest batch remains reopenable',
 )
 
 
@@ -46,7 +50,7 @@ def main():
     args.output.parent.mkdir(parents=True, exist_ok=True)
     captured = b''
     with args.output.open('wb') as log:
-        for phase in ([], ['--verify-m5-restoration']):
+        for phase in (['--verify-m6-settings-fresh'], ['--verify-m5-restoration']):
             command = ['xcrun', 'simctl', 'launch', '--console', '--terminate-running-process', args.udid,
                        'com.timilehinaregbesola.mathalarm', '--verify-shared-bridge', *phase]
             process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
@@ -54,7 +58,7 @@ def main():
             selector.register(process.stdout, selectors.EVENT_READ)
             passed = False
             phase_output = b''
-            deadline = time.monotonic() + 110
+            deadline = time.monotonic() + 160
             try:
                 while time.monotonic() < deadline and process.poll() is None:
                     for key, _ in selector.select(timeout=1):

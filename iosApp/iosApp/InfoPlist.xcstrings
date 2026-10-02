@@ -1,0 +1,66 @@
+{
+  "sourceLanguage": "en",
+  "strings": {
+    "NSAlarmKitUsageDescription": {
+      "comment": "Purpose shown by the native alarm permission prompt.",
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MathAlarm uses alarms to wake you up at your scheduled times."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MathAlarm usa alarmas para despertarte a las horas programadas."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MathAlarm verwendet Wecker, um dich zu den eingestellten Zeiten zu wecken."
+          }
+        },
+        "ru": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MathAlarm использует будильники, чтобы будить вас в заданное время."
+          }
+        },
+        "pt": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "O MathAlarm usa alarmes para acordar você nos horários programados."
+          }
+        },
+        "hi": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MathAlarm आपके निर्धारित समय पर आपको जगाने के लिए अलार्म का उपयोग करता है।"
+          }
+        },
+        "pa": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MathAlarm ਤੁਹਾਡੇ ਤਹਿ ਕੀਤੇ ਸਮੇਂ ਉੱਤੇ ਤੁਹਾਨੂੰ ਜਗਾਉਣ ਲਈ ਅਲਾਰਮ ਵਰਤਦਾ ਹੈ।"
+          }
+        },
+        "bn": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MathAlarm আপনার নির্ধারিত সময়ে আপনাকে জাগাতে অ্যালার্ম ব্যবহার করে।"
+          }
+        },
+        "zh": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "MathAlarm 使用闹钟在您设定的时间叫醒您。"
+          }
+        }
+      }
+    }
+  },
+  "version": "1.0"
+}

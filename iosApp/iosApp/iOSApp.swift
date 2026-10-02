@@ -8,6 +8,9 @@ struct iOSApp: App {
     @Environment(\.scenePhase) private var scenePhase
     
     init() {
+        #if DEBUG
+        NativeSettingsVerification.prepareIfRequested()
+        #endif
         let bridge = AlarmKitKotlinBridge(wrapper: AlarmKitWrapperImpl.shared)
         IosApplication.shared.initialize(scheduler: bridge)
     }
@@ -18,7 +21,7 @@ struct iOSApp: App {
         }
         .onChange(of: scenePhase) { newPhase in
             #if DEBUG
-            if SharedBridgeVerification.enabled { return }
+            if SharedBridgeVerification.enabled || NativePresentationVerification.enabled { return }
             #endif
             if newPhase == .active {
                 // Check for pending AlarmKit deeplinks when app becomes active
@@ -62,7 +65,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     /// Called when app becomes active (from scenePhase change)
     static func checkPendingAlarmKitDeeplink(restoreUnresolved: Bool = false) {
         #if DEBUG
-        if SharedBridgeVerification.enabled { return }
+        if SharedBridgeVerification.enabled || NativePresentationVerification.enabled { return }
         #endif
         if restoreUnresolved || !pendingDeliveryRestorationFinished {
             guard !restorationStarted else { return }
@@ -115,7 +118,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         #if DEBUG
-        if SharedBridgeVerification.enabled { return true }
+        if SharedBridgeVerification.enabled || NativePresentationVerification.enabled { return true }
         #endif
         // Log AlarmKit availability; ask for authorization when saving an alarm.
         let alarmKitAvailable = alarmKitWrapper.isAlarmKitAvailable()

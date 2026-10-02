@@ -1,0 +1,9 @@
+# English, disposable iPhone/iPad. Run after portrait settings/keyboard checks.
+# Native OS orientation is exercised, then restored to portrait. The child flow
+# creates and discards only an unsaved editor/preview fixture.
+appId: com.timilehinaregbesola.mathalarm
+---
+- setOrientation: LANDSCAPE_LEFT
+- runFlow: native-m6-keyboard.yaml
+- takeScreenshot: native-landscape-root-after-preview-return
+- setOrientation: PORTRAIT

@@ -538,7 +538,7 @@ class AlarmKitWrapperImpl: NSObject {
                     systemImageName: "function"
                 )
                 let alertContent = AlarmPresentation.Alert(
-                    title: LocalizedStringResource(stringLiteral: alertTitle),
+                    title: alertTitle.isEmpty ? LocalizedStringResource("Solve Math") : LocalizedStringResource(stringLiteral: alertTitle),
                     stopButton: solveButton
                 )
                 let presentation = AlarmPresentation(alert: alertContent)
@@ -718,7 +718,7 @@ class AlarmKitWrapperImpl: NSObject {
         }
         let solve = AlarmButton(text: "Solve Math", textColor: .mathAlarmGreen, systemImageName: "function")
         let alert = AlarmPresentation.Alert(
-            title: LocalizedStringResource(stringLiteral: data.title.isEmpty ? "Solve Math" : data.title),
+            title: data.title.isEmpty ? LocalizedStringResource("Solve Math") : LocalizedStringResource(stringLiteral: data.title),
             stopButton: solve
         )
         let configuration = MathAlarmConfiguration.alarm(

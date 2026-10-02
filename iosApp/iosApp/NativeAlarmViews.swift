@@ -19,8 +19,14 @@ struct NativeAlarmList: View {
             if model.state.loading {
                 ProgressView("Loading alarms")
             } else if model.state.alarms.isEmpty {
-                ContentUnavailableView("No alarms", systemImage: "alarm",
-                    description: Text("Add an alarm to get started."))
+                ContentUnavailableView {
+                    Label {
+                        Text("No alarms")
+                            .lineLimit(nil)
+                            .multilineTextAlignment(.center)
+                            .fixedSize(horizontal: false, vertical: true)
+                    } icon: { Image(systemName: "alarm") }
+                } description: { Text("Add an alarm to get started.") }
             } else {
                 ForEach(model.state.alarms, id: \.alarmId) { alarm in
                     HStack {
@@ -32,14 +38,21 @@ struct NativeAlarmList: View {
                                 Text(NativeAlarmPresentation.recurrence(alarm))
                                     .font(.caption).foregroundStyle(.secondary)
                                 if alarm.scheduleError != nil {
-                                    Label("Scheduling needs attention", systemImage: "exclamationmark.triangle")
-                                        .font(.caption).foregroundStyle(.red)
+                                    Label {
+                                        Text("Scheduling needs attention").foregroundStyle(Color.primary)
+                                    } icon: {
+                                        Image(systemName: "exclamationmark.triangle").foregroundStyle(Color.red)
+                                    }
+                                    .font(.caption)
                                 }
                             }
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
+                        .accessibilityElement(children: .combine)
+                        .accessibilityHint(Text("Change the alarm time, label and settings."))
+                        .accessibilityIdentifier("edit-alarm-\(alarm.alarmId)")
                         Toggle("Enabled", isOn: Binding(get: { alarm.isOn }, set: {
                             model.setEnabled(alarm: alarm, enabled: $0)
                         }))
@@ -78,6 +91,7 @@ struct NativeAlarmList: View {
             }
             ToolbarItem(placement: .secondaryAction) {
                 Button("Settings", systemImage: "gearshape", action: openSettings)
+                    .accessibilityIdentifier("app-settings")
             }
             ToolbarItem(placement: .secondaryAction) {
                 Button("Clear alarms", systemImage: "trash", role: .destructive) {
@@ -138,6 +152,7 @@ struct NativeAlarmList: View {
             }
             if result.event is UiEvent.ShowError {
                 errorResult = result
+                if let error = result.event as? UiEvent.ShowError { NativeAccessibility.announce(NativeStrings.error(error.error)) }
                 return
             }
             if let notice = result.event as? UiEvent.ShowSnackbar {
@@ -149,6 +164,7 @@ struct NativeAlarmList: View {
                     message = NativeStrings.text("Alarm scheduled.")
                 }
                 // Retain the native affordance before acknowledging the semantic result.
+                if let message { NativeAccessibility.announce(message) }
                 model.acknowledgeResult(id: result.id)
             }
         }
@@ -440,16 +456,6 @@ struct NativeEditorSubpage: View {
     }
 }
 
-struct NativeDevelopmentScreen: View {
-    let title: String
-    let milestone: Int
-    var body: some View {
-        ContentUnavailableView(title, systemImage: "wrench.and.screwdriver",
-            description: Text("Native development screen. This feature is scheduled for Milestone \(milestone)."))
-            .navigationTitle(title)
-    }
-}
-
 @MainActor
 struct NativeMathPreview: View {
     let editorID: String
@@ -503,6 +509,7 @@ struct NativeOwnedChallenge: View {
 @MainActor
 struct NativePendingDelivery: View {
     @ObservedObject var sessions: NativeWindowSessions
+    @Environment(\.accessibilityReduceTransparency) private var reduceTransparency
     var body: some View {
         Group {
             if let session = sessions.challenge {
@@ -523,7 +530,13 @@ struct NativePendingDelivery: View {
                 VStack {
                     Text("Unable to retain delivery acknowledgement. Try again.")
                     Button("Try again") { sessions.retryDelivery() }
-                }.padding().background(.regularMaterial)
+                }
+                .padding()
+                .frame(maxWidth: .infinity)
+                .background {
+                    if reduceTransparency { Color(uiColor: .systemBackground) }
+                    else { Rectangle().fill(.regularMaterial) }
+                }
             }
         }
     }

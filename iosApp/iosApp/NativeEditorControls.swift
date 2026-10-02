@@ -6,6 +6,7 @@ import app
 @MainActor
 struct NativeEditorControls: View {
     @ObservedViewModel var model: AlarmSettingsViewModel
+    @FocusState private var titleFocused: Bool
 
     var body: some View {
         Section("Alarm") {
@@ -16,6 +17,19 @@ struct NativeEditorControls: View {
             }))
             .textInputAutocapitalization(.sentences)
             .submitLabel(.done)
+            .focused($titleFocused)
+            .onSubmit { titleFocused = false }
+            .onDisappear { titleFocused = false }
+            .toolbar {
+                if titleFocused {
+                    ToolbarItemGroup(placement: .keyboard) {
+                        Spacer()
+                        Button("Done") { titleFocused = false }
+                            .accessibilityHint(Text("Dismiss keyboard"))
+                            .accessibilityIdentifier("editor-keyboard-done")
+                    }
+                }
+            }
             .accessibilityIdentifier("editor-title")
             Toggle("Enabled", isOn: Binding(get: { model.state.isOn }, set: {
                 model.onEvent(event: AddEditAlarmEvent.ToggleEnabled(value: $0))
@@ -37,8 +51,11 @@ struct NativeEditorControls: View {
                     : NSLocalizedString("Off", comment: "Snooze disabled"))
             }
             .accessibilityIdentifier("editor-snooze")
-            NavigationLink("Sound library", value: NativeEditorDestination.sound)
-                .accessibilityIdentifier("editor-sound")
+            NavigationLink(value: NativeEditorDestination.sound) {
+                LabeledContent("Sound library", value: NativeSoundPresentation.displayName(model.state.tone))
+            }
+            .accessibilityHint(Text("Choose the sound used by this alarm."))
+            .accessibilityIdentifier("editor-sound")
         }
         Section {
             NavigationLink("Test Alarm", value: NativeEditorDestination.preview)

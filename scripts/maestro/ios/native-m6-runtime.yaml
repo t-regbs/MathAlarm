@@ -1,0 +1,8 @@
+# Disposable English simulator with no configured email account and undetermined
+# or denied AlarmKit authorization. Retains one XCTest client for all three flows.
+appId: com.timilehinaregbesola.mathalarm
+---
+- setOrientation: PORTRAIT
+- runFlow: native-m6-keyboard.yaml
+- runFlow: native-m6-permission-denial.yaml
+- runFlow: native-m6-landscape.yaml

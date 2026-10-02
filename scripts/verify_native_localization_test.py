@@ -1,7 +1,10 @@
 import unittest
+from pathlib import Path
+import plistlib
+import tempfile
 
-from verify_native_localization import (LOCALES, REQUIRED_PLURALS, catalog_violations,
-                                        presentation_keys)
+from verify_native_localization import (LOCALES, REQUIRED_PLURALS, TONES, catalog_violations,
+                                        packaged_violations, presentation_keys)
 
 
 def catalog_fixture():
@@ -74,7 +77,7 @@ class NativeLocalizationTest(unittest.TestCase):
         self.assertEqual({"Easy", "Medium", "Addition", "Preview failed", "Flowing synth · bright",
                           "Stop preview", "Preview"}, presentation_keys(source))
 
-    def test_development_placeholder_does_not_hide_production_delivery_copy(self):
+    def test_development_placeholder_copy_is_no_longer_excluded(self):
         source = '''Text("Every %@")
 struct NativeDevelopmentScreen: View {
     var body: some View { Text("Later milestone") }
@@ -82,7 +85,55 @@ struct NativeDevelopmentScreen: View {
 struct NativePendingDelivery: View { Text("Pending delivery") }
 enum NativeAlarmPresentation { NativeStrings.text("Once") }
 '''
-        self.assertEqual({"Every %@", "Once", "Pending delivery"}, presentation_keys(source))
+        self.assertEqual({"Every %@", "Once", "Pending delivery", "Later milestone"}, presentation_keys(source))
+
+    def test_settings_announcements_native_errors_and_intents_are_audited(self):
+        source = '''
+        settingsLabel("Send Feedback", detail: "Send feedback to the developer", symbol: "envelope")
+        failure = "No email app is available."
+        static var title: LocalizedStringResource = "Stop Alarm"
+        @Parameter(title: "Alarm ID") var alarmId: String
+        String(localized: "Solve Math")
+        NavigationLink("Test Alarm", value: .preview)
+        NativeStrings.text(id == "math-challenges-v1" ? "More ways to wake up" : "Snooze on your terms")
+        '''
+        self.assertEqual({"Send Feedback", "Send feedback to the developer", "No email app is available.",
+                          "Stop Alarm", "Alarm ID", "Solve Math", "Test Alarm", "More ways to wake up",
+                          "Snooze on your terms"}, presentation_keys(source))
+
+    def test_permission_catalog_requires_translations_without_question_plural(self):
+        info = {"sourceLanguage": "en", "version": "1.0", "strings": {
+            "NSAlarmKitUsageDescription": {"localizations": {locale: {"stringUnit": {
+                "state": "translated", "value": "MathAlarm uses scheduled alarms."}} for locale in LOCALES}}}}
+        self.assertEqual([], catalog_violations(info, require_question_plurals=False))
+        info["strings"]["NSAlarmKitUsageDescription"]["localizations"].pop("pa")
+        self.assertTrue(catalog_violations(info, require_question_plurals=False))
+
+    def test_compiled_resources_detect_missing_locale_key_sound_and_launch(self):
+        catalog = catalog_fixture()
+        with tempfile.TemporaryDirectory() as directory:
+            app = Path(directory)
+            for locale in LOCALES:
+                localized = app / f"{locale}.lproj"
+                localized.mkdir()
+                (localized / "Localizable.strings").write_bytes(plistlib.dumps({"Every %@": "Every %@"}))
+                (localized / "Localizable.stringsdict").write_bytes(plistlib.dumps({"%lld questions": {}}))
+            for tone in TONES:
+                (app / f"alarm_{tone}.caf").write_bytes(b"caff\0\x01")
+            (app / "Assets.car").write_bytes(b"compiled")
+            launch = app / "Base.lproj/LaunchScreen.storyboardc"
+            launch.mkdir(parents=True)
+            (launch / "Info.plist").write_bytes(plistlib.dumps({}))
+            (app / "Info.plist").write_bytes(plistlib.dumps({"UILaunchStoryboardName": "LaunchScreen"}))
+            self.assertEqual([], packaged_violations(app, {"Localizable": catalog}))
+            (app / "pa.lproj/Localizable.stringsdict").unlink()
+            (app / "alarm_orbit.caf").write_bytes(b"bad")
+            (app / "Assets.car").unlink()
+            errors = packaged_violations(app, {"Localizable": catalog})
+            self.assertEqual(3, len(errors))
+            self.assertTrue(any("Localizable/pa" in error for error in errors))
+            self.assertTrue(any("alarm_orbit.caf" in error for error in errors))
+            self.assertTrue(any("Assets.car" in error for error in errors))
 
 
 if __name__ == "__main__":

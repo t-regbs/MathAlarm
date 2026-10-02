@@ -30,6 +30,10 @@
 		D4A000000000000000000005 /* NativeStrings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A000000000000000000006 /* NativeStrings.swift */; };
 		D4A000000000000000000007 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = D4A000000000000000000008 /* Localizable.xcstrings */; };
 		D5A000000000000000000001 /* NativeChallengeViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = D5A000000000000000000002 /* NativeChallengeViews.swift */; };
+		D6A000000000000000000001 /* NativeAppSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6A000000000000000000002 /* NativeAppSettings.swift */; };
+		D6A000000000000000000003 /* NativeSettingsVerification.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6A000000000000000000004 /* NativeSettingsVerification.swift */; };
+		D6A000000000000000000005 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = D6A000000000000000000006 /* InfoPlist.xcstrings */; };
+		D6A000000000000000000007 /* NativePresentationVerification.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6A000000000000000000008 /* NativePresentationVerification.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -56,6 +60,10 @@
 		D4A000000000000000000006 /* NativeStrings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeStrings.swift; sourceTree = "<group>"; };
 		D4A000000000000000000008 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 		D5A000000000000000000002 /* NativeChallengeViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeChallengeViews.swift; sourceTree = "<group>"; };
+		D6A000000000000000000002 /* NativeAppSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeAppSettings.swift; sourceTree = "<group>"; };
+		D6A000000000000000000004 /* NativeSettingsVerification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSettingsVerification.swift; sourceTree = "<group>"; };
+		D6A000000000000000000006 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
+		D6A000000000000000000008 /* NativePresentationVerification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativePresentationVerification.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -82,6 +90,10 @@
 				D4A000000000000000000002 /* NativeEditorControls.swift */,
 				D4A000000000000000000004 /* NativeSoundPicker.swift */,
 				D5A000000000000000000002 /* NativeChallengeViews.swift */,
+				D6A000000000000000000002 /* NativeAppSettings.swift */,
+				D6A000000000000000000004 /* NativeSettingsVerification.swift */,
+				D6A000000000000000000006 /* InfoPlist.xcstrings */,
+				D6A000000000000000000008 /* NativePresentationVerification.swift */,
 				D4A000000000000000000006 /* NativeStrings.swift */,
 				D4A000000000000000000008 /* Localizable.xcstrings */,
 				D3A000000000000000000004 /* NativeAlarmViews.swift */,
@@ -207,6 +219,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D6A000000000000000000005 /* InfoPlist.xcstrings in Resources */,
 				D4A000000000000000000007 /* Localizable.xcstrings in Resources */,
 				058557BB273AAA24004C7B11 /* Assets.xcassets in Resources */,
 				EE54222328378572DB85563F /* alarm_daybreak.caf in Resources */,
@@ -256,6 +269,9 @@
 				D4A000000000000000000001 /* NativeEditorControls.swift in Sources */,
 				D4A000000000000000000003 /* NativeSoundPicker.swift in Sources */,
 				D5A000000000000000000001 /* NativeChallengeViews.swift in Sources */,
+				D6A000000000000000000001 /* NativeAppSettings.swift in Sources */,
+				D6A000000000000000000003 /* NativeSettingsVerification.swift in Sources */,
+				D6A000000000000000000007 /* NativePresentationVerification.swift in Sources */,
 				D4A000000000000000000005 /* NativeStrings.swift in Sources */,
 				D3A000000000000000000003 /* NativeAlarmViews.swift in Sources */,
 				058557D9273AAEEB004C7B11 /* ContentView.swift in Sources */,

@@ -100,11 +100,11 @@ output. `result.json` records audibility as **not measured**.
 
 ## Production native UI and shared bridge checks
 
-Milestones 1–5 use the production `app` framework and the production Debug app,
+Milestones 1–6 use the production `app` framework and the production Debug app,
 with pinned Kotlin/Swift ObservableViewModel 1.1.0 and NativeCoroutines 1.0.6.
 See [migration baseline](native-ui-migration-baseline-2026-10-02.md) and
 [progress and lifecycle decisions](native-ui-migration-progress.md) for measured
-results and the Milestone 6 handoff.
+results and the Milestone 7 handoff.
 
 Run the host/native suites (including the renderer tests now in `androidApp`) and build Android:
 
@@ -133,7 +133,7 @@ python3 -B scripts/verify_ios_shared_bridge.py --udid DISPOSABLE_SIMULATOR_UDID 
 
 The explicit `--verify-shared-bridge` Debug launch path mounts a real SwiftUI owner
 and observed child in a UIKit window, using `SharedFeatures` and `IosApplication`.
-Twenty groups check bootstrap/handoff identity, generated state observation, the actual
+Twenty-four groups check bootstrap/handoff identity, generated state observation, the actual
 production `NativeSessionOwners` with compact/expanded/detail replacement, multiple
 retained drafts/routes, staged tone choices and permission guards; editor validation,
 duplicate guards, result acknowledgement, cancellation and structural owner cleanup.
@@ -144,6 +144,20 @@ duplicate completion/snooze guards and acknowledged unresolved progress restorat
 The runner terminates the first process after acknowledgement and progress persistence,
 then launches `--verify-m5-restoration` in a fresh process to compare every problem,
 index, start time and incorrect count before accepted resolution.
+
+Milestone 6 adds native theme/sort persistence while multiple drafts, routes, staged
+sound and permission guards retain their owners; frozen announcement pages survive
+interruption without acknowledgement; explicit browsing/finish persists acknowledgement;
+latest batch reopening and fresh-process settings/seen-ID restoration; native share in
+the tapped active scene with iPad source rect, cancellation/error callbacks and injected
+unavailable-mailto handling. No feedback or share recipient is selected. The first
+launch explicitly supplies `--verify-m6-settings-fresh` for disposable fixture keys;
+never use that flag on an existing user's installation.
+
+Navigation settlement requires the attached native top controller to be visible,
+with stable pane/container geometry and no active transition animation. A cached
+UIKit transition coordinator alone is not evidence of an unfinished transition;
+route identity, readiness and owner assertions remain independent.
 
 Earlier groups save disabled fixtures. M5 groups use production Room, shared
 usecases/coordinator and native owners with a controlled `NativeAlarmScheduler`;
@@ -158,8 +172,8 @@ framework; it does not establish verification of changed Kotlin source. A final
 bridge check must rebuild normally. The harness is excluded from Release and does
 not replace an Xcode unit/UI target (Milestone 7) or physical reliability checks.
 The normal iOS root is entirely SwiftUI. Native list/editor/nested settings, tone
-preview, maths preview and delivered challenge are implemented. App-wide settings
-and remaining presentation parity belong to Milestone 6. Native launch/activation
+preview, maths preview and delivered challenge are implemented. App-wide settings, What’s New, feedback/share and presentation parity are implemented in Milestone 6;
+see its verification record for the gate status and unavailable client checks. Native launch/activation
 restores durable unresolved occurrences independently of the delivery queue. Failed
 readiness keeps the exact delivery queued; accepted readiness persists unresolved
 progress before acknowledging the exact head. One unresolved challenge per repeating
@@ -181,7 +195,7 @@ python3 -B scripts/verify_native_ui_boundaries.py \
   --dependencies /tmp/mathalarm-native-dependencies.log
 ```
 
-The mounted captures under app Documents/native-ui-m4 show representative native light/dark, accessibility-size and label-focus layouts. They do not establish software-keyboard occlusion, VoiceOver traversal, linguistic review of every locale, acoustic output or physical resizing. UIKit can cache outgoing Form/alert values: structural window-owner removal must close factory keys even when an inert registry remains cached.
+The original mounted captures under app Documents/native-ui-m4 show representative native light/dark, accessibility-size and label-focus layouts. They do not establish software-keyboard occlusion, VoiceOver traversal, linguistic review of every locale, acoustic output or physical resizing. UIKit can cache outgoing Form/alert values: structural window-owner removal must close factory keys even when an inert registry remains cached.
 
 Retained native session owners must call `SharedFeatures.closeEditor(sessionId)`
 or `closeChallenge(sessionId)` when the session actually ends; layout/detail
@@ -189,6 +203,89 @@ replacement only replaces observers. A challenge owner closing never resolves a
 real alarm. Regression tests also check accepted saves/completion/initialization
 after owner cancellation, failed readiness/progress writes and retry, stable
 occurrence/delivery identity, stale guards, and preview/audio cleanup arbitration.
+
+
+### Native settings, keyboard and locale presentation verification
+
+Use the normal production build on disposable iPhone and iPad simulators. For the
+nine-locale visual matrix, run actual views in fresh language/region processes:
+
+```sh
+python3 -B scripts/verify_ios_native_presentation.py --udid DISPOSABLE_SIMULATOR_UDID \
+  --app /absolute/DerivedData/Build/Products/Debug-iphonesimulator/MathAlarm.app \
+  --output build/native-ui-m6/iphone/presentation
+python3 -B scripts/verify_native_localization.py \
+  --app /absolute/DerivedData/Build/Products/Debug-iphonesimulator/MathAlarm.app
+```
+
+The default runner executes a base phase and a separate delivered phase in fresh processes
+for each locale. `--base-only` and `--delivered-only` select one phase; `--locales en`
+provides a focused iteration. The opt-in Debug-only harness starts one independent task
+per process, so SwiftUI task cancellation or repeated mounting cannot restart the run.
+The base phase retains factory owners, saves two uniquely named **disabled** fixtures
+(no scheduling), captures list/editor/subpages/sound/fallback/preview/settings/announcements
+in light and dark accessibility3, and captures lower scroll viewports where content exceeds
+the window. Cleanup deletes only the exact fixture IDs through production commands and
+acknowledges results in the same process while owners remain mounted; it restores the prior
+theme before teardown.
+
+The delivered phase uses the existing controlled Debug scheduler, a private handoff queue
+and a no-op native recovery hook. It exercises native delivered progress and feedback in
+light/dark accessibility3, authoritative resolution and return to the retained draft/route.
+Its enabled fixture never registers with AlarmKit; resolution and exact-ID cleanup complete
+before owners are removed. This is controlled occurrence/presentation evidence, not OS
+alarm delivery. Locale logs, PNGs and JSON record phase completion, actual window/control
+traits and scroll geometry. A synthetic RTL capture checks layout direction without adding
+a supported locale. Launch storyboard captures establish rendered native assets/layout,
+not OS cold-launch timing. Successful capture requires separate visual review; final matrix
+results must be recorded after both phases complete on each device family.
+The runner copies only capture names emitted by the current process and removes prior
+images for the selected phase, so stale optional lower-viewport captures cannot pass a run.
+
+Native client flows are in `scripts/maestro/ios/native-m6-*.yaml`. Use Maestro 2.10+
+(the installed 1.33 driver failed in this environment), disable analytics, and target
+only a disposable simulator:
+
+```sh
+MAESTRO_CLI_NO_ANALYTICS=1 maestro --device DISPOSABLE_SIMULATOR_UDID test \
+  --test-output-dir build/native-ui-m6/iphone/maestro \
+scripts/maestro/ios/native-m6-runtime.yaml
+```
+
+`native-m6-sound.yaml` inspects all six native tone/preview controls, applies Clear
+Signal only to an unsaved draft, then discards without playback or saving. Start from
+the ordinary English list with no active draft and OS maximum accessibility text set;
+record and restore the original OS text category afterward. Intermediate harness
+`*-bottom` pictures alone are not proof that the final tone row was reached.
+
+Settings exercises all theme/sort controls, restart persistence, explicit What's New
+acknowledgement/reopening and native unavailable-feedback handling. Share waits for settled
+native presentation and cancels without choosing a destination. Keyboard flows tap actual
+editor and maths fields, capture software keyboards, use their Done controls, verify
+wrong-answer feedback and exact draft return; landscape restores portrait afterward.
+Permission flows verify the native guard/Keep editing/Allow alarms and draft protection.
+The OS denial prompt branch is conditional: a skipped branch is **not** a first-install
+permission-client pass. Hardware keyboard preferences must permit the software keyboard.
+
+`native-m6-disabled-crud.yaml` saves, deletes, undoes and deletes a uniquely named disabled
+alarm, including preview return before Save. Supply a new alphanumeric/underscore title
+with `-e FIXTURE_TITLE=M6_disabled_UNIQUE_RUN_ID`; its selectors interpolate that title as
+a regular expression. Never enable the fixture or target an existing alarm. The final
+delete removes the fixture without accepting an OS registration.
+
+`native-m6-os-accessibility.yaml` operates native Settings on a disposable English
+**402-point iPhone**. It requires Reduce Motion and Reduce Transparency initially **Off**,
+asserts and captures both switches On, then captures the app's list/settings/editor under
+those OS settings. It restores and asserts both switches Off. Do not run it against another
+initial state or screen width. If interrupted after enabling a switch, restore the original
+Off state through Settings before reusing the simulator. Report its actual client captures
+and restoration separately; this flow does not establish effects across every screen.
+
+Accessibility identifiers/client hierarchy are not evidence of VoiceOver speech or focus
+traversal. Preserve explicit unavailable checks for VoiceOver client behavior, unexercised
+Reduce Motion/Transparency layouts, interactive window resizing, physical folds, minimum
+runtime and alarm reliability in the milestone record; do not replace them with catalog
+assertions. These instructions do not declare final matrix or OS-client checks passed.
 
 ## CI
 

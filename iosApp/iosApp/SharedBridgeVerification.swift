@@ -12,8 +12,9 @@ extension app.ViewModel: @retroactive Observable { }
 
 #if DEBUG
 /// Production-app integration checks. Only an explicit launch argument enables them.
-/// Disabled fixture alarms exercise native save/list flows in disposable storage.
-/// No alarms are scheduled, delivered, completed, or snoozed by this harness.
+/// Disabled fixtures exercise native save/list flows in disposable storage.
+/// Occurrence checks use a controlled scheduler and real shared progress logic;
+/// no physical AlarmKit registration or acoustic behavior is established.
 @MainActor
 enum SharedBridgeVerification {
     static var enabled: Bool { ProcessInfo.processInfo.arguments.contains("--verify-shared-bridge") }
@@ -86,10 +87,29 @@ enum SharedBridgeVerification {
         }
     }
 
-    static func run() async {
+    private static var verificationTask: Task<Void, Never>?
+
+    static func start() {
+        // Full-screen fixtures can remove the launch view from presentation.
+        // Its SwiftUI task must neither cancel nor restart the explicit verifier.
+        guard verificationTask == nil else { return }
+        verificationTask = Task { @MainActor in await run() }
+    }
+
+    private static func run() async {
         setbuf(stdout, nil) // Preserve the failing group in simulator crash transcripts.
+        if ProcessInfo.processInfo.arguments.contains("--verify-m6-settings-only") {
+            guard let window = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene })
+                .flatMap(\.windows).first(where: \.isKeyWindow), let parent = window.rootViewController else {
+                preconditionFailure("Settings verification requires an attached app window")
+            }
+            await NativeSettingsVerification.run(window: window, parent: parent)
+            print("SHARED_BRIDGE_VERIFICATION_PASSED")
+            return
+        }
         if ProcessInfo.processInfo.arguments.contains("--verify-m5-restoration") {
             await verifyProcessRestoration()
+            NativeSettingsVerification.verifyFreshProcess()
             print("SHARED_BRIDGE_VERIFICATION_PASSED")
             return
         }
@@ -440,13 +460,14 @@ enum SharedBridgeVerification {
         challenge.model.close()
         print("BRIDGE PASS production session-end and window cleanup preserve unresolved delivery")
         await exerciseMilestone5(window: window, parent: parent)
+        await NativeSettingsVerification.run(window: window, parent: parent)
         print("SHARED_BRIDGE_VERIFICATION_PASSED")
         fflush(stdout)
     }
 
     /// Controlled native acceptance exercises production Room/usecases/session owners.
     /// It creates no AlarmKit registration and proves no acoustic/device behavior.
-    private final class VerificationScheduler: NSObject, NativeAlarmScheduler {
+    final class VerificationScheduler: NSObject, NativeAlarmScheduler {
         var registrations: [String: AlarmScheduleRequest] = [:]
         var cancellations: [Int64] = []
         var rejectCancellation = false
@@ -579,16 +600,17 @@ enum SharedBridgeVerification {
         let list = SharedFeatures.shared.list()
         await wait { !list.state.loading }
         func saveFixture(_ title: String) async -> Alarm {
+            let fixtureTitle = title + " / " + UUID().uuidString
             let id = "m5-save/\(UUID().uuidString)"
             let editor = SharedFeatures.shared.doNewEditor(sessionId: id)
-            editor.onEvent(event: AddEditAlarmEvent.EnteredTitle(value: title))
+            editor.onEvent(event: AddEditAlarmEvent.EnteredTitle(value: fixtureTitle))
             editor.onEvent(event: AddEditAlarmEvent.ChangeTime(value: TimeState(hour: 23, minute: 50)))
             editor.onEvent(event: AddEditAlarmEvent.OnChallengeChange(value: MathChallenge(difficulty: 3,
                 questionCount: 2, operations: "+", additionRange: 0, factorRange: 0, difficultyMix: "")))
             editor.onEvent(event: AddEditAlarmEvent.OnSaveTodoClick.shared)
             await wait { !editor.state.isSaving && editor.state.results.contains { $0.event is AlarmSettingsViewModel.UiEventSaveAlarm } }
-            await wait { list.state.alarms.contains { $0.title == title } }
-            let alarm = list.state.alarms.first { $0.title == title }!
+            await wait { list.state.alarms.contains { $0.title == fixtureTitle } }
+            let alarm = list.state.alarms.first { $0.title == fixtureTitle }!
             precondition(alarm.isOn && !alarm.pendingTimes.isEmpty)
             for result in editor.state.results { editor.acknowledgeResult(id: result.id) }
             SharedFeatures.shared.closeEditor(sessionId: id)
@@ -814,9 +836,121 @@ enum SharedBridgeVerification {
         return controller.children.contains { hasPresentedAlert(in: $0) }
     }
 
+    private struct NavigationStabilitySample {
+        let signature: String
+        let since: TimeInterval
+    }
+    private static var navigationStability: [ObjectIdentifier: NavigationStabilitySample] = [:]
+    private static var reportedSettledNavigation: Set<String> = []
+
+    /// SwiftUI may retain a coordinator after its transition. Establish settlement
+    /// from the attached native top view and its rendered geometry over time.
+    /// Inspect only navigation/container layers: a caret or progress spinner is
+    /// allowed to animate inside an otherwise settled destination.
+    private static func nativeNavigationSettled(_ navigation: UINavigationController) -> Bool {
+        let identity = ObjectIdentifier(navigation)
+        guard let window = navigation.viewIfLoaded?.window,
+              let visible = navigation.visibleViewController,
+              visible === navigation.topViewController,
+              let view = visible.viewIfLoaded, view.window === window,
+              !navigation.isBeingPresented, !navigation.isBeingDismissed,
+              !visible.isBeingPresented, !visible.isBeingDismissed,
+              !view.isHidden, view.alpha > 0.99 else {
+            navigationStability.removeValue(forKey: identity)
+            return false
+        }
+        let frame = view.convert(view.bounds, to: window)
+        guard !frame.isEmpty, !frame.isNull, !frame.isInfinite,
+              frame.intersects(window.bounds) else {
+            navigationStability.removeValue(forKey: identity)
+            return false
+        }
+        if let coordinator = navigation.transitionCoordinator,
+           coordinator.isInteractive && coordinator.percentComplete < 1 {
+            navigationStability.removeValue(forKey: identity)
+            return false
+        }
+        let layers = navigationLayers(navigation, visible: visible)
+        guard layers.allSatisfy({ !layerTransitionIsActive($0) }) else {
+            navigationStability.removeValue(forKey: identity)
+            return false
+        }
+        let geometry = layers.map { layer in
+            "\(NSCoder.string(for: layer.frame))/\(NSCoder.string(for: layer.bounds))/\(layer.opacity)/\(String(describing: layer.transform))"
+        }.joined(separator: "|")
+        let signature = "\(ObjectIdentifier(visible))/\(visible.navigationItem.title ?? "")/\(NSCoder.string(for: frame))/\(geometry)"
+        let now = ProcessInfo.processInfo.systemUptime
+        guard let sample = navigationStability[identity], sample.signature == signature else {
+            navigationStability[identity] = NavigationStabilitySample(signature: signature, since: now)
+            return false
+        }
+        guard now - sample.since >= 0.12 else { return false }
+        if let coordinator = navigation.transitionCoordinator,
+           reportedSettledNavigation.insert(signature).inserted {
+            print("BRIDGE TRACE native navigation settled title=\(visible.navigationItem.title ?? "") visible=\(ObjectIdentifier(visible)) topMatches=true windowFrame=\(NSCoder.string(for: frame)) stableGeometryAge=\(now - sample.since) activeTransitionAnimations=\(layers.flatMap { activeTransitionAnimations($0) }) presentationGeometryMatches=true coordinator(animated=\(coordinator.isAnimated),interactive=\(coordinator.isInteractive),initiallyInteractive=\(coordinator.initiallyInteractive),cancelled=\(coordinator.isCancelled),percentComplete=\(coordinator.percentComplete),duration=\(coordinator.transitionDuration))")
+        }
+        return true
+    }
+
+    private static func navigationLayers(_ navigation: UINavigationController,
+                                         visible: UIViewController) -> [CALayer] {
+        var layers: [CALayer] = []
+        var view = visible.viewIfLoaded
+        while let current = view {
+            layers.append(current.layer)
+            if current === navigation.viewIfLoaded { break }
+            view = current.superview
+        }
+        layers.append(navigation.navigationBar.layer)
+        return layers
+    }
+
+    private static func transitionKeyPaths(_ animation: CAAnimation) -> [String] {
+        if let group = animation as? CAAnimationGroup {
+            return (group.animations ?? []).flatMap { transitionKeyPaths($0) }
+        }
+        guard let property = animation as? CAPropertyAnimation,
+              let key = property.keyPath else { return [] }
+        return [key].filter { key in
+            ["position", "bounds", "transform", "opacity"].contains { key.hasPrefix($0) }
+        }
+    }
+
+    private static func activeTransitionAnimations(_ layer: CALayer) -> [String] {
+        let now = layer.convertTime(CACurrentMediaTime(), from: nil)
+        return (layer.animationKeys() ?? []).compactMap { key in
+            guard let animation = layer.animation(forKey: key),
+                  !transitionKeyPaths(animation).isEmpty,
+                  animation.duration > 0 else { return nil }
+            let duration = animation.duration * (animation.autoreverses ? 2 : 1)
+            let repeated = animation.repeatDuration > 0 ? animation.repeatDuration :
+                duration * Double(max(1, animation.repeatCount))
+            let elapsed = (now - animation.beginTime) * Double(animation.speed) + animation.timeOffset
+            // Removed-on-completion layers can retain an animation object. Its
+            // elapsed timeline and the presentation geometry distinguish activity.
+            guard animation.speed == 0 || elapsed < repeated else { return nil }
+            return "\(key):paths=\(transitionKeyPaths(animation)),elapsed=\(elapsed),duration=\(repeated),speed=\(animation.speed)"
+        }
+    }
+
+    private static func layerTransitionIsActive(_ layer: CALayer) -> Bool {
+        if !activeTransitionAnimations(layer).isEmpty { return true }
+        guard let presentation = layer.presentation() else { return false }
+        let actual = presentation.frame, expected = layer.frame
+        return abs(actual.origin.x - expected.origin.x) > 0.5 ||
+            abs(actual.origin.y - expected.origin.y) > 0.5 ||
+            abs(actual.width - expected.width) > 0.5 ||
+            abs(actual.height - expected.height) > 0.5 ||
+            abs(presentation.opacity - layer.opacity) > 0.01 ||
+            !CATransform3DEqualToTransform(presentation.transform, layer.transform)
+    }
+
     private static func navigationSettled(in controller: UIViewController) -> Bool {
-        if let navigation = controller as? UINavigationController,
-           navigation.transitionCoordinator != nil { return false }
+        if let navigation = controller as? UINavigationController {
+            guard nativeNavigationSettled(navigation),
+                  let visible = navigation.visibleViewController else { return false }
+            return navigationSettled(in: visible)
+        }
         return controller.children.allSatisfy { navigationSettled(in: $0) }
     }
 
@@ -855,7 +989,7 @@ enum SharedBridgeVerification {
 
     private static func visibleEditor(in controller: UIViewController, title: String) -> Bool {
         if let navigation = controller as? UINavigationController {
-            guard navigation.transitionCoordinator == nil,
+            guard nativeNavigationSettled(navigation),
                   let visible = navigation.visibleViewController,
                   visible === navigation.topViewController else { return false }
             return visibleEditor(in: visible, title: title)
@@ -870,7 +1004,7 @@ enum SharedBridgeVerification {
     private static func visibleDestination(in controller: UIViewController,
                                            destination: NativeEditorDestination) -> Bool {
         if let navigation = controller as? UINavigationController {
-            guard navigation.transitionCoordinator == nil,
+            guard nativeNavigationSettled(navigation),
                   navigation.viewIfLoaded?.window != nil,
                   let visible = navigation.visibleViewController,
                   visible === navigation.topViewController,
@@ -896,7 +1030,7 @@ enum SharedBridgeVerification {
     private static func visibleDeliveredChallenge(in controller: UIViewController) -> Bool {
         if let presented = controller.presentedViewController, visibleDeliveredChallenge(in: presented) { return true }
         if let navigation = controller as? UINavigationController {
-            guard navigation.transitionCoordinator == nil,
+            guard nativeNavigationSettled(navigation),
                   let visible = navigation.visibleViewController, visible === navigation.topViewController,
                   visible.viewIfLoaded?.window != nil,
                   visible.navigationItem.title == NativeStrings.text("Solve maths") else { return false }
@@ -947,7 +1081,22 @@ enum SharedBridgeVerification {
         let attached = controller.viewIfLoaded?.window != nil
         var result = ["\(indentation)\(String(describing: type(of: controller))) title=\(title) attached=\(attached)"]
         if let navigation = controller as? UINavigationController {
-            result.append("\(indentation) visible=\(String(describing: navigation.visibleViewController)) settled=\(navigation.transitionCoordinator == nil)")
+            let visible = navigation.visibleViewController
+            let top = navigation.topViewController
+            result.append("\(indentation) visible=\(String(describing: visible)) top=\(String(describing: top)) same=\(visible === top) settled=\(nativeNavigationSettled(navigation))")
+            if let coordinator = navigation.transitionCoordinator {
+                result.append("\(indentation) coordinator animated=\(coordinator.isAnimated) interactive=\(coordinator.isInteractive) initiallyInteractive=\(coordinator.initiallyInteractive) cancelled=\(coordinator.isCancelled) percentComplete=\(coordinator.percentComplete) duration=\(coordinator.transitionDuration)")
+            } else { result.append("\(indentation) coordinator=nil") }
+            if let visible, let view = visible.viewIfLoaded {
+                let frame = view.window.map { NSCoder.string(for: view.convert(view.bounds, to: $0)) } ?? "detached"
+                result.append("\(indentation) visibleWindowFrame=\(frame) hidden=\(view.isHidden) alpha=\(view.alpha) beingPresented=\(visible.isBeingPresented) beingDismissed=\(visible.isBeingDismissed)")
+                for layer in navigationLayers(navigation, visible: visible) {
+                    result.append("\(indentation) layer=\(type(of: layer)) frame=\(NSCoder.string(for: layer.frame)) presentationFrame=\(layer.presentation().map { NSCoder.string(for: $0.frame) } ?? "nil") animationKeys=\(layer.animationKeys() ?? []) activeTransitionAnimations=\(activeTransitionAnimations(layer)) geometryMoving=\(layerTransitionIsActive(layer))")
+                }
+                if let sample = navigationStability[ObjectIdentifier(navigation)] {
+                    result.append("\(indentation) stableGeometryAge=\(ProcessInfo.processInfo.systemUptime - sample.since) signature=\(sample.signature)")
+                }
+            }
         }
         if let view = controller.viewIfLoaded {
             result += accessibilityEvidence(in: view).map { indentation + " " + $0 }
