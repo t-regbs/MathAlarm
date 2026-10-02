@@ -1,0 +1,17 @@
+{
+  "platform": "Android API 35 emulator",
+  "method": "Manual UI checks through Android CLI layout and adb input",
+  "status": "passed",
+  "checks": [
+    "Empty title produces shared validation and starts no save",
+    "Entered title is reflected in Compose from Kotlin state",
+    "Fake save succeeds with started=1 and completed=1",
+    "Title and saved state survive portrait-landscape-portrait activity recreation",
+    "Failed save retains title and shows error with started=2 and completed=1",
+    "Retry succeeds with started=3 and completed=2"
+  ],
+  "rotation_settings_restored": {
+    "accelerometer_rotation": 1,
+    "user_rotation": 0
+  }
+}

@@ -1,0 +1,12 @@
+PASS: typed StateFlow delivers initial draft
+PASS: Swift Observation invalidates when Kotlin state changes
+PASS: shared validation rejects invalid draft
+PASS: native async save succeeds
+PASS: native async save returns typed scheduling failure
+PASS: Swift Task cancellation throws CancellationError
+PASS: Swift cancellation reaches Kotlin work without saving
+PASS: cancelling Swift observation removes Kotlin subscription
+PASS: owner cleanup cancels lifecycle work
+PASS: ViewModelStore cleanup invokes onCleared exactly once
+PASS: closed ViewModel rejects further saves
+ALL NATIVE SWIFT EXPORT CHECKS PASSED

@@ -16,6 +16,8 @@ The project follows **Clean Architecture** with the **MVVM** pattern:
 - **`:core`** - Shared domain logic and business rules
 - **`iosApp/`** - Native iOS application consuming the framework produced by `:shared`
 
+The [approved native UI migration plan](docs/native-ui-migration-plan.md) shares Kotlin feature ViewModels and alarm logic while moving rendering to Android Compose and iOS SwiftUI. [Progress and handoff](docs/native-ui-migration-progress.md) and [interop research](docs/research/native-ui-interop-2026-10-02/README.md) record the gates and evidence.
+
 ## Technologies Used
 
 ### Kotlin Multiplatform

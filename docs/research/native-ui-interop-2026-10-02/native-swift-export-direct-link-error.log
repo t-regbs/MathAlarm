@@ -1,0 +1,7 @@
+e: Compilation failed: Exception during generating code for following declaration:
+// FILE: AndroidxLifecycleLifecycleViewmodel.kt
+// path: /Users/timilehin/AndroidStudioProjects/MathAlarm/experiments/swift-export/build/SwiftExport/macosArm64/Debug/files/AndroidxLifecycleLifecycleViewmodel/AndroidxLifecycleLifecycleViewmodel.kt
+// FILE: AndroidxLifecycleLifecycleViewmodel.kt
+// path: /Users/timilehin/AndroidStudioProjects/MathAlarm/experiments/swift-export/build/SwiftExport/macosArm64/Debug/files/AndroidxLifecycleLifecycleViewmodel/AndroidxLifecycleLifecycleViewmodel.kt
+Caused by: java.lang.IllegalArgumentException: FUN name:addCloseable visibility:public modality:FINAL <> (<this>:androidx.lifecycle.ViewModel, key:kotlin.String, closeable:kotlin.AutoCloseable) returnType:kotlin.Unit is not found in vtable of CLASS CLASS name:ViewModel modality:ABSTRACT visibility:public superTypes:[kotlin.Any]
+BUILD FAILED in 1m 9s

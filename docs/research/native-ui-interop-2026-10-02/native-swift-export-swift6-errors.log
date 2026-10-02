@@ -1,0 +1,3 @@
+experiments/swift-export/swift/IntegrationHarness.swift:89:39: error: sending 'model' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+    |                                       |- error: sending 'model' risks causing data races [#RegionIsolation::SendingRisksDataRace]
+    |                                       `- note: sending main actor-isolated 'model' to @concurrent instance method 'save(simulateSchedulingFailure:delayMillis:)' risks causing data races between @concurrent and main actor-isolated uses
