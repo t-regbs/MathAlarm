@@ -62,6 +62,7 @@ class AlarmSettingsViewModel internal constructor(
     private var initialDraft: Alarm? = null
     private var isNewAlarm = false
     private var isRescheduled = false
+    private var enabledWasEdited = false
     private var nextResultId = 0L
     val currentAlarmId: Long? get() = state.value.alarmId
     val hasUnsavedChanges: Boolean get() = state.value.hasUnsavedChanges
@@ -89,6 +90,10 @@ class AlarmSettingsViewModel internal constructor(
             is AddEditAlarmEvent.ChangeTime -> edit(reschedule = true) { copy(alarmTime = event.value) }
             is AddEditAlarmEvent.EnteredTitle -> edit { copy(alarmTitle = event.value) }
             is AddEditAlarmEvent.ToggleRepeat -> edit(reschedule = true) { copy(repeatWeekly = event.value) }
+            is AddEditAlarmEvent.ToggleEnabled -> {
+                if (!state.value.isSaving) enabledWasEdited = true
+                edit { copy(isOn = event.value) }
+            }
             is AddEditAlarmEvent.ToggleVibrate -> edit { copy(vibrate = event.value) }
             is AddEditAlarmEvent.ToggleSnooze -> edit { copy(snoozeEnabled = event.value) }
             is AddEditAlarmEvent.ChangeMaxSnoozes -> {
@@ -102,6 +107,42 @@ class AlarmSettingsViewModel internal constructor(
             is AddEditAlarmEvent.OnToneChange -> edit { copy(tone = event.value) }
             AddEditAlarmEvent.OnToneError -> publish(UiEvent.ShowError(AlarmErrorMessage.TONE))
         }
+    }
+
+    /** Semantic mixing intents keep preset/count policy below both native renderers. */
+    fun setChallengeMixing(enabled: Boolean) {
+        if (isClosed || state.value.isSaving) return
+        val current = state.value.challenge
+        if (enabled == current.difficultyMix.isNotEmpty()) return
+        val changed = if (enabled && current.difficulty != MathChallenge.CUSTOM) {
+            current.copy(difficultyMix = current.difficulty.toString().repeat(current.questionCount))
+        } else current.copy(
+            difficulty = current.mixedDifficulties.firstOrNull() ?: current.difficulty,
+            questionCount = current.mixedDifficulties.size.takeIf { it > 0 } ?: current.questionCount,
+            difficultyMix = "",
+        )
+        onEvent(AddEditAlarmEvent.OnChallengeChange(changed))
+    }
+
+    /** Keep at least one selected custom operation; the domain still normalizes all fields. */
+    fun setChallengeOperation(operation: String, enabled: Boolean) {
+        if (operation.length != 1 || operation !in MathChallenge.ALL_OPERATIONS) return
+        val current = state.value.challenge
+        val operations = if (enabled) current.operations + operation else current.operations.replace(operation, "")
+        if (operations.isEmpty()) return
+        onEvent(AddEditAlarmEvent.OnChallengeChange(current.copy(operations = operations)))
+    }
+
+    fun setMixedQuestionCount(difficulty: Int, count: Int) {
+        if (isClosed || state.value.isSaving || difficulty !in 0 until MathChallenge.CUSTOM) return
+        val current = state.value.challenge
+        if (current.difficulty == MathChallenge.CUSTOM || current.difficultyMix.isEmpty()) return
+        val others = current.mixedDifficulties.filterNot { it == difficulty }
+        val available = MathChallenge.MAX_QUESTIONS - others.size
+        val requested = count.coerceIn(if (others.isEmpty()) 1 else 0, available)
+        onEvent(AddEditAlarmEvent.OnChallengeChange(current.copy(
+            difficultyMix = (others + List(requested) { difficulty }).sorted().joinToString("")
+        )))
     }
 
     private fun edit(reschedule: Boolean = false, change: AlarmEditorState.() -> AlarmEditorState) {
@@ -137,6 +178,7 @@ class AlarmSettingsViewModel internal constructor(
         val edited = createAlarm().copy(isSaved = true)
         val reschedule = isRescheduled
         val wasNew = isNewAlarm
+        val enabledChanged = enabledWasEdited
         mutableState.update { it.copy(isSaving = true) }
         // The application owns an accepted save. Removing the UI observer or closing
         // this ViewModel cannot abort storage/scheduling or lose its retained result.
@@ -145,7 +187,7 @@ class AlarmSettingsViewModel internal constructor(
                 val accepted = command {
                     val old = findAlarm(edited.alarmId)
                     val alarm = edited.copy(
-                        isOn = old?.isOn ?: edited.isOn,
+                        isOn = if (wasNew || enabledChanged) edited.isOn else old?.isOn ?: edited.isOn,
                         pendingTimes = old?.pendingTimes.orEmpty(),
                         scheduleInitialized = old?.scheduleInitialized ?: false,
                         snoozedUntil = old?.snoozedUntil,
@@ -156,13 +198,20 @@ class AlarmSettingsViewModel internal constructor(
                         scheduleTimeZone = old?.scheduleTimeZone,
                     )
                     if (alarm.isOn && !permission.hasExactAlarmPermission()) return@command null
-                    val id = addAlarm(alarm)
-                    val saved = alarm.copy(alarmId = if (alarm.alarmId == 0L) id else alarm.alarmId)
+                    // Cancel before committing an explicit disable. A rejected cancellation
+                    // keeps the prior occurrence/progress/recovery authoritative and retryable.
+                    if (!alarm.isOn && old?.isOn == true) cancelAlarm(old)
+                    val desired = if (!alarm.isOn && old?.isOn == true) alarm.copy(
+                        pendingTimes = emptyList(), snoozedUntil = null, activeAt = null,
+                        snoozeCount = 0, skippedDate = null, scheduleError = null
+                    ) else alarm
+                    val id = addAlarm(desired)
+                    val saved = desired.copy(alarmId = if (desired.alarmId == 0L) id else desired.alarmId)
                     // Insertion can succeed before OS scheduling fails. Retain its allocated
                     // identity immediately so retry updates this row instead of creating another.
                     mutableState.update { it.copy(alarmId = saved.alarmId) }
                     refreshDraftStatus()
-                    if (saved.isOn && (wasNew || reschedule)) scheduleAlarm(saved, true)
+                    if (saved.isOn && (wasNew || reschedule || old?.isOn != true || old?.scheduleError != null)) scheduleAlarm(saved, true)
                     else updateAlarm(saved)
                     findAlarm(saved.alarmId) ?: saved
                 }
@@ -170,6 +219,7 @@ class AlarmSettingsViewModel internal constructor(
                     mutableState.update { it.copy(alarmId = accepted.alarmId, isSaved = true, isOn = accepted.isOn) }
                     isNewAlarm = false
                     isRescheduled = false
+                    enabledWasEdited = false
                     initialDraft = createAlarm()
                     refreshDraftStatus()
                     analytics.trackSafely(AnalyticsEvents.alarmSaved(edited, wasNew))
@@ -199,7 +249,7 @@ class AlarmSettingsViewModel internal constructor(
         Alarm(
             alarmId = alarmId ?: 0L, hour = alarmTime.hour, minute = alarmTime.minute,
             repeat = repeatWeekly, repeatDays = dayChooser,
-            isOn = if (isNewAlarm) true else isOn, vibrate = vibrate, title = alarmTitle,
+            isOn = isOn, vibrate = vibrate, title = alarmTitle,
             difficulty = challenge.difficulty, questionCount = challenge.questionCount,
             challengeOperations = challenge.operations, additionRange = challenge.additionRange,
             factorRange = challenge.factorRange, difficultyMix = challenge.difficultyMix,
@@ -225,7 +275,7 @@ class AlarmSettingsViewModel internal constructor(
                 snoozeMinutes = alarm.snooze.takeIf { duration -> duration > 0 }?.coerceAtMost(30) ?: 5,
                 maxSnoozes = alarm.maxSnoozes, challenge = alarm.mathChallenge,
                 tone = alarm.alarmTone.ifEmpty { getDefaultAlarmTone() },
-                alarmTitle = alarm.title.replace('+', ' '), isOn = alarm.isOn, isSaved = alarm.isSaved,
+                alarmTitle = alarm.title.replace('+', ' '), isOn = if (isNewAlarm) true else alarm.isOn, isSaved = alarm.isSaved,
             )
         }
         initialDraft = createAlarm()

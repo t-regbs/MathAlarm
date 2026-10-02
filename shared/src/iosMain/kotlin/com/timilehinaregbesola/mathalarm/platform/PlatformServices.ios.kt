@@ -62,6 +62,15 @@ actual fun stopAlarmTonePreview() {
     com.timilehinaregbesola.mathalarm.interactors.IosAlarmAudioManager.stopPreview()
 }
 
+actual fun previewOwnedAlarmTone(ownerId: String, alarmTone: String,
+    onFinished: (com.timilehinaregbesola.mathalarm.sound.TonePreviewResult) -> Unit) {
+    com.timilehinaregbesola.mathalarm.interactors.IosAlarmAudioManager.startOwnedPreview(ownerId, alarmTone, onFinished)
+}
+
+actual fun stopOwnedAlarmTonePreview(ownerId: String) {
+    com.timilehinaregbesola.mathalarm.interactors.IosAlarmAudioManager.stopOwnedPreview(ownerId)
+}
+
 actual fun stopPlatformAlarmAudio() {
     // Stop the iOS alarm audio manager
     com.timilehinaregbesola.mathalarm.interactors.IosAlarmAudioManager.stopAlarm()

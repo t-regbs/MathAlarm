@@ -25,6 +25,10 @@
 		D2D1C0B0A001000000000005 /* KMPNativeCoroutinesAsync in Frameworks */ = {isa = PBXBuildFile; productRef = D2D1C0B0A001000000000006 /* KMPNativeCoroutinesAsync */; };
 		D3A000000000000000000001 /* NativeRootSessions.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3A000000000000000000002 /* NativeRootSessions.swift */; };
 		D3A000000000000000000003 /* NativeAlarmViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = D3A000000000000000000004 /* NativeAlarmViews.swift */; };
+		D4A000000000000000000001 /* NativeEditorControls.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A000000000000000000002 /* NativeEditorControls.swift */; };
+		D4A000000000000000000003 /* NativeSoundPicker.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A000000000000000000004 /* NativeSoundPicker.swift */; };
+		D4A000000000000000000005 /* NativeStrings.swift in Sources */ = {isa = PBXBuildFile; fileRef = D4A000000000000000000006 /* NativeStrings.swift */; };
+		D4A000000000000000000007 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = D4A000000000000000000008 /* Localizable.xcstrings */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -46,6 +50,10 @@
 		D2D1C0B0A001000000000002 /* SharedBridgeVerification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SharedBridgeVerification.swift; sourceTree = "<group>"; };
 		D3A000000000000000000002 /* NativeRootSessions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeRootSessions.swift; sourceTree = "<group>"; };
 		D3A000000000000000000004 /* NativeAlarmViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeAlarmViews.swift; sourceTree = "<group>"; };
+		D4A000000000000000000002 /* NativeEditorControls.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeEditorControls.swift; sourceTree = "<group>"; };
+		D4A000000000000000000004 /* NativeSoundPicker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSoundPicker.swift; sourceTree = "<group>"; };
+		D4A000000000000000000006 /* NativeStrings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeStrings.swift; sourceTree = "<group>"; };
+		D4A000000000000000000008 /* Localizable.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = Localizable.xcstrings; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -69,6 +77,10 @@
 				C6A5E4D3B2F1098765432104 /* PendingDeeplinkStore.swift */,
 				058557BA273AAA24004C7B11 /* Assets.xcassets */,
 				D3A000000000000000000002 /* NativeRootSessions.swift */,
+				D4A000000000000000000002 /* NativeEditorControls.swift */,
+				D4A000000000000000000004 /* NativeSoundPicker.swift */,
+				D4A000000000000000000006 /* NativeStrings.swift */,
+				D4A000000000000000000008 /* Localizable.xcstrings */,
 				D3A000000000000000000004 /* NativeAlarmViews.swift */,
 				058557D8273AAEEB004C7B11 /* ContentView.swift */,
 				2152FB032600AC8F00CF470E /* iOSApp.swift */,
@@ -163,6 +175,14 @@
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				en,
+				es,
+				de,
+				ru,
+				pt,
+				hi,
+				pa,
+				bn,
+				zh,
 				Base,
 			);
 			mainGroup = 7555FF72242A565900829871;
@@ -184,6 +204,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				D4A000000000000000000007 /* Localizable.xcstrings in Resources */,
 				058557BB273AAA24004C7B11 /* Assets.xcassets in Resources */,
 				EE54222328378572DB85563F /* alarm_daybreak.caf in Resources */,
 				B1AEE1B2AA51B904088AD5ED /* alarm_orbit.caf in Resources */,
@@ -229,6 +250,9 @@
 				C6A5E4D3B2F1098765432103 /* PendingDeeplinkStore.swift in Sources */,
 				2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */,
 				D3A000000000000000000001 /* NativeRootSessions.swift in Sources */,
+				D4A000000000000000000001 /* NativeEditorControls.swift in Sources */,
+				D4A000000000000000000003 /* NativeSoundPicker.swift in Sources */,
+				D4A000000000000000000005 /* NativeStrings.swift in Sources */,
 				D3A000000000000000000003 /* NativeAlarmViews.swift in Sources */,
 				058557D9273AAEEB004C7B11 /* ContentView.swift in Sources */,
 			);

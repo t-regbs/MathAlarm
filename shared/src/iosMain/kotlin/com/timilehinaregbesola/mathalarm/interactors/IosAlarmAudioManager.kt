@@ -2,6 +2,8 @@ package com.timilehinaregbesola.mathalarm.interactors
 
 import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.sound.AlarmSoundCatalog
+import com.timilehinaregbesola.mathalarm.sound.TonePreviewOwnership
+import com.timilehinaregbesola.mathalarm.sound.TonePreviewResult
 import kotlinx.cinterop.ExperimentalForeignApi
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -35,15 +37,15 @@ object IosAlarmAudioManager {
     private val logger = Logger.withTag("IosAlarmAudioManager")
     private var audioPlayer: AVAudioPlayer? = null
     private var previewPlayer: AVAudioPlayer? = null
-    private var previewFinished: (() -> Unit)? = null
+    private val previewOwnership = TonePreviewOwnership()
     // AVAudioPlayer holds its delegate weakly; retain it for the manager's lifetime.
     private val previewDelegate = object : NSObject(), AVAudioPlayerDelegateProtocol {
         override fun audioPlayerDidFinishPlaying(player: AVAudioPlayer, successfully: Boolean) {
-            if (player == previewPlayer) stopPreview()
+            if (player == previewPlayer) stopPreview(TonePreviewResult.FINISHED)
         }
 
         override fun audioPlayerDecodeErrorDidOccur(player: AVAudioPlayer, error: NSError?) {
-            if (player == previewPlayer) stopPreview()
+            if (player == previewPlayer) stopPreview(TonePreviewResult.UNAVAILABLE)
         }
     }
     private var vibrationJob: Job? = null
@@ -63,33 +65,44 @@ object IosAlarmAudioManager {
     }
 
     fun startPreview(soundName: String, onFinished: () -> Unit) {
-        stopPreview()
-        if (isAlarmActive) { onFinished(); return }
-        previewFinished = onFinished
+        startOwnedPreview("legacy-tone-preview", soundName) { onFinished() }
+    }
+
+    fun startOwnedPreview(ownerId: String, soundName: String, onFinished: (TonePreviewResult) -> Unit) {
+        val request = previewOwnership.nextRequest()
+        if (previewOwnership.rejectWhileAlarmActive(isAlarmActive, onFinished)) return
+        stopPreview(TonePreviewResult.REPLACED)
+        // Completing the replaced preview can synchronously request another preview
+        // or start a real alarm. That newer request wins; this call must not overwrite it.
+        if (!previewOwnership.isCurrentRequest(request)) { onFinished(TonePreviewResult.REPLACED); return }
+        if (previewOwnership.rejectWhileAlarmActive(isAlarmActive, onFinished)) return
+        previewOwnership.begin(ownerId, onFinished)
         try {
             val url = bundledSoundUrl(soundName)
-            if (url == null) { stopPreview(); return }
+            if (url == null) { stopPreview(TonePreviewResult.UNAVAILABLE); return }
             configureAudioSession()
             val player = AVAudioPlayer(contentsOfURL = url, error = null)
             previewPlayer = player
             player.delegate = previewDelegate
             player.numberOfLoops = 0
             player.volume = 0.75f
-            if (!player.prepareToPlay() || !player.play()) stopPreview()
+            if (!player.prepareToPlay() || !player.play()) stopPreview(TonePreviewResult.UNAVAILABLE)
         } catch (error: Exception) {
-            stopPreview()
+            stopPreview(TonePreviewResult.UNAVAILABLE)
             logger.e(error) { "Unable to preview alarm sound" }
         }
     }
 
-    fun stopPreview() {
-        val finished = previewFinished
-        previewFinished = null
+    fun stopOwnedPreview(ownerId: String) {
+        if (previewOwnership.owns(ownerId)) stopPreview()
+    }
+
+    fun stopPreview(result: TonePreviewResult = TonePreviewResult.STOPPED) {
         previewPlayer?.delegate = null
         previewPlayer?.stop()
         previewPlayer = null
         if (!isAlarmActive) AVAudioSession.sharedInstance().setActive(false, error = null)
-        finished?.invoke()
+        previewOwnership.finish(result)
     }
 
     /**
@@ -100,13 +113,15 @@ object IosAlarmAudioManager {
      * @param volume Volume level 0.0 to 1.0
      */
     fun startAlarm(soundName: String = "", vibrate: Boolean = true, volume: Float = 1.0f) {
-        stopPreview()
         if (isAlarmActive) {
             logger.d { "Alarm already active, restarting..." }
             stopAlarm()
         }
         
         isAlarmActive = true
+        previewOwnership.nextRequest()
+        // Establish real priority before completion callbacks can request playback.
+        stopPreview(TonePreviewResult.INTERRUPTED_BY_ALARM)
         logger.d { "Starting alarm: sound=$soundName, vibrate=$vibrate" }
         
         // Configure audio session for alarm playback

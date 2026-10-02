@@ -21,7 +21,9 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.*
@@ -32,6 +34,83 @@ import kotlinx.datetime.toLocalDateTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AlarmListViewModelTest {
+
+    @Test
+    fun `pending list operation survives owner closure until its accepted deletion finishes`() = runTest {
+        val commands = usecases.copy(applicationScope = backgroundScope)
+        viewModel = AlarmListViewModel(commands, permission, preferences, Logger.withTag("PendingDeleteTest"))
+        val original = Alarm(alarmId = 810, isSaved = true, isOn = true)
+        commands.addAlarm(original)
+        commands.scheduleAlarm(original, true)
+        val scheduled = commands.findAlarm(original.alarmId)!!
+        val locked = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val blocking = launch { commands.command { locked.complete(Unit); release.await() } }
+        locked.await()
+
+        viewModel.onEvent(AlarmListEvent.OnDeleteAlarmClick(scheduled))
+        viewModel.state.value.pendingOperations shouldBe 1
+        runCurrent()
+        commands.findAlarm(original.alarmId) shouldBe scheduled
+        listOf(alarmInteractor.getScheduledAlarms()[original.alarmId]!!.timeInMillis) shouldBe scheduled.pendingTimes
+        viewModel.close()
+        release.complete(Unit)
+        blocking.join()
+        runCurrent()
+
+        commands.findAlarm(original.alarmId) shouldBe null
+        alarmInteractor.getScheduledAlarms() shouldBe emptyMap()
+        viewModel.state.value.pendingOperations shouldBe 0
+        val retained = viewModel.state.value.results.single()
+        retained.event shouldBe UiEvent.ShowSnackbar(UiEvent.ListMessage.DELETED,
+            actionType = UiEvent.SnackbarAction.UNDO_DELETE)
+        viewModel.acknowledgeResult(retained.id)
+        viewModel.state.value.results shouldBe emptyList()
+        viewModel.onEvent(AlarmListEvent.OnUndoDeleteClick)
+        runCurrent()
+        commands.findAlarm(original.alarmId) shouldBe null
+        viewModel.state.value.pendingOperations shouldBe 0
+    }
+
+    @Test
+    fun `failed list cancellation clears pending state retains occurrence and permits retry`() = runTest {
+        val original = Alarm(alarmId = 811, isSaved = true, isOn = true)
+        usecases.addAlarm(original)
+        usecases.scheduleAlarm(original, true)
+        val scheduled = usecases.findAlarm(original.alarmId)!!
+        val registered = alarmInteractor.getScheduledAlarms()
+        var failCancellation = true
+        val backend = object : AlarmInteractor by alarmInteractor {
+            override fun cancel(alarm: Alarm) {
+                if (failCancellation) error("cancellation unavailable")
+                alarmInteractor.cancel(alarm)
+            }
+        }
+        val commands = usecases.copy(cancelAlarm = CancelAlarm(backend))
+        viewModel = AlarmListViewModel(commands, permission, preferences, Logger.withTag("PendingFailureTest"))
+        viewModel.setEnabled(scheduled, false)
+        viewModel.state.value.pendingOperations shouldBe 1
+        advanceUntilIdle()
+
+        usecases.findAlarm(original.alarmId) shouldBe scheduled
+        alarmInteractor.getScheduledAlarms() shouldBe registered
+        viewModel.state.value.pendingOperations shouldBe 0
+        val error = viewModel.state.value.results.single()
+        error.event shouldBe UiEvent.ShowError(AlarmErrorMessage.UPDATE)
+        failCancellation = false
+        viewModel.setEnabled(scheduled, false)
+        advanceUntilIdle()
+        val disabled = usecases.findAlarm(original.alarmId)!!
+        disabled.isOn shouldBe false
+        disabled.pendingTimes shouldBe emptyList()
+        disabled.activeAt shouldBe null
+        disabled.snoozedUntil shouldBe null
+        alarmInteractor.getScheduledAlarms() shouldBe emptyMap()
+        viewModel.state.value.pendingOperations shouldBe 0
+        viewModel.state.value.results shouldBe listOf(error)
+        viewModel.acknowledgeResult(error.id)
+        viewModel.state.value.results shouldBe emptyList()
+    }
 
     private lateinit var viewModel: AlarmListViewModel
     private lateinit var dataSource: AlarmRepositoryFake

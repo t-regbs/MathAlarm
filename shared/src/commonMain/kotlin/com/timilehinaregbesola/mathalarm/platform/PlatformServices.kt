@@ -46,6 +46,11 @@ expect fun previewAlarmTone(alarmTone: String, onFinished: () -> Unit)
 
 expect fun stopAlarmTonePreview()
 
+/** Main-thread sound audition. Ownership prevents outgoing picker cleanup stopping a newer one. */
+expect fun previewOwnedAlarmTone(ownerId: String, alarmTone: String,
+    onFinished: (com.timilehinaregbesola.mathalarm.sound.TonePreviewResult) -> Unit)
+expect fun stopOwnedAlarmTonePreview(ownerId: String)
+
 /**
  * Stop the platform alarm audio.
  * On iOS, this stops the IosAlarmAudioManager.

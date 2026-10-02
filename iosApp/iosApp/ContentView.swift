@@ -38,6 +38,9 @@ struct NativeApplicationRoot: View {
                 NativeEditorStack(sessions: sessions)
             }
         }
+        .onChange(of: sessions.selectedEditorID) { id in
+            compactColumn = id == nil ? .sidebar : .detail
+        }
         .onAppear {
             if AppDelegate.pendingDeliveryRestorationFinished { sessions.refreshPendingDelivery() }
         }

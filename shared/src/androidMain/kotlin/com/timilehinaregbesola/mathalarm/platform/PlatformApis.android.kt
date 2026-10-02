@@ -56,6 +56,12 @@ actual fun previewAlarmTone(alarmTone: String, onFinished: () -> Unit) = onFinis
 
 actual fun stopAlarmTonePreview() = Unit
 
+actual fun previewOwnedAlarmTone(ownerId: String, alarmTone: String,
+    onFinished: (com.timilehinaregbesola.mathalarm.sound.TonePreviewResult) -> Unit) =
+    onFinished(com.timilehinaregbesola.mathalarm.sound.TonePreviewResult.UNAVAILABLE)
+
+actual fun stopOwnedAlarmTonePreview(ownerId: String) = Unit
+
 actual fun stopPlatformAlarmAudio() {
     // On Android, alarm audio is handled by the AlarmReceiver/service
     // This is a no-op as the audio stops when the ViewModel's audioPlayer.stop() is called

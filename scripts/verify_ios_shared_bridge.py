@@ -13,6 +13,8 @@ REQUIRED_CHECKS = (
     'production editor owner survives compact-expanded-compact layout',
     'production detail and nested destination replacement retain drafts',
     'production challenge placeholder preserves durable ordered deliveries',
+    'native editor subpages and staged sound survive presentation replacement',
+    'native validation retry duplicate save result acknowledgement and list undo',
     'typed validation result without persistence',
     'native suspend cancellation leaves later authoritative result retained',
     'native Flow cancellation leaves owner and state alive',

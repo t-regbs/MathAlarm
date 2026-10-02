@@ -69,6 +69,7 @@ class AlarmListViewModel internal constructor(
     private var recentlyDeletedAlarm: Alarm? = null
     private fun launchCommand(block: suspend Usecases.() -> Unit) {
         if (isClosed) return
+        _state.value = _state.value.copy(pendingOperations = _state.value.pendingOperations + 1)
         usecases.launchCommand {
             try {
                 usecases.command(block)
@@ -77,6 +78,8 @@ class AlarmListViewModel internal constructor(
             } catch (e: Exception) {
                 logger.e(e) { "Alarm command failed" }
                 sendUiEvent(UiEvent.ShowError(AlarmErrorMessage.UPDATE))
+            } finally {
+                _state.value = _state.value.copy(pendingOperations = _state.value.pendingOperations - 1)
             }
         }
     }
@@ -107,11 +110,13 @@ class AlarmListViewModel internal constructor(
                 addAlarm(restored)
                 if (restored.isOn) rescheduleFutureAlarms.restoreAlarm(restored, clearActive = true)
                 recentlyDeletedAlarm = null
+                _state.value = _state.value.copy(canUndoDelete = false)
             }
             is AlarmListEvent.OnDeleteAlarmClick -> launchCommand {
                 val latest = findAlarm(event.alarm.alarmId) ?: return@launchCommand
                 deleteAlarm(latest)
                 recentlyDeletedAlarm = latest
+                _state.value = _state.value.copy(canUndoDelete = true)
                 sendUiEvent(ShowSnackbar(
                     code = UiEvent.ListMessage.DELETED,
                     actionType = SnackbarAction.UNDO_DELETE,
@@ -155,5 +160,5 @@ class AlarmListViewModel internal constructor(
 }
 
 /** Immutable semantic results are replayed until native presentation acknowledges their IDs. */
-data class AlarmListState(val alarms: List<Alarm> = emptyList(), val loading: Boolean = true, val results: List<AlarmListResult> = emptyList())
+data class AlarmListState(val alarms: List<Alarm> = emptyList(), val loading: Boolean = true, val results: List<AlarmListResult> = emptyList(), val pendingOperations: Int = 0, val canUndoDelete: Boolean = false)
 data class AlarmListResult(val id: Long, val event: UiEvent)

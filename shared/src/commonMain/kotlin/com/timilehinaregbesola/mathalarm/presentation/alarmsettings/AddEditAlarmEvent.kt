@@ -4,6 +4,7 @@ sealed class AddEditAlarmEvent {
     object OnSaveTodoClick : AddEditAlarmEvent()
     data class ChangeTime(val value: TimeState) : AddEditAlarmEvent()
     data class EnteredTitle(val value: String) : AddEditAlarmEvent()
+    data class ToggleEnabled(val value: Boolean) : AddEditAlarmEvent()
     data class ToggleVibrate(val value: Boolean) : AddEditAlarmEvent()
     data class ToggleSnooze(val value: Boolean) : AddEditAlarmEvent()
     data class ChangeMaxSnoozes(val value: Int) : AddEditAlarmEvent()
