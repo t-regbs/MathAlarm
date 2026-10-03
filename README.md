@@ -16,7 +16,7 @@ The project follows **Clean Architecture** with the **MVVM** pattern:
 - **`:core`** - Shared domain logic and business rules
 - **`iosApp/`** - SwiftUI screens and session/navigation owners consuming the `app` framework produced by `:shared`
 
-The [approved native UI migration plan](docs/native-ui-migration-plan.md) moves presentation to Android Compose and iOS SwiftUI while sharing Kotlin ViewModels and alarm logic. Milestone 3 establishes these boundaries and the SwiftUI list/root. Native editor, challenge, sound and settings screens explicitly remain incomplete; this development build is not release ready. [Progress and next milestone](docs/native-ui-migration-progress.md) record verification and remaining work. [Research and experiment results](docs/research/native-ui-interop-2026-10-02/README.md) record the verified interop approach.
+The native migration uses shared Kotlin ViewModels and alarm logic with Compose on Android and SwiftUI on iOS. All native parity screens are implemented. Permanent XCTest/UI targets, native client flows, renderer/resource gates and archive checks are documented in [architecture and build](docs/native-architecture.md) and [testing](docs/testing.md). [Migration progress](docs/native-ui-migration-progress.md) separates implementation evidence from physical AlarmKit, acoustic, minimum-runtime and release acceptance gates. This development build is not yet release ready.
 
 ## Technologies Used
 
@@ -56,6 +56,8 @@ See [the testing guide](docs/testing.md) for host suites, real-device lifecycle 
 * [Turbine](https://github.com/cashapp/turbine) - Flow testing
 * [Kotest](https://kotest.io/) - Assertions library
 * [MockK](https://mockk.io/) - Mocking library (Android)
+* XCTest / XCUITest - Production framework, native owners, navigation and fresh-process restoration
+* Maestro - Native client flows and software-keyboard/accessibility-size evidence
 
 ## Installation
 
@@ -73,11 +75,11 @@ The iOS app supports iPhone and iPad running iOS/iPadOS **26 or later**. The cur
 
 ```bash
 ./gradlew :core:iosSimulatorArm64Test :shared:iosSimulatorArm64Test --continue
-xcodebuild -project iosApp/iosApp.xcodeproj -scheme iosApp -configuration Debug \
+xcodebuild -project iosApp/iosApp.xcodeproj -scheme MathAlarmNative -configuration Debug \
   -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
 ```
 
-The PR workflow runs these checks on the `xcode-27` macOS runner. Use iPad simulators for layout/navigation checks and a physical iPhone for AlarmKit delivery and audio validation. Signed device builds require your Apple development team and provisioning profile; a simulator build does not establish alarm delivery reliability.
+The PR workflow runs permanent native tests, client flows, nine-locale screenshots and archive packaging on the GitHub-hosted `xcode-27` Apple Silicon image, explicitly selecting Xcode 27.0 (27A266a). Use iPad simulators for layout/navigation checks and a physical iPhone for AlarmKit delivery and audio validation. Signed device builds require your Apple development team and provisioning profile; a simulator build does not establish alarm delivery reliability.
 
 ## Contribution
 All contributions are welcome. Simply make a PR!

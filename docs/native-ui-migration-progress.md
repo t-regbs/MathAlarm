@@ -1,6 +1,6 @@
-# Native UI migration progress — 2 October 2026
+# Native UI migration progress — 3 October 2026
 
-The [approved plan](native-ui-migration-plan.md) remains the architectural authority. Milestones 1–6 have completed their documented implementation/simulator gates. Native app-wide settings, What's New, feedback/share and every parity-table feature are implemented; the [Milestone 6 record](native-ui-migration-milestone-6-2026-10-02.md) maps the current source and evidence. Milestone 5 delivery/restoration/result/audio guarantees are reverified. Compose remains Android-owned, shared production code renderer-free, and iOS entirely SwiftUI. Milestone 7 permanent native tests/CI and approved cleanup are next. Physical/release gates, unavailable VoiceOver/window/Mail client checks and minimum-runtime validation remain open; this is not release readiness. Earlier sections are historical snapshots. The [baseline](native-ui-migration-baseline-2026-10-02.md) and [results-only experiment archive](research/native-ui-interop-2026-10-02/README.md) remain unchanged.
+The [approved plan](native-ui-migration-plan.md) remains the architectural authority. Milestones 1–6 have completed their documented implementation/simulator gates. Native app-wide settings, What's New, feedback/share and every parity-table feature are implemented; the [Milestone 6 record](native-ui-migration-milestone-6-2026-10-02.md) maps the current source and evidence. Milestone 5 delivery/restoration/result/audio guarantees are reverified. Compose remains Android-owned, shared production code renderer-free, and iOS entirely SwiftUI. Milestone 7 is complete against its approved implementation/CI/archive gate: permanent native targets, CI integration, isolated cleanup and unsigned archive packaging pass locally and in corrected hosted runs, as recorded in the [M7 record](native-ui-migration-milestone-7-2026-10-03.md). Unavailable native-client evidence remains explicitly unestablished. Physical/release gates, unavailable VoiceOver/window/Mail client checks and minimum-runtime validation remain open; this is not release readiness. Earlier sections are historical snapshots. The [baseline](native-ui-migration-baseline-2026-10-02.md) and [results-only experiment archive](research/native-ui-interop-2026-10-02/README.md) remain unchanged.
 
 ## Milestone gates
 
@@ -14,6 +14,8 @@ The [iOS visual identity refinement](ios-visual-identity-2026-10-02.md) adds Mat
 | 4 — Complete native list and editing | **COMPLETE** | List/editor/subpage/sound parity, validation/failure retry/duplicate guards, accepted result acknowledgement, retained drafts/routes across layout/detail replacement, Android editor/tablet regressions; measured limits below |
 | 5 — Complete preview and delivered alarms | **COMPLETE — implementation gate** | Native challenge, readiness before exact acknowledgement, ordered replay, independent durable restoration and process restart, retained drafts/routes, audio ownership and fault ordering; physical recovery/release gates remain open |
 | 6 — Finish settings and native presentation parity | **COMPLETE — implementation/simulator gate** | Native parity-table features, persisted theme/sort/announcement acknowledgement, active-scene feedback/share with iPad anchor, nine packaged catalogs/six tones, native launch and reviewed locale/keyboard/accessibility-size presentation; explicit client/physical/release limits in the M6 record |
+| 7 — Enforce boundaries and integrate CI | **COMPLETE — implementation/CI/archive gate** | Permanent XCTest/UI targets, all 27 production groups, both native clients, nine-locale matrices, renderer boundaries, four SDK/configuration links and unsigned archive pass locally and in hosted CI; Android APIs 30/32/35/36 pass. Unavailable client evidence remains recorded. [M7 evidence](native-ui-migration-milestone-7-2026-10-03.md) |
+| 8 — Device and release acceptance | **OPEN** | Physical AlarmKit/recovery/PiP/acoustic, minimum-runtime, signing/distribution and remaining client evidence remain separate from M7 archive packaging |
 
 The final verification record below ties completion to the approved gates: feature contracts contain no Compose/UI types; existing Android consumers build; the production bootstrap and bridge checks work without constructing a Compose controller; observer-removal regressions preserve accepted commands and real sessions; pinned Kotlin/Swift dependencies resolve and work together. Those Milestone 2 results are retained below; the completed renderer extraction and native root have their own Milestone 3 verification record.
 
@@ -276,3 +278,35 @@ Forced baseline and final suites pass **487 Android (156 core / 199 shared / 132
 Migrate all 27 current production groups in `scripts/verify_ios_shared_bridge.py` into permanent native XCTest/UI targets, preserving mounted-owner and fresh-process assertions, including the post-M6 permission/save, Settings-return and tutorial/audio-lease regressions. Integrate reproducible native client/nine-locale/resource/boundary checks in CI; carry forward the Back/Cancel, maths keyboard/landscape, maximum-text tone selection and controlled next-alarm subtitle checks recorded in the [visual refinement evidence](ios-visual-identity-2026-10-02.md). Establish the unavailable VoiceOver/window/Mail client evidence and perform only the approved separate dead-code/dependency cleanup. Retain narrow SharedFeatures APIs and all M5 durable/result/audio guarantees. The approved plan and M6 record still define the milestone scope; no permanent target or CI expansion was added by the visual refinement.
 
 Milestone 8 retains physical AlarmKit reliability, continuous recovery, audio routing, minimum iOS 26.0 runtime and release/store acceptance. Include the new single-action permission flow on an actual iPhone: PiP over Settings, the Alarms toggle, return/save of the originating draft and interruption by a real alarm or tone preview. The simulator establishes inline playback and the direct Settings fallback because native PiP is unsupported there; it does not close this device gate. Milestone 7 also retains the approved Release linking/archive packaging checks before Milestone 8's physical and distribution acceptance. No milestone restart is required.
+
+
+## Milestone 7 implementation and current handoff
+
+The [M7 record](native-ui-migration-milestone-7-2026-10-03.md) supersedes the historical
+M7 implementation handoff above. Permanent `MathAlarmNative` hosted XCTest/UI targets
+consume production `app` and preserve all 27 groups, mounted owner lifetimes, durable
+operations, exact acknowledgements and fresh-process restoration. Native sessions now
+retain their pinned bridge observation wrapper through outgoing-observer replacement.
+The Debug harness and the post-M6 visual/navigation/permission baseline remain intact.
+
+Local verification passes: 487 Android host plus 370 native Kotlin tests, 27 Python
+contracts, three Android layout instrumentations, six permanent native tests on each
+iPhone/iPad family, all native client flows, 631 iPhone and 495 iPad locale captures,
+four Debug/Release device/simulator links and unsigned Release archive/resource checks.
+The isolated cleanup preserves Room generation, platform tests, factories, persisted
+compatibility and delivery/audio guarantees. Reproduction is in [testing](testing.md)
+and [architecture/build](native-architecture.md); logs, xcresults, images and the
+archive are under `build/native-ui-m7/`. Corrected failures are retained and explained.
+
+**M7 is complete against its approved implementation/CI/archive gate.** Hosted
+[Android run 37104690123](https://github.com/t-regbs/MathAlarm/actions/runs/37104690123)
+and [native run 37107437705](https://github.com/t-regbs/MathAlarm/actions/runs/37107437705)
+are green. The former covers unchanged Android/shared sources; the latter verifies
+both final native families, all locale/client flows, all four links and actual archive
+resources. Downloaded artifacts and independent summaries are under
+`build/native-ui-m7/hosted-android/` and `build/native-ui-m7/hosted-final/`.
+VoiceOver speech/focus, actual window resizing and configured-Mail composer
+cancellation remain unavailable/unestablished; screenshot review is explicitly sampled,
+not full linguistic/visual sign-off. No external feedback/share message was sent.
+M8 physical AlarmKit/recovery, PiP over Settings, acoustic/routing output, iOS 26.0
+minimum-runtime and signed distribution/store acceptance remain onward gates.

@@ -1,6 +1,26 @@
-# iOS simulator validation
+# Native iOS simulator validation
 
-Use Maestro 2.10.0 or later, Xcode, and an installed Math Alarm Debug build on an iOS/iPadOS 26+ simulator. Flows expect English and default new-alarm settings (Easy, one question, Orbit tone). They create an unsaved draft, test it, and dismiss it; they do not clear app data or modify existing saved alarms.
+The implemented app is SwiftUI. For current verification, use the pinned Maestro
+2.10.0, Xcode 27.0 and a disposable English simulator with the production Debug app
+from the `MathAlarmNative` scheme:
+
+```sh
+M7_UDID=DISPOSABLE_UDID MAESTRO_BIN=/path/to/2.10.0/maestro \
+  bash scripts/ci_native_client.sh
+```
+
+The [permanent M7 entry point](#permanent-m7-ci-entry-point) and native flows below
+describe the current system. Run `bash scripts/ci_native_ios.sh` for the complete
+KMP/XCTest/UI, locale, native-client and packaging pipeline. Its controlled scheduler
+does not establish physical AlarmKit reliability. See the
+[current evidence record](../../../docs/native-ui-migration-milestone-7-2026-10-03.md).
+
+## Historical September renderer-era flows
+
+This section records the pre-migration flows and their original limitations. Use the
+native entry point above for M7 acceptance. The historical setup used Maestro 2.10.0,
+Xcode and an installed Debug build; it expected English and default new-alarm settings
+(Easy, one question, Orbit tone).
 
 ```sh
 MAESTRO_CLI_NO_ANALYTICS=1 maestro --device <simulator-UDID> test \
@@ -45,8 +65,9 @@ directly. An unsuccessful request offers Allow alarms, with no premature Setting
 an explicit retry does not immediately repeat the dialog. Denial opens the permission
 guide with the Apps → Math Alarm → Alarms route and one Go to Settings action. This flow
 closes the guide, retains the draft and discards it. The optional system denial branch
-remains conditional; never grant permission in this flow. Native PiP is unavailable on
-the current simulator, so its floating playback needs a physical iPhone check.
+remains conditional; never grant permission in this flow. The M7 capability probe
+reported PiP unavailable on iPhone and available on iPad; neither establishes playback
+over Settings, which remains a physical-client check.
 
 `native-m6-disabled-crud.yaml` creates a disabled fixture, returns from a preview to
 the same draft, saves, deletes, undoes and deletes it again. Supply a unique title
@@ -102,3 +123,44 @@ names emitted by the current process, excluding stale optional viewport pictures
 Final matrix/client results and review are recorded in the linked M6 record;
 controlled delivery does not establish physical AlarmKit delivery, audible output,
 VoiceOver speech/focus, interactive window resizing or release readiness.
+
+## Permanent M7 CI entry point
+
+`M7_UDID=DISPOSABLE_UDID MAESTRO_BIN=/path/to/2.10.0/maestro bash scripts/ci_native_client.sh`
+runs settings/announcement persistence, share cancellation, maths keyboard and landscape,
+permission guard, stable Back/Cancel, unique disabled CRUD and all six tone controls at
+maximum OS text size. It restores the original text category. It selects no share target,
+sends no feedback, and uses only disposable app data. The optional OS permission denial
+branch still must be reported as skipped when no system alert appears.
+
+The permanent `MathAlarmNative` XCTest scheme separately verifies all 27 production
+groups, once-only permission/Settings return/save, tutorial interruption/audio leases,
+mounted owners, durable commands and exact acknowledgements, including fresh-process
+restoration. The nine-locale matrix retains the controlled next-alarm subtitle assertions.
+`native_screenshot_review.py` builds the offline comparison index; humans/agents must
+inspect pixels before recording visual approval.
+
+### Remaining native accessibility/client evidence
+
+Record runtime, device, orientation/window size, text size, expected/observed behavior
+and evidence paths for each case. Do not convert a source/AX-tree inspection to a pass.
+
+- VoiceOver: enable on a supported client; traverse list, editor/nested controls, tones,
+  permission guide, maths Answer/Clear/Submit, error feedback and settings. Record spoken
+  labels, order, focus after Back/Cancel, wrong-answer announcement and return to the same
+  draft. Restore the prior setting. A successful XCTest accessibility lookup is not speech.
+- iPad live resizing: while editing a named unsaved draft and nested route, resize the
+  actual app window across compact/expanded widths; verify title, staged tone, navigation
+  and draft survive, then discard. Layout replacement tests and orientation changes are
+  separate evidence, not interactive resizing.
+- Configured native Mail: on an isolated configured client, open feedback, inspect the
+  intended recipient and empty subject/body, cancel and delete the unsent draft. Verify
+  return to settings; exercise failure only through a controlled client mechanism. Never
+  send. An unavailable-handler alert does not establish composer behavior.
+
+Physical alarm/audio/PiP and distribution acceptance remain M8, independently of archive
+packaging. Consult the current milestone record before marking any manual gate complete.
+
+The maximum-text tone flow requires 100% visibility of each preview control. The final
+Clear Signal row does not require centering: a list can reach its bottom scroll limit
+with that row fully visible. Selection, exact-draft application and discard remain asserted.

@@ -7,8 +7,10 @@ import app
 struct ContentView: View {
     var body: some View {
         #if DEBUG
-        if SharedBridgeVerification.enabled {
-            Color.clear.task { SharedBridgeVerification.start() }
+        if ProcessInfo.processInfo.environment["MATHALARM_HOSTED_TESTS"] == "1" {
+            Color.clear
+        } else if SharedBridgeVerification.enabled {
+            VerificationResultView().task { SharedBridgeVerification.start() }
         } else if NativeAlarmPermissionGuideVerification.enabled {
             NativeAlarmPermissionGuideVerification()
         } else if NativePresentationVerification.enabled {

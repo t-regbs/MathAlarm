@@ -1,5 +1,6 @@
 import SwiftUI
 import KMPObservableViewModelSwiftUI
+import KMPObservableViewModelCore
 import app
 import KMPNativeCoroutinesAsync
 
@@ -11,6 +12,14 @@ struct NativeEditorSession: Identifiable {
     let id: String
     let alarmID: Int64?
     let model: AlarmSettingsViewModel
+    // Keep the bridge cancellation lifetime with the retained session value too.
+    // SwiftUI can construct an outgoing observer after its StateViewModel leaves
+    // the hierarchy. The pinned bridge cannot recreate an expired cancellable.
+    private let observationLifetime: ObservableViewModel<AlarmSettingsViewModel>
+    init(id: String, alarmID: Int64?, model: AlarmSettingsViewModel) {
+        self.id = id; self.alarmID = alarmID; self.model = model
+        observationLifetime = observableViewModel(for: model)
+    }
     // Scheduling can fail after insertion; the retained draft then owns the allocated ID.
     var resolvedAlarmID: Int64? {
         guard let id = model.state.alarmId?.int64Value, id != 0 else { return alarmID }
@@ -25,6 +34,13 @@ struct NativeChallengeSession: Identifiable {
     var editorID: String? = nil
     var previewAlarm: Alarm? = nil
     var isPreview: Bool { editorID != nil }
+    private let observationLifetime: ObservableViewModel<AlarmMathViewModel>
+    init(id: String, payload: String, model: AlarmMathViewModel,
+         editorID: String? = nil, previewAlarm: Alarm? = nil) {
+        self.id = id; self.payload = payload; self.model = model
+        self.editorID = editorID; self.previewAlarm = previewAlarm
+        observationLifetime = observableViewModel(for: model)
+    }
 }
 
 /// Stable session IDs and factory references live above split/stack/detail branches.

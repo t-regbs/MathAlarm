@@ -72,7 +72,7 @@ enum NativeSettingsVerification {
         let sound = sessions.soundSelection(sessionID: second.id)!
         sound.begin(currentTone: second.model.state.tone)
         sound.choose("alarm_rally")
-        precondition(sessions.beginPermissionRequest(id: second.id))
+        verificationCheck(sessions.beginPermissionRequest(id: second.id))
         let originalFirst = first.model
         let originalSecond = second.model
 
@@ -114,25 +114,25 @@ enum NativeSettingsVerification {
                 (theme == .light ? .light : inheritedSystemStyle)
             await waitForNativeFormAppearance(expectedStyle, theme: theme.name, host: settingsController, window: window)
             await Task.yield()
-            precondition(defaults.integer(forKey: "mathalarm_theme_option") == Int(theme.ordinal))
-            precondition(!model.isClosed)
-            precondition(!originalFirst.isClosed && !originalSecond.isClosed)
-            precondition(sessions.editors.first(where: { $0.id == first.id })?.model === originalFirst)
-            precondition(sessions.selectedEditor?.model === originalSecond)
-            precondition(originalFirst.state.alarmTitle == "M6 retained first draft")
-            precondition(originalSecond.state.alarmTitle == "M6 retained second draft")
-            precondition(sessions.editorPaths[second.id] == [.sound] && sound.pendingTone == "alarm_rally")
-            precondition(sessions.permissionRequests.contains(second.id))
+            verificationCheck(defaults.integer(forKey: "mathalarm_theme_option") == Int(theme.ordinal))
+            verificationCheck(!model.isClosed)
+            verificationCheck(!originalFirst.isClosed && !originalSecond.isClosed)
+            verificationCheck(sessions.editors.first(where: { $0.id == first.id })?.model === originalFirst)
+            verificationCheck(sessions.selectedEditor?.model === originalSecond)
+            verificationCheck(originalFirst.state.alarmTitle == "M6 retained first draft")
+            verificationCheck(originalSecond.state.alarmTitle == "M6 retained second draft")
+            verificationCheck(sessions.editorPaths[second.id] == [.sound] && sound.pendingTone == "alarm_rally")
+            verificationCheck(sessions.permissionRequests.contains(second.id))
         }
         for sort in [AlarmPreferencesAlarmSortOrder.creation, .time] {
             model.selectSortOrder(sortOrder: sort)
             await wait("shared sort expected=\(sort.name) actual=\(model.state.sortOrder.name)") { model.state.sortOrder == sort }
-            precondition(defaults.integer(forKey: "mathalarm_alarm_sort_order") == Int(sort.ordinal))
+            verificationCheck(defaults.integer(forKey: "mathalarm_alarm_sort_order") == Int(sort.ordinal))
         }
         let replacement = SharedFeatures.shared.settings()
-        precondition(replacement.state.theme == .dark && replacement.state.sortOrder == .time)
+        verificationCheck(replacement.state.theme == .dark && replacement.state.sortOrder == .time)
         replacement.close()
-        print("BRIDGE PASS native settings all themes/sorts use persisted keys while two drafts, nested route, staged sound and permission guard retain owners")
+        VerificationResults.shared.pass("native settings all themes/sorts use persisted keys while two drafts, nested route, staged sound and permission guard retain owners")
 
         let announcements = NativeAnnouncementPresentation()
         let seenBefore = model.state.seenAnnouncementIds
@@ -140,53 +140,53 @@ enum NativeSettingsVerification {
         if announcements.presented {
             let originalID = announcements.currentID
             announcements.interrupt()
-            precondition(model.state.seenAnnouncementIds == seenBefore)
+            verificationCheck(model.state.seenAnnouncementIds == seenBefore)
             announcements.offerAutomatically(model: model)
-            precondition(announcements.presented && announcements.currentID == originalID)
+            verificationCheck(announcements.presented && announcements.currentID == originalID)
         }
         announcements.reopen(model: model)
-        precondition(announcements.ids == model.state.announcementIds)
-        precondition(!announcements.ids.contains("skip-next-alarm-v1"))
+        verificationCheck(announcements.ids == model.state.announcementIds)
+        verificationCheck(!announcements.ids.contains("skip-next-alarm-v1"))
         let reopenedID = announcements.currentID
         announcements.snoozeExampleEnabled = false
         let seenBeforeDemonstration = model.state.seenAnnouncementIds
         announcements.interrupt()
         announcements.interrupt()
-        precondition(sessions.selectedEditor?.id == second.id)
-        precondition(announcements.resumeIfInterrupted())
-        precondition(announcements.presented && announcements.currentID == reopenedID)
-        precondition(!announcements.snoozeExampleEnabled && model.state.seenAnnouncementIds == seenBeforeDemonstration)
-        precondition(!announcements.resumeIfInterrupted())
+        verificationCheck(sessions.selectedEditor?.id == second.id)
+        verificationCheck(announcements.resumeIfInterrupted())
+        verificationCheck(announcements.presented && announcements.currentID == reopenedID)
+        verificationCheck(!announcements.snoozeExampleEnabled && model.state.seenAnnouncementIds == seenBeforeDemonstration)
+        verificationCheck(!announcements.resumeIfInterrupted())
         if announcements.ids.count > 1 {
             let id = announcements.currentID!
             announcements.move(to: 1, model: model)
-            precondition(model.state.seenAnnouncementIds.contains(id))
-            precondition(defaults.bool(forKey: "mathalarm_seen_announcement_" + id))
+            verificationCheck(model.state.seenAnnouncementIds.contains(id))
+            verificationCheck(defaults.bool(forKey: "mathalarm_seen_announcement_" + id))
         }
         let lastID = announcements.currentID!
-        precondition(announcements.finish(model: model))
-        precondition(defaults.bool(forKey: "mathalarm_seen_announcement_" + lastID))
-        precondition(!announcements.presented)
+        verificationCheck(announcements.finish(model: model))
+        verificationCheck(defaults.bool(forKey: "mathalarm_seen_announcement_" + lastID))
+        verificationCheck(!announcements.presented)
         let acknowledged = model.state.seenAnnouncementIds
         announcements.offerAutomatically(model: model)
-        precondition(!announcements.presented)
+        verificationCheck(!announcements.presented)
         announcements.reopen(model: model)
-        precondition(announcements.presented && announcements.ids == model.state.announcementIds)
-        precondition(model.state.seenAnnouncementIds == acknowledged)
+        verificationCheck(announcements.presented && announcements.ids == model.state.announcementIds)
+        verificationCheck(model.state.seenAnnouncementIds == acknowledged)
         let observer = SharedFeatures.shared.settings()
-        precondition(observer.state.seenAnnouncementIds == acknowledged)
+        verificationCheck(observer.state.seenAnnouncementIds == acknowledged)
         observer.close()
-        print("BRIDGE PASS native announcement IDs/page survive interruption without acknowledgement; explicit browse/Got it persist and latest batch reopens")
+        VerificationResults.shared.pass("native announcement IDs/page survive interruption without acknowledgement; explicit browse/Got it persist and latest batch reopens")
 
         let anchor = external.anchor!
         let inspection = external.makeShareController(anchor: anchor)
         if anchor.traitCollection.userInterfaceIdiom == .pad {
-            precondition(inspection.modalPresentationStyle == .popover)
-            precondition(inspection.popoverPresentationController?.sourceView === anchor.view)
-            precondition(inspection.popoverPresentationController?.sourceRect == anchor.view.bounds)
+            verificationCheck(inspection.modalPresentationStyle == .popover)
+            verificationCheck(inspection.popoverPresentationController?.sourceView === anchor.view)
+            verificationCheck(inspection.popoverPresentationController?.sourceRect == anchor.view.bounds)
         }
-        precondition(anchor.view.window?.windowScene === window.windowScene)
-        precondition(NativeExternalPresentation.shareText == "MathAlarm Clock\nSolve math problems to wake up! https://github.com/t-regbs/MathAlarm")
+        verificationCheck(anchor.view.window?.windowScene === window.windowScene)
+        verificationCheck(NativeExternalPresentation.shareText == "MathAlarm Clock\nSolve math problems to wake up! https://github.com/t-regbs/MathAlarm")
         external.presentShare()
         await wait("share controller=\(String(describing: external.presentedController)) anchor presentation=\(String(describing: anchor.presentedViewController)) scene=\(String(describing: anchor.view.window?.windowScene?.activationState))") {
             guard let share = external.presentedController as? UIActivityViewController else { return false }
@@ -200,7 +200,7 @@ enum NativeSettingsVerification {
         await wait("share cancellation dismissed: \(presentationEvidence(external: external, anchor: anchor, settings: settingsController))") {
             external.presentedController == nil && anchor.presentedViewController == nil
         }
-        precondition(external.failure == nil && requestedURLs.isEmpty)
+        verificationCheck(external.failure == nil && requestedURLs.isEmpty)
         external.presentShare()
         await wait("second share presentation settled: \(presentationEvidence(external: external, anchor: anchor, settings: settingsController))") {
             guard let share = external.presentedController as? UIActivityViewController else { return false }
@@ -225,8 +225,8 @@ enum NativeSettingsVerification {
         await wait("unavailable feedback callback URLs=\(requestedURLs.count): \(presentationEvidence(external: external, anchor: anchor, settings: settingsController))") {
             external.failure != nil
         }
-        precondition(requestedURLs == [NativeExternalPresentation.feedbackURL])
-        precondition(external.presentedController == nil)
+        verificationCheck(requestedURLs == [NativeExternalPresentation.feedbackURL])
+        verificationCheck(external.presentedController == nil)
         await wait("unavailable feedback alert visible: \(presentationEvidence(external: external, anchor: anchor, settings: settingsController))") {
             visiblePresentedAlert(in: settingsController)?.message == NativeStrings.text("No email app is available. Email aregbestimi@gmail.com to send feedback.")
         }
@@ -234,7 +234,7 @@ enum NativeSettingsVerification {
         await wait("unavailable feedback alert dismissed: \(presentationEvidence(external: external, anchor: anchor, settings: settingsController))") {
             settingsController.presentedViewController == nil && anchor.presentedViewController == nil
         }
-        print("BRIDGE PASS production settings share presents in the tapped active scene with iPad anchor, cancellation/error callbacks; unavailable feedback handler reports failure using injected mailto opener")
+        VerificationResults.shared.pass("production settings share presents in the tapped active scene with iPad anchor, cancellation/error callbacks; unavailable feedback handler reports failure using injected mailto opener")
 
         defaults.set(true, forKey: marker)
         sessions.closeWindow()
@@ -253,15 +253,15 @@ enum NativeSettingsVerification {
             preconditionFailure("M6 restart verification requires the preceding settings fixture")
         }
         let model = SharedFeatures.shared.settings()
-        precondition(model.state.theme == .dark && model.state.sortOrder == .time)
-        precondition(NativeAnnouncementPresentation.supportedIDs.allSatisfy { model.state.seenAnnouncementIds.contains($0) })
+        verificationCheck(model.state.theme == .dark && model.state.sortOrder == .time)
+        verificationCheck(NativeAnnouncementPresentation.supportedIDs.allSatisfy { model.state.seenAnnouncementIds.contains($0) })
         let announcements = NativeAnnouncementPresentation()
         announcements.offerAutomatically(model: model)
-        precondition(!announcements.presented)
+        verificationCheck(!announcements.presented)
         announcements.reopen(model: model)
-        precondition(announcements.ids == model.state.announcementIds && announcements.presented)
+        verificationCheck(announcements.ids == model.state.announcementIds && announcements.presented)
         model.close()
-        print("BRIDGE PASS fresh process restores theme/sort and announcement acknowledgement while latest batch remains reopenable")
+        VerificationResults.shared.pass("fresh process restores theme/sort and announcement acknowledgement while latest batch remains reopenable")
     }
 
     private static func wait(_ context: @autoclosure () -> String = "condition", _ condition: () -> Bool) async {

@@ -128,6 +128,8 @@ class TabletPaneLayoutTest {
                 assertEquals("Morning commute", usecases.findAlarm(ids[0])?.title)
                 assertTrue(usecases.findAlarm(ids[1])!!.pendingTimes.isEmpty())
             }
+            compose.waitForIdle()
+            compose.mainClock.advanceTimeBy(1_500)
             compose.waitUntil(5_000) { reviewRequests.get() == 1 }
             compose.onNodeWithContentDescription("Settings").performClick()
             compose.onNodeWithText(labels.colorTheme).assertIsDisplayed()
@@ -218,6 +220,8 @@ class TabletPaneLayoutTest {
             compose.onNodeWithText("Phone draft").assertExists()
             assertEquals(0, reviewRequests.get())
             compose.onNodeWithText(labels.save.uppercase()).performClick()
+            compose.waitForIdle()
+            compose.mainClock.advanceTimeBy(1_500)
             compose.waitUntil(5_000) { reviewRequests.get() == 1 }
             compose.onNodeWithContentDescription("Settings").performClick()
             compose.onNodeWithText(labels.colorTheme).assertIsDisplayed()

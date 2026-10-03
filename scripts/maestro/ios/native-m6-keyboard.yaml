@@ -19,7 +19,7 @@ appId: com.timilehinaregbesola.mathalarm
 - assertVisible:
     id: editor-keyboard-done
 - waitForAnimationToEnd
-- takeScreenshot: native-editor-software-keyboard
+- takeScreenshot: "native-editor-software-keyboard-${typeof CHALLENGE_ORIENTATION === 'undefined' ? 'portrait' : CHALLENGE_ORIENTATION}"
 - tapOn:
     id: editor-keyboard-done
 - assertVisible: 'Native M6 "Keyboard" draft'
@@ -62,7 +62,7 @@ appId: com.timilehinaregbesola.mathalarm
           id: challenge-problem
       - assertVisible:
           id: challenge-submit
-- takeScreenshot: native-preview-software-keyboard
+- takeScreenshot: "native-preview-software-keyboard-${typeof CHALLENGE_ORIENTATION === 'undefined' ? 'portrait' : CHALLENGE_ORIENTATION}"
 - tapOn:
     id: challenge-keyboard-done
 - assertNotVisible:
@@ -78,7 +78,7 @@ appId: com.timilehinaregbesola.mathalarm
       text: "Incorrect answer. Try again."
     direction: DOWN
 - assertVisible: "Incorrect answer. Try again."
-- takeScreenshot: native-preview-wrong-answer
+- takeScreenshot: "native-preview-wrong-answer-${typeof CHALLENGE_ORIENTATION === 'undefined' ? 'portrait' : CHALLENGE_ORIENTATION}"
 - tapOn:
     id: challenge-acknowledge-feedback
 - assertNotVisible: "Incorrect answer. Try again."

@@ -86,7 +86,11 @@ and a one-minute snooze. It cleans up that alarm after each run. It resets the t
 app's delivery log and grants required permissions on the disposable emulator.
 The Doze fixture schedules three minutes ahead and temporarily sets
 `min_time_to_alarm=0,idle_to=30000`. This permits a confirmed 30-second initial idle
-window outside Android’s early-wake margin, then restores the original settings. Android normally avoids
+window outside Android’s early-wake margin, then restores the original settings.
+Android 12–14 require per-key `device_config` overrides in the `device_idle` namespace;
+Android 11 and 15+ support the global Settings override. The runner preserves prior
+values, restores partial setup failures and verifies both effective service thresholds
+before requiring actual deep-idle entry. Android normally avoids
 deep idle shortly before alarm-clock events. This accelerated fixture complements
 the overnight physical-device check.
 Do not use an emulator containing alarms you need to preserve. A failed run is
@@ -186,8 +190,8 @@ The runner cleans fixtures and terminates its app; delete the simulator afterwar
 
 `SKIP_KOTLIN_BUILD=YES` permits a Swift-only iteration against an already generated
 framework; it does not establish verification of changed Kotlin source. A final
-bridge check must rebuild normally. The harness is excluded from Release and does
-not replace an Xcode unit/UI target (Milestone 7) or physical reliability checks.
+bridge check must rebuild normally. The harness is excluded from Release. It now shares assertions with permanent M7
+XCTest/UI targets (see below), and never replaces physical reliability checks.
 The normal iOS root is entirely SwiftUI. Native list/editor/nested settings, tone
 preview, maths preview and delivered challenge are implemented. App-wide settings, What’s New, feedback/share and presentation parity are implemented in Milestone 6;
 see its verification record for the gate status and unavailable client checks. Native launch/activation
@@ -381,3 +385,85 @@ against that branch so reviewers see only the testing changes. After the parent
 merges, retarget to `main`. If the parent was squash-merged, rebase the testing
 commits onto `main` using the old parent tip as the boundary before retargeting;
 otherwise the old reliability commits may appear again in the diff.
+
+## Milestone 7 permanent native gate
+
+`MathAlarmNative` is the repository's unambiguous shared scheme. `MathAlarmTests`
+imports the production app and production `app` framework. Its mounted journey
+forwards the original behavioral assertions to XCTest with source file/line and
+checks all 25 first-process groups. `MathAlarmUITests` independently executes the
+entire 27-group contract across two OS processes and tests ordinary Back/Cancel.
+The first process persists acknowledged unresolved progress; the UI runner terminates
+it before starting restoration. Reconstructing an owner in one process is not that gate.
+Both targets disable parallel execution because bootstrap, Room and native windows
+are process-scoped. The Debug harness is retained and shares the same assertions.
+
+Use only a disposable iOS 27 simulator, with no user alarms or accounts:
+
+```sh
+xcodebuild -project iosApp/iosApp.xcodeproj -scheme MathAlarmNative \
+  -configuration Debug -destination 'platform=iOS Simulator,id=DISPOSABLE_UDID' \
+  -derivedDataPath build/native-tests -disableAutomaticPackageResolution \
+  -parallel-testing-enabled NO -collect-test-diagnostics never \
+  -resultBundlePath build/native-tests.xcresult CODE_SIGNING_ALLOWED=NO test
+```
+
+The hosted test launch intentionally leaves the production app window to the fixture
+and suppresses ordinary launch restoration; all tested services/factories and mounted
+owners are production implementations. The UI app explicitly clears that hosted-test
+setting. Tests use the controlled scheduler only for OS acceptance; Room, durable
+commands, queue ordering, readiness, result acknowledgement, observation and audio
+ownership remain real. No physical AlarmKit registration is made by these fixtures.
+
+The full local/CI command creates and deletes its own simulator, builds normally,
+runs native KMP and XCTest/UI suites, retained-harness parity, nine locales on actual
+views, Maestro 2.10.0 client flows, all four Debug/Release SDK links, resource checks
+and an unsigned Release archive:
+
+```sh
+M7_OUTPUT=build/native-ui-m7-iphone bash scripts/ci_native_ios.sh
+M7_DEVICE=com.apple.CoreSimulator.SimDeviceType.iPad-Pro-11-inch-M5-12GB \
+  M7_OUTPUT=build/native-ui-m7-ipad bash scripts/ci_native_ios.sh
+```
+
+Set `MAESTRO_BIN` to a pinned 2.10.0 executable if it is not on PATH. The workflow
+verifies the release ZIP checksum. Use a new output directory per run (xcresult
+creation deliberately refuses to overwrite prior evidence). CI runs both families
+on the GitHub-hosted `xcode-27` Apple Silicon image with Xcode 27.0 (27A266a) explicitly selected for PRs, pushes, dispatch
+and schedule; it requires the iOS 27 runtime. It keeps Android host/delivery coverage
+and adds expanded/recreated/compact Android UI instrumentation on dedicated emulators.
+The Android layout fixture explicitly grants notification permission before running;
+first-install authorization is a separate scenario.
+
+Full validation is the default. For a platform-specific fixture change, an explicitly
+scoped dispatch can run alongside an existing full run without cancelling it:
+
+```sh
+gh workflow run build.yml --ref BRANCH -f scope=android
+gh workflow run build.yml --ref BRANCH -f scope=ios
+```
+
+Each focused run skips the other platform and establishes only its selected platform's
+gate. Link both runs and their exact source revisions when relying on unchanged evidence.
+
+`presentation/review.html` compares every required capture family and additional scrolled
+viewport across nine locales and links its actual trait/scroll JSON. `review-status.json` records capture completeness
+and initially says visual review is pending. Inspect pixels and record the reviewer,
+findings and exact run; do not treat generated HTML or file presence as visual approval.
+Native XCTest reports, client screenshots/logs, presentation PNG/JSON and archive logs
+are uploaded even on failure. Controlled next-alarm assertions compare the subtitle
+against accepted scheduler requests and verify removal after disabling the fixtures.
+
+`verify_ios_release.py` checks locked Swift revisions against Kotlin bridge versions,
+all compiled locale keys/plurals and launch assets, the six unchanged CAF binaries,
+privacy reasons, nine exact video binaries and native-optimized poster dimensions.
+Release binaries must exclude Debug verification symbols. Xcode may recompress PNGs,
+so byte-for-byte poster identity is intentionally not assumed.
+
+Unsigned archive creation proves packaging only. Physical AlarmKit/recovery, PiP over
+Settings, acoustic/routing output, iOS 26.0 minimum runtime and signed distribution
+acceptance remain Milestone 8 gates. VoiceOver speech/focus, live window resizing and
+configured native Mail cancellation must be recorded as client evidence where available;
+accessibility identifiers, injected callbacks or screenshots do not substitute for them.
+See the [M7 record](native-ui-migration-milestone-7-2026-10-03.md) for this run's actual
+results and unavailable checks, and the [architecture/build guide](native-architecture.md).
