@@ -1,5 +1,6 @@
 import SwiftUI
 import KMPObservableViewModelSwiftUI
+import KMPObservableViewModelCore
 import app
 import KMPNativeCoroutinesAsync
 
@@ -11,6 +12,14 @@ struct NativeEditorSession: Identifiable {
     let id: String
     let alarmID: Int64?
     let model: AlarmSettingsViewModel
+    // Keep the bridge cancellation lifetime with the retained session value too.
+    // SwiftUI can construct an outgoing observer after its StateViewModel leaves
+    // the hierarchy. The pinned bridge cannot recreate an expired cancellable.
+    private let observationLifetime: ObservableViewModel<AlarmSettingsViewModel>
+    init(id: String, alarmID: Int64?, model: AlarmSettingsViewModel) {
+        self.id = id; self.alarmID = alarmID; self.model = model
+        observationLifetime = observableViewModel(for: model)
+    }
     // Scheduling can fail after insertion; the retained draft then owns the allocated ID.
     var resolvedAlarmID: Int64? {
         guard let id = model.state.alarmId?.int64Value, id != 0 else { return alarmID }
@@ -25,6 +34,13 @@ struct NativeChallengeSession: Identifiable {
     var editorID: String? = nil
     var previewAlarm: Alarm? = nil
     var isPreview: Bool { editorID != nil }
+    private let observationLifetime: ObservableViewModel<AlarmMathViewModel>
+    init(id: String, payload: String, model: AlarmMathViewModel,
+         editorID: String? = nil, previewAlarm: Alarm? = nil) {
+        self.id = id; self.payload = payload; self.model = model
+        self.editorID = editorID; self.previewAlarm = previewAlarm
+        observationLifetime = observableViewModel(for: model)
+    }
 }
 
 /// Stable session IDs and factory references live above split/stack/detail branches.
@@ -41,13 +57,19 @@ final class NativeWindowSessions: ObservableObject {
     @Published private(set) var selectedEditorID: String?
     @Published private(set) var editorResultsRevision = 0
     @Published private(set) var permissionRequests: Set<String> = []
+    private var initialPermissionResults: [String: Int64] = [:]
+    private var alarmSettingsEditorID: String?
+    private var alarmSettingsLeftApp = false
+    let settingsGuide = NativeAlarmPermissionGuidePlayer()
     private var soundSelections: [String: NativeSoundSelection] = [:]
     private var navigationObservers: [String: Int] = [:]
     private var latestNavigationObservers: [String: Int] = [:]
     @Published private(set) var challenge: NativeChallengeSession?
     @Published private(set) var challenges: [NativeChallengeSession] = []
     @Published private(set) var pendingPayload: String?
-    @Published var deliveryPresented = false
+    @Published var deliveryPresented = false {
+        didSet { if deliveryPresented { settingsGuide.stop() } }
+    }
     @Published private(set) var previews: [String: NativeChallengeSession] = [:]
     @Published private(set) var challengeFailures: [String: ChallengeResult] = [:]
     @Published private(set) var handoffWriteFailed = false
@@ -97,6 +119,8 @@ final class NativeWindowSessions: ObservableObject {
         guard !windowEnded else { return }
         guard editors.contains(where: { $0.id == id }) else { return }
         if selectedEditorID != id {
+            cancelAlarmSettingsSave()
+            settingsGuide.stop()
             if let previous = selectedEditorID {
                 navigationObservers.removeValue(forKey: previous)
                 previewPresentations.removeValue(forKey: previous)
@@ -142,6 +166,79 @@ final class NativeWindowSessions: ObservableObject {
 
     func endPermissionRequest(id: String) { permissionRequests.remove(id) }
 
+    /// The first Save asks iOS directly, once per retained permission result.
+    /// A failed request remains available for an explicit retry or Settings guidance.
+    @discardableResult
+    func requestInitialAlarmPermission(id: String, resultID: Int64) -> Task<Void, Never>? {
+        guard selectedEditorID == id, !deliveryPresented,
+              AlarmSchedulerBridge.shared.authorizationStatus() == "notDetermined",
+              initialPermissionResults[id] != resultID,
+              let editor = editors.first(where: { $0.id == id }),
+              editor.model.state.results.contains(where: {
+                  $0.id == resultID && $0.event is AlarmSettingsViewModel.UiEventRequestExactAlarmPermission
+              }) else { return nil }
+        guard let request = requestAlarmPermission(id: id, retainingResultID: resultID) else { return nil }
+        initialPermissionResults[id] = resultID
+        return request
+    }
+
+    /// Resume this draft's save only after an affirmative authorization result.
+    /// Denial/failure leaves it editable; it must not generate another save alert.
+    @discardableResult
+    func requestAlarmPermission(id: String, retainingResultID: Int64? = nil) -> Task<Void, Never>? {
+        guard let editor = editors.first(where: { $0.id == id }),
+              !editor.model.isClosed, beginPermissionRequest(id: id) else { return nil }
+        return Task { @MainActor in
+            defer { endPermissionRequest(id: id) }
+            let authorized = await withCheckedContinuation { continuation in
+                AlarmSchedulerBridge.shared.requestAuthorization { result in
+                    continuation.resume(returning: result.boolValue)
+                }
+            }
+            guard authorized, !editor.model.isClosed else { return }
+            if let retainingResultID { editor.model.acknowledgeResult(id: retainingResultID) }
+            editor.model.onEvent(event: AddEditAlarmEvent.OnSaveTodoClick.shared)
+        }
+    }
+
+    /// Settings grants apply to the originating draft, never a different selection.
+    @discardableResult
+    func beginAlarmSettingsSave(id: String) -> Bool {
+        guard !windowEnded, selectedEditorID == id, !deliveryPresented,
+              let editor = editors.first(where: { $0.id == id }), !editor.model.isClosed else { return false }
+        alarmSettingsEditorID = id
+        alarmSettingsLeftApp = false
+        return true
+    }
+
+    func cancelAlarmSettingsSave(id: String? = nil) {
+        guard id == nil || alarmSettingsEditorID == id else { return }
+        alarmSettingsEditorID = nil
+        alarmSettingsLeftApp = false
+    }
+
+    func alarmSettingsSceneChanged(_ phase: ScenePhase) {
+        guard alarmSettingsEditorID != nil else { return }
+        if phase != .active { alarmSettingsLeftApp = true }
+        else {
+            if alarmSettingsLeftApp { settingsGuide.stop() }
+            resumeAlarmSaveAfterSettings()
+        }
+    }
+
+    func resumeAlarmSaveAfterSettings() {
+        guard !windowEnded, alarmSettingsLeftApp, let id = alarmSettingsEditorID else { return }
+        guard AlarmSchedulerBridge.shared.authorizationStatus() == "authorized" else {
+            cancelAlarmSettingsSave(id: id)
+            return
+        }
+        guard !deliveryPresented else { return }
+        cancelAlarmSettingsSave(id: id)
+        guard selectedEditorID == id, let editor = editors.first(where: { $0.id == id }),
+              !editor.model.isClosed, !editor.model.state.isSaving else { return }
+        editor.model.onEvent(event: AddEditAlarmEvent.OnSaveTodoClick.shared)
+    }
+
     func receiveEditorResults(id: String) {
         guard !windowEnded else { return }
         acceptSavedResult(id: id)
@@ -161,6 +258,9 @@ final class NativeWindowSessions: ObservableObject {
         guard let editor = editors.first(where: { $0.id == id }),
               acceptedSave || !editor.model.state.isSaving else { return }
         permissionRequests.remove(id)
+        if selectedEditorID == id { settingsGuide.stop() }
+        initialPermissionResults.removeValue(forKey: id)
+        cancelAlarmSettingsSave(id: id)
         closePreview(editorID: id, returning: false)
         soundSelections.removeValue(forKey: id)?.finish()
         SharedFeatures.shared.closeEditor(sessionId: id)
@@ -176,6 +276,7 @@ final class NativeWindowSessions: ObservableObject {
     func closeWindow() {
         guard !windowEnded else { return }
         windowEnded = true
+        settingsGuide.stop()
         replayTask?.cancel()
         initializationTasks.values.forEach { $0.cancel() }
         initializationTasks.removeAll()
@@ -187,6 +288,8 @@ final class NativeWindowSessions: ObservableObject {
         challenges.forEach { SharedFeatures.shared.closeChallenge(sessionId: $0.id) }
         soundSelections.removeAll()
         permissionRequests.removeAll()
+        initialPermissionResults.removeAll()
+        cancelAlarmSettingsSave()
         editors.removeAll()
         challenges.removeAll()
         challenge = nil
@@ -475,8 +578,10 @@ final class NativeWindowSessions: ObservableObject {
         // durable occurrence, cancel application commands or silence application audio.
         let editorIDs = editors.map(\.id)
         let sounds = Array(soundSelections.values)
+        let guide = settingsGuide
         let challengeIDs = challenges.map(\.id) + previews.values.map(\.id)
         DispatchQueue.main.async {
+            guide.stop()
             sounds.forEach { $0.finish() }
             editorIDs.forEach { SharedFeatures.shared.closeEditor(sessionId: $0) }
             challengeIDs.forEach { SharedFeatures.shared.closeChallenge(sessionId: $0) }

@@ -3,6 +3,7 @@
 appId: com.timilehinaregbesola.mathalarm
 ---
 - launchApp
+- setOrientation: "${typeof CHALLENGE_ORIENTATION === 'undefined' ? 'PORTRAIT' : CHALLENGE_ORIENTATION}"
 - runFlow:
     when:
       visible:
@@ -18,7 +19,7 @@ appId: com.timilehinaregbesola.mathalarm
 - assertVisible:
     id: editor-keyboard-done
 - waitForAnimationToEnd
-- takeScreenshot: native-editor-software-keyboard
+- takeScreenshot: "native-editor-software-keyboard-${typeof CHALLENGE_ORIENTATION === 'undefined' ? 'portrait' : CHALLENGE_ORIENTATION}"
 - tapOn:
     id: editor-keyboard-done
 - assertVisible: 'Native M6 "Keyboard" draft'
@@ -38,13 +39,30 @@ appId: com.timilehinaregbesola.mathalarm
     id: challenge-answer
 - tapOn:
     id: challenge-answer
+- inputText: "-123"
+- assertVisible: "-123"
+- assertVisible:
+    id: challenge-clear
+- tapOn:
+    id: challenge-clear
+- assertNotVisible: "-123"
+- assertVisible:
+    id: challenge-keyboard-done
 - inputText: "999999"
 - assertVisible:
     id: challenge-keyboard-done
 - waitForAnimationToEnd
 - assertVisible:
     id: challenge-answer
-- takeScreenshot: native-preview-software-keyboard
+- runFlow:
+    when:
+      true: ${typeof REQUIRE_VISIBLE_TASK === 'undefined' || REQUIRE_VISIBLE_TASK == 'true'}
+    commands:
+      - assertVisible:
+          id: challenge-problem
+      - assertVisible:
+          id: challenge-submit
+- takeScreenshot: "native-preview-software-keyboard-${typeof CHALLENGE_ORIENTATION === 'undefined' ? 'portrait' : CHALLENGE_ORIENTATION}"
 - tapOn:
     id: challenge-keyboard-done
 - assertNotVisible:
@@ -60,7 +78,10 @@ appId: com.timilehinaregbesola.mathalarm
       text: "Incorrect answer. Try again."
     direction: DOWN
 - assertVisible: "Incorrect answer. Try again."
-- takeScreenshot: native-preview-wrong-answer
+- takeScreenshot: "native-preview-wrong-answer-${typeof CHALLENGE_ORIENTATION === 'undefined' ? 'portrait' : CHALLENGE_ORIENTATION}"
+- tapOn:
+    id: challenge-acknowledge-feedback
+- assertNotVisible: "Incorrect answer. Try again."
 - tapOn:
     id: challenge-cancel-preview
 - scrollUntilVisible:

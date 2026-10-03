@@ -34,6 +34,32 @@
 		D6A000000000000000000003 /* NativeSettingsVerification.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6A000000000000000000004 /* NativeSettingsVerification.swift */; };
 		D6A000000000000000000005 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = D6A000000000000000000006 /* InfoPlist.xcstrings */; };
 		D6A000000000000000000007 /* NativePresentationVerification.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6A000000000000000000008 /* NativePresentationVerification.swift */; };
+		D7A000000000000000000001 /* NativeDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7A000000000000000000002 /* NativeDesign.swift */; };
+		D8A000000000000000000001 /* NativeAlarmPermissionGuide.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8A000000000000000000002 /* NativeAlarmPermissionGuide.swift */; };
+		D8C000000000000000000001 /* alarm-settings-guide-en.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D8B000000000000000000001 /* alarm-settings-guide-en.mp4 */; };
+		D8C000000000000000000002 /* alarm-settings-guide-es.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D8B000000000000000000002 /* alarm-settings-guide-es.mp4 */; };
+		D8C000000000000000000003 /* alarm-settings-guide-de.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D8B000000000000000000003 /* alarm-settings-guide-de.mp4 */; };
+		D8C000000000000000000004 /* alarm-settings-guide-ru.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D8B000000000000000000004 /* alarm-settings-guide-ru.mp4 */; };
+		D8C000000000000000000005 /* alarm-settings-guide-pt.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D8B000000000000000000005 /* alarm-settings-guide-pt.mp4 */; };
+		D8C000000000000000000006 /* alarm-settings-guide-hi.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D8B000000000000000000006 /* alarm-settings-guide-hi.mp4 */; };
+		D8C000000000000000000007 /* alarm-settings-guide-pa.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D8B000000000000000000007 /* alarm-settings-guide-pa.mp4 */; };
+		D8C000000000000000000008 /* alarm-settings-guide-bn.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D8B000000000000000000008 /* alarm-settings-guide-bn.mp4 */; };
+		D8C000000000000000000009 /* alarm-settings-guide-zh.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D8B000000000000000000009 /* alarm-settings-guide-zh.mp4 */; };
+		D8E000000000000000000001 /* alarm-settings-guide-en.png in Resources */ = {isa = PBXBuildFile; fileRef = D8D000000000000000000001 /* alarm-settings-guide-en.png */; };
+		D8E000000000000000000002 /* alarm-settings-guide-es.png in Resources */ = {isa = PBXBuildFile; fileRef = D8D000000000000000000002 /* alarm-settings-guide-es.png */; };
+		D8E000000000000000000003 /* alarm-settings-guide-de.png in Resources */ = {isa = PBXBuildFile; fileRef = D8D000000000000000000003 /* alarm-settings-guide-de.png */; };
+		D8E000000000000000000004 /* alarm-settings-guide-ru.png in Resources */ = {isa = PBXBuildFile; fileRef = D8D000000000000000000004 /* alarm-settings-guide-ru.png */; };
+		D8E000000000000000000005 /* alarm-settings-guide-pt.png in Resources */ = {isa = PBXBuildFile; fileRef = D8D000000000000000000005 /* alarm-settings-guide-pt.png */; };
+		D8E000000000000000000006 /* alarm-settings-guide-hi.png in Resources */ = {isa = PBXBuildFile; fileRef = D8D000000000000000000006 /* alarm-settings-guide-hi.png */; };
+		D8E000000000000000000007 /* alarm-settings-guide-pa.png in Resources */ = {isa = PBXBuildFile; fileRef = D8D000000000000000000007 /* alarm-settings-guide-pa.png */; };
+		D8E000000000000000000008 /* alarm-settings-guide-bn.png in Resources */ = {isa = PBXBuildFile; fileRef = D8D000000000000000000008 /* alarm-settings-guide-bn.png */; };
+		D8E000000000000000000009 /* alarm-settings-guide-zh.png in Resources */ = {isa = PBXBuildFile; fileRef = D8D000000000000000000009 /* alarm-settings-guide-zh.png */; };
+		E70000000000000000000002 /* SharedViewModelBridge.swift in Sources */ = {isa = PBXBuildFile; fileRef = E70000000000000000000001; };
+		E70000000000000000000004 /* VerificationResults.swift in Sources */ = {isa = PBXBuildFile; fileRef = E70000000000000000000003; };
+		E7000000000000000000006A /* ProductionIntegrationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E70000000000000000000069; };
+		E7000000000000000000006B /* VerificationContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = E70000000000000000000005; };
+		E700000000000000000000CE /* NativeFlowTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = E700000000000000000000CD; };
+		E700000000000000000000CF /* VerificationContract.swift in Sources */ = {isa = PBXBuildFile; fileRef = E70000000000000000000005; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -64,6 +90,33 @@
 		D6A000000000000000000004 /* NativeSettingsVerification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSettingsVerification.swift; sourceTree = "<group>"; };
 		D6A000000000000000000006 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		D6A000000000000000000008 /* NativePresentationVerification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativePresentationVerification.swift; sourceTree = "<group>"; };
+		D7A000000000000000000002 /* NativeDesign.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeDesign.swift; sourceTree = "<group>"; };
+		D8A000000000000000000002 /* NativeAlarmPermissionGuide.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeAlarmPermissionGuide.swift; sourceTree = "<group>"; };
+		D8B000000000000000000001 /* alarm-settings-guide-en.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = alarm-settings-guide-en.mp4; path = PermissionGuide/alarm-settings-guide-en.mp4; sourceTree = "<group>"; };
+		D8B000000000000000000002 /* alarm-settings-guide-es.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = alarm-settings-guide-es.mp4; path = PermissionGuide/alarm-settings-guide-es.mp4; sourceTree = "<group>"; };
+		D8B000000000000000000003 /* alarm-settings-guide-de.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = alarm-settings-guide-de.mp4; path = PermissionGuide/alarm-settings-guide-de.mp4; sourceTree = "<group>"; };
+		D8B000000000000000000004 /* alarm-settings-guide-ru.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = alarm-settings-guide-ru.mp4; path = PermissionGuide/alarm-settings-guide-ru.mp4; sourceTree = "<group>"; };
+		D8B000000000000000000005 /* alarm-settings-guide-pt.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = alarm-settings-guide-pt.mp4; path = PermissionGuide/alarm-settings-guide-pt.mp4; sourceTree = "<group>"; };
+		D8B000000000000000000006 /* alarm-settings-guide-hi.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = alarm-settings-guide-hi.mp4; path = PermissionGuide/alarm-settings-guide-hi.mp4; sourceTree = "<group>"; };
+		D8B000000000000000000007 /* alarm-settings-guide-pa.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = alarm-settings-guide-pa.mp4; path = PermissionGuide/alarm-settings-guide-pa.mp4; sourceTree = "<group>"; };
+		D8B000000000000000000008 /* alarm-settings-guide-bn.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = alarm-settings-guide-bn.mp4; path = PermissionGuide/alarm-settings-guide-bn.mp4; sourceTree = "<group>"; };
+		D8B000000000000000000009 /* alarm-settings-guide-zh.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = alarm-settings-guide-zh.mp4; path = PermissionGuide/alarm-settings-guide-zh.mp4; sourceTree = "<group>"; };
+		D8D000000000000000000001 /* alarm-settings-guide-en.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = alarm-settings-guide-en.png; path = PermissionGuide/alarm-settings-guide-en.png; sourceTree = "<group>"; };
+		D8D000000000000000000002 /* alarm-settings-guide-es.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = alarm-settings-guide-es.png; path = PermissionGuide/alarm-settings-guide-es.png; sourceTree = "<group>"; };
+		D8D000000000000000000003 /* alarm-settings-guide-de.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = alarm-settings-guide-de.png; path = PermissionGuide/alarm-settings-guide-de.png; sourceTree = "<group>"; };
+		D8D000000000000000000004 /* alarm-settings-guide-ru.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = alarm-settings-guide-ru.png; path = PermissionGuide/alarm-settings-guide-ru.png; sourceTree = "<group>"; };
+		D8D000000000000000000005 /* alarm-settings-guide-pt.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = alarm-settings-guide-pt.png; path = PermissionGuide/alarm-settings-guide-pt.png; sourceTree = "<group>"; };
+		D8D000000000000000000006 /* alarm-settings-guide-hi.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = alarm-settings-guide-hi.png; path = PermissionGuide/alarm-settings-guide-hi.png; sourceTree = "<group>"; };
+		D8D000000000000000000007 /* alarm-settings-guide-pa.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = alarm-settings-guide-pa.png; path = PermissionGuide/alarm-settings-guide-pa.png; sourceTree = "<group>"; };
+		D8D000000000000000000008 /* alarm-settings-guide-bn.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = alarm-settings-guide-bn.png; path = PermissionGuide/alarm-settings-guide-bn.png; sourceTree = "<group>"; };
+		D8D000000000000000000009 /* alarm-settings-guide-zh.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = alarm-settings-guide-zh.png; path = PermissionGuide/alarm-settings-guide-zh.png; sourceTree = "<group>"; };
+		E70000000000000000000001 /* SharedViewModelBridge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/SharedViewModelBridge.swift"; sourceTree = SOURCE_ROOT; };
+		E70000000000000000000003 /* VerificationResults.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "iosApp/VerificationResults.swift"; sourceTree = SOURCE_ROOT; };
+		E70000000000000000000005 /* VerificationContract.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MathAlarmTests/VerificationContract.swift"; sourceTree = SOURCE_ROOT; };
+		E70000000000000000000069 /* ProductionIntegrationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MathAlarmTests/ProductionIntegrationTests.swift"; sourceTree = SOURCE_ROOT; };
+E70000000000000000000065 /* MathAlarmTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = MathAlarmTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		E700000000000000000000CD /* NativeFlowTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "MathAlarmUITests/NativeFlowTests.swift"; sourceTree = SOURCE_ROOT; };
+E700000000000000000000C9 /* MathAlarmUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; path = MathAlarmUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -76,6 +129,8 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+E70000000000000000000067 = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+E700000000000000000000CB = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
@@ -90,6 +145,26 @@
 				D4A000000000000000000002 /* NativeEditorControls.swift */,
 				D4A000000000000000000004 /* NativeSoundPicker.swift */,
 				D5A000000000000000000002 /* NativeChallengeViews.swift */,
+				D7A000000000000000000002 /* NativeDesign.swift */,
+				D8A000000000000000000002 /* NativeAlarmPermissionGuide.swift */,
+				D8D000000000000000000009 /* alarm-settings-guide-zh.png */,
+				D8D000000000000000000008 /* alarm-settings-guide-bn.png */,
+				D8D000000000000000000007 /* alarm-settings-guide-pa.png */,
+				D8D000000000000000000006 /* alarm-settings-guide-hi.png */,
+				D8D000000000000000000005 /* alarm-settings-guide-pt.png */,
+				D8D000000000000000000004 /* alarm-settings-guide-ru.png */,
+				D8D000000000000000000003 /* alarm-settings-guide-de.png */,
+				D8D000000000000000000002 /* alarm-settings-guide-es.png */,
+				D8D000000000000000000001 /* alarm-settings-guide-en.png */,
+				D8B000000000000000000009 /* alarm-settings-guide-zh.mp4 */,
+				D8B000000000000000000008 /* alarm-settings-guide-bn.mp4 */,
+				D8B000000000000000000007 /* alarm-settings-guide-pa.mp4 */,
+				D8B000000000000000000006 /* alarm-settings-guide-hi.mp4 */,
+				D8B000000000000000000005 /* alarm-settings-guide-pt.mp4 */,
+				D8B000000000000000000004 /* alarm-settings-guide-ru.mp4 */,
+				D8B000000000000000000003 /* alarm-settings-guide-de.mp4 */,
+				D8B000000000000000000002 /* alarm-settings-guide-es.mp4 */,
+				D8B000000000000000000001 /* alarm-settings-guide-en.mp4 */,
 				D6A000000000000000000002 /* NativeAppSettings.swift */,
 				D6A000000000000000000004 /* NativeSettingsVerification.swift */,
 				D6A000000000000000000006 /* InfoPlist.xcstrings */,
@@ -98,6 +173,8 @@
 				D4A000000000000000000008 /* Localizable.xcstrings */,
 				D3A000000000000000000004 /* NativeAlarmViews.swift */,
 				058557D8273AAEEB004C7B11 /* ContentView.swift */,
+				E70000000000000000000003 /* VerificationResults.swift */,
+				E70000000000000000000001 /* SharedViewModelBridge.swift */,
 				2152FB032600AC8F00CF470E /* iOSApp.swift */,
 				B4C0D1E2F3A405162738494F /* LaunchScreen.storyboard */,
 				C6A5E4D3B2F1098765432102 /* PrivacyInfo.xcprivacy */,
@@ -125,6 +202,8 @@
 			children = (
 				058557D7273AAEEB004C7B11 /* iosApp */,
 				7555FF7C242A565900829871 /* Products */,
+E700000000000000000000D4 /* MathAlarmUITests */,
+E70000000000000000000070 /* MathAlarmTests */,
 				7555FFB0242A642200829871 /* Frameworks */,
 			);
 			sourceTree = "<group>";
@@ -133,6 +212,8 @@
 			isa = PBXGroup;
 			children = (
 				7555FF7B242A565900829871 /* MathAlarm.app */,
+E700000000000000000000C9 /* MathAlarmUITests.xctest */,
+E70000000000000000000065 /* MathAlarmTests.xctest */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -144,6 +225,8 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+E70000000000000000000070 /* MathAlarmTests */ = {isa = PBXGroup; children = (E70000000000000000000069, E70000000000000000000005,); name = MathAlarmTests; sourceTree = "<group>"; };
+E700000000000000000000D4 /* MathAlarmUITests */ = {isa = PBXGroup; children = (E700000000000000000000CD, ); name = MathAlarmUITests; sourceTree = "<group>"; };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -169,7 +252,19 @@
 			productReference = 7555FF7B242A565900829871 /* MathAlarm.app */;
 			productType = "com.apple.product-type.application";
 		};
+E70000000000000000000064 /* MathAlarmTests */ = {isa = PBXNativeTarget; buildConfigurationList = E70000000000000000000068; buildPhases = (E70000000000000000000066, E70000000000000000000067,); buildRules = (); dependencies = (E7000000000000000000006D,); name = MathAlarmTests; productName = MathAlarmTests; productReference = E70000000000000000000065; productType = "com.apple.product-type.bundle.unit-test"; };
+E700000000000000000000C8 /* MathAlarmUITests */ = {isa = PBXNativeTarget; buildConfigurationList = E700000000000000000000CC; buildPhases = (E700000000000000000000CA, E700000000000000000000CB,); buildRules = (); dependencies = (E700000000000000000000D1,); name = MathAlarmUITests; productName = MathAlarmUITests; productReference = E700000000000000000000C9; productType = "com.apple.product-type.bundle.ui-testing"; };
 /* End PBXNativeTarget section */
+
+/* Begin PBXContainerItemProxy section */
+E7000000000000000000006C = {isa = PBXContainerItemProxy; containerPortal = 7555FF73242A565900829871; proxyType = 1; remoteGlobalIDString = 7555FF7A242A565900829871; remoteInfo = iosApp; };
+E700000000000000000000D0 = {isa = PBXContainerItemProxy; containerPortal = 7555FF73242A565900829871; proxyType = 1; remoteGlobalIDString = 7555FF7A242A565900829871; remoteInfo = iosApp; };
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXTargetDependency section */
+E7000000000000000000006D = {isa = PBXTargetDependency; target = 7555FF7A242A565900829871; targetProxy = E7000000000000000000006C; };
+E700000000000000000000D1 = {isa = PBXTargetDependency; target = 7555FF7A242A565900829871; targetProxy = E700000000000000000000D0; };
+/* End PBXTargetDependency section */
 
 /* Begin PBXProject section */
 		7555FF73242A565900829871 /* Project object */ = {
@@ -209,6 +304,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
+E700000000000000000000C8,
+E70000000000000000000064,
 				7555FF7A242A565900829871 /* iosApp */,
 			);
 		};
@@ -222,6 +319,24 @@
 				D6A000000000000000000005 /* InfoPlist.xcstrings in Resources */,
 				D4A000000000000000000007 /* Localizable.xcstrings in Resources */,
 				058557BB273AAA24004C7B11 /* Assets.xcassets in Resources */,
+				D8E000000000000000000009 /* alarm-settings-guide-zh.png in Resources */,
+				D8E000000000000000000008 /* alarm-settings-guide-bn.png in Resources */,
+				D8E000000000000000000007 /* alarm-settings-guide-pa.png in Resources */,
+				D8E000000000000000000006 /* alarm-settings-guide-hi.png in Resources */,
+				D8E000000000000000000005 /* alarm-settings-guide-pt.png in Resources */,
+				D8E000000000000000000004 /* alarm-settings-guide-ru.png in Resources */,
+				D8E000000000000000000003 /* alarm-settings-guide-de.png in Resources */,
+				D8E000000000000000000002 /* alarm-settings-guide-es.png in Resources */,
+				D8E000000000000000000001 /* alarm-settings-guide-en.png in Resources */,
+				D8C000000000000000000009 /* alarm-settings-guide-zh.mp4 in Resources */,
+				D8C000000000000000000008 /* alarm-settings-guide-bn.mp4 in Resources */,
+				D8C000000000000000000007 /* alarm-settings-guide-pa.mp4 in Resources */,
+				D8C000000000000000000006 /* alarm-settings-guide-hi.mp4 in Resources */,
+				D8C000000000000000000005 /* alarm-settings-guide-pt.mp4 in Resources */,
+				D8C000000000000000000004 /* alarm-settings-guide-ru.mp4 in Resources */,
+				D8C000000000000000000003 /* alarm-settings-guide-de.mp4 in Resources */,
+				D8C000000000000000000002 /* alarm-settings-guide-es.mp4 in Resources */,
+				D8C000000000000000000001 /* alarm-settings-guide-en.mp4 in Resources */,
 				EE54222328378572DB85563F /* alarm_daybreak.caf in Resources */,
 				B1AEE1B2AA51B904088AD5ED /* alarm_orbit.caf in Resources */,
 				5860812A34B23777D66F1426 /* alarm_rally.caf in Resources */,
@@ -262,6 +377,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				D2D1C0B0A001000000000001 /* SharedBridgeVerification.swift in Sources */,
+				E70000000000000000000004 /* VerificationResults.swift in Sources */,
+				E70000000000000000000002 /* SharedViewModelBridge.swift in Sources */,
 				ALARMKIT01273AAA24004C7B11 /* AlarmKitWrapper.swift in Sources */,
 				C6A5E4D3B2F1098765432103 /* PendingDeeplinkStore.swift in Sources */,
 				2152FB042600AC8F00CF470E /* iOSApp.swift in Sources */,
@@ -269,6 +386,8 @@
 				D4A000000000000000000001 /* NativeEditorControls.swift in Sources */,
 				D4A000000000000000000003 /* NativeSoundPicker.swift in Sources */,
 				D5A000000000000000000001 /* NativeChallengeViews.swift in Sources */,
+				D7A000000000000000000001 /* NativeDesign.swift in Sources */,
+				D8A000000000000000000001 /* NativeAlarmPermissionGuide.swift in Sources */,
 				D6A000000000000000000001 /* NativeAppSettings.swift in Sources */,
 				D6A000000000000000000003 /* NativeSettingsVerification.swift in Sources */,
 				D6A000000000000000000007 /* NativePresentationVerification.swift in Sources */,
@@ -278,6 +397,8 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
+E70000000000000000000066 = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (E7000000000000000000006A, E7000000000000000000006B,); runOnlyForDeploymentPostprocessing = 0; };
+E700000000000000000000CA = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (E700000000000000000000CE, E700000000000000000000CF,); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin XCBuildConfiguration section */
@@ -455,6 +576,10 @@
 			};
 			name = Release;
 		};
+E7000000000000000000006E = {isa = XCBuildConfiguration; buildSettings = {GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = com.timilehinaregbesola.MathAlarmTests; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; "EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64; BUNDLE_LOADER = "$(TEST_HOST)"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MathAlarm.app/MathAlarm"; FRAMEWORK_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",); }; name = Debug; };
+E7000000000000000000006F = {isa = XCBuildConfiguration; buildSettings = {GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = com.timilehinaregbesola.MathAlarmTests; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; "EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64; BUNDLE_LOADER = "$(TEST_HOST)"; TEST_HOST = "$(BUILT_PRODUCTS_DIR)/MathAlarm.app/MathAlarm"; FRAMEWORK_SEARCH_PATHS = ("$(inherited)", "$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",); }; name = Release; };
+E700000000000000000000D2 = {isa = XCBuildConfiguration; buildSettings = {GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = com.timilehinaregbesola.MathAlarmUITests; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; "EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64; TEST_TARGET_NAME = iosApp; }; name = Debug; };
+E700000000000000000000D3 = {isa = XCBuildConfiguration; buildSettings = {GENERATE_INFOPLIST_FILE = YES; PRODUCT_BUNDLE_IDENTIFIER = com.timilehinaregbesola.MathAlarmUITests; PRODUCT_NAME = "$(TARGET_NAME)"; SWIFT_VERSION = 5.0; TARGETED_DEVICE_FAMILY = "1,2"; "EXCLUDED_ARCHS[sdk=iphonesimulator*]" = x86_64; TEST_TARGET_NAME = iosApp; }; name = Release; };
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
@@ -476,6 +601,8 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
+E70000000000000000000068 = {isa = XCConfigurationList; buildConfigurations = (E7000000000000000000006E, E7000000000000000000006F,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+E700000000000000000000CC = {isa = XCConfigurationList; buildConfigurations = (E700000000000000000000D2, E700000000000000000000D3,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 /* End XCConfigurationList section */
 /* Begin XCRemoteSwiftPackageReference section */
 		D2D1C0B0A001000000000007 /* KMP-ObservableViewModel */ = {

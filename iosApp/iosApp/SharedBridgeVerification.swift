@@ -1,14 +1,12 @@
 import SwiftUI
+import AVFoundation
+import AVKit
 import UIKit
 import Observation
 import KMPObservableViewModelCore
 import KMPObservableViewModelSwiftUI
 import KMPNativeCoroutinesAsync
 import app
-
-// One conformance for every production shared feature model.
-extension app.ViewModel: @retroactive KMPObservableViewModelCore.ViewModel { }
-extension app.ViewModel: @retroactive Observable { }
 
 #if DEBUG
 /// Production-app integration checks. Only an explicit launch argument enables them.
@@ -96,7 +94,8 @@ enum SharedBridgeVerification {
         verificationTask = Task { @MainActor in await run() }
     }
 
-    private static func run() async {
+    static func run(restoration: Bool = false) async {
+        VerificationResults.shared.reset()
         setbuf(stdout, nil) // Preserve the failing group in simulator crash transcripts.
         if ProcessInfo.processInfo.arguments.contains("--verify-m6-settings-only") {
             guard let window = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene })
@@ -104,35 +103,35 @@ enum SharedBridgeVerification {
                 preconditionFailure("Settings verification requires an attached app window")
             }
             await NativeSettingsVerification.run(window: window, parent: parent)
-            print("SHARED_BRIDGE_VERIFICATION_PASSED")
+            VerificationResults.shared.finish()
             return
         }
-        if ProcessInfo.processInfo.arguments.contains("--verify-m5-restoration") {
+        if restoration || ProcessInfo.processInfo.arguments.contains("--verify-m5-restoration") {
             await verifyProcessRestoration()
             NativeSettingsVerification.verifyFreshProcess()
-            print("SHARED_BRIDGE_VERIFICATION_PASSED")
+            VerificationResults.shared.finish()
             return
         }
         let handoff = IosApplication.shared.createAlarmHandoffJson(
             alarmId: 7, deliveryId: "bridge-verification-token", activeAt: KotlinLong(value: 1000))
         let encoded = try! JSONSerialization.jsonObject(with: Data(handoff.utf8)) as! [String: Any]
-        precondition(encoded["alarmId"] as? Int == 7)
-        precondition(encoded["activeAt"] as? Int == 1000)
-        precondition(encoded["version"] as? Int == 2)
-        precondition(encoded["deliveryId"] as? String == "bridge-verification-token")
+        verificationCheck(encoded["alarmId"] as? Int == 7)
+        verificationCheck(encoded["activeAt"] as? Int == 1000)
+        verificationCheck(encoded["version"] as? Int == 2)
+        verificationCheck(encoded["deliveryId"] as? String == "bridge-verification-token")
         let decoded = IosApplication.shared.decodeAlarmHandoffJson(payload: handoff)!
-        precondition(decoded.alarmId == 7 && decoded.activeAt?.int64Value == 1000)
-        precondition(decoded.deliveryId == "bridge-verification-token")
-        precondition(IosApplication.shared.decodeAlarmHandoffJson(payload: "invalid payload") == nil)
+        verificationCheck(decoded.alarmId == 7 && decoded.activeAt?.int64Value == 1000)
+        verificationCheck(decoded.deliveryId == "bridge-verification-token")
+        verificationCheck(IosApplication.shared.decodeAlarmHandoffJson(payload: "invalid payload") == nil)
         let missingSession = "bridge-verification/missing-occurrence/\(UUID().uuidString)"
         let missingChallenge = SharedFeatures.shared.challenge(sessionId: missingSession)
         let missingReady = try! await asyncFunction(for: missingChallenge.initializeOccurrence(
             alarmId: Int64.min, activeAt: KotlinLong(value: 1000)))
-        precondition(!missingReady.boolValue && missingChallenge.state.readiness == .error)
-        precondition(missingChallenge.state.occurrenceId == nil && missingChallenge.state.alarm == nil)
+        verificationCheck(!missingReady.boolValue && missingChallenge.state.readiness == .error)
+        verificationCheck(missingChallenge.state.occurrenceId == nil && missingChallenge.state.alarm == nil)
         SharedFeatures.shared.closeChallenge(sessionId: missingSession)
-        precondition(missingChallenge.isClosed)
-        print("BRIDGE PASS UI-free bootstrap, versioned codec and identity-only missing-occurrence result")
+        verificationCheck(missingChallenge.isClosed)
+        VerificationResults.shared.pass("UI-free bootstrap, versioned codec and identity-only missing-occurrence result")
         let suite = "bridge-verification/\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
@@ -158,24 +157,24 @@ enum SharedBridgeVerification {
         }
         model.onEvent(event: AddEditAlarmEvent.EnteredTitle(value: "Retained Swift draft"))
         await wait { mount.observationInvalidated }
-        precondition(model.state.alarmTitle == "Retained Swift draft")
-        precondition(model.state.hasUnsavedChanges)
-        print("BRIDGE PASS typed edits and Swift Observation")
+        verificationCheck(model.state.alarmTitle == "Retained Swift draft")
+        verificationCheck(model.state.hasUnsavedChanges)
+        VerificationResults.shared.pass("typed edits and Swift Observation")
         capture(window, name: "editor")
 
-        precondition(sessions!.beginPermissionRequest(id: session))
-        precondition(!sessions!.beginPermissionRequest(id: session))
+        verificationCheck(sessions!.beginPermissionRequest(id: session))
+        verificationCheck(!sessions!.beginPermissionRequest(id: session))
         mount.alternateDetail = true
         await wait { mount.renderedDetail == "true/\(session)/editor" && navigationSettled(in: host!) }
-        precondition(SharedFeatures.shared.doNewEditor(sessionId: session) === model)
-        precondition(model.state.alarmTitle == "Retained Swift draft")
-        precondition(!model.isClosed)
+        verificationCheck(SharedFeatures.shared.doNewEditor(sessionId: session) === model)
+        verificationCheck(model.state.alarmTitle == "Retained Swift draft")
+        verificationCheck(!model.isClosed)
         mount.alternateDetail = false
         await wait { mount.renderedDetail == "false/\(session)/editor" && navigationSettled(in: host!) }
-        precondition(sessions!.openEditor(alarm: nil).model === model && !model.isClosed)
-        precondition(sessions!.permissionRequests.contains(session))
+        verificationCheck(sessions!.openEditor(alarm: nil).model === model && !model.isClosed)
+        verificationCheck(sessions!.permissionRequests.contains(session))
         sessions!.endPermissionRequest(id: session)
-        print("BRIDGE PASS production editor owner survives compact-expanded-compact layout")
+        VerificationResults.shared.pass("production editor owner survives compact-expanded-compact layout")
 
         model.onEvent(event: AddEditAlarmEvent.OnTestClick.shared)
         let previewResult = model.state.results.last!
@@ -188,9 +187,9 @@ enum SharedBridgeVerification {
         await waitForDestination(.sound, editorID: replacement.id, sessions: sessions!, in: host!, window: window)
         sessions!.selectEditor(id: session)
         await wait { mount.renderedDetail == "false/\(session)/editor" && navigationSettled(in: host!) }
-        precondition(model.state.alarmTitle == "Retained Swift draft" && !model.isClosed)
-        precondition(replacement.model.state.alarmTitle == "Second retained draft" && !replacement.model.isClosed)
-        precondition(sessions!.editorPaths[replacement.id] == [.sound])
+        verificationCheck(model.state.alarmTitle == "Retained Swift draft" && !model.isClosed)
+        verificationCheck(replacement.model.state.alarmTitle == "Second retained draft" && !replacement.model.isClosed)
+        verificationCheck(sessions!.editorPaths[replacement.id] == [.sound])
         sessions!.setEditorPath([.challenge], id: session)
         await waitForDestination(.challenge, editorID: session, sessions: sessions!, in: host!, window: window)
         capture(window, name: "challenge")
@@ -206,11 +205,11 @@ enum SharedBridgeVerification {
         // SwiftUI can keep the root mounted throughout a push/pop, so a second
         // root onAppear is not a rendering signal. Inspect the visible UIKit stack.
         await wait { visibleEditor(in: host!, title: model.state.alarmTitle) }
-        precondition(sessions!.editorPaths[session] == [])
+        verificationCheck(sessions!.editorPaths[session] == [])
         sessions!.closeEditor(id: replacement.id)
         await wait { replacement.model.isClosed }
-        precondition(!model.isClosed)
-        print("BRIDGE PASS production detail and nested destination replacement retain drafts")
+        verificationCheck(!model.isClosed)
+        VerificationResults.shared.pass("production detail and nested destination replacement retain drafts")
 
         model.onEvent(event: AddEditAlarmEvent.ChangeTime(value: TimeState(hour: 9, minute: 45)))
         model.onEvent(event: AddEditAlarmEvent.ToggleRepeat(value: true))
@@ -219,7 +218,7 @@ enum SharedBridgeVerification {
             difficulty: 1, questionCount: 3, operations: "+−×÷", additionRange: 0, factorRange: 0, difficultyMix: "")))
         model.setChallengeMixing(enabled: true)
         model.setMixedQuestionCount(difficulty: 2, count: 2)
-        precondition(model.state.challenge.questionCount == 5 && model.state.challenge.difficultyMix == "11122")
+        verificationCheck(model.state.challenge.questionCount == 5 && model.state.challenge.difficultyMix == "11122")
         model.setChallengeMixing(enabled: false)
         model.onEvent(event: AddEditAlarmEvent.OnChallengeChange(value: MathChallenge(
             difficulty: 3, questionCount: 4, operations: "+×", additionRange: 2, factorRange: 1, difficultyMix: "")))
@@ -230,9 +229,9 @@ enum SharedBridgeVerification {
             await wait { visibleEditor(in: host!, title: model.state.alarmTitle) }
             sessions!.setEditorPath([destination], id: session)
             await waitForDestination(destination, editorID: session, sessions: sessions!, in: host!, window: window)
-            precondition(model.state.alarmTime.hour == 9 && model.state.alarmTime.minute == 45)
-            precondition(model.state.dayChooser == "FTFTFTF" && model.state.repeatWeekly)
-            precondition(model.state.challenge.operations == "+×" && model.state.snoozeMinutes == 12)
+            verificationCheck(model.state.alarmTime.hour == 9 && model.state.alarmTime.minute == 45)
+            verificationCheck(model.state.dayChooser == "FTFTFTF" && model.state.repeatWeekly)
+            verificationCheck(model.state.challenge.operations == "+×" && model.state.snoozeMinutes == 12)
             capture(window, name: destination == .preview ? "maths-preview-native" : destination.rawValue.lowercased())
         }
         sessions!.setEditorPath([], id: session)
@@ -243,25 +242,25 @@ enum SharedBridgeVerification {
         let sound = sessions!.soundSelection(sessionID: session)!
         let originalTone = model.state.tone
         sound.choose("alarm_daybreak")
-        precondition(model.state.tone == originalTone && sound.hasChanges)
+        verificationCheck(model.state.tone == originalTone && sound.hasChanges)
         mount.alternateDetail = true
         await waitForDestination(.sound, editorID: session, sessions: sessions!, in: host!, window: window)
-        precondition(sessions!.soundSelection(sessionID: session) === sound && sound.pendingTone == "alarm_daybreak")
+        verificationCheck(sessions!.soundSelection(sessionID: session) === sound && sound.pendingTone == "alarm_daybreak")
         let oldPresentation = sound.beginPresentation()
         let newPresentation = sound.beginPresentation()
         sound.togglePreview("alarm_orbit")
-        precondition(sound.previewingTone == "alarm_orbit" && sound.previewMessage == nil)
+        verificationCheck(sound.previewingTone == "alarm_orbit" && sound.previewMessage == nil)
         sound.endPresentation(oldPresentation)
-        precondition(sound.previewingTone == "alarm_orbit")
+        verificationCheck(sound.previewingTone == "alarm_orbit")
         sound.endPresentation(newPresentation)
-        precondition(sound.previewingTone == nil)
+        verificationCheck(sound.previewingTone == nil)
         sound.finish() // Explicit Back/discard leaves Kotlin selection untouched.
         sound.begin(currentTone: model.state.tone)
-        precondition(sound.pendingTone == originalTone && !sound.hasChanges)
+        verificationCheck(sound.pendingTone == originalTone && !sound.hasChanges)
         sound.choose("alarm_rally")
         model.onEvent(event: AddEditAlarmEvent.OnToneChange(value: sound.pendingTone)) // Same Done action.
         sound.finish()
-        precondition(model.state.tone == "alarm_rally" && model.state.hasUnsavedChanges)
+        verificationCheck(model.state.tone == "alarm_rally" && model.state.hasUnsavedChanges)
         mount.alternateDetail = false
         await waitForDestination(.sound, editorID: session, sessions: sessions!, in: host!, window: window)
         sessions!.setEditorPath([], id: session)
@@ -275,7 +274,7 @@ enum SharedBridgeVerification {
         window.overrideUserInterfaceStyle = .light
         await wait { host!.traitCollection.userInterfaceStyle == .light }
         await exerciseKeyboard(in: host!.view, title: model.state.alarmTitle, window: window)
-        print("BRIDGE PASS native editor subpages and staged sound survive presentation replacement")
+        VerificationResults.shared.pass("native editor subpages and staged sound survive presentation replacement")
 
         pendingStore.setPendingDeeplink(handoff)
         let laterHandoff = IosApplication.shared.createAlarmHandoffJson(
@@ -288,13 +287,13 @@ enum SharedBridgeVerification {
         await Task.yield()
         sessions!.deliveryPresented = false
         sessions!.refreshPendingDelivery()
-        precondition(sessions!.challenge!.model === challenge.model)
-        precondition(challenge.model.state.readiness == .error && !challenge.model.isClosed)
-        precondition(PendingDeeplinkStore(userDefaults: defaults).peekPendingDeeplink() == handoff)
-        precondition(!pendingStore.acknowledgePendingDeeplink(laterHandoff))
-        precondition(defaults.data(forKey: "MathAlarm.pendingAlarmHandoffs.v1") == queuedData)
-        precondition(model.state.alarmTitle == "Retained Swift draft" && !model.isClosed)
-        print("BRIDGE PASS failed readiness preserves durable ordered deliveries")
+        verificationCheck(sessions!.challenge!.model === challenge.model)
+        verificationCheck(challenge.model.state.readiness == .error && !challenge.model.isClosed)
+        verificationCheck(PendingDeeplinkStore(userDefaults: defaults).peekPendingDeeplink() == handoff)
+        verificationCheck(!pendingStore.acknowledgePendingDeeplink(laterHandoff))
+        verificationCheck(defaults.data(forKey: "MathAlarm.pendingAlarmHandoffs.v1") == queuedData)
+        verificationCheck(model.state.alarmTitle == "Retained Swift draft" && !model.isClosed)
+        VerificationResults.shared.pass("failed readiness preserves durable ordered deliveries")
         // End only the error presentation before exercising the editor alert.
         // Replay above legitimately requests presentation again; it does not resolve it.
         await wait { !sessions!.deliveryReplayInFlight }
@@ -303,19 +302,19 @@ enum SharedBridgeVerification {
 
         model.onEvent(event: AddEditAlarmEvent.ChangeTime(value: TimeState(hour: 25, minute: 0)))
         model.onEvent(event: AddEditAlarmEvent.OnSaveTodoClick.shared)
-        precondition(model.state.validation == .invalidTime)
-        precondition(!model.state.results.isEmpty)
-        precondition(!model.state.isSaving)
+        verificationCheck(model.state.validation == .invalidTime)
+        verificationCheck(!model.state.results.isEmpty)
+        verificationCheck(!model.state.isSaving)
         print("BRIDGE TRACE editor validation deliveryPresented=\(sessions!.deliveryPresented) revision=\(sessions!.editorResultsRevision) results=\(model.state.results.map(\.id))")
         await wait { hasPresentedAlert(in: parent) }
         let retainedValidationIDs = model.state.results.map(\.id)
         sessions!.deliveryPresented = true
         await wait { !hasPresentedAlert(in: parent) }
-        precondition(model.state.results.map(\.id) == retainedValidationIDs)
+        verificationCheck(model.state.results.map(\.id) == retainedValidationIDs)
         sessions!.deliveryPresented = false
         await wait { hasPresentedAlert(in: parent) }
-        precondition(defaults.data(forKey: "MathAlarm.pendingAlarmHandoffs.v1") == queuedData)
-        print("BRIDGE PASS typed validation result without persistence")
+        verificationCheck(defaults.data(forKey: "MathAlarm.pendingAlarmHandoffs.v1") == queuedData)
+        VerificationResults.shared.pass("typed validation result without persistence")
 
         let cursor = model.state.results.last!.id
         var suspendStarted = false
@@ -328,11 +327,11 @@ enum SharedBridgeVerification {
         await wait { suspendStarted }
         resultWaiter.cancel()
         await resultWaiter.value
-        precondition(suspendCancelled)
-        precondition(!model.isClosed)
+        verificationCheck(suspendCancelled)
+        verificationCheck(!model.isClosed)
         model.onEvent(event: AddEditAlarmEvent.OnSaveTodoClick.shared)
-        precondition(model.state.results.last!.id > cursor)
-        print("BRIDGE PASS native suspend cancellation leaves later authoritative result retained")
+        verificationCheck(model.state.results.last!.id > cursor)
+        VerificationResults.shared.pass("native suspend cancellation leaves later authoritative result retained")
 
         var emissions = 0
         let observation = Task { @MainActor in
@@ -346,35 +345,35 @@ enum SharedBridgeVerification {
         let before = emissions
         model.onEvent(event: AddEditAlarmEvent.EnteredTitle(value: "After observer cancellation"))
         await Task.yield()
-        precondition(emissions == before)
-        precondition(!model.isClosed)
-        print("BRIDGE PASS native Flow cancellation leaves owner and state alive")
+        verificationCheck(emissions == before)
+        verificationCheck(!model.isClosed)
+        VerificationResults.shared.pass("native Flow cancellation leaves owner and state alive")
 
         sessions!.closeEditor(id: session)
         await wait { model.isClosed }
-        precondition(!challenge.model.isClosed && pendingStore.peekPendingDeeplink() == handoff)
+        verificationCheck(!challenge.model.isClosed && pendingStore.peekPendingDeeplink() == handoff)
         let savedEditor = sessions!.openEditor(alarm: nil)
         let savedModel = savedEditor.model
         await wait { mount.renderedDetail == "false/\(savedEditor.id)/editor" && navigationSettled(in: host!) }
         savedModel.onEvent(event: AddEditAlarmEvent.EnteredTitle(value: "M4 disabled native fixture"))
         savedModel.onEvent(event: AddEditAlarmEvent.ChangeTime(value: TimeState(hour: 24, minute: 0)))
         savedModel.onEvent(event: AddEditAlarmEvent.OnSaveTodoClick.shared)
-        precondition(!savedModel.isClosed && savedModel.state.hasUnsavedChanges)
+        verificationCheck(!savedModel.isClosed && savedModel.state.hasUnsavedChanges)
         let validationResult = savedModel.state.results.last!
-        precondition(validationResult.event is AlarmSettingsViewModel.UiEventValidationFailed)
+        verificationCheck(validationResult.event is AlarmSettingsViewModel.UiEventValidationFailed)
         savedModel.acknowledgeResult(id: validationResult.id)
         await wait { !hasPresentedAlert(in: parent) }
         savedModel.onEvent(event: AddEditAlarmEvent.ChangeTime(value: TimeState(hour: 8, minute: 20)))
         savedModel.onEvent(event: AddEditAlarmEvent.ToggleEnabled(value: false))
         savedModel.onEvent(event: AddEditAlarmEvent.OnSaveTodoClick.shared)
         savedModel.onEvent(event: AddEditAlarmEvent.OnSaveTodoClick.shared)
-        precondition(savedModel.state.isSaving)
+        verificationCheck(savedModel.state.isSaving)
         sessions!.closeEditor(id: savedEditor.id) // Explicit discard is guarded during accepted work.
-        precondition(sessions!.editors.contains { $0.id == savedEditor.id })
+        verificationCheck(sessions!.editors.contains { $0.id == savedEditor.id })
         await wait { savedModel.isClosed }
-        precondition(savedModel.state.isSaved && savedModel.state.results.isEmpty)
-        precondition(!sessions!.editors.contains { $0.id == savedEditor.id })
-        precondition(sessions!.soundSelection(sessionID: savedEditor.id) == nil)
+        verificationCheck(savedModel.state.isSaved && savedModel.state.results.isEmpty)
+        verificationCheck(!sessions!.editors.contains { $0.id == savedEditor.id })
+        verificationCheck(sessions!.soundSelection(sessionID: savedEditor.id) == nil)
         let listModel = SharedFeatures.shared.list()
         await wait { !listModel.state.loading && listModel.state.alarms.contains { $0.title == "M4 disabled native fixture" } }
         mount.list = listModel
@@ -383,22 +382,22 @@ enum SharedBridgeVerification {
         host!.view.layoutIfNeeded()
         capture(window, name: "list")
         let fixture = listModel.state.alarms.first { $0.title == "M4 disabled native fixture" }!
-        precondition(!fixture.isOn && fixture.pendingTimes.isEmpty)
-        precondition(listModel.state.alarms.filter { $0.title == fixture.title }.count == 1)
+        verificationCheck(!fixture.isOn && fixture.pendingTimes.isEmpty)
+        verificationCheck(listModel.state.alarms.filter { $0.title == fixture.title }.count == 1)
         listModel.onEvent(event: AlarmListEvent.OnDeleteAlarmClick(alarm: fixture))
         await wait { listModel.state.pendingOperations == 0 && !listModel.state.alarms.contains { $0.alarmId == fixture.alarmId } }
-        precondition(listModel.state.canUndoDelete)
+        verificationCheck(listModel.state.canUndoDelete)
         capture(window, name: "list-undo")
         listModel.onEvent(event: AlarmListEvent.OnUndoDeleteClick.shared)
         await wait { listModel.state.pendingOperations == 0 && listModel.state.alarms.contains { $0.alarmId == fixture.alarmId } }
-        precondition(!listModel.state.canUndoDelete)
+        verificationCheck(!listModel.state.canUndoDelete)
         listModel.onEvent(event: AlarmListEvent.OnClearAlarmsClick.shared)
         await wait { listModel.state.pendingOperations == 0 && listModel.state.alarms.isEmpty }
         capture(window, name: "list-empty")
         mount.list = nil
         listModel.close()
-        precondition(defaults.data(forKey: "MathAlarm.pendingAlarmHandoffs.v1") == queuedData)
-        print("BRIDGE PASS native validation retry duplicate save result acknowledgement and list undo")
+        verificationCheck(defaults.data(forKey: "MathAlarm.pendingAlarmHandoffs.v1") == queuedData)
+        VerificationResults.shared.pass("native validation retry duplicate save result acknowledgement and list undo")
 
         let windowEditor = sessions!.openEditor(alarm: nil)
         windowEditor.model.onEvent(event: AddEditAlarmEvent.EnteredTitle(value: "Window-owned retained draft"))
@@ -413,26 +412,26 @@ enum SharedBridgeVerification {
         probe!.didMove(toParent: parent)
         await Task.yield()
         probe!.view.layoutIfNeeded()
-        precondition(!probeModel.isClosed)
+        verificationCheck(!probeModel.isClosed)
         probe!.willMove(toParent: nil)
         probe!.view.removeFromSuperview()
         probe!.removeFromParent()
         probe = nil
         await wait { probeModel.isClosed }
         SharedFeatures.shared.closeEditor(sessionId: probeID)
-        precondition(defaults.data(forKey: "MathAlarm.pendingAlarmHandoffs.v1") == queuedData)
-        print("BRIDGE PASS mounted StateViewModel cleanup leaves durable queue unchanged")
+        verificationCheck(defaults.data(forKey: "MathAlarm.pendingAlarmHandoffs.v1") == queuedData)
+        VerificationResults.shared.pass("mounted StateViewModel cleanup leaves durable queue unchanged")
 
         mount.visible = false
         host!.rootView = Mount(mount: mount, sessions: nil)
         // Structural owner teardown explicitly ends factory sessions independently of caches.
         await wait { challenge.model.isClosed && windowEditor.model.isClosed && sessions!.editors.isEmpty }
-        precondition(sessions!.challenges.isEmpty)
+        verificationCheck(sessions!.challenges.isEmpty)
         sessions!.refreshPendingDelivery() // A late outgoing-window notification cannot recreate owners.
-        precondition(sessions!.challenge == nil && sessions!.challenges.isEmpty)
-        precondition(windowEditor.model.state.alarmTitle == "Window-owned retained draft")
-        precondition(challenge.model.state.readiness == .error)
-        precondition(defaults.data(forKey: "MathAlarm.pendingAlarmHandoffs.v1") == queuedData)
+        verificationCheck(sessions!.challenge == nil && sessions!.challenges.isEmpty)
+        verificationCheck(windowEditor.model.state.alarmTitle == "Window-owned retained draft")
+        verificationCheck(challenge.model.state.readiness == .error)
+        verificationCheck(defaults.data(forKey: "MathAlarm.pendingAlarmHandoffs.v1") == queuedData)
         // A real window lifetime ends when its hosting controller is detached/released.
         // Native Form/alert transition caches may retain removed view values while a host lives.
         host!.willMove(toParent: nil)
@@ -446,22 +445,23 @@ enum SharedBridgeVerification {
         // keyboard or alert. The gate is authoritative owner/factory cleanup, not
         // an undocumented deadline for presentation-cache object deallocation.
         if let cachedWindow = releasedWindow {
-            precondition(cachedWindow.editors.isEmpty && cachedWindow.challenges.isEmpty)
+            verificationCheck(cachedWindow.editors.isEmpty && cachedWindow.challenges.isEmpty)
             cachedWindow.refreshPendingDelivery()
-            precondition(cachedWindow.challenge == nil)
+            verificationCheck(cachedWindow.challenge == nil)
             print("BRIDGE NOTE outgoing native presentation cache retains an inert registry; all factory owners ended")
         }
-        precondition(challenge.model.state.readiness == .error)
-        precondition(PendingDeeplinkStore(userDefaults: defaults).peekPendingDeeplink() == handoff)
-        precondition(defaults.data(forKey: "MathAlarm.pendingAlarmHandoffs.v1") == queuedData)
-        precondition(model.isClosed)
+        verificationCheck(challenge.model.state.readiness == .error)
+        verificationCheck(PendingDeeplinkStore(userDefaults: defaults).peekPendingDeeplink() == handoff)
+        verificationCheck(defaults.data(forKey: "MathAlarm.pendingAlarmHandoffs.v1") == queuedData)
+        verificationCheck(model.isClosed)
         model.close()
         windowEditor.model.close()
         challenge.model.close()
-        print("BRIDGE PASS production session-end and window cleanup preserve unresolved delivery")
+        VerificationResults.shared.pass("production session-end and window cleanup preserve unresolved delivery")
+        await exercisePermissionSave(parent: parent)
         await exerciseMilestone5(window: window, parent: parent)
         await NativeSettingsVerification.run(window: window, parent: parent)
-        print("SHARED_BRIDGE_VERIFICATION_PASSED")
+        VerificationResults.shared.finish()
         fflush(stdout)
     }
 
@@ -471,10 +471,23 @@ enum SharedBridgeVerification {
         var registrations: [String: AlarmScheduleRequest] = [:]
         var cancellations: [Int64] = []
         var rejectCancellation = false
+        var authorization = "authorized"
+        var authorizationResponse = true
+        var deferAuthorization = false
+        var pendingAuthorization: AlarmAuthorizationCompletion?
+        var authorizationRequests = 0
         private func key(_ id: Int64, _ occurrence: String) -> String { "\(id)/\(occurrence)" }
         func isAlarmKitAvailable() -> Bool { true }
-        func authorizationStatus() -> String { "authorized" }
-        func requestAuthorization(completion: AlarmAuthorizationCompletion) { completion.complete(authorized: true) }
+        func authorizationStatus() -> String { authorization }
+        func requestAuthorization(completion: AlarmAuthorizationCompletion) {
+            authorizationRequests += 1
+            if deferAuthorization {
+                pendingAuthorization = completion
+            } else {
+                authorization = authorizationResponse ? "authorized" : "denied"
+                completion.complete(authorized: authorizationResponse)
+            }
+        }
         func scheduleAlarm(request: AlarmScheduleRequest, completion: AlarmScheduleCompletion) {
             registrations[key(request.alarmId, request.occurrenceKey)] = request
             completion.complete(success: true, error: nil)
@@ -496,6 +509,179 @@ enum SharedBridgeVerification {
         }
         func hasPendingHandoff() -> Bool { false }
         func acknowledgePendingHandoff(payload: String) { }
+    }
+
+    private final class PermissionMount: ObservableObject {
+        @Published var showEditor = true
+    }
+
+    private struct PermissionScene: View {
+        @ObservedObject var sessions: NativeWindowSessions
+        @ObservedObject var mount: PermissionMount
+        var body: some View {
+            ZStack {
+                NativeSessionOwners(sessions: sessions)
+                if mount.showEditor { NativeEditorStack(sessions: sessions) }
+            }
+        }
+    }
+
+    private static func exercisePermissionSave(parent: UIViewController) async {
+        let scheduler = VerificationScheduler()
+        scheduler.authorization = "notDetermined"
+        scheduler.authorizationResponse = false
+        AlarmSchedulerBridge.shared.registerScheduler(scheduler: scheduler)
+        defer { AlarmSchedulerBridge.shared.registerScheduler(scheduler: AlarmKitKotlinBridge(wrapper: AlarmKitWrapperImpl.shared)) }
+        let sessions = NativeWindowSessions()
+        let mount = PermissionMount()
+        let host = UIHostingController(rootView: PermissionScene(sessions: sessions, mount: mount))
+        parent.addChild(host); parent.view.addSubview(host.view)
+        host.view.frame = parent.view.bounds; host.didMove(toParent: parent)
+        let list = SharedFeatures.shared.list()
+        await wait { !list.state.loading }
+        let originalIDs = Set(list.state.alarms.map(\.alarmId))
+        defer {
+            sessions.closeWindow(); list.close()
+            host.willMove(toParent: nil); host.view.removeFromSuperview(); host.removeFromParent()
+        }
+
+        let draft = sessions.openEditor(alarm: nil)
+        scheduler.deferAuthorization = true
+        draft.model.onEvent(event: AddEditAlarmEvent.EnteredTitle(value: "Permission retry fixture"))
+        draft.model.onEvent(event: AddEditAlarmEvent.OnSaveTodoClick.shared)
+        await wait { scheduler.pendingAuthorization != nil }
+        let permission = draft.model.state.results.first!
+        verificationCheck(sessions.permissionRequests == [draft.id] && scheduler.authorizationRequests == 1)
+        verificationCheck(sessions.requestInitialAlarmPermission(id: draft.id, resultID: permission.id) == nil)
+        scheduler.authorization = "denied"
+        scheduler.pendingAuthorization!.complete(authorized: false)
+        scheduler.pendingAuthorization = nil
+        scheduler.deferAuthorization = false
+        await wait { sessions.permissionRequests.isEmpty }
+        verificationCheck(draft.model.state.results.map(\.id) == [permission.id])
+        verificationCheck(sessions.requestInitialAlarmPermission(id: draft.id, resultID: permission.id) == nil)
+        verificationCheck(scheduler.authorizationRequests == 1)
+        await wait { host.presentedViewController != nil }
+        if let window = parent.view.window { capture(window, name: "permission-settings-guidance") }
+        draft.model.acknowledgeResult(id: permission.id)
+        mount.showEditor = false
+        await wait { host.presentedViewController == nil && editorField(in: host.view, title: "Permission retry fixture") == nil }
+        verificationCheck(!draft.model.isClosed && !draft.model.state.isSaving && !draft.model.state.isSaved)
+        verificationCheck(draft.model.state.alarmId?.int64Value == 0 && draft.model.state.results.isEmpty)
+        verificationCheck(draft.model.state.alarmTitle == "Permission retry fixture")
+        verificationCheck(sessions.selectedEditorID == draft.id && sessions.permissionRequests.isEmpty)
+        verificationCheck(Set(list.state.alarms.map(\.alarmId)) == originalIDs && scheduler.registrations.isEmpty)
+
+        // A later explicit save can request permission again and accept this exact draft.
+        scheduler.authorization = "notDetermined"
+        scheduler.authorizationResponse = true
+        draft.model.onEvent(event: AddEditAlarmEvent.OnSaveTodoClick.shared)
+        await wait { !draft.model.state.isSaving && !draft.model.state.results.isEmpty }
+        draft.model.acknowledgeResult(id: draft.model.state.results.first!.id)
+        await sessions.requestAlarmPermission(id: draft.id)!.value
+        await wait { draft.model.isClosed && list.state.alarms.contains { $0.title == "Permission retry fixture" } }
+        let saved = list.state.alarms.first { $0.title == "Permission retry fixture" }!
+        verificationCheck(saved.isOn && saved.scheduleInitialized && saved.scheduleError == nil && !saved.pendingTimes.isEmpty)
+        verificationCheck(scheduler.registrations.values.filter { $0.alarmId == saved.alarmId }.count == saved.pendingTimes.count)
+        verificationCheck(sessions.selectedEditorID == nil && sessions.permissionRequests.isEmpty)
+        list.onEvent(event: AlarmListEvent.OnDeleteAlarmClick(alarm: saved))
+        await wait { list.state.pendingOperations == 0 && !list.state.alarms.contains { $0.alarmId == saved.alarmId } }
+        verificationCheck(scheduler.registrations.values.allSatisfy { $0.alarmId != saved.alarmId })
+
+        // An OS response arriving after discard cannot save the replacement draft.
+        scheduler.authorization = "notDetermined"
+        scheduler.deferAuthorization = true
+        let discarded = sessions.openEditor(alarm: nil)
+        let late = sessions.requestAlarmPermission(id: discarded.id)!
+        await wait { scheduler.pendingAuthorization != nil }
+        sessions.closeEditor(id: discarded.id)
+        let replacement = sessions.openEditor(alarm: nil)
+        replacement.model.onEvent(event: AddEditAlarmEvent.EnteredTitle(value: "Replacement permission draft"))
+        scheduler.authorization = "authorized"
+        scheduler.pendingAuthorization!.complete(authorized: true)
+        scheduler.pendingAuthorization = nil
+        await late.value
+        verificationCheck(discarded.model.isClosed && !replacement.model.isClosed && !replacement.model.state.isSaved)
+        verificationCheck(replacement.model.state.alarmId?.int64Value == 0 && replacement.model.state.results.isEmpty)
+        verificationCheck(sessions.selectedEditorID == replacement.id && sessions.permissionRequests.isEmpty)
+        verificationCheck(Set(list.state.alarms.map(\.alarmId)) == originalIDs && scheduler.registrations.isEmpty)
+        VerificationResults.shared.pass("native permission denial keeps unsaved draft without retry; grant saves exact draft and occurrences; late response cannot save replacement")
+
+        // Returning without a grant consumes the handoff without another Save/dialog.
+        scheduler.authorization = "denied"
+        verificationCheck(sessions.beginAlarmSettingsSave(id: replacement.id))
+        sessions.alarmSettingsSceneChanged(.active) // No departure yet: do not save.
+        sessions.alarmSettingsSceneChanged(.inactive)
+        sessions.alarmSettingsSceneChanged(.active)
+        verificationCheck(!replacement.model.state.isSaved && replacement.model.state.results.isEmpty)
+        scheduler.authorization = "authorized"
+        sessions.alarmSettingsSceneChanged(.active) // An unrelated later activation cannot save it.
+        verificationCheck(!replacement.model.state.isSaved && replacement.model.state.alarmId?.int64Value == 0)
+
+        // A failed Settings open and a discarded originating draft both cancel the intent.
+        verificationCheck(sessions.beginAlarmSettingsSave(id: replacement.id))
+        sessions.cancelAlarmSettingsSave(id: replacement.id)
+        sessions.alarmSettingsSceneChanged(.inactive)
+        sessions.alarmSettingsSceneChanged(.active)
+        verificationCheck(!replacement.model.state.isSaved)
+        verificationCheck(sessions.beginAlarmSettingsSave(id: replacement.id))
+        sessions.alarmSettingsSceneChanged(.inactive)
+        sessions.closeEditor(id: replacement.id)
+        let settingsDraft = sessions.openEditor(alarm: nil)
+        settingsDraft.model.onEvent(event: AddEditAlarmEvent.EnteredTitle(value: "Settings grant fixture"))
+        sessions.alarmSettingsSceneChanged(.active)
+        verificationCheck(!settingsDraft.model.state.isSaved && settingsDraft.model.state.results.isEmpty)
+
+        // Grant saves this exact draft once, after any delivered challenge yields.
+        scheduler.authorization = "denied"
+        verificationCheck(sessions.beginAlarmSettingsSave(id: settingsDraft.id))
+        sessions.alarmSettingsSceneChanged(.background)
+        scheduler.authorization = "authorized"
+        sessions.deliveryPresented = true
+        sessions.alarmSettingsSceneChanged(.active)
+        verificationCheck(!settingsDraft.model.state.isSaved && !settingsDraft.model.state.isSaving)
+        sessions.deliveryPresented = false
+        sessions.resumeAlarmSaveAfterSettings()
+        sessions.resumeAlarmSaveAfterSettings() // Repeated activation must not duplicate the Save.
+        await wait { settingsDraft.model.isClosed && list.state.alarms.contains { $0.title == "Settings grant fixture" } }
+        let settingsSaved = list.state.alarms.first { $0.title == "Settings grant fixture" }!
+        verificationCheck(settingsSaved.isOn && settingsSaved.scheduleInitialized && settingsSaved.scheduleError == nil)
+        verificationCheck(!settingsSaved.pendingTimes.isEmpty)
+        verificationCheck(scheduler.registrations.values.filter { $0.alarmId == settingsSaved.alarmId }.count == settingsSaved.pendingTimes.count)
+        verificationCheck(list.state.alarms.filter { $0.title == "Settings grant fixture" }.count == 1)
+        list.onEvent(event: AlarmListEvent.OnDeleteAlarmClick(alarm: settingsSaved))
+        await wait { list.state.pendingOperations == 0 && Set(list.state.alarms.map(\.alarmId)) == originalIDs }
+        verificationCheck(scheduler.registrations.isEmpty && scheduler.authorizationRequests == 3)
+        VerificationResults.shared.pass("native first Save requests authorization once; Settings grant resumes exact draft once; denial, failed open and replacement never save; delivery defers resumption")
+
+        for language in ["en", "es", "de", "ru", "pt", "hi", "pa", "bn", "zh"] {
+            let url = Bundle.main.url(forResource: "alarm-settings-guide-\(language)", withExtension: "mp4")!
+            let asset = AVURLAsset(url: url)
+            let duration = try! await asset.load(.duration)
+            let video = try! await asset.loadTracks(withMediaType: .video)
+            let audio = try! await asset.loadTracks(withMediaType: .audio)
+            verificationCheck(duration.seconds == 6 && video.count == 1 && audio.isEmpty)
+            let size = try! await video[0].load(.naturalSize)
+            verificationCheck(size == CGSize(width: 480, height: 640))
+        }
+        verificationCheck(IosApplication.shared.beginSettingsGuideAudio(ownerId: "verification-guide-a", onInterrupted: {}))
+        verificationCheck(!IosApplication.shared.beginSettingsGuideAudio(ownerId: "verification-guide-b", onInterrupted: {}))
+        verificationCheck(!IosApplication.shared.endSettingsGuideAudio(ownerId: "verification-guide-b"))
+        verificationCheck(IosApplication.shared.endSettingsGuideAudio(ownerId: "verification-guide-a"))
+        sessions.settingsGuide.prepare(autoplay: false)
+        verificationCheck(sessions.settingsGuide.available && !sessions.settingsGuide.playing)
+        if !AVPictureInPictureController.isPictureInPictureSupported() {
+            var openedSettings = 0
+            sessions.settingsGuide.openSettingsWithGuide { openedSettings += 1 }
+            verificationCheck(openedSettings == 1 && !sessions.settingsGuide.starting && !sessions.settingsGuide.floating)
+            print("BRIDGE NOTE native Picture in Picture unsupported on this simulator; direct Settings fallback verified")
+        }
+        verificationCheck(!IosApplication.shared.beginSettingsGuideAudio(ownerId: "verification-guide-b", onInterrupted: {}))
+        sessions.deliveryPresented = true // The window registry yields the tutorial to delivery.
+        verificationCheck(IosApplication.shared.beginSettingsGuideAudio(ownerId: "verification-guide-b", onInterrupted: {}))
+        verificationCheck(IosApplication.shared.endSettingsGuideAudio(ownerId: "verification-guide-b"))
+        sessions.deliveryPresented = false
+        VerificationResults.shared.pass("native permission tutorial bundles nine silent loops; audio lease rejects competing owners and stale release; delivery stops guide")
     }
 
     private struct ChallengeScene: View {
@@ -542,28 +728,28 @@ enum SharedBridgeVerification {
         await wait { sessions.previews[draft.id]?.model.state.readiness == .ready }
         await waitForDestination(.preview, editorID: draft.id, sessions: sessions, in: host!, window: window)
         let preview = sessions.previews[draft.id]!
-        precondition(preview.model.state.preview && preview.model.state.occurrenceId == nil)
+        verificationCheck(preview.model.state.preview && preview.model.state.occurrenceId == nil)
         let firstProblem = preview.model.state.currentProblem!
         await wait { answerField(in: host!.view) != nil }
         let nativeAnswer = answerField(in: host!.view)!
-        precondition(nativeAnswer.window === window && nativeAnswer.placeholder == NativeStrings.text("Answer"))
-        precondition(nativeAnswer.keyboardType == .numbersAndPunctuation && nativeAnswer.returnKeyType == .go)
+        verificationCheck(nativeAnswer.window === window && nativeAnswer.placeholder == NativeStrings.text("Answer"))
+        verificationCheck(nativeAnswer.keyboardType == .numbersAndPunctuation && nativeAnswer.returnKeyType == .go)
         // SwiftUI owns the accessible container/label, rather than assigning it
         // to this inner UITextField. Client-level label checks belong to M7.
         await wait { nativeAnswer.isFirstResponder } // Native FocusState supplies initial answer focus.
-        precondition((nativeAnswer.text ?? "").isEmpty && preview.model.state.answerText.isEmpty)
+        verificationCheck((nativeAnswer.text ?? "").isEmpty && preview.model.state.answerText.isEmpty)
         nativeAnswer.insertText("-999")
         await wait { nativeAnswer.text == "-999" && preview.model.state.answerText == "-999" }
-        precondition(nativeAnswer.isFirstResponder)
+        verificationCheck(nativeAnswer.isFirstResponder)
         capture(window, name: "maths-preview-native-answer-focus-keyboard")
-        print("BRIDGE PASS native answer focus keyboard placeholder and UITextField insertion update shared raw answer")
+        VerificationResults.shared.pass("native answer focus keyboard placeholder and UITextField insertion update shared raw answer")
         preview.model.submitAnswer(questionIndex: 0, problem: firstProblem)
         await wait { sessions.challengeFailures[preview.id] != nil }
         nativeAnswer.resignFirstResponder()
         preview.model.onEvent(event: MathScreenEvent.EnteredAnswer(value: String(firstProblem.answer)))
         preview.model.submitAnswer(questionIndex: 0, problem: firstProblem)
         await wait { preview.model.state.questionIndex == 1 }
-        precondition(!queue.hasPendingDeeplink() && scheduler.registrations.isEmpty)
+        verificationCheck(!queue.hasPendingDeeplink() && scheduler.registrations.isEmpty)
         mount.largeText = true
         window.overrideUserInterfaceStyle = .dark
         await Task.yield()
@@ -573,16 +759,16 @@ enum SharedBridgeVerification {
         window.overrideUserInterfaceStyle = .light
         mount.alternateDetail = true
         await Task.yield()
-        precondition(sessions.previews[draft.id]?.model === preview.model)
+        verificationCheck(sessions.previews[draft.id]?.model === preview.model)
         sessions.closePreview(editorID: draft.id, expectedSessionID: preview.id)
-        precondition(preview.model.isClosed && sessions.editorPaths[draft.id] == [.challenge])
-        precondition(draft.model.state.alarmTitle == "M5 retained draft \"quotes\"")
+        verificationCheck(preview.model.isClosed && sessions.editorPaths[draft.id] == [.challenge])
+        verificationCheck(draft.model.state.alarmTitle == "M5 retained draft \"quotes\"")
         sessions.setEditorPath([.challenge, .preview], id: draft.id)
         await wait { sessions.previews[draft.id]?.model.state.readiness == .ready }
         await waitForDestination(.preview, editorID: draft.id, sessions: sessions, in: host!, window: window)
         let secondPreview = sessions.previews[draft.id]!
         sessions.closePreview(editorID: draft.id, expectedSessionID: preview.id) // Outgoing Cancel cannot close replacement.
-        precondition(sessions.previews[draft.id]?.id == secondPreview.id)
+        verificationCheck(sessions.previews[draft.id]?.id == secondPreview.id)
         let draftBeforePreviewCompletion = draft.model.state
         for expectedIndex in 0..<Int(secondPreview.model.state.questionCount) {
             let problem = secondPreview.model.state.currentProblem!
@@ -591,11 +777,11 @@ enum SharedBridgeVerification {
             await wait { secondPreview.model.isClosed || secondPreview.model.state.questionIndex == Int32(expectedIndex + 1) }
         }
         await wait { secondPreview.model.isClosed && sessions.previews[draft.id] == nil }
-        precondition(secondPreview.model.state.readiness == .resolved && secondPreview.model.state.results.isEmpty)
-        precondition(sessions.selectedEditor?.model === draft.model && draft.model.state == draftBeforePreviewCompletion)
-        precondition(sessions.editorPaths[draft.id] == [.challenge] && !queue.hasPendingDeeplink() && scheduler.registrations.isEmpty)
-        print("BRIDGE PASS native maths preview validation progress cancellation and retained route")
-        print("BRIDGE PASS native preview accepted completion returns to identical unsaved draft and nested route")
+        verificationCheck(secondPreview.model.state.readiness == .resolved && secondPreview.model.state.results.isEmpty)
+        verificationCheck(sessions.selectedEditor?.model === draft.model && draft.model.state == draftBeforePreviewCompletion)
+        verificationCheck(sessions.editorPaths[draft.id] == [.challenge] && !queue.hasPendingDeeplink() && scheduler.registrations.isEmpty)
+        VerificationResults.shared.pass("native maths preview validation progress cancellation and retained route")
+        VerificationResults.shared.pass("native preview accepted completion returns to identical unsaved draft and nested route")
 
         let list = SharedFeatures.shared.list()
         await wait { !list.state.loading }
@@ -609,9 +795,11 @@ enum SharedBridgeVerification {
                 questionCount: 2, operations: "+", additionRange: 0, factorRange: 0, difficultyMix: "")))
             editor.onEvent(event: AddEditAlarmEvent.OnSaveTodoClick.shared)
             await wait { !editor.state.isSaving && editor.state.results.contains { $0.event is AlarmSettingsViewModel.UiEventSaveAlarm } }
-            await wait { list.state.alarms.contains { $0.title == fixtureTitle } }
+            // Room may emit the desired row before the accepted registration update.
+            // Await the authoritative scheduled row, not merely its first insertion.
+            await wait { list.state.alarms.contains { $0.title == fixtureTitle && $0.isOn && !$0.pendingTimes.isEmpty } }
             let alarm = list.state.alarms.first { $0.title == fixtureTitle }!
-            precondition(alarm.isOn && !alarm.pendingTimes.isEmpty)
+            verificationCheck(alarm.isOn && !alarm.pendingTimes.isEmpty)
             for result in editor.state.results { editor.acknowledgeResult(id: result.id) }
             SharedFeatures.shared.closeEditor(sessionId: id)
             return alarm
@@ -625,17 +813,17 @@ enum SharedBridgeVerification {
         let stagedSound = sessions.soundSelection(sessionID: draft.id)!
         stagedSound.choose("alarm_daybreak")
         let draftBeforeDelivery = draft.model.state
-        precondition(sessions.beginPermissionRequest(id: draft.id))
+        verificationCheck(sessions.beginPermissionRequest(id: draft.id))
         let returningPayload = IosApplication.shared.createAlarmHandoffJson(alarmId: returningAlarm.alarmId,
             deliveryId: "m5-same-owner-return", activeAt: returningAlarm.pendingTimes.first!)
-        precondition(queue.setPendingDeeplink(returningPayload))
+        verificationCheck(queue.setPendingDeeplink(returningPayload))
         sessions.refreshPendingDelivery()
         await wait { sessions.challenge?.model.state.readiness == .ready && !queue.hasPendingDeeplink() }
         let interruption = sessions.challenge!
         await wait { visibleDeliveredChallenge(in: host!) }
-        precondition(interruption.model.state.alarm?.alarmId == returningAlarm.alarmId)
-        precondition(sessions.selectedEditor?.model === draft.model && sessions.editorPaths[draft.id] == [.challenge, .sound])
-        precondition(sessions.permissionRequests.contains(draft.id) && stagedSound.pendingTone == "alarm_daybreak")
+        verificationCheck(interruption.model.state.alarm?.alarmId == returningAlarm.alarmId)
+        verificationCheck(sessions.selectedEditor?.model === draft.model && sessions.editorPaths[draft.id] == [.challenge, .sound])
+        verificationCheck(sessions.permissionRequests.contains(draft.id) && stagedSound.pendingTone == "alarm_daybreak")
         for expectedIndex in 0..<Int(interruption.model.state.questionCount) {
             let problem = interruption.model.state.currentProblem!
             interruption.model.onEvent(event: MathScreenEvent.EnteredAnswer(value: String(problem.answer)))
@@ -644,13 +832,13 @@ enum SharedBridgeVerification {
         }
         await wait { interruption.model.isClosed && sessions.challenge == nil && !sessions.deliveryPresented && !hasPresentation(in: host!) }
         await waitForDestination(.sound, editorID: draft.id, sessions: sessions, in: host!, window: window)
-        precondition(sessions.selectedEditor?.model === draft.model && !draft.model.isClosed && draft.model.state == draftBeforeDelivery)
-        precondition(sessions.editorPaths[draft.id] == [.challenge, .sound])
-        precondition(sessions.soundSelection(sessionID: draft.id) === stagedSound && stagedSound.pendingTone == "alarm_daybreak")
-        precondition(sessions.permissionRequests.contains(draft.id) && interruption.model.state.results.isEmpty)
+        verificationCheck(sessions.selectedEditor?.model === draft.model && !draft.model.isClosed && draft.model.state == draftBeforeDelivery)
+        verificationCheck(sessions.editorPaths[draft.id] == [.challenge, .sound])
+        verificationCheck(sessions.soundSelection(sessionID: draft.id) === stagedSound && stagedSound.pendingTone == "alarm_daybreak")
+        verificationCheck(sessions.permissionRequests.contains(draft.id) && interruption.model.state.results.isEmpty)
         sessions.endPermissionRequest(id: draft.id)
         capture(window, name: "same-owner-draft-and-staged-sound-after-real-completion")
-        print("BRIDGE PASS real accepted completion returns to identical retained draft nested route staged sound and permission guard")
+        VerificationResults.shared.pass("real accepted completion returns to identical retained draft nested route staged sound and permission guard")
 
         sessions.setEditorPath([.challenge, .preview], id: draft.id)
         await wait { sessions.previews[draft.id]?.model.state.readiness == .ready }
@@ -664,22 +852,22 @@ enum SharedBridgeVerification {
             deliveryId: "m5-first", activeAt: firstAt)
         let secondPayload = IosApplication.shared.createAlarmHandoffJson(alarmId: second.alarmId,
             deliveryId: "m5-second", activeAt: secondAt)
-        precondition(queue.setPendingDeeplink(firstPayload) && queue.setPendingDeeplink(secondPayload))
+        verificationCheck(queue.setPendingDeeplink(firstPayload) && queue.setPendingDeeplink(secondPayload))
         sessions.refreshPendingDelivery()
         await wait { sessions.challenge?.model.state.readiness == .ready && queue.peekPendingDeeplink() == secondPayload }
         let delivered = sessions.challenge!
-        precondition(delivered.model.state.alarm?.alarmId == first.alarmId)
-        precondition(delivered.model.state.alarm?.activeAt == firstAt)
-        precondition(sessions.previews[draft.id]?.model === retainedPreview.model)
+        verificationCheck(delivered.model.state.alarm?.alarmId == first.alarmId)
+        verificationCheck(delivered.model.state.alarm?.activeAt == firstAt)
+        verificationCheck(sessions.previews[draft.id]?.model === retainedPreview.model)
         let problem = delivered.model.state.currentProblem!
         delivered.model.onEvent(event: MathScreenEvent.EnteredAnswer(value: String(problem.answer)))
         delivered.model.submitAnswer(questionIndex: 0, problem: problem)
         await wait { delivered.model.state.questionIndex == 1 }
         sessions.refreshPendingDelivery()
-        precondition(sessions.challenge?.id == delivered.id && queue.peekPendingDeeplink() == secondPayload)
+        verificationCheck(sessions.challenge?.id == delivered.id && queue.peekPendingDeeplink() == secondPayload)
         await Task.yield()
         capture(window, name: "delivered-challenge-progress")
-        print("BRIDGE PASS native readiness before exact acknowledgement and ordered delivery interruption")
+        VerificationResults.shared.pass("native readiness before exact acknowledgement and ordered delivery interruption")
 
         // End the structural owner after acknowledgement; durable occurrence/progress must restore.
         let exactProblem = delivered.model.state.currentProblem!
@@ -687,31 +875,31 @@ enum SharedBridgeVerification {
         let incorrect = delivered.model.state.incorrectAnswers
         await wait { visibleDeliveredChallenge(in: host!) }
         sessions.closeWindow()
-        precondition(delivered.model.isClosed && queue.peekPendingDeeplink() == secondPayload)
+        verificationCheck(delivered.model.isClosed && queue.peekPendingDeeplink() == secondPayload)
         // This UIKit harness removes only a child host, unlike a real closed window.
         // Let its requested cover dismissal finish before installing another host.
         await wait { !hasPresentation(in: parent) }
         host!.willMove(toParent: nil); host!.view.removeFromSuperview(); host!.removeFromParent(); host = nil
         var restoredPayloads: [String]?
         IosApplication.shared.restoreUnresolvedHandoffs { payloads, succeeded in
-            precondition(succeeded.boolValue)
+            verificationCheck(succeeded.boolValue)
             restoredPayloads = payloads
         }
         await wait { restoredPayloads != nil }
-        precondition(restoredPayloads!.contains { IosApplication.shared.decodeAlarmHandoffJson(payload: $0)?.alarmId == first.alarmId })
-        precondition(queue.restoreUnresolvedHandoffs(restoredPayloads!))
+        verificationCheck(restoredPayloads!.contains { IosApplication.shared.decodeAlarmHandoffJson(payload: $0)?.alarmId == first.alarmId })
+        verificationCheck(queue.restoreUnresolvedHandoffs(restoredPayloads!))
         let replacement = NativeWindowSessions(pendingStore: queue, restoreRecovery: { recoveryRequests += $0 })
         host = UIHostingController(rootView: ChallengeScene(sessions: replacement, mount: mount))
         parent.addChild(host!); parent.view.addSubview(host!.view); host!.view.frame = parent.view.bounds; host!.didMove(toParent: parent)
         replacement.refreshPendingDelivery()
         await wait { replacement.challenge?.model.state.readiness == .ready && queue.peekPendingDeeplink() == secondPayload }
         let restored = replacement.challenge!
-        precondition(restored.model.state.questionIndex == 1 && restored.model.state.currentProblem == exactProblem)
-        precondition(restored.model.state.startedAt == startedAt && restored.model.state.incorrectAnswers == incorrect)
+        verificationCheck(restored.model.state.questionIndex == 1 && restored.model.state.currentProblem == exactProblem)
+        verificationCheck(restored.model.state.startedAt == startedAt && restored.model.state.incorrectAnswers == incorrect)
         // Exercise user commands only once the restored native cover is actually
         // mounted; readiness itself can precede SwiftUI's presentation transaction.
         await wait { visibleDeliveredChallenge(in: host!) }
-        print("BRIDGE PASS acknowledged unresolved restoration preserves exact challenge progress")
+        VerificationResults.shared.pass("acknowledged unresolved restoration preserves exact challenge progress")
 
         // Native cancellation failure must keep the answer/problem/identity; only accepted result navigates.
         scheduler.rejectCancellation = true
@@ -719,25 +907,25 @@ enum SharedBridgeVerification {
         restored.model.submitAnswer(questionIndex: 1, problem: exactProblem)
         restored.model.submitAnswer(questionIndex: 1, problem: exactProblem)
         await wait { replacement.challengeFailures[restored.id] != nil && !restored.model.state.finishing }
-        precondition(restored.model.state.readiness == .ready && restored.model.state.answerText == String(exactProblem.answer))
-        precondition(restored.model.state.occurrenceId == delivered.model.state.occurrenceId)
+        verificationCheck(restored.model.state.readiness == .ready && restored.model.state.answerText == String(exactProblem.answer))
+        verificationCheck(restored.model.state.occurrenceId == delivered.model.state.occurrenceId)
         let failed = replacement.challengeFailures[restored.id]!
         scheduler.rejectCancellation = false
         replacement.retryChallengeFailure(session: restored, resultID: failed.id)
         await wait { restored.model.isClosed && replacement.challenge?.model.state.alarm?.alarmId == second.alarmId }
         await wait { replacement.challenge?.model.state.readiness == .ready && !queue.hasPendingDeeplink() }
         let later = replacement.challenge!
-        precondition(restored.model.state.results.isEmpty)
+        verificationCheck(restored.model.state.results.isEmpty)
         let cancellationCount = scheduler.cancellations.count
         replacement.retryChallengeFailure(session: restored, resultID: failed.id)
-        precondition(scheduler.cancellations.count == cancellationCount)
+        verificationCheck(scheduler.cancellations.count == cancellationCount)
         later.model.onEvent(event: MathScreenEvent.OnSnoozeClick(alarm: second.alarmId, preview: false))
         later.model.onEvent(event: MathScreenEvent.OnSnoozeClick(alarm: second.alarmId, preview: false))
         await wait { later.model.isClosed && replacement.challenge == nil }
         await wait { list.state.alarms.first { $0.alarmId == second.alarmId }?.snoozeCount == 1 }
-        precondition(later.model.state.results.isEmpty && !queue.hasPendingDeeplink())
-        precondition(recoveryRequests.contains(firstPayload) && recoveryRequests.contains(secondPayload))
-        print("BRIDGE PASS native accepted completion snooze retry duplicates and result acknowledgement")
+        verificationCheck(later.model.state.results.isEmpty && !queue.hasPendingDeeplink())
+        verificationCheck(recoveryRequests.contains(firstPayload) && recoveryRequests.contains(secondPayload))
+        VerificationResults.shared.pass("native accepted completion snooze retry duplicates and result acknowledgement")
         replacement.closeWindow()
         host!.willMove(toParent: nil); host!.view.removeFromSuperview(); host!.removeFromParent(); host = nil
         list.onEvent(event: AlarmListEvent.OnClearAlarmsClick.shared)
@@ -747,7 +935,7 @@ enum SharedBridgeVerification {
         let restartQueue = PendingDeeplinkStore(userDefaults: restartDefaults)
         let restartPayload = IosApplication.shared.createAlarmHandoffJson(alarmId: restartAlarm.alarmId,
             deliveryId: "m5-crash-window", activeAt: restartAlarm.pendingTimes.first!)
-        precondition(restartQueue.setPendingDeeplink(restartPayload))
+        verificationCheck(restartQueue.setPendingDeeplink(restartPayload))
         let restartOwner = NativeWindowSessions(pendingStore: restartQueue, restoreRecovery: { _ in })
         host = UIHostingController(rootView: ChallengeScene(sessions: restartOwner, mount: mount))
         parent.addChild(host!); parent.view.addSubview(host!.view); host!.view.frame = parent.view.bounds; host!.didMove(toParent: parent)
@@ -767,7 +955,7 @@ enum SharedBridgeVerification {
         let destination = FileManager.default.urls(for: .documentDirectory, in: .userDomainMask)[0].appendingPathComponent("m5-restart.json")
         try! JSONSerialization.data(withJSONObject: evidence).write(to: destination, options: .atomic)
         restartOwner.closeWindow()
-        precondition(restarting.model.isClosed && !restartQueue.hasPendingDeeplink())
+        verificationCheck(restarting.model.isClosed && !restartQueue.hasPendingDeeplink())
         host!.willMove(toParent: nil); host!.view.removeFromSuperview(); host!.removeFromParent(); host = nil
         list.close()
         print("BRIDGE NOTE durable acknowledged occurrence retained for separate process restart")
@@ -782,17 +970,17 @@ enum SharedBridgeVerification {
         let activeAt = (expected["activeAt"] as! NSNumber).int64Value
         let defaults = UserDefaults(suiteName: "MathAlarm.M5.restart-verification")!
         let queue = PendingDeeplinkStore(userDefaults: defaults)
-        precondition(!queue.hasPendingDeeplink()) // Payload was acknowledged in the terminated process.
+        verificationCheck(!queue.hasPendingDeeplink()) // Payload was acknowledged in the terminated process.
         var payloads: [String]?
         IosApplication.shared.restoreUnresolvedHandoffs { restored, succeeded in
-            precondition(succeeded.boolValue)
+            verificationCheck(succeeded.boolValue)
             payloads = restored
         }
         await wait { payloads != nil }
-        precondition(payloads!.count == 1)
+        verificationCheck(payloads!.count == 1)
         let decoded = IosApplication.shared.decodeAlarmHandoffJson(payload: payloads!.first!)!
-        precondition(decoded.alarmId == id && decoded.activeAt?.int64Value == activeAt)
-        precondition(queue.restoreUnresolvedHandoffs(payloads!))
+        verificationCheck(decoded.alarmId == id && decoded.activeAt?.int64Value == activeAt)
+        verificationCheck(queue.restoreUnresolvedHandoffs(payloads!))
         let owner = NativeWindowSessions(pendingStore: queue, restoreRecovery: { _ in })
         let mount = MountState()
         let window = UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.flatMap(\.windows).first(where: \.isKeyWindow)!
@@ -803,16 +991,16 @@ enum SharedBridgeVerification {
         await wait { owner.challenge?.model.state.readiness == .ready && !queue.hasPendingDeeplink() }
         let session = owner.challenge!
         let state = session.model.state
-        precondition(state.alarm?.activeAt?.int64Value == activeAt && state.questionIndex == (expected["index"] as! NSNumber).int32Value)
-        precondition(state.startedAt == (expected["startedAt"] as! NSNumber).int64Value)
-        precondition(state.incorrectAnswers == (expected["incorrect"] as! NSNumber).int32Value)
+        verificationCheck(state.alarm?.activeAt?.int64Value == activeAt && state.questionIndex == (expected["index"] as! NSNumber).int32Value)
+        verificationCheck(state.startedAt == (expected["startedAt"] as! NSNumber).int64Value)
+        verificationCheck(state.incorrectAnswers == (expected["incorrect"] as! NSNumber).int32Value)
         let problems = expected["problems"] as! [[String: Any]]
-        precondition(problems.count == state.problems.count)
+        verificationCheck(problems.count == state.problems.count)
         for (actual, expected) in zip(state.problems, problems) {
-            precondition(actual.numOne == (expected["first"] as! NSNumber).int32Value)
-            precondition(actual.numTwo == (expected["second"] as! NSNumber).int32Value)
-            precondition(actual.answer == (expected["answer"] as! NSNumber).int32Value)
-            precondition(actual.operator_.name == expected["operation"] as! String)
+            verificationCheck(actual.numOne == (expected["first"] as! NSNumber).int32Value)
+            verificationCheck(actual.numTwo == (expected["second"] as! NSNumber).int32Value)
+            verificationCheck(actual.answer == (expected["answer"] as! NSNumber).int32Value)
+            verificationCheck(actual.operator_.name == expected["operation"] as! String)
         }
         let problem = session.model.state.currentProblem!
         session.model.onEvent(event: MathScreenEvent.EnteredAnswer(value: String(problem.answer)))
@@ -826,7 +1014,7 @@ enum SharedBridgeVerification {
         host.willMove(toParent: nil); host.view.removeFromSuperview(); host.removeFromParent()
         defaults.removePersistentDomain(forName: "MathAlarm.M5.restart-verification")
         try! FileManager.default.removeItem(at: destination)
-        print("BRIDGE PASS process restart after acknowledgement restores exact durable progress")
+        VerificationResults.shared.pass("process restart after acknowledgement restores exact durable progress")
     }
 
     private static func hasPresentedAlert(in controller: UIViewController) -> Bool {
@@ -1144,9 +1332,17 @@ enum SharedBridgeVerification {
     }
 
     private static func wait(file: StaticString = #fileID, line: UInt = #line, _ condition: () -> Bool) async {
-        let deadline = ContinuousClock.now + .seconds(5)
+        // XCTest accessibility snapshots and first-launch iPad layout can contend
+        // with rendering on CI. Keep the exact condition and a bounded deadline;
+        // a five-second wall-clock budget produced a diagnosed split-layout timeout.
+        let deadline = ContinuousClock.now + .seconds(15)
         while !condition() {
-            precondition(ContinuousClock.now < deadline, "Bridge integration condition timed out", file: file, line: line)
+            if ContinuousClock.now >= deadline,
+               let window = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene })
+                .flatMap(\.windows).first(where: \.isKeyWindow) {
+                capture(window, name: "failure-wait-\(line)")
+            }
+            verificationCheck(ContinuousClock.now < deadline, "Bridge integration condition timed out", file: file, line: line)
             try? await Task.sleep(for: .milliseconds(20))
         }
     }

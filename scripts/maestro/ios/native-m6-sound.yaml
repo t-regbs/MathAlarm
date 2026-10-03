@@ -2,6 +2,7 @@
 # Unsaved draft only. Preview controls are inspected without playback; no alarm is saved.
 appId: com.timilehinaregbesola.mathalarm
 ---
+- launchApp
 - setOrientation: PORTRAIT
 - runFlow:
     when:
@@ -15,8 +16,14 @@ appId: com.timilehinaregbesola.mathalarm
 - tapOn:
     id: editor-title
 - inputText: 'M6 maximum text sound draft'
+- waitForAnimationToEnd
 - tapOn:
     id: editor-keyboard-done
+    retryTapIfNoChange: false
+- waitForAnimationToEnd
+- assertVisible:
+    id: save-alarm
+- assertVisible: 'M6 maximum text sound draft'
 - scrollUntilVisible:
     element:
       id: editor-sound

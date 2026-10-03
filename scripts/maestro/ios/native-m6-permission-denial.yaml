@@ -22,23 +22,64 @@ appId: com.timilehinaregbesola.mathalarm
     id: editor-keyboard-done
 - tapOn:
     id: save-alarm
-- assertVisible: "Permission Required"
-- takeScreenshot: native-permission-guard
-- tapOn: "Keep editing"
-- assertVisible: "Native M6 permission denial"
-- tapOn:
-    id: save-alarm
-- tapOn: "Allow alarms"
 - runFlow:
     when:
       visible: "Don’t Allow|Don't Allow"
     commands:
       - takeScreenshot: native-alarmkit-permission
       - tapOn: "Don’t Allow|Don't Allow"
-- assertVisible: "Permission Required"
-- tapOn: "Keep editing"
+- takeScreenshot: native-permission-guard
+- runFlow:
+    when:
+      visible: "Enable alarms in Settings"
+    commands:
+      - assertVisible: "Go to Settings"
+      - assertVisible: ".*Apps.*"
+      - assertVisible: ".*Math Alarm.*"
+      - assertVisible: ".*Alarms.*"
+      - tapOn:
+          id: alarm-permission-guide-close
+- runFlow:
+    when:
+      visible: "Permission Required"
+    commands:
+      - assertNotVisible: "Go to Settings"
+      - tapOn: "Allow alarms"
+      - runFlow:
+          when:
+            visible: "Don’t Allow|Don't Allow"
+          commands:
+            - takeScreenshot: native-alarmkit-permission-retry
+            - tapOn: "Don’t Allow|Don't Allow"
 - assertVisible: "Native M6 permission denial"
+- assertNotVisible: "Permission Required"
+- assertNotVisible: "Enable alarms in Settings"
 - takeScreenshot: native-permission-denied-retained-draft
+- tapOn:
+    id: save-alarm
+- runFlow:
+    when:
+      visible: "Don’t Allow|Don't Allow"
+    commands:
+      - tapOn: "Don’t Allow|Don't Allow"
+- runFlow:
+    when:
+      visible: "Enable alarms in Settings"
+    commands:
+      - assertVisible: "Go to Settings"
+      - assertVisible: ".*Apps.*"
+      - assertVisible: ".*Math Alarm.*"
+      - assertVisible: ".*Alarms.*"
+      - tapOn:
+          id: alarm-permission-guide-close
+- runFlow:
+    when:
+      visible: "Permission Required"
+    commands:
+      - assertVisible: "Allow alarms"
+      - assertNotVisible: "Go to Settings"
+      - tapOn: "Keep editing"
+- assertVisible: "Native M6 permission denial"
 - tapOn:
     id: discard-draft
 - tapOn: "Discard changes"

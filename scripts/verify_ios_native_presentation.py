@@ -5,6 +5,8 @@ Use only a disposable simulator. The opt-in DEBUG run has an independent,
 once-only task lifetime across native presentation, saves uniquely named disabled
 fixtures, captures retained native screens, and deletes only its exact IDs through
 production list commands with retained-result acknowledgement in the same process.
+The base phase briefly enables its fixtures only through that controlled scheduler
+to render the next-alarm subtitle, then disables them before exact-ID cleanup.
 The separate delivered phase creates one enabled occurrence only through the
 controlled DEBUG scheduler, private handoff queue and no-op native recovery hook;
 it completes that occurrence and deletes its exact disabled fixture afterward.
@@ -101,7 +103,12 @@ def required_capture_names():
     screens = ("editor", "repeat", "challenge-preset", "challenge-mixing", "challenge-custom",
                "snooze", "sound", "sound-missing-tone-fallback", "preview", "settings",
                "whats-new-maths", "whats-new-snooze", "list-populated")
-    return names | {f"{screen}-{suffix}" for screen in screens for suffix in ("light", "dark-accessibility3")}
+    dials = {f"editor-dial-{hour}-{minute}-{theme}"
+             for hour, minute in ((0, 0), (3, 15), (7, 20), (9, 45)) for theme in ("light", "dark")}
+    dials |= {f"editor-dial-increased-contrast-{theme}" for theme in ("light", "dark")}
+    summaries = {"list-next-alarm-light", "list-next-alarm-dark", "list-next-alarm-dark-accessibility3",
+                 "list-next-alarm-one-enabled-light", "list-next-alarm-one-enabled-dark"}
+    return names | dials | summaries | {f"{screen}-{suffix}" for screen in screens for suffix in ("light", "dark-accessibility3")}
 
 
 def required_delivered_capture_names():

@@ -27,8 +27,6 @@ expect fun shouldStartMathScreenAlarmAudio(fromSheet: Boolean): Boolean
 // True when running on iOS.
 expect fun isIosPlatform(): Boolean
 
-// Platform URI conversion helper if needed by players; may return same string on some platforms
-expect fun toPlatformMediaSource(uriString: String): String
 
 // Check if notifications are enabled for the app
 expect fun areNotificationsEnabled(): Boolean

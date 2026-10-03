@@ -133,7 +133,7 @@ python3 -B scripts/verify_ios_shared_bridge.py --udid DISPOSABLE_SIMULATOR_UDID 
 
 The explicit `--verify-shared-bridge` Debug launch path mounts a real SwiftUI owner
 and observed child in a UIKit window, using `SharedFeatures` and `IosApplication`.
-Twenty-four groups check bootstrap/handoff identity, generated state observation, the actual
+Twenty-seven groups check bootstrap/handoff identity, generated state observation, the actual
 production `NativeSessionOwners` with compact/expanded/detail replacement, multiple
 retained drafts/routes, staged tone choices and permission guards; editor validation,
 duplicate guards, result acknowledgement, cancellation and structural owner cleanup.
@@ -154,6 +154,23 @@ unavailable-mailto handling. No feedback or share recipient is selected. The fir
 launch explicitly supplies `--verify-m6-settings-fresh` for disposable fixture keys;
 never use that flag on an existing user's installation.
 
+The permission-save regressions check that the first Save requests native authorization
+once, refusal preserves the unsaved draft, and approval persists that exact alarm and
+its controlled scheduled occurrences. Returning from Settings after a grant resumes the
+same draft once; returning without a grant, discarding the draft, changing selection or
+failing to open Settings cannot save another draft. Delivery defers save resumption.
+Nine six-second silent tutorial assets and owner-scoped audio leases are verified; an
+incoming delivery stops the guide. Unsupported PiP opens Settings directly.
+
+The permission sheet has one “Go to Settings” action. It starts the tutorial in native
+Picture in Picture, waits for AVKit's start callback, then opens app Settings. The video
+continues over Settings and stops on return. There is no separate tutorial selection.
+Use `--verify-alarm-settings-guide` only on a disposable Debug simulator to inspect the
+guide without a draft, save or permission grant. The simulator used for this refinement
+reports PiP unsupported; inline playback, the single-action Settings fallback and
+controlled save behavior are simulator evidence. Verify the actual floating window,
+Settings navigation, toggle change, return/save and interruption on an iPhone.
+
 Navigation settlement requires the attached native top controller to be visible,
 with stable pane/container geometry and no active transition animation. A cached
 UIKit transition coordinator alone is not evidence of an unfinished transition;
@@ -169,8 +186,8 @@ The runner cleans fixtures and terminates its app; delete the simulator afterwar
 
 `SKIP_KOTLIN_BUILD=YES` permits a Swift-only iteration against an already generated
 framework; it does not establish verification of changed Kotlin source. A final
-bridge check must rebuild normally. The harness is excluded from Release and does
-not replace an Xcode unit/UI target (Milestone 7) or physical reliability checks.
+bridge check must rebuild normally. The harness is excluded from Release. It now shares assertions with permanent M7
+XCTest/UI targets (see below), and never replaces physical reliability checks.
 The normal iOS root is entirely SwiftUI. Native list/editor/nested settings, tone
 preview, maths preview and delivered challenge are implemented. App-wide settings, What’s New, feedback/share and presentation parity are implemented in Milestone 6;
 see its verification record for the gate status and unavailable client checks. Native launch/activation
@@ -222,12 +239,28 @@ The default runner executes a base phase and a separate delivered phase in fresh
 for each locale. `--base-only` and `--delivered-only` select one phase; `--locales en`
 provides a focused iteration. The opt-in Debug-only harness starts one independent task
 per process, so SwiftUI task cancellation or repeated mounting cannot restart the run.
+It also checks the app's 12-hour display at midnight/noon, padded minutes and all nine
+localized day periods, including a locale with an explicit 24-hour preference.
 The base phase retains factory owners, saves two uniquely named **disabled** fixtures
-(no scheduling), captures list/editor/subpages/sound/fallback/preview/settings/announcements
+(no OS scheduling), captures list/editor/subpages/sound/fallback/preview/settings/announcements
 in light and dark accessibility3, and captures lower scroll viewports where content exceeds
 the window. Cleanup deletes only the exact fixture IDs through production commands and
 acknowledges results in the same process while owners remain mounted; it restores the prior
 theme before teardown.
+
+The base phase also captures the real editor dial at 00:00, 03:15, 07:20 and 09:45
+in normal light and dark appearances, plus increased-contrast editor views. The
+contrast capture temporarily overrides the UIKit window trait and restores its
+previous value or absence afterward; JSON records the contrast actually rendered.
+These changes affect only an unsaved draft and exercise no additional scheduling.
+
+For the next-alarm subtitle, the base phase briefly enables its saved fixtures
+through the controlled Debug scheduler. It checks the displayed occurrence against
+the earliest registered request, captures native large-title and scrolled bar
+layouts, disables the nearest alarm and checks the following occurrence, then
+disables both and confirms that the subtitle and controlled registrations are gone.
+The fixtures are subsequently deleted by their exact IDs as above. No AlarmKit
+registration is made by this phase.
 
 The delivered phase uses the existing controlled Debug scheduler, a private handoff queue
 and a no-op native recovery hook. It exercises native delivered progress and feedback in
@@ -262,7 +295,9 @@ Settings exercises all theme/sort controls, restart persistence, explicit What's
 acknowledgement/reopening and native unavailable-feedback handling. Share waits for settled
 native presentation and cancels without choosing a destination. Keyboard flows tap actual
 editor and maths fields, capture software keyboards, use their Done controls, verify
-wrong-answer feedback and exact draft return; landscape restores portrait afterward.
+negative input and the independent trailing Clear action, dismiss wrong-answer feedback,
+and return to the exact draft; landscape restores portrait afterward. Regular portrait
+also asserts question and Submit visibility while the software keyboard is open.
 Permission flows verify the native guard/Keep editing/Allow alarms and draft protection.
 The OS denial prompt branch is conditional: a skipped branch is **not** a first-install
 permission-client pass. Hardware keyboard preferences must permit the software keyboard.
@@ -346,3 +381,74 @@ against that branch so reviewers see only the testing changes. After the parent
 merges, retarget to `main`. If the parent was squash-merged, rebase the testing
 commits onto `main` using the old parent tip as the boundary before retargeting;
 otherwise the old reliability commits may appear again in the diff.
+
+## Milestone 7 permanent native gate
+
+`MathAlarmNative` is the repository's unambiguous shared scheme. `MathAlarmTests`
+imports the production app and production `app` framework. Its mounted journey
+forwards the original behavioral assertions to XCTest with source file/line and
+checks all 25 first-process groups. `MathAlarmUITests` independently executes the
+entire 27-group contract across two OS processes and tests ordinary Back/Cancel.
+The first process persists acknowledged unresolved progress; the UI runner terminates
+it before starting restoration. Reconstructing an owner in one process is not that gate.
+Both targets disable parallel execution because bootstrap, Room and native windows
+are process-scoped. The Debug harness is retained and shares the same assertions.
+
+Use only a disposable iOS 27 simulator, with no user alarms or accounts:
+
+```sh
+xcodebuild -project iosApp/iosApp.xcodeproj -scheme MathAlarmNative \
+  -configuration Debug -destination 'platform=iOS Simulator,id=DISPOSABLE_UDID' \
+  -derivedDataPath build/native-tests -disableAutomaticPackageResolution \
+  -parallel-testing-enabled NO -collect-test-diagnostics never \
+  -resultBundlePath build/native-tests.xcresult CODE_SIGNING_ALLOWED=NO test
+```
+
+The hosted test launch intentionally leaves the production app window to the fixture
+and suppresses ordinary launch restoration; all tested services/factories and mounted
+owners are production implementations. The UI app explicitly clears that hosted-test
+setting. Tests use the controlled scheduler only for OS acceptance; Room, durable
+commands, queue ordering, readiness, result acknowledgement, observation and audio
+ownership remain real. No physical AlarmKit registration is made by these fixtures.
+
+The full local/CI command creates and deletes its own simulator, builds normally,
+runs native KMP and XCTest/UI suites, retained-harness parity, nine locales on actual
+views, Maestro 2.10.0 client flows, all four Debug/Release SDK links, resource checks
+and an unsigned Release archive:
+
+```sh
+M7_OUTPUT=build/native-ui-m7-iphone bash scripts/ci_native_ios.sh
+M7_DEVICE=com.apple.CoreSimulator.SimDeviceType.iPad-Pro-11-inch-M5-12GB \
+  M7_OUTPUT=build/native-ui-m7-ipad bash scripts/ci_native_ios.sh
+```
+
+Set `MAESTRO_BIN` to a pinned 2.10.0 executable if it is not on PATH. The workflow
+verifies the release ZIP checksum. Use a new output directory per run (xcresult
+creation deliberately refuses to overwrite prior evidence). CI runs both families
+on the GitHub-hosted `xcode-27` Apple Silicon image with Xcode 27.0 (27A266a) explicitly selected for PRs, pushes, dispatch
+and schedule; it requires the iOS 27 runtime. It keeps Android host/delivery coverage
+and adds expanded/recreated/compact Android UI instrumentation on dedicated emulators.
+The Android layout fixture explicitly grants notification permission before running;
+first-install authorization is a separate scenario.
+
+`presentation/review.html` compares every required capture family and additional scrolled
+viewport across nine locales and links its actual trait/scroll JSON. `review-status.json` records capture completeness
+and initially says visual review is pending. Inspect pixels and record the reviewer,
+findings and exact run; do not treat generated HTML or file presence as visual approval.
+Native XCTest reports, client screenshots/logs, presentation PNG/JSON and archive logs
+are uploaded even on failure. Controlled next-alarm assertions compare the subtitle
+against accepted scheduler requests and verify removal after disabling the fixtures.
+
+`verify_ios_release.py` checks locked Swift revisions against Kotlin bridge versions,
+all compiled locale keys/plurals and launch assets, the six unchanged CAF binaries,
+privacy reasons, nine exact video binaries and native-optimized poster dimensions.
+Release binaries must exclude Debug verification symbols. Xcode may recompress PNGs,
+so byte-for-byte poster identity is intentionally not assumed.
+
+Unsigned archive creation proves packaging only. Physical AlarmKit/recovery, PiP over
+Settings, acoustic/routing output, iOS 26.0 minimum runtime and signed distribution
+acceptance remain Milestone 8 gates. VoiceOver speech/focus, live window resizing and
+configured native Mail cancellation must be recorded as client evidence where available;
+accessibility identifiers, injected callbacks or screenshots do not substitute for them.
+See the [M7 record](native-ui-migration-milestone-7-2026-10-03.md) for this run's actual
+results and unavailable checks, and the [architecture/build guide](native-architecture.md).

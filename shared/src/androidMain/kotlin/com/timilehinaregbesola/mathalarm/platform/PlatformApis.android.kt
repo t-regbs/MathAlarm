@@ -40,7 +40,6 @@ actual fun shouldStartMathScreenAlarmAudio(fromSheet: Boolean): Boolean = fromSh
 
 actual fun isIosPlatform(): Boolean = false
 
-actual fun toPlatformMediaSource(uriString: String): String = uriString
 
 actual fun areNotificationsEnabled(): Boolean {
     val context: Context = getKoinContext()

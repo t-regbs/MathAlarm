@@ -9,7 +9,7 @@ struct NativeEditorControls: View {
     @FocusState private var titleFocused: Bool
 
     var body: some View {
-        Section("Alarm") {
+        Section {
             DatePicker("Time", selection: time, displayedComponents: .hourAndMinute)
                 .accessibilityIdentifier("editor-time")
             TextField("Label", text: Binding(get: { model.state.alarmTitle }, set: {
@@ -36,29 +36,39 @@ struct NativeEditorControls: View {
             }))
             .accessibilityIdentifier("editor-enabled")
             NavigationLink(value: NativeEditorDestination.repeatSettings) {
-                LabeledContent("Repeat", value: NativeEditorPresentation.weekdays(model.state))
+                LabeledContent {
+                    Text(NativeEditorPresentation.weekdays(model.state))
+                } label: { MatAlarmFeatureLabel(title: "Repeat", symbol: "repeat") }
             }
             .accessibilityIdentifier("editor-repeat")
         }
         Section {
             NavigationLink(value: NativeEditorDestination.challenge) {
-                LabeledContent("Challenge settings", value: NativeEditorPresentation.difficulty(model.state.challenge))
+                LabeledContent {
+                    Text(NativeEditorPresentation.difficulty(model.state.challenge))
+                } label: { MatAlarmFeatureLabel(title: "Challenge settings", symbol: "function") }
             }
             .accessibilityIdentifier("editor-challenge")
             NavigationLink(value: NativeEditorDestination.snooze) {
-                LabeledContent("Snooze", value: model.state.snoozeEnabled
+                LabeledContent {
+                    Text(model.state.snoozeEnabled
                     ? NativeStrings.minutes(count: Int(model.state.snoozeMinutes))
                     : NSLocalizedString("Off", comment: "Snooze disabled"))
+                } label: { MatAlarmFeatureLabel(title: "Snooze", symbol: "zzz") }
             }
             .accessibilityIdentifier("editor-snooze")
             NavigationLink(value: NativeEditorDestination.sound) {
-                LabeledContent("Sound library", value: NativeSoundPresentation.displayName(model.state.tone))
+                LabeledContent {
+                    Text(NativeSoundPresentation.displayName(model.state.tone))
+                } label: { MatAlarmFeatureLabel(title: "Sound library", symbol: "waveform") }
             }
             .accessibilityHint(Text("Choose the sound used by this alarm."))
             .accessibilityIdentifier("editor-sound")
         }
         Section {
-            NavigationLink("Test Alarm", value: NativeEditorDestination.preview)
+            NavigationLink(value: NativeEditorDestination.preview) {
+                MatAlarmFeatureLabel(title: "Test Alarm", symbol: "play.fill")
+            }
                 .accessibilityIdentifier("editor-test-alarm")
         }
     }
@@ -103,6 +113,7 @@ struct NativeRepeatSettings: View {
             }
             draftFooter
         }
+        .matAlarmContent()
         .navigationTitle("Repeat")
         .disabled(model.state.isSaving)
     }
@@ -182,6 +193,7 @@ struct NativeChallengeSettings: View {
             }
             draftFooter
         }
+        .matAlarmContent()
         .navigationTitle("Challenge settings")
         .disabled(model.state.isSaving)
     }
@@ -201,7 +213,7 @@ struct NativeChallengeSettings: View {
             Picker(NSLocalizedString(title, comment: "Math operand range"),
                 selection: Binding(get: { value }, set: update)) {
                 ForEach(ranges.indices, id: \.self) { index in
-                    Text("\(Int(ranges[index].first).formatted())–\(Int(ranges[index].last).formatted())")
+                    Text(verbatim: "\(Int(ranges[index].first).formatted())–\(Int(ranges[index].last).formatted())")
                         .tag(Int32(index))
                 }
             }
@@ -260,6 +272,7 @@ struct NativeSnoozeSettings: View {
             }
             draftFooter
         }
+        .matAlarmContent()
         .navigationTitle("Snooze")
         .disabled(model.state.isSaving)
     }

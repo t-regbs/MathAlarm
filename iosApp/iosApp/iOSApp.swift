@@ -21,7 +21,7 @@ struct iOSApp: App {
         }
         .onChange(of: scenePhase) { newPhase in
             #if DEBUG
-            if SharedBridgeVerification.enabled || NativePresentationVerification.enabled { return }
+            if ProcessInfo.processInfo.environment["MATHALARM_HOSTED_TESTS"] == "1" || SharedBridgeVerification.enabled || NativePresentationVerification.enabled || NativeAlarmPermissionGuideVerification.enabled { return }
             #endif
             if newPhase == .active {
                 // Check for pending AlarmKit deeplinks when app becomes active
@@ -65,7 +65,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     /// Called when app becomes active (from scenePhase change)
     static func checkPendingAlarmKitDeeplink(restoreUnresolved: Bool = false) {
         #if DEBUG
-        if SharedBridgeVerification.enabled || NativePresentationVerification.enabled { return }
+        if ProcessInfo.processInfo.environment["MATHALARM_HOSTED_TESTS"] == "1" || SharedBridgeVerification.enabled || NativePresentationVerification.enabled || NativeAlarmPermissionGuideVerification.enabled { return }
         #endif
         if restoreUnresolved || !pendingDeliveryRestorationFinished {
             guard !restorationStarted else { return }
@@ -118,7 +118,7 @@ class AppDelegate: NSObject, UIApplicationDelegate {
     
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey : Any]? = nil) -> Bool {
         #if DEBUG
-        if SharedBridgeVerification.enabled || NativePresentationVerification.enabled { return true }
+        if ProcessInfo.processInfo.environment["MATHALARM_HOSTED_TESTS"] == "1" || SharedBridgeVerification.enabled || NativePresentationVerification.enabled || NativeAlarmPermissionGuideVerification.enabled { return true }
         #endif
         // Log AlarmKit availability; ask for authorization when saving an alarm.
         let alarmKitAvailable = alarmKitWrapper.isAlarmKitAvailable()

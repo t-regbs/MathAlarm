@@ -120,6 +120,7 @@ struct NativeSoundPicker: View {
     @ObservedObject var selection: NativeSoundSelection
     let onClose: () -> Void
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.dynamicTypeSize) private var dynamicTypeSize
     @State private var discardConfirmation = false
     @State private var presentation: Int?
 
@@ -137,18 +138,21 @@ struct NativeSoundPicker: View {
             }
             Section {
                 ForEach(AlarmSoundCatalog.shared.sounds, id: \.id) { sound in
-                    HStack(alignment: .center, spacing: 16) {
+                    let layout = dynamicTypeSize.isAccessibilitySize
+                        ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
+                        : AnyLayout(HStackLayout(alignment: .center, spacing: 16))
+                    layout {
                         Button { selection.choose(sound.id) } label: {
-                            HStack {
+                            HStack(spacing: 12) {
+                                if !dynamicTypeSize.isAccessibilitySize {
+                                    MatAlarmFeatureIcon(symbol: "waveform")
+                                }
                                 VStack(alignment: .leading, spacing: 4) {
-                                    Text(sound.displayName).foregroundStyle(.primary)
+                                    Text(sound.displayName).font(.headline).foregroundStyle(.primary)
                                     Text(NativeStrings.text(NativeSoundPresentation.description(sound.id)))
                                         .font(.footnote).foregroundStyle(.secondary)
                                 }
                                 Spacer(minLength: 0)
-                                if selection.pendingTone == sound.id {
-                                    Image(systemName: "checkmark").accessibilityHidden(true)
-                                }
                             }
                             .frame(minHeight: 44)
                             .contentShape(Rectangle())
@@ -160,12 +164,15 @@ struct NativeSoundPicker: View {
                             Image(systemName: selection.previewingTone == sound.id ? "stop.fill" : "play.fill")
                                 .frame(minWidth: 44, minHeight: 44)
                         }
-                        .buttonStyle(.borderless)
-                        .accessibilityLabel(Text(NativeStrings.text(selection.previewingTone == sound.id ? "Stop preview" : "Preview")) + Text(" ") + Text(sound.displayName))
+                        .buttonStyle(.glass)
+                        .buttonBorderShape(.circle)
+                        .accessibilityLabel(Text(NativeStrings.text(selection.previewingTone == sound.id ? "Stop preview" : "Preview")) + Text(verbatim: " ") + Text(sound.displayName))
                         .accessibilityHint(selection.previewingTone == sound.id
                             ? Text("Stop preview") : Text("Preview this tone without changing your selection."))
                         .accessibilityIdentifier("preview-\(sound.id)")
                     }
+                    .padding(.vertical, 6)
+                    .listRowBackground(selection.pendingTone == sound.id ? MatAlarmPalette.wash : MatAlarmPalette.surface)
                 }
             }
             if let message = selection.previewMessage {
@@ -173,6 +180,8 @@ struct NativeSoundPicker: View {
                     .accessibilityIdentifier("sound-preview-message")
             }
         }
+        .listStyle(.insetGrouped)
+        .matAlarmContent()
         .navigationTitle("Sound library")
         .navigationBarBackButtonHidden(true)
         .toolbar {
