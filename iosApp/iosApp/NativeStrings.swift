@@ -22,7 +22,7 @@ enum NativeStrings {
     }
 
     static func problem(_ problem: MathProblem) -> String {
-        "\(number(problem.numOne)) \(operationSymbol(problem.operator_)) \(number(problem.numTwo)) = ?"
+        "\(number(problem.numOne)) \(operationSymbol(problem.operator_)) \(number(problem.numTwo))"
     }
 
     static func accessibleProblem(_ problem: MathProblem) -> String {

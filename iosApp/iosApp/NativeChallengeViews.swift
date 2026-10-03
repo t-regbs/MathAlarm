@@ -18,6 +18,8 @@ struct NativeChallengeView: View {
     var dismissFailure: (() -> Void)? = nil
     @FocusState private var answerFocused: Bool
     @State private var answerScrollTask: Task<Void, Never>?
+    @State private var challengeContentHeight: CGFloat = 0
+    @ScaledMetric(relativeTo: .largeTitle) private var equationSize = 48
     private let answerScrollTarget = "native-challenge-answer-row"
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
@@ -37,6 +39,8 @@ struct NativeChallengeView: View {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(MatAlarmPalette.canvas)
+        .tint(MatAlarmPalette.accent)
         .navigationTitle(preview ? NativeStrings.text("Test Alarm") : NativeStrings.text("Solve maths"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
@@ -104,118 +108,161 @@ struct NativeChallengeView: View {
     private func challenge(_ problem: MathProblem, questionIndex: Int32) -> some View {
         GeometryReader { viewport in
             ScrollViewReader { proxy in
-                Form {
-                    if preview {
-                        Section {
-                            Label("Maths preview", systemImage: "function")
-                        } footer: {
-                            Text("Practise with this draft. Your alarm and delivery progress are unchanged.")
+                ScrollView {
+                    VStack(spacing: 24) {
+                        if model.state.questionCount > 1 || model.state.alarm?.title.isEmpty == false {
+                            challengeHeading
                         }
-                    }
-                    if let alarm = model.state.alarm, !alarm.title.isEmpty {
-                        Section { Text(alarm.title).font(.headline) }
-                    }
-                    Section {
-                        VStack(alignment: .leading, spacing: 16) {
-                            Text(NativeStrings.questionProgress(index: model.state.questionIndex, count: model.state.questionCount))
-                                .font(.subheadline).foregroundStyle(.secondary)
-                                .accessibilityIdentifier("challenge-progress-label")
-                            ProgressView(value: Double(model.state.questionIndex), total: Double(max(1, model.state.questionCount)))
-                                .accessibilityLabel(Text("Challenge progress"))
-                                .accessibilityValue(NativeStrings.questionProgress(index: model.state.questionIndex, count: model.state.questionCount))
-                            Text(NativeStrings.problem(problem))
-                                .font(.largeTitle.monospacedDigit())
-                                .frame(maxWidth: .infinity, alignment: .center)
-                                .fixedSize(horizontal: false, vertical: true)
-                                .padding(.vertical, 8)
-                                .accessibilityLabel(NativeStrings.accessibleProblem(problem))
-                                .accessibilityIdentifier("challenge-problem")
-                        }
-                        .padding(.vertical, 8)
-                        TextField("Answer", text: Binding(get: { model.state.answerText }, set: { value in
-                            guard canInteract else { return }
-                            model.onEvent(event: MathScreenEvent.EnteredAnswer(value: value))
-                        }))
-                        .keyboardType(.numbersAndPunctuation)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                        .submitLabel(.go)
-                        .focused($answerFocused)
-                        .onSubmit { submit(problem, questionIndex: questionIndex) }
-                        .accessibilityLabel(Text("Answer"))
-                        .accessibilityHint(Text("Enter a whole number. Negative answers are allowed."))
-                        .accessibilityIdentifier("challenge-answer")
-                        .id(answerScrollTarget)
-                        .disabled(!canInteract)
-                        Group {
-                            if dynamicTypeSize.isAccessibilitySize {
-                                VStack(alignment: .leading, spacing: 16) {
-                                    submitButton(problem, questionIndex: questionIndex)
-                                    clearButton
-                                }
-                            } else {
-                                HStack {
-                                    clearButton
-                                    Spacer()
-                                    submitButton(problem, questionIndex: questionIndex)
-                                }
-                            }
-                        }
-                        // Each row's control receives its own action, rather than Form's row-wide button action.
-                        .buttonStyle(.borderless)
-                    }
-                    if let failure {
-                        Section {
-                            Label {
-                                Text(NativeStrings.error(failure)).foregroundStyle(Color.primary)
-                            } icon: {
-                                Image(systemName: "exclamationmark.triangle").foregroundStyle(Color.red)
-                            }
+                        Text(NativeStrings.problem(problem))
+                            .font(.system(size: equationSize, weight: .semibold, design: .rounded))
+                            .monospacedDigit()
+                            .multilineTextAlignment(.center)
+                            .lineLimit(dynamicTypeSize.isAccessibilitySize ? nil : 1)
+                            .minimumScaleFactor(dynamicTypeSize.isAccessibilitySize ? 1 : 0.6)
                             .fixedSize(horizontal: false, vertical: true)
-                            .accessibilityIdentifier("challenge-feedback")
-                            if let retryFailure {
-                                Button("Try again", action: retryFailure)
-                                    .disabled(!canInteract)
-                                    .accessibilityIdentifier("challenge-retry-command")
+                            .frame(maxWidth: .infinity)
+                            .accessibilityLabel(NativeStrings.accessibleProblem(problem))
+                            .accessibilityIdentifier("challenge-problem")
+                        VStack(spacing: 16) {
+                            answerField(problem, questionIndex: questionIndex)
+                            if let failure { feedback(failure) }
+                            submitButton(problem, questionIndex: questionIndex)
+                            if model.state.finishing {
+                                ProgressView("Updating alarm…")
+                                    .accessibilityIdentifier("challenge-finishing")
                             }
-                            if let dismissFailure {
-                                Button("OK", action: dismissFailure)
-                                    .accessibilityIdentifier("challenge-acknowledge-feedback")
+                            if !preview, let alarm = model.state.alarm, alarm.canSnooze {
+                                Button {
+                                    guard canInteract else { return }
+                                    model.onEvent(event: MathScreenEvent.OnSnoozeClick(alarm: alarm.alarmId, preview: false))
+                                } label: {
+                                    HStack(spacing: 8) {
+                                        Text("Snooze")
+                                        Text(verbatim: NativeStrings.minutes(count: alarm.snooze))
+                                            .foregroundStyle(Color.secondary)
+                                    }
+                                    .font(.subheadline)
+                                    .frame(maxWidth: .infinity, minHeight: 44)
+                                    .contentShape(Rectangle())
+                                }
+                                .buttonStyle(.plain)
+                                .foregroundStyle(MatAlarmPalette.accent)
+                                .disabled(!canInteract)
+                                .accessibilityIdentifier("challenge-snooze")
                             }
                         }
                     }
-                    if model.state.finishing {
-                        Section {
-                            ProgressView("Updating alarm…")
-                                .accessibilityIdentifier("challenge-finishing")
-                        }
-                    }
-                    if !preview, let alarm = model.state.alarm, alarm.canSnooze {
-                        Section {
-                            Button {
-                                guard canInteract else { return }
-                                model.onEvent(event: MathScreenEvent.OnSnoozeClick(alarm: alarm.alarmId, preview: false))
-                            } label: {
-                                LabeledContent("Snooze", value: NativeStrings.minutes(count: alarm.snooze))
-                            }
-                            .disabled(!canInteract)
-                            .accessibilityIdentifier("challenge-snooze")
-                        }
+                    .frame(maxWidth: 480)
+                    .padding(.horizontal, 28)
+                    .padding(.vertical, 28)
+                    .frame(maxWidth: .infinity)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: {
+                        challengeContentHeight = $0
                     }
                 }
+                // Native alignment centers short content; taller layouts scroll.
+                .defaultScrollAnchor(.center, for: .alignment)
+                .scrollBounceBehavior(.basedOnSize)
+                .scrollIndicators(.hidden)
                 .scrollDismissesKeyboard(.interactively)
                 .onChange(of: answerFocused) { focused in
-                    if focused { revealAnswer(using: proxy) }
+                    if focused { revealAnswer(using: proxy, viewportHeight: viewport.size.height) }
                     else { answerScrollTask?.cancel(); answerScrollTask = nil }
                 }
-                .onChange(of: viewport.size) { _ in revealAnswer(using: proxy) }
-                .onChange(of: dynamicTypeSize) { _ in revealAnswer(using: proxy) }
+                .onChange(of: viewport.size) { _ in revealAnswer(using: proxy, viewportHeight: viewport.size.height) }
+                .onChange(of: challengeContentHeight) { _ in revealAnswer(using: proxy, viewportHeight: viewport.size.height) }
+                .onChange(of: dynamicTypeSize) { _ in revealAnswer(using: proxy, viewportHeight: viewport.size.height) }
                 .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillChangeFrameNotification)) { _ in
-                    revealAnswer(using: proxy)
+                    revealAnswer(using: proxy, viewportHeight: viewport.size.height)
                 }
                 .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardDidShowNotification)) { _ in
-                    revealAnswer(using: proxy)
+                    revealAnswer(using: proxy, viewportHeight: viewport.size.height)
                 }
+            }
+        }
+    }
+
+    private var challengeHeading: some View {
+        VStack(spacing: 8) {
+            if let alarm = model.state.alarm, !alarm.title.isEmpty {
+                Text(verbatim: alarm.title)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            if model.state.questionCount > 1 {
+                Text(NativeStrings.questionProgress(index: model.state.questionIndex, count: model.state.questionCount))
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(MatAlarmPalette.accent)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .accessibilityIdentifier("challenge-progress-label")
+            }
+        }
+        .multilineTextAlignment(.center)
+    }
+
+    private func answerField(_ problem: MathProblem, questionIndex: Int32) -> some View {
+        HStack(spacing: 0) {
+            // Balance the trailing clear target without merging its accessibility
+            // into the field. Both native controls keep independent actions.
+            Color.clear.frame(width: 44, height: 44).accessibilityHidden(true)
+            TextField("Answer", text: Binding(get: { model.state.answerText }, set: { value in
+                guard canInteract else { return }
+                model.onEvent(event: MathScreenEvent.EnteredAnswer(value: value))
+            }))
+            .keyboardType(.numbersAndPunctuation)
+            .font(.system(.title, design: .rounded, weight: .medium))
+            .monospacedDigit()
+            .multilineTextAlignment(.center)
+            .textInputAutocapitalization(.never)
+            .autocorrectionDisabled()
+            .submitLabel(.go)
+            .focused($answerFocused)
+            .onSubmit { submit(problem, questionIndex: questionIndex) }
+            .accessibilityLabel(Text("Answer"))
+            .accessibilityHint(Text("Enter a whole number. Negative answers are allowed."))
+            .accessibilityIdentifier("challenge-answer")
+            .frame(maxWidth: .infinity)
+            clearButton
+        }
+        .padding(.horizontal, 4)
+        .padding(.vertical, 14)
+        .frame(minHeight: 72)
+        .background(MatAlarmPalette.wash, in: RoundedRectangle(cornerRadius: 24))
+        .id(answerScrollTarget)
+        .disabled(!canInteract)
+    }
+
+    private func feedback(_ failure: AlarmErrorMessage) -> some View {
+        VStack(spacing: 8) {
+            HStack(alignment: .center, spacing: 8) {
+                Label {
+                    Text(NativeStrings.error(failure)).foregroundStyle(Color.primary)
+                } icon: {
+                    Image(systemName: "exclamationmark.circle").foregroundStyle(Color.red)
+                }
+                .font(.subheadline)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .accessibilityIdentifier("challenge-feedback")
+                if let dismissFailure {
+                    Button(action: dismissFailure) {
+                        Image(systemName: "xmark")
+                            .font(.caption.weight(.semibold))
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .foregroundStyle(.secondary)
+                    .accessibilityLabel(Text("OK"))
+                    .accessibilityIdentifier("challenge-acknowledge-feedback")
+                }
+            }
+            if let retryFailure {
+                Button("Try again", action: retryFailure)
+                    .disabled(!canInteract)
+                    .frame(minHeight: 44)
+                    .accessibilityIdentifier("challenge-retry-command")
             }
         }
     }
@@ -223,9 +270,12 @@ struct NativeChallengeView: View {
     /// Focused native input stays inside the current viewport after software
     /// keyboard, window/orientation and text-size changes. This is presentation
     /// work only; disappearance cancels it without touching the shared owner.
-    private func revealAnswer(using proxy: ScrollViewProxy) {
-        guard answerFocused, canInteract else { return }
+    private func revealAnswer(using proxy: ScrollViewProxy, viewportHeight: CGFloat) {
         answerScrollTask?.cancel()
+        guard answerFocused, canInteract, challengeContentHeight > viewportHeight else {
+            answerScrollTask = nil
+            return
+        }
         answerScrollTask = Task { @MainActor in
             // The first pass follows layout; the second follows keyboard insets.
             // didShow/viewport events repeat this with the final native geometry.
@@ -248,20 +298,37 @@ struct NativeChallengeView: View {
     }
 
     private var clearButton: some View {
-        Button("Clear") {
+        Button {
             guard canInteract else { return }
             model.onEvent(event: MathScreenEvent.OnClearClick.shared)
             answerFocused = true
+        } label: {
+            Image(systemName: "xmark.circle.fill")
+                .font(.body)
+                .frame(width: 44, height: 44)
+                .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
+        .foregroundStyle(.secondary)
+        .opacity(model.state.answerText.isEmpty ? 0 : 1)
         .disabled(!canInteract || model.state.answerText.isEmpty)
+        .accessibilityHidden(model.state.answerText.isEmpty)
+        .accessibilityLabel(Text("Clear"))
         .accessibilityIdentifier("challenge-clear")
     }
 
     private func submitButton(_ problem: MathProblem, questionIndex: Int32) -> some View {
-        Button("Submit answer") { submit(problem, questionIndex: questionIndex) }
-            .buttonStyle(.borderedProminent)
-            .disabled(!canInteract)
-            .accessibilityIdentifier("challenge-submit")
+        Button { submit(problem, questionIndex: questionIndex) } label: {
+            Text("Submit answer")
+                .font(.headline)
+                .frame(maxWidth: .infinity, minHeight: 28)
+                .fixedSize(horizontal: false, vertical: true)
+        }
+        .buttonStyle(.glassProminent)
+        .tint(MatAlarmPalette.action)
+        .controlSize(.large)
+        .disabled(!canInteract)
+        .accessibilityIdentifier("challenge-submit")
     }
 
     private func submit(_ problem: MathProblem, questionIndex: Int32) {

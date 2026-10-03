@@ -6,7 +6,7 @@ import KMPNativeCoroutinesAsync
 import app
 
 /// Opt-in rendered presentation evidence from the production native views.
-/// Uses unsaved drafts, preview sessions and uniquely named disabled list fixtures.
+/// Uses unsaved drafts, preview sessions and uniquely named list fixtures.
 /// Production Room/list behavior uses the existing controlled DEBUG scheduler;
 /// this proves no real AlarmKit save/cancellation behavior. Cleanup deletes only fixture IDs.
 @MainActor
@@ -55,6 +55,7 @@ enum NativePresentationVerification {
     private final class Mount: ObservableObject {
         @Published var screen = Screen.editor
         @Published var largeText = false
+        var expectedIncreasedContrast = false
         @Published var forcedRTL = false
         @Published var scenePresented = true
         var expectedDark = false
@@ -151,6 +152,7 @@ enum NativePresentationVerification {
 
     static func run(window: UIWindow, parent: UIViewController) async {
         setbuf(stdout, nil) // Preserve rendered evidence and timeout context on fixture failures.
+        verifyClockFormatting()
         let scheduler = SharedBridgeVerification.VerificationScheduler()
         AlarmSchedulerBridge.shared.registerScheduler(scheduler: scheduler)
         defer {
@@ -221,8 +223,20 @@ enum NativePresentationVerification {
 
         let mount = Mount()
         let originalWindowStyle = window.overrideUserInterfaceStyle
+        let originalWindowContrast: UIAccessibilityContrast? = window.traitOverrides.contains(UITraitAccessibilityContrast.self)
+            ? window.traitOverrides.accessibilityContrast : nil
+        func restoreWindowContrast() {
+            if let originalWindowContrast {
+                window.traitOverrides.accessibilityContrast = originalWindowContrast
+            } else {
+                window.traitOverrides.remove(UITraitAccessibilityContrast.self)
+            }
+        }
         window.overrideUserInterfaceStyle = .unspecified
-        defer { window.overrideUserInterfaceStyle = originalWindowStyle }
+        defer {
+            window.overrideUserInterfaceStyle = originalWindowStyle
+            restoreWindowContrast()
+        }
         await inspectLaunchStoryboard(window: window, parent: parent, mount: mount)
         let external = NativeExternalPresentation(openURL: { _, completion in completion(false) },
             canSendMail: { false })
@@ -252,9 +266,9 @@ enum NativePresentationVerification {
         }
 
         for dark in [false, true] {
-            mount.largeText = dark
             mount.expectedDark = dark
             settings.selectTheme(theme: dark ? .dark : .light)
+            mount.largeText = false
             let suffix = dark ? "dark-accessibility3" : "light"
             mount.screen = .editor
             sessions.setEditorPath([], id: editor.id)
@@ -263,6 +277,27 @@ enum NativePresentationVerification {
                 let forms = visibleNativeForms(in: activeRootView(in: host))
                 return !forms.isEmpty && forms.allSatisfy { $0.traitCollection.userInterfaceStyle == (dark ? .dark : .light) }
             }
+            // Render the small decorative dial in its actual editor banner,
+            // including overlapping hands and cardinal marks. These are
+            // unsaved draft changes; no additional alarms are scheduled.
+            for (hour, minute) in [(0, 0), (3, 15), (7, 20), (9, 45)] {
+                model.onEvent(event: AddEditAlarmEvent.ChangeTime(value: TimeState(hour: Int32(hour), minute: Int32(minute))))
+                await wait("editor dial time \(hour):\(minute)") {
+                    model.state.alarmTime.hour == Int32(hour) && model.state.alarmTime.minute == Int32(minute)
+                }
+                await capture(window, host: host, mount: mount,
+                              name: "editor-dial-\(hour)-\(minute)-\(dark ? "dark" : "light")", includeBottom: false)
+            }
+            mount.expectedIncreasedContrast = true
+            window.traitOverrides.accessibilityContrast = .high
+            await wait("editor dial increased contrast") {
+                activeRootView(in: host).traitCollection.accessibilityContrast == .high
+            }
+            await capture(window, host: host, mount: mount,
+                          name: "editor-dial-increased-contrast-\(dark ? "dark" : "light")", includeBottom: false)
+            restoreWindowContrast()
+            mount.expectedIncreasedContrast = false
+            mount.largeText = dark
             await capture(window, host: host, mount: mount, name: "editor-\(suffix)")
             await destination(.repeatSettings, sessions: sessions, editorID: editor.id, host: host)
             await capture(window, host: host, mount: mount, name: "repeat-\(suffix)")
@@ -323,7 +358,62 @@ enum NativePresentationVerification {
             mount.screen = .list
             await wait("populated list loading=\(list.state.loading) alarms=\(list.state.alarms.map(\.alarmId))") { !list.state.loading }
             await waitForTitle(NativeStrings.text("Math Alarm"), in: host)
+            await wait("disabled list has no next-alarm subtitle") {
+                (visibleNavigation(in: host)?.navigationItem.subtitle ?? "").isEmpty
+            }
             await capture(window, host: host, mount: mount, name: "list-populated-\(suffix)")
+            // Exercise the native subtitle against real persisted list state.
+            // Only VerificationScheduler receives these enabled occurrences.
+            mount.largeText = false
+            for fixtureID in fixtureIDs.sorted() {
+                let alarm = list.state.alarms.first { $0.alarmId == fixtureID }!
+                list.setEnabled(alarm: alarm, enabled: true)
+                await wait("next-alarm fixture enabled \(fixtureID)") {
+                    list.state.pendingOperations == 0
+                        && list.state.alarms.first { $0.alarmId == fixtureID }?.isOn == true
+                }
+            }
+            let nearestRequest = scheduler.registrations.values.min { $0.timeInMillis < $1.timeInMillis }!
+            let nearestScheduledTime = nearestRequest.timeInMillis
+            let next = NativeAlarmPresentation.nextAlarmDate(list.state.alarms, now: Date())!
+            precondition(abs(next.timeIntervalSince1970 * 1_000 - Double(nearestScheduledTime)) < 1)
+            let subtitle = NativeAlarmPresentation.nextAlarmSubtitle(list.state.alarms, now: Date())
+            await wait("native next-alarm subtitle \(subtitle)") {
+                visibleNavigation(in: host)?.navigationItem.subtitle == subtitle
+            }
+            await capture(window, host: host, mount: mount,
+                          name: "list-next-alarm-\(dark ? "dark" : "light")")
+            if dark {
+                mount.largeText = true
+                await capture(window, host: host, mount: mount, name: "list-next-alarm-dark-accessibility3")
+            }
+            mount.largeText = false
+            let disableOrder = [nearestRequest.alarmId] + fixtureIDs.filter { $0 != nearestRequest.alarmId }.sorted()
+            for (index, fixtureID) in disableOrder.enumerated() {
+                let alarm = list.state.alarms.first { $0.alarmId == fixtureID }!
+                list.setEnabled(alarm: alarm, enabled: false)
+                await wait("next-alarm fixture disabled \(fixtureID)") {
+                    list.state.pendingOperations == 0
+                        && list.state.alarms.first { $0.alarmId == fixtureID }?.isOn == false
+                }
+                if index == 0 {
+                    let remainingScheduledTime = scheduler.registrations.values.map(\.timeInMillis).min()!
+                    let next = NativeAlarmPresentation.nextAlarmDate(list.state.alarms, now: Date())!
+                    precondition(abs(next.timeIntervalSince1970 * 1_000 - Double(remainingScheduledTime)) < 1)
+                    let changedSubtitle = NativeAlarmPresentation.nextAlarmSubtitle(list.state.alarms, now: Date())
+                    precondition(changedSubtitle != subtitle)
+                    await wait("next-alarm subtitle updates after nearest disabled") {
+                        visibleNavigation(in: host)?.navigationItem.subtitle == changedSubtitle
+                    }
+                    await capture(window, host: host, mount: mount,
+                                  name: "list-next-alarm-one-enabled-\(dark ? "dark" : "light")")
+                }
+            }
+            await wait("next-alarm subtitle removed after disable") {
+                (visibleNavigation(in: host)?.navigationItem.subtitle ?? "").isEmpty
+            }
+            precondition(scheduler.registrations.isEmpty)
+            mount.largeText = dark
             precondition(sessions.selectedEditor?.model === model && !model.isClosed)
             precondition(model.state.alarmTitle == "M6 native presentation" && model.state.hasUnsavedChanges)
         }
@@ -474,9 +564,9 @@ enum NativePresentationVerification {
             mount.expectedDark = dark
             settings.selectTheme(theme: dark ? .dark : .light)
             await waitForTitle(NativeStrings.text("Solve maths"), in: host)
-            await wait("delivered actual Form appearance expected=\(dark)") {
-                let forms = visibleNativeForms(in: activeRootView(in: host))
-                return !forms.isEmpty && forms.allSatisfy { $0.traitCollection.userInterfaceStyle == (dark ? .dark : .light) }
+            await wait("delivered native scroll appearance expected=\(dark)") {
+                let scrolls = visibleScrollViews(in: activeRootView(in: host))
+                return !scrolls.isEmpty && scrolls.allSatisfy { $0.traitCollection.userInterfaceStyle == (dark ? .dark : .light) }
             }
             delivered.model.onEvent(event: MathScreenEvent.OnClearClick.shared)
             let suffix = dark ? "dark-accessibility3" : "light"
@@ -535,6 +625,30 @@ enum NativePresentationVerification {
         sessions.closeWindow()
         precondition(draft.model.isClosed && sessions.editors.isEmpty)
         print("M6_DELIVERED_PRESENTATION_PASSED locale=\(Locale.current.identifier) exactID=\(saved.alarmId) readyBeforeExactACK=true resultACK=true sameDraft=true stagedRoute=true controlledSchedulerOnly=true noNativeRecovery=true")
+    }
+
+    private static func verifyClockFormatting() {
+        let cases: [(Int32, Int32, String, String)] = [
+            (0, 0, "12:00", "AM"), (0, 5, "12:05", "AM"),
+            (7, 5, "07:05", "AM"), (11, 59, "11:59", "AM"),
+            (12, 0, "12:00", "PM"), (12, 5, "12:05", "PM"),
+            (19, 35, "07:35", "PM"), (23, 59, "11:59", "PM"),
+        ]
+        for tag in ["en_US", "en_GB", "en_GB@hours=h23"] {
+            for (hour, minute, digits, period) in cases {
+                let time = NativeAlarmPresentation.clockTime(hour: hour, minute: minute, locale: Locale(identifier: tag))
+                precondition(time.digits == digits && time.period == period && time.formatted == "\(digits) \(period)")
+            }
+        }
+        for tag in ["en_GB", "es_ES", "de_DE", "ru_RU", "pt_PT", "hi_IN", "pa_IN", "bn_BD", "zh_CN"] {
+            let locale = Locale(identifier: tag)
+            let morning = NativeAlarmPresentation.clockTime(hour: 7, minute: 35, locale: locale)
+            let evening = NativeAlarmPresentation.clockTime(hour: 19, minute: 35, locale: locale)
+            precondition(morning.digits == evening.digits && !morning.period.isEmpty && !evening.period.isEmpty)
+            precondition(morning.period != evening.period)
+        }
+        precondition(UIImage(systemName: "arrow.up.forward.app") != nil)
+        print("M6 CLOCK PASS 12-hour midnight/noon and padded minutes; explicit 24-hour locale override; nine localized day periods")
     }
 
     private static func setChallenge(_ model: AlarmSettingsViewModel, difficulty: Int32) {
@@ -703,6 +817,7 @@ enum NativePresentationVerification {
             "locale": Locale.current.identifier, "preferredLanguages": Locale.preferredLanguages,
             "windowFrame": NSCoder.string(for: window.frame), "safeArea": String(describing: window.safeAreaInsets),
             "visibleTitle": visible?.navigationItem.title ?? "", "contentFrame": NSCoder.string(for: visible?.view.frame ?? .zero),
+            "navigationSubtitle": visible?.navigationItem.subtitle ?? "",
             "expectedTheme": name.hasPrefix("launch-storyboard-rendered-")
                 ? (name.hasSuffix("dark") ? "dark" : "light") : (mount.expectedDark ? "dark" : "light"),
             "hostingStyle": host.traitCollection.userInterfaceStyle.rawValue,
@@ -712,6 +827,8 @@ enum NativePresentationVerification {
                 "\(String(describing: type(of: $0))) viewport=\(NSCoder.string(for: $0.bounds)) contentSize=\(NSCoder.string(for: $0.contentSize)) offset=\(NSCoder.string(for: $0.contentOffset))"
             },
             "accessibility3": mount.largeText,
+            "expectedIncreasedContrast": mount.expectedIncreasedContrast,
+            "renderedAccessibilityContrast": renderedRoot.traitCollection.accessibilityContrast.rawValue,
             "forcedRTLSynthetic": mount.forcedRTL,
             "verificationTaskCancelled": Task.isCancelled,
             "applicationState": UIApplication.shared.applicationState.rawValue,

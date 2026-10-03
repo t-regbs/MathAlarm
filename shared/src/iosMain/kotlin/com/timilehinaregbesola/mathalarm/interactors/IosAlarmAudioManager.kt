@@ -17,6 +17,7 @@ import platform.darwin.NSObject
 import platform.AVFAudio.AVAudioSession
 import platform.AVFAudio.AVAudioSessionCategoryPlayback
 import platform.AVFAudio.AVAudioSessionModeDefault
+import platform.AVFAudio.AVAudioSessionCategoryOptionMixWithOthers
 import platform.AVFAudio.setActive
 import platform.AudioToolbox.AudioServicesPlaySystemSound
 import platform.AudioToolbox.kSystemSoundID_Vibrate
@@ -51,6 +52,8 @@ object IosAlarmAudioManager {
     private var vibrationJob: Job? = null
     private var soundJob: Job? = null
     private var isAlarmActive = false
+    private var guideOwnerId: String? = null
+    private var guideInterrupted: (() -> Unit)? = null
     private val scope = CoroutineScope(Dispatchers.Main)
     
 
@@ -71,6 +74,7 @@ object IosAlarmAudioManager {
     fun startOwnedPreview(ownerId: String, soundName: String, onFinished: (TonePreviewResult) -> Unit) {
         val request = previewOwnership.nextRequest()
         if (previewOwnership.rejectWhileAlarmActive(isAlarmActive, onFinished)) return
+        interruptGuideAudio()
         stopPreview(TonePreviewResult.REPLACED)
         // Completing the replaced preview can synchronously request another preview
         // or start a real alarm. That newer request wins; this call must not overwrite it.
@@ -101,7 +105,7 @@ object IosAlarmAudioManager {
         previewPlayer?.delegate = null
         previewPlayer?.stop()
         previewPlayer = null
-        if (!isAlarmActive) AVAudioSession.sharedInstance().setActive(false, error = null)
+        if (!isAlarmActive && guideOwnerId == null) AVAudioSession.sharedInstance().setActive(false, error = null)
         previewOwnership.finish(result)
     }
 
@@ -119,6 +123,7 @@ object IosAlarmAudioManager {
         }
         
         isAlarmActive = true
+        interruptGuideAudio()
         previewOwnership.nextRequest()
         // Establish real priority before completion callbacks can request playback.
         stopPreview(TonePreviewResult.INTERRUPTED_BY_ALARM)
@@ -156,7 +161,7 @@ object IosAlarmAudioManager {
         
         // Deactivate audio session
         try {
-            if (previewPlayer == null) AVAudioSession.sharedInstance().setActive(false, error = null)
+            if (previewPlayer == null && guideOwnerId == null) AVAudioSession.sharedInstance().setActive(false, error = null)
         } catch (e: Exception) {
             logger.e(e) { "Error deactivating audio session" }
         }
@@ -166,6 +171,34 @@ object IosAlarmAudioManager {
      * Check if alarm is currently active
      */
     fun isPlaying(): Boolean = isAlarmActive
+
+    /** Silent PiP still needs a playback session. Real alarms and tone previews win. */
+    fun beginSettingsGuideAudio(ownerId: String, onInterrupted: () -> Unit): Boolean {
+        require(ownerId.isNotBlank())
+        if (isAlarmActive || previewPlayer != null || guideOwnerId != null) return false
+        val session = AVAudioSession.sharedInstance()
+        if (!session.setCategory(AVAudioSessionCategoryPlayback, mode = AVAudioSessionModeDefault,
+                options = AVAudioSessionCategoryOptionMixWithOthers, error = null)) return false
+        if (!session.setActive(true, error = null)) return false
+        guideOwnerId = ownerId
+        guideInterrupted = onInterrupted
+        return true
+    }
+
+    fun endSettingsGuideAudio(ownerId: String): Boolean {
+        if (guideOwnerId != ownerId) return false
+        guideOwnerId = null
+        guideInterrupted = null
+        if (!isAlarmActive && previewPlayer == null) AVAudioSession.sharedInstance().setActive(false, error = null)
+        return true
+    }
+
+    private fun interruptGuideAudio() {
+        val ownerId = guideOwnerId ?: return
+        val callback = guideInterrupted
+        endSettingsGuideAudio(ownerId)
+        callback?.invoke()
+    }
     
     /**
      * Configure audio session for alarm playback

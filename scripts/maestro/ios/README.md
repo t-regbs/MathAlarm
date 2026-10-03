@@ -28,9 +28,25 @@ They use native keyboard Done identifiers and preserve unsaved drafts. Run only
 on disposable English simulators with no configured email account and undetermined
 or denied AlarmKit permission. Sharing cancels without selecting a destination.
 The optional OS denial branch must be reported as skipped when no system alert appears.
+The maths keyboard flow also checks negative input, the answer field's clear action,
+question/answer/Submit visibility with the software keyboard, inline incorrect-answer
+feedback and its explicit dismissal. Portrait requires the whole task to be visible;
+landscape scrolls to controls in its shorter viewport.
+The landscape wrapper supplies `CHALLENGE_ORIENTATION` after app launch and sets
+`REQUIRE_VISIBLE_TASK=false`; standalone keyboard runs default to portrait.
+Inspect the rendered orientation or EXIF metadata, since native landscape captures
+can retain portrait pixel dimensions with rotation metadata.
 See [testing instructions](../../../docs/testing.md) and the
 [Milestone 6 evidence](../../../docs/native-ui-migration-milestone-6-2026-10-02.md)
 for actual runtime results and unresolved VoiceOver, physical and release gates.
+
+`native-m6-permission-denial.yaml` checks that the first Save requests authorization
+directly. An unsuccessful request offers Allow alarms, with no premature Settings link;
+an explicit retry does not immediately repeat the dialog. Denial opens the permission
+guide with the Apps → Math Alarm → Alarms route and one Go to Settings action. This flow
+closes the guide, retains the draft and discards it. The optional system denial branch
+remains conditional; never grant permission in this flow. Native PiP is unavailable on
+the current simulator, so its floating playback needs a physical iPhone check.
 
 `native-m6-disabled-crud.yaml` creates a disabled fixture, returns from a preview to
 the same draft, saves, deletes, undoes and deletes it again. Supply a unique title

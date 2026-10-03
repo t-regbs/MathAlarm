@@ -34,6 +34,26 @@
 		D6A000000000000000000003 /* NativeSettingsVerification.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6A000000000000000000004 /* NativeSettingsVerification.swift */; };
 		D6A000000000000000000005 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = D6A000000000000000000006 /* InfoPlist.xcstrings */; };
 		D6A000000000000000000007 /* NativePresentationVerification.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6A000000000000000000008 /* NativePresentationVerification.swift */; };
+		D7A000000000000000000001 /* NativeDesign.swift in Sources */ = {isa = PBXBuildFile; fileRef = D7A000000000000000000002 /* NativeDesign.swift */; };
+		D8A000000000000000000001 /* NativeAlarmPermissionGuide.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8A000000000000000000002 /* NativeAlarmPermissionGuide.swift */; };
+		D8C000000000000000000001 /* alarm-settings-guide-en.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D8B000000000000000000001 /* alarm-settings-guide-en.mp4 */; };
+		D8C000000000000000000002 /* alarm-settings-guide-es.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D8B000000000000000000002 /* alarm-settings-guide-es.mp4 */; };
+		D8C000000000000000000003 /* alarm-settings-guide-de.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D8B000000000000000000003 /* alarm-settings-guide-de.mp4 */; };
+		D8C000000000000000000004 /* alarm-settings-guide-ru.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D8B000000000000000000004 /* alarm-settings-guide-ru.mp4 */; };
+		D8C000000000000000000005 /* alarm-settings-guide-pt.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D8B000000000000000000005 /* alarm-settings-guide-pt.mp4 */; };
+		D8C000000000000000000006 /* alarm-settings-guide-hi.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D8B000000000000000000006 /* alarm-settings-guide-hi.mp4 */; };
+		D8C000000000000000000007 /* alarm-settings-guide-pa.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D8B000000000000000000007 /* alarm-settings-guide-pa.mp4 */; };
+		D8C000000000000000000008 /* alarm-settings-guide-bn.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D8B000000000000000000008 /* alarm-settings-guide-bn.mp4 */; };
+		D8C000000000000000000009 /* alarm-settings-guide-zh.mp4 in Resources */ = {isa = PBXBuildFile; fileRef = D8B000000000000000000009 /* alarm-settings-guide-zh.mp4 */; };
+		D8E000000000000000000001 /* alarm-settings-guide-en.png in Resources */ = {isa = PBXBuildFile; fileRef = D8D000000000000000000001 /* alarm-settings-guide-en.png */; };
+		D8E000000000000000000002 /* alarm-settings-guide-es.png in Resources */ = {isa = PBXBuildFile; fileRef = D8D000000000000000000002 /* alarm-settings-guide-es.png */; };
+		D8E000000000000000000003 /* alarm-settings-guide-de.png in Resources */ = {isa = PBXBuildFile; fileRef = D8D000000000000000000003 /* alarm-settings-guide-de.png */; };
+		D8E000000000000000000004 /* alarm-settings-guide-ru.png in Resources */ = {isa = PBXBuildFile; fileRef = D8D000000000000000000004 /* alarm-settings-guide-ru.png */; };
+		D8E000000000000000000005 /* alarm-settings-guide-pt.png in Resources */ = {isa = PBXBuildFile; fileRef = D8D000000000000000000005 /* alarm-settings-guide-pt.png */; };
+		D8E000000000000000000006 /* alarm-settings-guide-hi.png in Resources */ = {isa = PBXBuildFile; fileRef = D8D000000000000000000006 /* alarm-settings-guide-hi.png */; };
+		D8E000000000000000000007 /* alarm-settings-guide-pa.png in Resources */ = {isa = PBXBuildFile; fileRef = D8D000000000000000000007 /* alarm-settings-guide-pa.png */; };
+		D8E000000000000000000008 /* alarm-settings-guide-bn.png in Resources */ = {isa = PBXBuildFile; fileRef = D8D000000000000000000008 /* alarm-settings-guide-bn.png */; };
+		D8E000000000000000000009 /* alarm-settings-guide-zh.png in Resources */ = {isa = PBXBuildFile; fileRef = D8D000000000000000000009 /* alarm-settings-guide-zh.png */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -64,6 +84,26 @@
 		D6A000000000000000000004 /* NativeSettingsVerification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeSettingsVerification.swift; sourceTree = "<group>"; };
 		D6A000000000000000000006 /* InfoPlist.xcstrings */ = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = InfoPlist.xcstrings; sourceTree = "<group>"; };
 		D6A000000000000000000008 /* NativePresentationVerification.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativePresentationVerification.swift; sourceTree = "<group>"; };
+		D7A000000000000000000002 /* NativeDesign.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeDesign.swift; sourceTree = "<group>"; };
+		D8A000000000000000000002 /* NativeAlarmPermissionGuide.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NativeAlarmPermissionGuide.swift; sourceTree = "<group>"; };
+		D8B000000000000000000001 /* alarm-settings-guide-en.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = alarm-settings-guide-en.mp4; path = PermissionGuide/alarm-settings-guide-en.mp4; sourceTree = "<group>"; };
+		D8B000000000000000000002 /* alarm-settings-guide-es.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = alarm-settings-guide-es.mp4; path = PermissionGuide/alarm-settings-guide-es.mp4; sourceTree = "<group>"; };
+		D8B000000000000000000003 /* alarm-settings-guide-de.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = alarm-settings-guide-de.mp4; path = PermissionGuide/alarm-settings-guide-de.mp4; sourceTree = "<group>"; };
+		D8B000000000000000000004 /* alarm-settings-guide-ru.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = alarm-settings-guide-ru.mp4; path = PermissionGuide/alarm-settings-guide-ru.mp4; sourceTree = "<group>"; };
+		D8B000000000000000000005 /* alarm-settings-guide-pt.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = alarm-settings-guide-pt.mp4; path = PermissionGuide/alarm-settings-guide-pt.mp4; sourceTree = "<group>"; };
+		D8B000000000000000000006 /* alarm-settings-guide-hi.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = alarm-settings-guide-hi.mp4; path = PermissionGuide/alarm-settings-guide-hi.mp4; sourceTree = "<group>"; };
+		D8B000000000000000000007 /* alarm-settings-guide-pa.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = alarm-settings-guide-pa.mp4; path = PermissionGuide/alarm-settings-guide-pa.mp4; sourceTree = "<group>"; };
+		D8B000000000000000000008 /* alarm-settings-guide-bn.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = alarm-settings-guide-bn.mp4; path = PermissionGuide/alarm-settings-guide-bn.mp4; sourceTree = "<group>"; };
+		D8B000000000000000000009 /* alarm-settings-guide-zh.mp4 */ = {isa = PBXFileReference; lastKnownFileType = file; name = alarm-settings-guide-zh.mp4; path = PermissionGuide/alarm-settings-guide-zh.mp4; sourceTree = "<group>"; };
+		D8D000000000000000000001 /* alarm-settings-guide-en.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = alarm-settings-guide-en.png; path = PermissionGuide/alarm-settings-guide-en.png; sourceTree = "<group>"; };
+		D8D000000000000000000002 /* alarm-settings-guide-es.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = alarm-settings-guide-es.png; path = PermissionGuide/alarm-settings-guide-es.png; sourceTree = "<group>"; };
+		D8D000000000000000000003 /* alarm-settings-guide-de.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = alarm-settings-guide-de.png; path = PermissionGuide/alarm-settings-guide-de.png; sourceTree = "<group>"; };
+		D8D000000000000000000004 /* alarm-settings-guide-ru.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = alarm-settings-guide-ru.png; path = PermissionGuide/alarm-settings-guide-ru.png; sourceTree = "<group>"; };
+		D8D000000000000000000005 /* alarm-settings-guide-pt.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = alarm-settings-guide-pt.png; path = PermissionGuide/alarm-settings-guide-pt.png; sourceTree = "<group>"; };
+		D8D000000000000000000006 /* alarm-settings-guide-hi.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = alarm-settings-guide-hi.png; path = PermissionGuide/alarm-settings-guide-hi.png; sourceTree = "<group>"; };
+		D8D000000000000000000007 /* alarm-settings-guide-pa.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = alarm-settings-guide-pa.png; path = PermissionGuide/alarm-settings-guide-pa.png; sourceTree = "<group>"; };
+		D8D000000000000000000008 /* alarm-settings-guide-bn.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = alarm-settings-guide-bn.png; path = PermissionGuide/alarm-settings-guide-bn.png; sourceTree = "<group>"; };
+		D8D000000000000000000009 /* alarm-settings-guide-zh.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; name = alarm-settings-guide-zh.png; path = PermissionGuide/alarm-settings-guide-zh.png; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -90,6 +130,26 @@
 				D4A000000000000000000002 /* NativeEditorControls.swift */,
 				D4A000000000000000000004 /* NativeSoundPicker.swift */,
 				D5A000000000000000000002 /* NativeChallengeViews.swift */,
+				D7A000000000000000000002 /* NativeDesign.swift */,
+				D8A000000000000000000002 /* NativeAlarmPermissionGuide.swift */,
+				D8D000000000000000000009 /* alarm-settings-guide-zh.png */,
+				D8D000000000000000000008 /* alarm-settings-guide-bn.png */,
+				D8D000000000000000000007 /* alarm-settings-guide-pa.png */,
+				D8D000000000000000000006 /* alarm-settings-guide-hi.png */,
+				D8D000000000000000000005 /* alarm-settings-guide-pt.png */,
+				D8D000000000000000000004 /* alarm-settings-guide-ru.png */,
+				D8D000000000000000000003 /* alarm-settings-guide-de.png */,
+				D8D000000000000000000002 /* alarm-settings-guide-es.png */,
+				D8D000000000000000000001 /* alarm-settings-guide-en.png */,
+				D8B000000000000000000009 /* alarm-settings-guide-zh.mp4 */,
+				D8B000000000000000000008 /* alarm-settings-guide-bn.mp4 */,
+				D8B000000000000000000007 /* alarm-settings-guide-pa.mp4 */,
+				D8B000000000000000000006 /* alarm-settings-guide-hi.mp4 */,
+				D8B000000000000000000005 /* alarm-settings-guide-pt.mp4 */,
+				D8B000000000000000000004 /* alarm-settings-guide-ru.mp4 */,
+				D8B000000000000000000003 /* alarm-settings-guide-de.mp4 */,
+				D8B000000000000000000002 /* alarm-settings-guide-es.mp4 */,
+				D8B000000000000000000001 /* alarm-settings-guide-en.mp4 */,
 				D6A000000000000000000002 /* NativeAppSettings.swift */,
 				D6A000000000000000000004 /* NativeSettingsVerification.swift */,
 				D6A000000000000000000006 /* InfoPlist.xcstrings */,
@@ -222,6 +282,24 @@
 				D6A000000000000000000005 /* InfoPlist.xcstrings in Resources */,
 				D4A000000000000000000007 /* Localizable.xcstrings in Resources */,
 				058557BB273AAA24004C7B11 /* Assets.xcassets in Resources */,
+				D8E000000000000000000009 /* alarm-settings-guide-zh.png in Resources */,
+				D8E000000000000000000008 /* alarm-settings-guide-bn.png in Resources */,
+				D8E000000000000000000007 /* alarm-settings-guide-pa.png in Resources */,
+				D8E000000000000000000006 /* alarm-settings-guide-hi.png in Resources */,
+				D8E000000000000000000005 /* alarm-settings-guide-pt.png in Resources */,
+				D8E000000000000000000004 /* alarm-settings-guide-ru.png in Resources */,
+				D8E000000000000000000003 /* alarm-settings-guide-de.png in Resources */,
+				D8E000000000000000000002 /* alarm-settings-guide-es.png in Resources */,
+				D8E000000000000000000001 /* alarm-settings-guide-en.png in Resources */,
+				D8C000000000000000000009 /* alarm-settings-guide-zh.mp4 in Resources */,
+				D8C000000000000000000008 /* alarm-settings-guide-bn.mp4 in Resources */,
+				D8C000000000000000000007 /* alarm-settings-guide-pa.mp4 in Resources */,
+				D8C000000000000000000006 /* alarm-settings-guide-hi.mp4 in Resources */,
+				D8C000000000000000000005 /* alarm-settings-guide-pt.mp4 in Resources */,
+				D8C000000000000000000004 /* alarm-settings-guide-ru.mp4 in Resources */,
+				D8C000000000000000000003 /* alarm-settings-guide-de.mp4 in Resources */,
+				D8C000000000000000000002 /* alarm-settings-guide-es.mp4 in Resources */,
+				D8C000000000000000000001 /* alarm-settings-guide-en.mp4 in Resources */,
 				EE54222328378572DB85563F /* alarm_daybreak.caf in Resources */,
 				B1AEE1B2AA51B904088AD5ED /* alarm_orbit.caf in Resources */,
 				5860812A34B23777D66F1426 /* alarm_rally.caf in Resources */,
@@ -269,6 +347,8 @@
 				D4A000000000000000000001 /* NativeEditorControls.swift in Sources */,
 				D4A000000000000000000003 /* NativeSoundPicker.swift in Sources */,
 				D5A000000000000000000001 /* NativeChallengeViews.swift in Sources */,
+				D7A000000000000000000001 /* NativeDesign.swift in Sources */,
+				D8A000000000000000000001 /* NativeAlarmPermissionGuide.swift in Sources */,
 				D6A000000000000000000001 /* NativeAppSettings.swift in Sources */,
 				D6A000000000000000000003 /* NativeSettingsVerification.swift in Sources */,
 				D6A000000000000000000007 /* NativePresentationVerification.swift in Sources */,

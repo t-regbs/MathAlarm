@@ -1,4 +1,6 @@
 import SwiftUI
+import AVFoundation
+import AVKit
 import UIKit
 import Observation
 import KMPObservableViewModelCore
@@ -459,6 +461,7 @@ enum SharedBridgeVerification {
         windowEditor.model.close()
         challenge.model.close()
         print("BRIDGE PASS production session-end and window cleanup preserve unresolved delivery")
+        await exercisePermissionSave(parent: parent)
         await exerciseMilestone5(window: window, parent: parent)
         await NativeSettingsVerification.run(window: window, parent: parent)
         print("SHARED_BRIDGE_VERIFICATION_PASSED")
@@ -471,10 +474,23 @@ enum SharedBridgeVerification {
         var registrations: [String: AlarmScheduleRequest] = [:]
         var cancellations: [Int64] = []
         var rejectCancellation = false
+        var authorization = "authorized"
+        var authorizationResponse = true
+        var deferAuthorization = false
+        var pendingAuthorization: AlarmAuthorizationCompletion?
+        var authorizationRequests = 0
         private func key(_ id: Int64, _ occurrence: String) -> String { "\(id)/\(occurrence)" }
         func isAlarmKitAvailable() -> Bool { true }
-        func authorizationStatus() -> String { "authorized" }
-        func requestAuthorization(completion: AlarmAuthorizationCompletion) { completion.complete(authorized: true) }
+        func authorizationStatus() -> String { authorization }
+        func requestAuthorization(completion: AlarmAuthorizationCompletion) {
+            authorizationRequests += 1
+            if deferAuthorization {
+                pendingAuthorization = completion
+            } else {
+                authorization = authorizationResponse ? "authorized" : "denied"
+                completion.complete(authorized: authorizationResponse)
+            }
+        }
         func scheduleAlarm(request: AlarmScheduleRequest, completion: AlarmScheduleCompletion) {
             registrations[key(request.alarmId, request.occurrenceKey)] = request
             completion.complete(success: true, error: nil)
@@ -496,6 +512,179 @@ enum SharedBridgeVerification {
         }
         func hasPendingHandoff() -> Bool { false }
         func acknowledgePendingHandoff(payload: String) { }
+    }
+
+    private final class PermissionMount: ObservableObject {
+        @Published var showEditor = true
+    }
+
+    private struct PermissionScene: View {
+        @ObservedObject var sessions: NativeWindowSessions
+        @ObservedObject var mount: PermissionMount
+        var body: some View {
+            ZStack {
+                NativeSessionOwners(sessions: sessions)
+                if mount.showEditor { NativeEditorStack(sessions: sessions) }
+            }
+        }
+    }
+
+    private static func exercisePermissionSave(parent: UIViewController) async {
+        let scheduler = VerificationScheduler()
+        scheduler.authorization = "notDetermined"
+        scheduler.authorizationResponse = false
+        AlarmSchedulerBridge.shared.registerScheduler(scheduler: scheduler)
+        defer { AlarmSchedulerBridge.shared.registerScheduler(scheduler: AlarmKitKotlinBridge(wrapper: AlarmKitWrapperImpl.shared)) }
+        let sessions = NativeWindowSessions()
+        let mount = PermissionMount()
+        let host = UIHostingController(rootView: PermissionScene(sessions: sessions, mount: mount))
+        parent.addChild(host); parent.view.addSubview(host.view)
+        host.view.frame = parent.view.bounds; host.didMove(toParent: parent)
+        let list = SharedFeatures.shared.list()
+        await wait { !list.state.loading }
+        let originalIDs = Set(list.state.alarms.map(\.alarmId))
+        defer {
+            sessions.closeWindow(); list.close()
+            host.willMove(toParent: nil); host.view.removeFromSuperview(); host.removeFromParent()
+        }
+
+        let draft = sessions.openEditor(alarm: nil)
+        scheduler.deferAuthorization = true
+        draft.model.onEvent(event: AddEditAlarmEvent.EnteredTitle(value: "Permission retry fixture"))
+        draft.model.onEvent(event: AddEditAlarmEvent.OnSaveTodoClick.shared)
+        await wait { scheduler.pendingAuthorization != nil }
+        let permission = draft.model.state.results.first!
+        precondition(sessions.permissionRequests == [draft.id] && scheduler.authorizationRequests == 1)
+        precondition(sessions.requestInitialAlarmPermission(id: draft.id, resultID: permission.id) == nil)
+        scheduler.authorization = "denied"
+        scheduler.pendingAuthorization!.complete(authorized: false)
+        scheduler.pendingAuthorization = nil
+        scheduler.deferAuthorization = false
+        await wait { sessions.permissionRequests.isEmpty }
+        precondition(draft.model.state.results.map(\.id) == [permission.id])
+        precondition(sessions.requestInitialAlarmPermission(id: draft.id, resultID: permission.id) == nil)
+        precondition(scheduler.authorizationRequests == 1)
+        await wait { host.presentedViewController != nil }
+        if let window = parent.view.window { capture(window, name: "permission-settings-guidance") }
+        draft.model.acknowledgeResult(id: permission.id)
+        mount.showEditor = false
+        await wait { host.presentedViewController == nil && editorField(in: host.view, title: "Permission retry fixture") == nil }
+        precondition(!draft.model.isClosed && !draft.model.state.isSaving && !draft.model.state.isSaved)
+        precondition(draft.model.state.alarmId?.int64Value == 0 && draft.model.state.results.isEmpty)
+        precondition(draft.model.state.alarmTitle == "Permission retry fixture")
+        precondition(sessions.selectedEditorID == draft.id && sessions.permissionRequests.isEmpty)
+        precondition(Set(list.state.alarms.map(\.alarmId)) == originalIDs && scheduler.registrations.isEmpty)
+
+        // A later explicit save can request permission again and accept this exact draft.
+        scheduler.authorization = "notDetermined"
+        scheduler.authorizationResponse = true
+        draft.model.onEvent(event: AddEditAlarmEvent.OnSaveTodoClick.shared)
+        await wait { !draft.model.state.isSaving && !draft.model.state.results.isEmpty }
+        draft.model.acknowledgeResult(id: draft.model.state.results.first!.id)
+        await sessions.requestAlarmPermission(id: draft.id)!.value
+        await wait { draft.model.isClosed && list.state.alarms.contains { $0.title == "Permission retry fixture" } }
+        let saved = list.state.alarms.first { $0.title == "Permission retry fixture" }!
+        precondition(saved.isOn && saved.scheduleInitialized && saved.scheduleError == nil && !saved.pendingTimes.isEmpty)
+        precondition(scheduler.registrations.values.filter { $0.alarmId == saved.alarmId }.count == saved.pendingTimes.count)
+        precondition(sessions.selectedEditorID == nil && sessions.permissionRequests.isEmpty)
+        list.onEvent(event: AlarmListEvent.OnDeleteAlarmClick(alarm: saved))
+        await wait { list.state.pendingOperations == 0 && !list.state.alarms.contains { $0.alarmId == saved.alarmId } }
+        precondition(scheduler.registrations.values.allSatisfy { $0.alarmId != saved.alarmId })
+
+        // An OS response arriving after discard cannot save the replacement draft.
+        scheduler.authorization = "notDetermined"
+        scheduler.deferAuthorization = true
+        let discarded = sessions.openEditor(alarm: nil)
+        let late = sessions.requestAlarmPermission(id: discarded.id)!
+        await wait { scheduler.pendingAuthorization != nil }
+        sessions.closeEditor(id: discarded.id)
+        let replacement = sessions.openEditor(alarm: nil)
+        replacement.model.onEvent(event: AddEditAlarmEvent.EnteredTitle(value: "Replacement permission draft"))
+        scheduler.authorization = "authorized"
+        scheduler.pendingAuthorization!.complete(authorized: true)
+        scheduler.pendingAuthorization = nil
+        await late.value
+        precondition(discarded.model.isClosed && !replacement.model.isClosed && !replacement.model.state.isSaved)
+        precondition(replacement.model.state.alarmId?.int64Value == 0 && replacement.model.state.results.isEmpty)
+        precondition(sessions.selectedEditorID == replacement.id && sessions.permissionRequests.isEmpty)
+        precondition(Set(list.state.alarms.map(\.alarmId)) == originalIDs && scheduler.registrations.isEmpty)
+        print("BRIDGE PASS native permission denial keeps unsaved draft without retry; grant saves exact draft and occurrences; late response cannot save replacement")
+
+        // Returning without a grant consumes the handoff without another Save/dialog.
+        scheduler.authorization = "denied"
+        precondition(sessions.beginAlarmSettingsSave(id: replacement.id))
+        sessions.alarmSettingsSceneChanged(.active) // No departure yet: do not save.
+        sessions.alarmSettingsSceneChanged(.inactive)
+        sessions.alarmSettingsSceneChanged(.active)
+        precondition(!replacement.model.state.isSaved && replacement.model.state.results.isEmpty)
+        scheduler.authorization = "authorized"
+        sessions.alarmSettingsSceneChanged(.active) // An unrelated later activation cannot save it.
+        precondition(!replacement.model.state.isSaved && replacement.model.state.alarmId?.int64Value == 0)
+
+        // A failed Settings open and a discarded originating draft both cancel the intent.
+        precondition(sessions.beginAlarmSettingsSave(id: replacement.id))
+        sessions.cancelAlarmSettingsSave(id: replacement.id)
+        sessions.alarmSettingsSceneChanged(.inactive)
+        sessions.alarmSettingsSceneChanged(.active)
+        precondition(!replacement.model.state.isSaved)
+        precondition(sessions.beginAlarmSettingsSave(id: replacement.id))
+        sessions.alarmSettingsSceneChanged(.inactive)
+        sessions.closeEditor(id: replacement.id)
+        let settingsDraft = sessions.openEditor(alarm: nil)
+        settingsDraft.model.onEvent(event: AddEditAlarmEvent.EnteredTitle(value: "Settings grant fixture"))
+        sessions.alarmSettingsSceneChanged(.active)
+        precondition(!settingsDraft.model.state.isSaved && settingsDraft.model.state.results.isEmpty)
+
+        // Grant saves this exact draft once, after any delivered challenge yields.
+        scheduler.authorization = "denied"
+        precondition(sessions.beginAlarmSettingsSave(id: settingsDraft.id))
+        sessions.alarmSettingsSceneChanged(.background)
+        scheduler.authorization = "authorized"
+        sessions.deliveryPresented = true
+        sessions.alarmSettingsSceneChanged(.active)
+        precondition(!settingsDraft.model.state.isSaved && !settingsDraft.model.state.isSaving)
+        sessions.deliveryPresented = false
+        sessions.resumeAlarmSaveAfterSettings()
+        sessions.resumeAlarmSaveAfterSettings() // Repeated activation must not duplicate the Save.
+        await wait { settingsDraft.model.isClosed && list.state.alarms.contains { $0.title == "Settings grant fixture" } }
+        let settingsSaved = list.state.alarms.first { $0.title == "Settings grant fixture" }!
+        precondition(settingsSaved.isOn && settingsSaved.scheduleInitialized && settingsSaved.scheduleError == nil)
+        precondition(!settingsSaved.pendingTimes.isEmpty)
+        precondition(scheduler.registrations.values.filter { $0.alarmId == settingsSaved.alarmId }.count == settingsSaved.pendingTimes.count)
+        precondition(list.state.alarms.filter { $0.title == "Settings grant fixture" }.count == 1)
+        list.onEvent(event: AlarmListEvent.OnDeleteAlarmClick(alarm: settingsSaved))
+        await wait { list.state.pendingOperations == 0 && Set(list.state.alarms.map(\.alarmId)) == originalIDs }
+        precondition(scheduler.registrations.isEmpty && scheduler.authorizationRequests == 3)
+        print("BRIDGE PASS native first Save requests authorization once; Settings grant resumes exact draft once; denial, failed open and replacement never save; delivery defers resumption")
+
+        for language in ["en", "es", "de", "ru", "pt", "hi", "pa", "bn", "zh"] {
+            let url = Bundle.main.url(forResource: "alarm-settings-guide-\(language)", withExtension: "mp4")!
+            let asset = AVURLAsset(url: url)
+            let duration = try! await asset.load(.duration)
+            let video = try! await asset.loadTracks(withMediaType: .video)
+            let audio = try! await asset.loadTracks(withMediaType: .audio)
+            precondition(duration.seconds == 6 && video.count == 1 && audio.isEmpty)
+            let size = try! await video[0].load(.naturalSize)
+            precondition(size == CGSize(width: 480, height: 640))
+        }
+        precondition(IosApplication.shared.beginSettingsGuideAudio(ownerId: "verification-guide-a", onInterrupted: {}))
+        precondition(!IosApplication.shared.beginSettingsGuideAudio(ownerId: "verification-guide-b", onInterrupted: {}))
+        precondition(!IosApplication.shared.endSettingsGuideAudio(ownerId: "verification-guide-b"))
+        precondition(IosApplication.shared.endSettingsGuideAudio(ownerId: "verification-guide-a"))
+        sessions.settingsGuide.prepare(autoplay: false)
+        precondition(sessions.settingsGuide.available && !sessions.settingsGuide.playing)
+        if !AVPictureInPictureController.isPictureInPictureSupported() {
+            var openedSettings = 0
+            sessions.settingsGuide.openSettingsWithGuide { openedSettings += 1 }
+            precondition(openedSettings == 1 && !sessions.settingsGuide.starting && !sessions.settingsGuide.floating)
+            print("BRIDGE NOTE native Picture in Picture unsupported on this simulator; direct Settings fallback verified")
+        }
+        precondition(!IosApplication.shared.beginSettingsGuideAudio(ownerId: "verification-guide-b", onInterrupted: {}))
+        sessions.deliveryPresented = true // The window registry yields the tutorial to delivery.
+        precondition(IosApplication.shared.beginSettingsGuideAudio(ownerId: "verification-guide-b", onInterrupted: {}))
+        precondition(IosApplication.shared.endSettingsGuideAudio(ownerId: "verification-guide-b"))
+        sessions.deliveryPresented = false
+        print("BRIDGE PASS native permission tutorial bundles nine silent loops; audio lease rejects competing owners and stale release; delivery stops guide")
     }
 
     private struct ChallengeScene: View {

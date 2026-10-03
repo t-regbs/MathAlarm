@@ -133,7 +133,7 @@ python3 -B scripts/verify_ios_shared_bridge.py --udid DISPOSABLE_SIMULATOR_UDID 
 
 The explicit `--verify-shared-bridge` Debug launch path mounts a real SwiftUI owner
 and observed child in a UIKit window, using `SharedFeatures` and `IosApplication`.
-Twenty-four groups check bootstrap/handoff identity, generated state observation, the actual
+Twenty-seven groups check bootstrap/handoff identity, generated state observation, the actual
 production `NativeSessionOwners` with compact/expanded/detail replacement, multiple
 retained drafts/routes, staged tone choices and permission guards; editor validation,
 duplicate guards, result acknowledgement, cancellation and structural owner cleanup.
@@ -153,6 +153,23 @@ the tapped active scene with iPad source rect, cancellation/error callbacks and 
 unavailable-mailto handling. No feedback or share recipient is selected. The first
 launch explicitly supplies `--verify-m6-settings-fresh` for disposable fixture keys;
 never use that flag on an existing user's installation.
+
+The permission-save regressions check that the first Save requests native authorization
+once, refusal preserves the unsaved draft, and approval persists that exact alarm and
+its controlled scheduled occurrences. Returning from Settings after a grant resumes the
+same draft once; returning without a grant, discarding the draft, changing selection or
+failing to open Settings cannot save another draft. Delivery defers save resumption.
+Nine six-second silent tutorial assets and owner-scoped audio leases are verified; an
+incoming delivery stops the guide. Unsupported PiP opens Settings directly.
+
+The permission sheet has one “Go to Settings” action. It starts the tutorial in native
+Picture in Picture, waits for AVKit's start callback, then opens app Settings. The video
+continues over Settings and stops on return. There is no separate tutorial selection.
+Use `--verify-alarm-settings-guide` only on a disposable Debug simulator to inspect the
+guide without a draft, save or permission grant. The simulator used for this refinement
+reports PiP unsupported; inline playback, the single-action Settings fallback and
+controlled save behavior are simulator evidence. Verify the actual floating window,
+Settings navigation, toggle change, return/save and interruption on an iPhone.
 
 Navigation settlement requires the attached native top controller to be visible,
 with stable pane/container geometry and no active transition animation. A cached
@@ -222,12 +239,28 @@ The default runner executes a base phase and a separate delivered phase in fresh
 for each locale. `--base-only` and `--delivered-only` select one phase; `--locales en`
 provides a focused iteration. The opt-in Debug-only harness starts one independent task
 per process, so SwiftUI task cancellation or repeated mounting cannot restart the run.
+It also checks the app's 12-hour display at midnight/noon, padded minutes and all nine
+localized day periods, including a locale with an explicit 24-hour preference.
 The base phase retains factory owners, saves two uniquely named **disabled** fixtures
-(no scheduling), captures list/editor/subpages/sound/fallback/preview/settings/announcements
+(no OS scheduling), captures list/editor/subpages/sound/fallback/preview/settings/announcements
 in light and dark accessibility3, and captures lower scroll viewports where content exceeds
 the window. Cleanup deletes only the exact fixture IDs through production commands and
 acknowledges results in the same process while owners remain mounted; it restores the prior
 theme before teardown.
+
+The base phase also captures the real editor dial at 00:00, 03:15, 07:20 and 09:45
+in normal light and dark appearances, plus increased-contrast editor views. The
+contrast capture temporarily overrides the UIKit window trait and restores its
+previous value or absence afterward; JSON records the contrast actually rendered.
+These changes affect only an unsaved draft and exercise no additional scheduling.
+
+For the next-alarm subtitle, the base phase briefly enables its saved fixtures
+through the controlled Debug scheduler. It checks the displayed occurrence against
+the earliest registered request, captures native large-title and scrolled bar
+layouts, disables the nearest alarm and checks the following occurrence, then
+disables both and confirms that the subtitle and controlled registrations are gone.
+The fixtures are subsequently deleted by their exact IDs as above. No AlarmKit
+registration is made by this phase.
 
 The delivered phase uses the existing controlled Debug scheduler, a private handoff queue
 and a no-op native recovery hook. It exercises native delivered progress and feedback in
@@ -262,7 +295,9 @@ Settings exercises all theme/sort controls, restart persistence, explicit What's
 acknowledgement/reopening and native unavailable-feedback handling. Share waits for settled
 native presentation and cancels without choosing a destination. Keyboard flows tap actual
 editor and maths fields, capture software keyboards, use their Done controls, verify
-wrong-answer feedback and exact draft return; landscape restores portrait afterward.
+negative input and the independent trailing Clear action, dismiss wrong-answer feedback,
+and return to the exact draft; landscape restores portrait afterward. Regular portrait
+also asserts question and Submit visibility while the software keyboard is open.
 Permission flows verify the native guard/Keep editing/Allow alarms and draft protection.
 The OS denial prompt branch is conditional: a skipped branch is **not** a first-install
 permission-client pass. Hardware keyboard preferences must permit the software keyboard.

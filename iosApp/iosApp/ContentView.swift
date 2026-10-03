@@ -9,6 +9,8 @@ struct ContentView: View {
         #if DEBUG
         if SharedBridgeVerification.enabled {
             Color.clear.task { SharedBridgeVerification.start() }
+        } else if NativeAlarmPermissionGuideVerification.enabled {
+            NativeAlarmPermissionGuideVerification()
         } else if NativePresentationVerification.enabled {
             Color.clear.task {
                 guard let window = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene })
@@ -30,12 +32,14 @@ struct ContentView: View {
 /// The window owns feature instances; navigation columns only borrow them.
 @MainActor
 struct NativeApplicationRoot: View {
+    @Environment(\.scenePhase) private var scenePhase
     @StateViewModel private var list = SharedFeatures.shared.list()
     @StateViewModel private var settings = SharedFeatures.shared.settings()
     @StateObject private var announcements = NativeAnnouncementPresentation()
     @StateObject private var sessions = NativeWindowSessions()
     @ObservedObject private var restoration = NativeDeliveryRestoration.shared
     @State private var compactColumn: NavigationSplitViewColumn = .sidebar
+    @State private var splitPresentation = 0
     @State private var settingsPresented = false
     @State private var settingsBeforeDelivery = false
 
@@ -50,9 +54,16 @@ struct NativeApplicationRoot: View {
             } detail: {
                 NativeEditorStack(sessions: sessions)
             }
+            .id(splitPresentation)
         }
+        .tint(MatAlarmPalette.accent)
+        .onChange(of: scenePhase) { phase in sessions.alarmSettingsSceneChanged(phase) }
         .onChange(of: sessions.selectedEditorID) { id in
             compactColumn = id == nil ? .sidebar : .detail
+            // A nested NavigationStack can keep the compact detail visible
+            // after its owner closes. Replace the container to show the list;
+            // the window's feature owners remain outside this identity.
+            if id == nil { splitPresentation += 1 }
         }
         .onAppear {
             // Each new window independently restores acknowledged occurrences.
@@ -85,7 +96,10 @@ struct NativeApplicationRoot: View {
         .onChange(of: list.state.loading) { _ in offerAnnouncementsIfIdle() }
         .onChange(of: sessions.selectedEditorID) { _ in offerAnnouncementsIfIdle() }
         .onChange(of: sessions.deliveryPresented) { presented in
-            if presented { interruptSupplementaryPresentation() }
+            if presented {
+                interruptSupplementaryPresentation()
+            }
+            else if scenePhase == .active { sessions.resumeAlarmSaveAfterSettings() }
         }
         .onChange(of: restoration.ready) { _ in offerAnnouncementsIfIdle() }
         .onChange(of: restoration.failure) { failure in
@@ -108,6 +122,7 @@ struct NativeApplicationRoot: View {
                     }, onDone: { settingsPresented = false })
                 }
             }
+            .tint(MatAlarmPalette.accent)
             .alert("Couldn’t update preferences. Try again.", isPresented: Binding(get: {
                 !settings.state.failures.isEmpty
             }, set: { _ in })) {
@@ -136,6 +151,7 @@ struct NativeApplicationRoot: View {
                             AppDelegate.checkPendingAlarmKitDeeplink(restoreUnresolved: true)
                         }
                         .buttonStyle(.borderedProminent)
+                        .tint(MatAlarmPalette.action)
                         .accessibilityIdentifier("deliveryRestorationRetry")
                     }
                     .padding()
@@ -149,6 +165,7 @@ struct NativeApplicationRoot: View {
                     NativePendingDelivery(sessions: sessions)
                 }
             }
+            .tint(MatAlarmPalette.accent)
             .interactiveDismissDisabled()
         }
     }

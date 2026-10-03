@@ -535,7 +535,7 @@ class AlarmKitWrapperImpl: NSObject {
                 let solveButton = AlarmButton(
                     text: LocalizedStringResource("Solve Math"),
                     textColor: .mathAlarmGreen,
-                    systemImageName: "function"
+                    systemImageName: "arrow.up.forward.app"
                 )
                 let alertContent = AlarmPresentation.Alert(
                     title: alertTitle.isEmpty ? LocalizedStringResource("Solve Math") : LocalizedStringResource(stringLiteral: alertTitle),
@@ -716,7 +716,7 @@ class AlarmKitWrapperImpl: NSObject {
             IosApplication.shared.reportRecoveryFailure(alarmId: data.alarmId)
             throw AlarmKitError.schedulingFailed("Could not persist native recovery metadata")
         }
-        let solve = AlarmButton(text: "Solve Math", textColor: .mathAlarmGreen, systemImageName: "function")
+        let solve = AlarmButton(text: "Solve Math", textColor: .mathAlarmGreen, systemImageName: "arrow.up.forward.app")
         let alert = AlarmPresentation.Alert(
             title: data.title.isEmpty ? LocalizedStringResource("Solve Math") : LocalizedStringResource(stringLiteral: data.title),
             stopButton: solve

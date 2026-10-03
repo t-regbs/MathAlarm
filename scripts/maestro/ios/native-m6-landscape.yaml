@@ -3,7 +3,10 @@
 # creates and discards only an unsaved editor/preview fixture.
 appId: com.timilehinaregbesola.mathalarm
 ---
-- setOrientation: LANDSCAPE_LEFT
-- runFlow: native-m6-keyboard.yaml
+- runFlow:
+    file: native-m6-keyboard.yaml
+    env:
+      REQUIRE_VISIBLE_TASK: "false"
+      CHALLENGE_ORIENTATION: LANDSCAPE_LEFT
 - takeScreenshot: native-landscape-root-after-preview-return
 - setOrientation: PORTRAIT

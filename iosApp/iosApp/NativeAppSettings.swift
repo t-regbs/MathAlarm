@@ -169,6 +169,7 @@ struct NativeAppSettings: View {
                 .background(NativeExternalPresentationAnchor(presentation: external).allowsHitTesting(false))
             }
         }
+        .matAlarmContent()
         .navigationTitle("App Settings")
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
@@ -187,7 +188,7 @@ struct NativeAppSettings: View {
                 Text(NativeStrings.text(detail)).font(.subheadline).foregroundStyle(Color.secondary)
             }
             .fixedSize(horizontal: false, vertical: true)
-        } icon: { Image(systemName: symbol).accessibilityHidden(true) }
+        } icon: { MatAlarmFeatureIcon(symbol: symbol) }
         .accessibilityElement(children: .combine)
     }
 }
@@ -203,7 +204,8 @@ struct NativeWhatsNew: View {
             if let id = presentation.currentID {
                 VStack(alignment: .leading, spacing: 24) {
                     Text(NativeStrings.text(id == "math-challenges-v1" ? "More ways to wake up" : "Snooze on your terms"))
-                        .font(.title).bold().accessibilityAddTraits(.isHeader)
+                        .font(.system(.largeTitle, design: .rounded, weight: .semibold))
+                        .accessibilityAddTraits(.isHeader)
                     announcementPreview(id: id)
                     if id == "math-challenges-v1" {
                         Text(String(format: NativeStrings.text("Solve up to %@ questions. Mix difficulties or build a custom challenge that works for you."), NativeStrings.number(MathChallenge.companion.MAX_QUESTIONS)))
@@ -214,33 +216,31 @@ struct NativeWhatsNew: View {
                         Text(String(format: NativeStrings.text("Open %@ to turn snooze on or off, or change its limit and duration."), NativeStrings.text("Snooze")))
                             .foregroundStyle(.secondary)
                     }
-                    if presentation.ids.count > 1 {
-                        HStack {
-                            Button("Back") { presentation.move(to: presentation.page - 1, model: model) }
-                                .disabled(presentation.page == 0)
-                                .accessibilityIdentifier("announcementPrevious")
-                            Spacer()
-                            Text(String(format: NativeStrings.text("Feature %@ of %@"), NativeStrings.number(presentation.page + 1), NativeStrings.number(presentation.ids.count)))
-                                .font(.caption).foregroundStyle(.secondary)
-                                .accessibilityIdentifier("announcementPage")
-                            Spacer()
-                            Button("Next") { presentation.move(to: presentation.page + 1, model: model) }
-                                .disabled(presentation.page == presentation.ids.count - 1)
-                                .accessibilityIdentifier("announcementNext")
+                    VStack(spacing: 20) {
+                        if presentation.ids.count > 1 { pageControls }
+                        Button {
+                            if presentation.finish(model: model) { onTryFeature(id) }
+                        } label: {
+                            Text("Try it")
+                                .frame(maxWidth: .infinity)
+                                .multilineTextAlignment(.center)
+                                .fixedSize(horizontal: false, vertical: true)
                         }
+                        .buttonStyle(.glassProminent)
+                        .tint(MatAlarmPalette.action)
+                        .controlSize(.large)
+                        .accessibilityIdentifier("announcementTry")
                     }
-                    Button("Try it") {
-                        if presentation.finish(model: model) { onTryFeature(id) }
-                    }
-                    .buttonStyle(.borderedProminent)
-                    .accessibilityIdentifier("announcementTry")
+                    .padding(.top, 8)
                 }
                 .frame(maxWidth: 560, alignment: .leading)
                 .padding()
                 .frame(maxWidth: .infinity)
             }
         }
+        .matAlarmContent()
         .navigationTitle("What’s new")
+        .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .confirmationAction) {
                 Button("Got it") { presentation.finish(model: model) }
@@ -251,10 +251,49 @@ struct NativeWhatsNew: View {
         .interactiveDismissDisabled()
     }
 
+    private var pageControls: some View {
+        HStack(spacing: 16) {
+            Button("Back", systemImage: "chevron.backward") {
+                presentation.move(to: presentation.page - 1, model: model)
+            }
+            .labelStyle(.iconOnly)
+            .buttonStyle(.glass)
+            .controlSize(.large)
+            .buttonBorderShape(.circle)
+            .frame(minWidth: 44, minHeight: 44)
+            .disabled(presentation.page == 0)
+            .accessibilityIdentifier("announcementPrevious")
+
+            HStack(spacing: 8) {
+                ForEach(presentation.ids.indices, id: \.self) { index in
+                    Circle()
+                        .fill(index == presentation.page ? MatAlarmPalette.accent : Color.primary.opacity(0.45))
+                        .frame(width: 8, height: 8)
+                }
+            }
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel(Text(String(format: NativeStrings.text("Feature %@ of %@"),
+                NativeStrings.number(presentation.page + 1), NativeStrings.number(presentation.ids.count))))
+            .accessibilityIdentifier("announcementPage")
+
+            Button("Next", systemImage: "chevron.forward") {
+                presentation.move(to: presentation.page + 1, model: model)
+            }
+            .labelStyle(.iconOnly)
+            .buttonStyle(.glass)
+            .controlSize(.large)
+            .buttonBorderShape(.circle)
+            .frame(minWidth: 44, minHeight: 44)
+            .disabled(presentation.page == presentation.ids.count - 1)
+            .accessibilityIdentifier("announcementNext")
+        }
+        .frame(maxWidth: .infinity)
+    }
+
     private func announcementPreview(id: String) -> some View {
         VStack(alignment: .leading, spacing: 12) {
             if id == "math-challenges-v1" {
-                Label(NativeStrings.questions(3), systemImage: "function").font(.headline)
+                Text(NativeStrings.questions(3)).font(.headline)
                 Text(String(format: NativeStrings.text("Easy: %@ · Medium: %@"), NativeStrings.number(2), NativeStrings.number(1)))
                     .font(.subheadline).foregroundStyle(Color.secondary)
                 announcementEquation(index: 1, left: 14, right: 28, division: false, difficulty: "Easy")
@@ -275,7 +314,7 @@ struct NativeWhatsNew: View {
             }
         }
         .padding().frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background.secondary, in: RoundedRectangle(cornerRadius: 16))
+        .background(MatAlarmPalette.wash, in: RoundedRectangle(cornerRadius: 24))
     }
 
     private func announcementEquation(index: Int, left: Int, right: Int, division: Bool, difficulty: String) -> some View {
@@ -285,19 +324,19 @@ struct NativeWhatsNew: View {
         return ViewThatFits(in: .horizontal) {
             HStack(spacing: 12) {
                 Text(NativeStrings.number(index)).font(.caption)
-                Text(equation).font(.headline.monospacedDigit()).accessibilityLabel(spoken)
+                Text(equation).font(.system(.title3, design: .rounded, weight: .semibold)).monospacedDigit().accessibilityLabel(spoken)
                 Text(NativeStrings.text(difficulty)).font(.caption)
             }
             .fixedSize(horizontal: true, vertical: true)
             VStack(alignment: .leading, spacing: 8) {
                 Text(NativeStrings.number(index)).font(.caption)
-                Text(equation).font(.headline.monospacedDigit()).accessibilityLabel(spoken)
+                Text(equation).font(.system(.title3, design: .rounded, weight: .semibold)).monospacedDigit().accessibilityLabel(spoken)
                 Text(NativeStrings.text(difficulty)).font(.caption)
             }
         }
         .padding(12)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.background, in: RoundedRectangle(cornerRadius: 12))
+        .background(MatAlarmPalette.surface, in: RoundedRectangle(cornerRadius: 16))
         .accessibilityElement(children: .combine)
     }
 }

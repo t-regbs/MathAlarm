@@ -31,6 +31,13 @@ import org.koin.core.component.KoinComponent
 enum class AlarmHandoffDisposition { INITIALIZE, OBSOLETE, DEFERRED, INVALID }
 
 object IosApplication {
+    /** AVKit's silent Settings tutorial leases the existing platform audio owner. */
+    fun beginSettingsGuideAudio(ownerId: String, onInterrupted: () -> Unit): Boolean =
+        com.timilehinaregbesola.mathalarm.interactors.IosAlarmAudioManager.beginSettingsGuideAudio(ownerId, onInterrupted)
+
+    fun endSettingsGuideAudio(ownerId: String): Boolean =
+        com.timilehinaregbesola.mathalarm.interactors.IosAlarmAudioManager.endSettingsGuideAudio(ownerId)
+
     private val dependencies = object : KoinComponent {}
     private var initialized = false
     private val applicationScope: CoroutineScope
