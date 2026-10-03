@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main, master, develop, "codex/**"]
   workflow_dispatch:
+    inputs:
+      scope:
+        description: 'Validation scope (Android-only does not establish the iOS gate)'
+        type: choice
+        options: [all, android]
+        default: all
   schedule:
     - cron: "17 3 * * *"
 
@@ -13,7 +19,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: testing-${{ github.workflow }}-${{ github.ref }}
+  group: testing-${{ github.workflow }}-${{ github.ref }}-${{ inputs.scope || 'all' }}
   cancel-in-progress: true
 
 jobs:
@@ -113,6 +119,7 @@ jobs:
 
   ios:
     name: Native iOS — ${{ matrix.family }}
+    if: ${{ inputs.scope != 'android' }}
     # GitHub-hosted Apple Silicon image; select the approved toolchain explicitly.
     runs-on: xcode-27
     timeout-minutes: 120

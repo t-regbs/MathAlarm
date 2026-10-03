@@ -86,7 +86,11 @@ and a one-minute snooze. It cleans up that alarm after each run. It resets the t
 app's delivery log and grants required permissions on the disposable emulator.
 The Doze fixture schedules three minutes ahead and temporarily sets
 `min_time_to_alarm=0,idle_to=30000`. This permits a confirmed 30-second initial idle
-window outside Android’s early-wake margin, then restores the original settings. Android normally avoids
+window outside Android’s early-wake margin, then restores the original settings.
+Android 12–14 require per-key `device_config` overrides in the `device_idle` namespace;
+Android 11 and 15+ support the global Settings override. The runner preserves prior
+values, restores partial setup failures and verifies both effective service thresholds
+before requiring actual deep-idle entry. Android normally avoids
 deep idle shortly before alarm-clock events. This accelerated fixture complements
 the overnight physical-device check.
 Do not use an emulator containing alarms you need to preserve. A failed run is
@@ -430,6 +434,16 @@ and schedule; it requires the iOS 27 runtime. It keeps Android host/delivery cov
 and adds expanded/recreated/compact Android UI instrumentation on dedicated emulators.
 The Android layout fixture explicitly grants notification permission before running;
 first-install authorization is a separate scenario.
+
+Full validation is the default. For an Android-only fixture change, an explicitly
+scoped dispatch can run alongside an existing full run without cancelling it:
+
+```sh
+gh workflow run build.yml --ref BRANCH -f scope=android
+```
+
+That run skips iOS and cannot establish an iOS gate. Link the separate full run and
+its exact source revision when relying on unchanged native evidence.
 
 `presentation/review.html` compares every required capture family and additional scrolled
 viewport across nine locales and links its actual trait/scroll JSON. `review-status.json` records capture completeness
