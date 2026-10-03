@@ -1,6 +1,6 @@
 # Native UI migration progress — 3 October 2026
 
-The [approved plan](native-ui-migration-plan.md) remains the architectural authority. Milestones 1–6 have completed their documented implementation/simulator gates. Native app-wide settings, What's New, feedback/share and every parity-table feature are implemented; the [Milestone 6 record](native-ui-migration-milestone-6-2026-10-02.md) maps the current source and evidence. Milestone 5 delivery/restoration/result/audio guarantees are reverified. Compose remains Android-owned, shared production code renderer-free, and iOS entirely SwiftUI. Milestone 7 permanent native targets, CI integration and isolated cleanup are implemented and locally verified in the [M7 record](native-ui-migration-milestone-7-2026-10-03.md). It is not marked complete: the updated hosted workflow is running against the approved snapshot, and unavailable native-client evidence remains explicitly unestablished. Physical/release gates, unavailable VoiceOver/window/Mail client checks and minimum-runtime validation remain open; this is not release readiness. Earlier sections are historical snapshots. The [baseline](native-ui-migration-baseline-2026-10-02.md) and [results-only experiment archive](research/native-ui-interop-2026-10-02/README.md) remain unchanged.
+The [approved plan](native-ui-migration-plan.md) remains the architectural authority. Milestones 1–6 have completed their documented implementation/simulator gates. Native app-wide settings, What's New, feedback/share and every parity-table feature are implemented; the [Milestone 6 record](native-ui-migration-milestone-6-2026-10-02.md) maps the current source and evidence. Milestone 5 delivery/restoration/result/audio guarantees are reverified. Compose remains Android-owned, shared production code renderer-free, and iOS entirely SwiftUI. Milestone 7 is complete against its approved implementation/CI/archive gate: permanent native targets, CI integration, isolated cleanup and unsigned archive packaging pass locally and in corrected hosted runs, as recorded in the [M7 record](native-ui-migration-milestone-7-2026-10-03.md). Unavailable native-client evidence remains explicitly unestablished. Physical/release gates, unavailable VoiceOver/window/Mail client checks and minimum-runtime validation remain open; this is not release readiness. Earlier sections are historical snapshots. The [baseline](native-ui-migration-baseline-2026-10-02.md) and [results-only experiment archive](research/native-ui-interop-2026-10-02/README.md) remain unchanged.
 
 ## Milestone gates
 
@@ -14,7 +14,7 @@ The [iOS visual identity refinement](ios-visual-identity-2026-10-02.md) adds Mat
 | 4 — Complete native list and editing | **COMPLETE** | List/editor/subpage/sound parity, validation/failure retry/duplicate guards, accepted result acknowledgement, retained drafts/routes across layout/detail replacement, Android editor/tablet regressions; measured limits below |
 | 5 — Complete preview and delivered alarms | **COMPLETE — implementation gate** | Native challenge, readiness before exact acknowledgement, ordered replay, independent durable restoration and process restart, retained drafts/routes, audio ownership and fault ordering; physical recovery/release gates remain open |
 | 6 — Finish settings and native presentation parity | **COMPLETE — implementation/simulator gate** | Native parity-table features, persisted theme/sort/announcement acknowledgement, active-scene feedback/share with iPad anchor, nine packaged catalogs/six tones, native launch and reviewed locale/keyboard/accessibility-size presentation; explicit client/physical/release limits in the M6 record |
-| 7 — Enforce boundaries and integrate CI | **IMPLEMENTED / LOCALLY VERIFIED — gate open** | Permanent XCTest/UI targets, all 27 production groups, both native clients, nine-locale matrices, four SDK/configuration links and unsigned archive pass locally; updated hosted CI and unavailable client evidence remain unverified. [M7 evidence](native-ui-migration-milestone-7-2026-10-03.md) |
+| 7 — Enforce boundaries and integrate CI | **COMPLETE — implementation/CI/archive gate** | Permanent XCTest/UI targets, all 27 production groups, both native clients, nine-locale matrices, renderer boundaries, four SDK/configuration links and unsigned archive pass locally and in hosted CI; Android APIs 30/32/35/36 pass. Unavailable client evidence remains recorded. [M7 evidence](native-ui-migration-milestone-7-2026-10-03.md) |
 | 8 — Device and release acceptance | **OPEN** | Physical AlarmKit/recovery/PiP/acoustic, minimum-runtime, signing/distribution and remaining client evidence remain separate from M7 archive packaging |
 
 The final verification record below ties completion to the approved gates: feature contracts contain no Compose/UI types; existing Android consumers build; the production bootstrap and bridge checks work without constructing a Compose controller; observer-removal regressions preserve accepted commands and real sessions; pinned Kotlin/Swift dependencies resolve and work together. Those Milestone 2 results are retained below; the completed renderer extraction and native root have their own Milestone 3 verification record.
@@ -289,7 +289,7 @@ operations, exact acknowledgements and fresh-process restoration. Native session
 retain their pinned bridge observation wrapper through outgoing-observer replacement.
 The Debug harness and the post-M6 visual/navigation/permission baseline remain intact.
 
-Local verification passes: 487 Android host plus 370 native Kotlin tests, 24 Python
+Local verification passes: 487 Android host plus 370 native Kotlin tests, 27 Python
 contracts, three Android layout instrumentations, six permanent native tests on each
 iPhone/iPad family, all native client flows, 631 iPhone and 495 iPad locale captures,
 four Debug/Release device/simulator links and unsigned Release archive/resource checks.
@@ -298,8 +298,14 @@ compatibility and delivery/audio guarantees. Reproduction is in [testing](testin
 and [architecture/build](native-architecture.md); logs, xcresults, images and the
 archive are under `build/native-ui-m7/`. Corrected failures are retained and explained.
 
-M7 is not marked complete until its hosted-CI gate is established for the changed
-workflow. VoiceOver speech/focus, actual window resizing and configured-Mail composer
+**M7 is complete against its approved implementation/CI/archive gate.** Hosted
+[Android run 37104690123](https://github.com/t-regbs/MathAlarm/actions/runs/37104690123)
+and [native run 37107437705](https://github.com/t-regbs/MathAlarm/actions/runs/37107437705)
+are green. The former covers unchanged Android/shared sources; the latter verifies
+both final native families, all locale/client flows, all four links and actual archive
+resources. Downloaded artifacts and independent summaries are under
+`build/native-ui-m7/hosted-android/` and `build/native-ui-m7/hosted-final/`.
+VoiceOver speech/focus, actual window resizing and configured-Mail composer
 cancellation remain unavailable/unestablished; screenshot review is explicitly sampled,
 not full linguistic/visual sign-off. No external feedback/share message was sent.
 M8 physical AlarmKit/recovery, PiP over Settings, acoustic/routing output, iOS 26.0

@@ -9,14 +9,16 @@ IDE state, Kotlin error-log deletions and Android release mapping are preserved.
 No dependency/toolchain version, persisted schema/key, registration identity or
 physical device state is changed. Android remains Compose-owned; iOS is SwiftUI.
 
-**Gate status: implemented and locally verified; not marked complete.** The updated
-workflow has run in hosted CI against the approved snapshot. The corrected Android
-matrix is green; the first iPhone run stopped at the final locale fixture assertion,
-and iPad stopped in the maximum-text final-row centering step. The native gate remains
-open pending the corrected run. VoiceOver speech/
-focus, live window resizing and configured-Mail composer cancellation also remain
-unestablished for the precise environmental reasons below. Source inspection and
-simulator captures are not substituted for those results.
+**Gate status: COMPLETE — approved implementation/CI/archive gate.** Corrected hosted
+Android and iPhone/iPad runs are green. CI verifies renderer boundaries, both native
+UIs, shared behavior, all four Debug/Release SDK links and unsigned Release archive
+packaging. Documentation describes the implemented architecture. Earlier failed runs
+remain recorded below, with their fixes and successful reruns.
+
+VoiceOver speech/focus, live window resizing and configured-Mail composer cancellation
+remain unestablished for the precise environmental reasons below. Full visual/linguistic
+sign-off is pending. These limits and M8 physical/distribution acceptance remain open;
+source inspection and simulator captures are not substituted for those results.
 
 ## Implemented system
 
@@ -113,13 +115,15 @@ The separate ordinary-keyboard client captures establish actual software-keyboar
 behavior. All-matrix linguistic/visual sign-off remains pending in the review artifact;
 neither contact sheets nor file counts establish VoiceOver output.
 
-The continuation expands the sampled review to 25 iPhone and 16 iPad families across
+The continuation expands the sampled review to 25 iPhone and 17 iPad families across
 the nine locales; exact names are in each `review-status.json`. Added samples cover
 challenge configuration, repeat/snooze controls, scrolled announcement actions,
 the 09:45 dial, one-enabled-alarm subtitle, synthetic RTL and unavailable-tone fallback.
 The additional large-text editor, delivered progress and snooze announcement samples
 include scrolled viewports where emitted; those optional views are absent when no
-additional scrolling was needed.
+additional scrolling was needed. The iPad custom-challenge sample places the large
+heading at the top edge; its source PNG/trait JSON is retained for interactive
+accessibility review rather than being counted as complete visual approval.
 All-family contact sheets are available under `{iphone,ipad}-review-all/`; these are
 navigation aids, not a claim that every family has been reviewed. An initial contact
 sheet crop hid a snooze switch; the full-resolution source showed it correctly, and
@@ -159,13 +163,13 @@ working tree includes the original user work and the M7 additions. After explici
 approval, an isolated 80-file snapshot was published as
 `f2b2226d3f450096bf421a30cacbed27af323609` on
 `codex/native-ui-m7-ci-20261003`; the user's working branch and index remain unchanged.
-The snapshot excludes IDE history/state, logs and release mappings. Hosted
+The snapshot excludes changes to IDE history/state, logs and release mappings. Hosted
 [run 37104158893](https://github.com/t-regbs/MathAlarm/actions/runs/37104158893)
-is in progress; its result must pass before closing the hosted-CI gate. The workflow
+exposed the Android Doze setup and two native fixture failures documented below; it
+is retained as failing evidence. Both corrected native jobs now pass. The workflow
 uses GitHub's hosted `xcode-27` Apple Silicon image with an explicit Xcode 27.0
-(`27A266a`) path and version assertion. A zero self-hosted-runner inventory does not
-mean this hosted image is unavailable. Retain the Debug harness until that migrated
-coverage is accepted.
+(`27A266a`) path and version assertion. The Debug harness remains as an independent
+parity check alongside the permanent tests.
 
 The first hosted continuation exposed an existing API 32 fixture issue in prior
 run `36992095751`: Doze configuration remained at its default thresholds after
@@ -204,7 +208,8 @@ checks and same-process typed cleanup), in `iphone-subtitle-zh/` and
 `iphone-subtitle-zh.log`. The normal framework/test build also passes in
 `build-subtitle-settlement.log`; all 27 Python contracts and boundary/localization/pin
 checks pass. [Native run 37107199909](https://github.com/t-regbs/MathAlarm/actions/runs/37107199909)
-is running both form factors at `cdb54fb4ce232e63bf612307d13ac1746b7b2eed`.
+started both form factors at `cdb54fb4ce232e63bf612307d13ac1746b7b2eed`, then
+was superseded by the final-row client correction below.
 Its explicit `scope=ios` skips the already-green, unchanged Android sources/tests;
 default workflow runs still validate both platforms.
 
@@ -217,11 +222,52 @@ row now uses `centerElement: false`; 100% visibility, both control assertions, a
 selection, exact-draft application and discard assertions remain unchanged. Evidence
 is retained in `hosted-first/ipad/.../client/sound-maximum/`, including the failure PNG,
 hierarchy and scroll log. This changes the client fixture, not app layout or text size.
+[Replacement native run 37107437705](https://github.com/t-regbs/MathAlarm/actions/runs/37107437705)
+validates both corrections at `e5c1720c58ca8f9e8fa39731891f367423df9cc1`.
+The complete corrected tone flow passes locally on a fresh disposable iPad using
+Maestro 2.10.0 and actual `accessibility-extra-extra-extra-large` OS text size:
+`ipad-final-tone.log`, `ipad-final-tone/` and `ipad-final-tone-content-size.txt`.
+All six controls, Clear Signal application to the exact draft, and discard pass.
+That task-owned simulator is removed after capture.
+
+
+### Final hosted gate evidence
+
+[Native run 37107437705](https://github.com/t-regbs/MathAlarm/actions/runs/37107437705)
+completed successfully on both families at `e5c1720c58ca8f9e8fa39731891f367423df9cc1`.
+Each job passes 370 native Kotlin tests, six permanent XCTest/UI tests without skips,
+all 27 retained harness groups, native client flows, four normal Kotlin-backed
+Debug/Release device/simulator links, and unsigned Release archive packaging. The
+nine-locale matrix contains 631 iPhone and 495 iPad captures with trait metadata and
+all 49 required families per locale. Maximum OS text size is recorded and restored.
+Boundary/framework consumption, pinned Swift resolution, nine compiled catalogs,
+six stable tones, privacy manifests and nine localized guide videos/posters pass.
+Controlled iOS scheduling remains separate from physical AlarmKit evidence.
+
+The green [Android run 37104690123](https://github.com/t-regbs/MathAlarm/actions/runs/37104690123)
+at `6b3e45cd4685d221c06e0d6a24985ea81b22a0ec` and this native run jointly establish the
+CI gate. Android/shared production and test sources are identical between those
+revisions; subsequent changes affect only native Debug/client fixtures, scoped dispatch
+and documentation. The default workflow still runs both platforms.
+
+Downloaded final native artifacts are under `hosted-final/{iphone,ipad}/`; each contains
+`build/native-ui-m7-ci/` logs, xcresult, review HTML/captures, client evidence and the
+actual archive. `hosted-final/verified-summary.json` records independent artifact
+checks, and `{iphone,ipad}-native-summary.json` records xcresult summaries. Android
+artifacts and their verified summary are under `hosted-android/`. Hosted metadata is
+in `github-{android,ios}-final.json`. All paths are relative to `build/native-ui-m7/`.
+The final branch update after this tested revision changes only the evidence documents.
+
+Passing xcresults retain runtime warnings for synchronous audio-session activation,
+mounted verification hosting views, transient invalid frame dimensions and publication
+during view updates. No test failed or was skipped; these warnings are preserved for
+follow-up diagnosis and are not represented as a warning-free runtime or physical
+responsiveness result.
 
 Collect the unavailable native-client evidence on a supported isolated client; no Mail
 message needs to be sent. The screenshot review artifacts retain their explicit full
 visual/linguistic sign-off status. M8 physical/minimum-runtime/distribution acceptance
 is still separate from the completed M7 archive packaging check.
 
-The task-owned Android emulator and two task-owned iOS simulators are removed after
+The task-owned Android emulator and all task-owned iOS simulators are removed after
 evidence capture. Existing user simulators and connected physical devices are preserved.
