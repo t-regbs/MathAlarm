@@ -8,9 +8,9 @@ on:
   workflow_dispatch:
     inputs:
       scope:
-        description: 'Validation scope (Android-only does not establish the iOS gate)'
+        description: 'Validation scope (a focused run establishes only its platform gate)'
         type: choice
-        options: [all, android]
+        options: [all, android, ios]
         default: all
   schedule:
     - cron: "17 3 * * *"
@@ -24,6 +24,7 @@ concurrency:
 
 jobs:
   build:
+    if: ${{ inputs.scope != 'ios' }}
     name: Build & Test
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -78,6 +79,7 @@ jobs:
           retention-days: 7
 
   device:
+    if: ${{ inputs.scope != 'ios' }}
     name: Alarm delivery API ${{ matrix.api }}
     runs-on: ubuntu-latest
     timeout-minutes: 35

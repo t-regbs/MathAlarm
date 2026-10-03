@@ -369,14 +369,23 @@ enum NativePresentationVerification {
                 let alarm = list.state.alarms.first { $0.alarmId == fixtureID }!
                 list.setEnabled(alarm: alarm, enabled: true)
                 await wait("next-alarm fixture enabled \(fixtureID)") {
-                    list.state.pendingOperations == 0
-                        && list.state.alarms.first { $0.alarmId == fixtureID }?.isOn == true
+                    // Command completion and Room's observed row arrive independently.
+                    // isOn is already true in the scheduling-in-progress journal row;
+                    // the subtitle intentionally excludes that unaccepted row.
+                    guard list.state.pendingOperations == 0,
+                          let saved = list.state.alarms.first(where: { $0.alarmId == fixtureID }),
+                          saved.isOn, saved.scheduleInitialized, saved.scheduleError == nil,
+                          !saved.pendingTimes.isEmpty else { return false }
+                    return saved.pendingTimes.map(\.int64Value).sorted()
+                        == scheduler.registrations.values.filter { $0.alarmId == fixtureID }
+                            .map(\.timeInMillis).sorted()
                 }
             }
             let nearestRequest = scheduler.registrations.values.min { $0.timeInMillis < $1.timeInMillis }!
             let nearestScheduledTime = nearestRequest.timeInMillis
             let next = NativeAlarmPresentation.nextAlarmDate(list.state.alarms, now: Date())!
-            precondition(abs(next.timeIntervalSince1970 * 1_000 - Double(nearestScheduledTime)) < 1)
+            precondition(abs(next.timeIntervalSince1970 * 1_000 - Double(nearestScheduledTime)) < 1,
+                         "next-alarm date=\(next) registered=\(nearestScheduledTime) rows=\(list.state.alarms)")
             let subtitle = NativeAlarmPresentation.nextAlarmSubtitle(list.state.alarms, now: Date())
             await wait("native next-alarm subtitle \(subtitle)") {
                 visibleNavigation(in: host)?.navigationItem.subtitle == subtitle
@@ -393,8 +402,10 @@ enum NativePresentationVerification {
                 let alarm = list.state.alarms.first { $0.alarmId == fixtureID }!
                 list.setEnabled(alarm: alarm, enabled: false)
                 await wait("next-alarm fixture disabled \(fixtureID)") {
-                    list.state.pendingOperations == 0
-                        && list.state.alarms.first { $0.alarmId == fixtureID }?.isOn == false
+                    guard list.state.pendingOperations == 0,
+                          let saved = list.state.alarms.first(where: { $0.alarmId == fixtureID }) else { return false }
+                    return !saved.isOn && saved.pendingTimes.isEmpty && saved.scheduleError == nil
+                        && !scheduler.registrations.values.contains { $0.alarmId == fixtureID }
                 }
                 if index == 0 {
                     let remainingScheduledTime = scheduler.registrations.values.map(\.timeInMillis).min()!

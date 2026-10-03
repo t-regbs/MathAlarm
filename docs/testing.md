@@ -435,15 +435,16 @@ and adds expanded/recreated/compact Android UI instrumentation on dedicated emul
 The Android layout fixture explicitly grants notification permission before running;
 first-install authorization is a separate scenario.
 
-Full validation is the default. For an Android-only fixture change, an explicitly
+Full validation is the default. For a platform-specific fixture change, an explicitly
 scoped dispatch can run alongside an existing full run without cancelling it:
 
 ```sh
 gh workflow run build.yml --ref BRANCH -f scope=android
+gh workflow run build.yml --ref BRANCH -f scope=ios
 ```
 
-That run skips iOS and cannot establish an iOS gate. Link the separate full run and
-its exact source revision when relying on unchanged native evidence.
+Each focused run skips the other platform and establishes only its selected platform's
+gate. Link both runs and their exact source revisions when relying on unchanged evidence.
 
 `presentation/review.html` compares every required capture family and additional scrolled
 viewport across nine locales and links its actual trait/scroll JSON. `review-status.json` records capture completeness
