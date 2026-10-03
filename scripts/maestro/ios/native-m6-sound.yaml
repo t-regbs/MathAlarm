@@ -91,7 +91,9 @@ appId: com.timilehinaregbesola.mathalarm
     element:
       id: preview-alarm_clear_signal
     direction: DOWN
-    centerElement: true
+    # Final row can be fully visible at the bottom scroll limit without centering.
+    # Keep the default 100% visibility requirement and both assertions below.
+    centerElement: false
 - assertVisible:
     id: tone-alarm_clear_signal
 - assertVisible:

@@ -10,7 +10,10 @@ No dependency/toolchain version, persisted schema/key, registration identity or
 physical device state is changed. Android remains Compose-owned; iOS is SwiftUI.
 
 **Gate status: implemented and locally verified; not marked complete.** The updated
-workflow has not run in hosted CI against this working-tree change. VoiceOver speech/
+workflow has run in hosted CI against the approved snapshot. The corrected Android
+matrix is green; the first iPhone run stopped at the final locale fixture assertion,
+and iPad stopped in the maximum-text final-row centering step. The native gate remains
+open pending the corrected run. VoiceOver speech/
 focus, live window resizing and configured-Mail composer cancellation also remain
 unestablished for the precise environmental reasons below. Source inspection and
 simulator captures are not substituted for those results.
@@ -53,7 +56,7 @@ simulator captures are not substituted for those results.
 ## Verification evidence
 
 Evidence is local and ignored under `build/native-ui-m7/`; logs retain failed attempts
-rather than rewriting their outcomes. Hosted CI has not been dispatched from this chat.
+rather than rewriting their outcomes. Hosted run details are in the final handoff below.
 
 | Check | Result / evidence |
 | --- | --- |
@@ -61,7 +64,7 @@ rather than rewriting their outcomes. Hosted CI has not been dispatched from thi
 | Native Kotlin/platform suites | 370 tests: core 155, shared 215; zero failures/errors/skips. Same logs. |
 | Android app/test APKs | Build passes; `kotlin-android.log`, `android-test-build.log`. |
 | Android expanded/recreation/compact UI | All three pass on task-owned API 35 emulator. `android-ui-clock.log`, `android-ui-clock/{expanded,compact}.txt`; emulator removed afterward. |
-| Python contracts | 24 pass, including all 27 required native group names and reviewed Kotlin/Swift lock parity. |
+| Python contracts | 27 pass after the Doze runner correction (24 before it), including all 27 required native group names, reviewed Kotlin/Swift lock parity and exact fixture-state restoration. `python-ci-fix.log`. |
 | Native durable queue/identity/recovery | All three Foundation smoke groups pass; `queue-smoke.log`. |
 | Renderer boundary | Source, resolved simulator graph and production generated framework headers pass; `ios-dependencies.log`. |
 | Permanent iPhone XCTest/UI | Final four hosted plus two UI tests pass, including the 25-group hosted journey, 27-group fresh-process UI journey and exact-title Back/Cancel. `iphone-final.log`, `iphone-final.xcresult`; earlier passing run retained in `iphone-lifetime`. |
@@ -110,6 +113,19 @@ The separate ordinary-keyboard client captures establish actual software-keyboar
 behavior. All-matrix linguistic/visual sign-off remains pending in the review artifact;
 neither contact sheets nor file counts establish VoiceOver output.
 
+The continuation expands the sampled review to 25 iPhone and 16 iPad families across
+the nine locales; exact names are in each `review-status.json`. Added samples cover
+challenge configuration, repeat/snooze controls, scrolled announcement actions,
+the 09:45 dial, one-enabled-alarm subtitle, synthetic RTL and unavailable-tone fallback.
+The additional large-text editor, delivered progress and snooze announcement samples
+include scrolled viewports where emitted; those optional views are absent when no
+additional scrolling was needed.
+All-family contact sheets are available under `{iphone,ipad}-review-all/`; these are
+navigation aids, not a claim that every family has been reviewed. An initial contact
+sheet crop hid a snooze switch; the full-resolution source showed it correctly, and
+the contact-sheet generator was corrected to preserve the entire image. No production
+UI change was needed from these additional samples.
+
 `capture-binaries.json` identifies the installed executable and Debug dylib for each
 matrix. The iPhone run precedes the Debug-only 15-second fixture settlement change;
 the production implementation is identical. Final permanent tests use the latest build.
@@ -139,9 +155,69 @@ Reproduction: [architecture/build](native-architecture.md), [testing](testing.md
 
 The implementation, production-framework consumption, boundary/resource tests,
 simulator/client suites and unsigned archive checks are locally passing. The current
-working tree includes the original user work and the M7 additions; nothing was committed,
-pushed or submitted. Run the updated workflow on this exact change before closing its
-hosted-CI gate. Retain the Debug harness until that migrated coverage is accepted.
+working tree includes the original user work and the M7 additions. After explicit
+approval, an isolated 80-file snapshot was published as
+`f2b2226d3f450096bf421a30cacbed27af323609` on
+`codex/native-ui-m7-ci-20261003`; the user's working branch and index remain unchanged.
+The snapshot excludes IDE history/state, logs and release mappings. Hosted
+[run 37104158893](https://github.com/t-regbs/MathAlarm/actions/runs/37104158893)
+is in progress; its result must pass before closing the hosted-CI gate. The workflow
+uses GitHub's hosted `xcode-27` Apple Silicon image with an explicit Xcode 27.0
+(`27A266a`) path and version assertion. A zero self-hosted-runner inventory does not
+mean this hosted image is unavailable. Retain the Debug harness until that migrated
+coverage is accepted.
+
+The first hosted continuation exposed an existing API 32 fixture issue in prior
+run `36992095751`: Doze configuration remained at its default thresholds after
+writing `device_idle_constants`. Android 12–14's
+[DeviceIdleController](https://android.googlesource.com/platform/frameworks/base/+/android-12.1.0_r1/apex/jobscheduler/service/java/com/android/server/DeviceIdleController.java)
+reads DeviceConfig directly; later versions restore the Settings override. The runner
+now selects that version-specific path, records per-key restoration before mutation,
+and requires both effective service thresholds before forcing/verifying deep idle.
+Three focused tests cover partial setup failure, exact restoration and rejection of
+stale effective configuration. All 27 Python checks pass (`python-ci-fix.log`);
+The first M7 run reproduces that exact setup timeout on API 32; cold-start, snooze
+and reboot pass (`hosted-first-api32.log`). The correction is published in
+`9e17a60a2f0b21f322c55195511c82c8bb2e0539`;
+[Android-only run 37104690123](https://github.com/t-regbs/MathAlarm/actions/runs/37104690123)
+verifies it at `6b3e45cd4685d221c06e0d6a24985ea81b22a0ec`, adding only the scoped
+dispatch and its instructions. The original native run continued with identical iOS production
+source and native runner between those revisions. The corrected run is **green**:
+all 487 host tests, 27 Python checks, four real-OS delivery scenarios and the
+expanded/recreation/compact native UI tests pass on APIs 30, 32, 35 and 36.
+Artifacts are retained under `hosted-android/`, with exact run metadata in
+`github-android-final.json`. Delivery, player-start,
+reboot and occurrence assertions are unchanged.
+The first hosted iPhone run passed native Kotlin, all six permanent native tests and
+all 27 independent harness groups, then failed the next-alarm equality assertion in
+the Chinese dark capture. The enable fixture waited for `isOn` and command completion,
+but the Room observer can still expose the intermediate scheduling journal row then;
+the production subtitle correctly excludes rows with `scheduleError`. The fixture now
+waits for the accepted persisted row (`scheduleInitialized`, no error, nonempty pending
+times) and exact equality of all persisted/registered occurrence times. The original
+next-alarm equality, subtitle changes and cleanup assertions remain intact; disabling
+also waits for empty persisted occurrences and no registered occurrence for that ID.
+This is DEBUG verification synchronization, with no change to production scheduling or
+subtitle behavior. Original failing evidence remains in `hosted-first/iphone/`.
+The corrected Chinese base/delivered journey passes locally (68 captures, exact subtitle
+checks and same-process typed cleanup), in `iphone-subtitle-zh/` and
+`iphone-subtitle-zh.log`. The normal framework/test build also passes in
+`build-subtitle-settlement.log`; all 27 Python contracts and boundary/localization/pin
+checks pass. [Native run 37107199909](https://github.com/t-regbs/MathAlarm/actions/runs/37107199909)
+is running both form factors at `cdb54fb4ce232e63bf612307d13ac1746b7b2eed`.
+Its explicit `scope=ios` skips the already-green, unchanged Android sources/tests;
+default workflow runs still validate both platforms.
+
+The original hosted iPad job passed the permanent suites, all 27 groups, all nine locale
+captures and the earlier client flows. Its maximum-text final tone was fully visible:
+Maestro logged `Visibility Percent: 1.0`, and the failure screenshot/hierarchy show
+Clear Signal and its preview control inside the viewport. `centerElement: true` kept
+trying to scroll the last row beyond the bottom limit and timed out. Only that final
+row now uses `centerElement: false`; 100% visibility, both control assertions, actual
+selection, exact-draft application and discard assertions remain unchanged. Evidence
+is retained in `hosted-first/ipad/.../client/sound-maximum/`, including the failure PNG,
+hierarchy and scroll log. This changes the client fixture, not app layout or text size.
+
 Collect the unavailable native-client evidence on a supported isolated client; no Mail
 message needs to be sent. The screenshot review artifacts retain their explicit full
 visual/linguistic sign-off status. M8 physical/minimum-runtime/distribution acceptance
