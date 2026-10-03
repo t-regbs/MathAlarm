@@ -65,16 +65,27 @@ internal class ChallengeCoordinator(
 
     /** Awaiting may be cancelled; initialization itself continues in the application scope. */
     suspend fun open(alarm: Alarm, preview: Boolean): ChallengeSession = if (preview) {
-        // Preview is screen work. Cancellation while waiting must never start orphan audio.
-        coroutineScope { openOwned(alarm, true) }
-    } else usecases.applicationScope.async { openOwned(alarm, false) }.await()
+        currentCoroutineContext().ensureActive()
+        preparePreview(alarm).also(::retryAudio)
+    } else usecases.applicationScope.async { openReal(alarm) }.await()
 
-    private suspend fun openOwned(alarm: Alarm, preview: Boolean): ChallengeSession =
+    /** In-memory maths is ready before native navigation. Playback starts when presented. */
+    fun preparePreview(alarm: Alarm): ChallengeSession {
+        val session = ChallengeSession(true) { ++nextResultId }
+        session.previewAudioAllowed = false
+        session.update { it.copy(alarm = alarm, problems = generateChallengeProblems(alarm.mathChallenge),
+            startedAt = Clock.System.now().toEpochMilliseconds(), readiness = ChallengeReadiness.READY) }
+        analytics.trackSafely(AnalyticsEvents.alarmPreviewStarted)
+        analytics.trackSafely(AnalyticsEvents.challengeStarted(true, alarm))
+        return session
+    }
+
+    private suspend fun openReal(alarm: Alarm): ChallengeSession =
         initialization.withLock {
-            var session = ChallengeSession(preview) { ++nextResultId }
+            var session = ChallengeSession(false) { ++nextResultId }
             session.update { it.copy(readiness = ChallengeReadiness.INITIALIZING) }
             try {
-                val authoritative = if (preview) alarm else usecases.command {
+                val authoritative = usecases.command {
                     val current = findAlarm(alarm.alarmId)
                         ?: return@command null
                     if (!current.isOn) return@command null
@@ -97,8 +108,8 @@ internal class ChallengeCoordinator(
                     }
                 }
                 if (authoritative == null) { session.fail(AlarmErrorMessage.INITIALIZATION); return@withLock session }
-                val key = if (preview) null else "${authoritative.alarmId}:${authoritative.activeAt}"
-                key?.let { retained[it] }?.let { existing ->
+                val key = "${authoritative.alarmId}:${authoritative.activeAt}"
+                retained[key]?.let { existing ->
                     if (existing.state.value.readiness == ChallengeReadiness.READY) {
                         realSession = existing
                         return@withLock existing
@@ -107,7 +118,7 @@ internal class ChallengeCoordinator(
                     session = existing
                     session.update { it.copy(readiness = ChallengeReadiness.INITIALIZING, error = null) }
                 }
-                val restored = if (preview) null else store.load(authoritative.alarmId, authoritative.activeAt!!)
+                val restored = store.load(authoritative.alarmId, authoritative.activeAt!!)
                 val problems = session.state.value.problems.takeIf { it.isNotEmpty() }
                     ?: restored?.problems ?: generateChallengeProblems(authoritative.mathChallenge)
                 session.update { it.copy(
@@ -117,12 +128,11 @@ internal class ChallengeCoordinator(
                         ?: restored?.startedAt?.takeIf { time -> time > 0 } ?: Clock.System.now().toEpochMilliseconds(),
                     incorrectAnswers = if (session.state.value.problems.isNotEmpty()) session.state.value.incorrectAnswers else restored?.incorrectAnswers ?: 0,
                 ) }
-                if (key != null) retained[key] = session
+                retained[key] = session
                 persist(session) // Durable unresolved record precedes readiness and native acknowledgement.
                 session.update { it.copy(readiness = ChallengeReadiness.READY) }
-                if (!preview) { realSession = session; retained[key!!] = session } else previewSession = session
-                if (preview) analytics.trackSafely(AnalyticsEvents.alarmPreviewStarted)
-                if (restored == null) analytics.trackSafely(AnalyticsEvents.challengeStarted(preview, authoritative))
+                realSession = session
+                if (restored == null) analytics.trackSafely(AnalyticsEvents.challengeStarted(false, authoritative))
                 startAudio(session)
                 AlarmApplicationStatus.state.value.failures.firstOrNull { it.alarmId == authoritative.alarmId }?.let {
                     session.result(ChallengeOutcome.Failure(it.error))
@@ -227,6 +237,7 @@ internal class ChallengeCoordinator(
 
     private fun startAudio(session: ChallengeSession) {
         val state = session.state.value
+        if (audioOwner === session) return
         if (state.preview && (!session.previewAudioAllowed || realSession != null)) return
         if (!state.preview) audioOwner?.takeIf { it.state.value.preview }?.let(::releaseAudio)
         if (!shouldStartMathScreenAlarmAudio(state.preview)) return // Android real audio remains service-owned.

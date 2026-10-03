@@ -1,4 +1,5 @@
 import SwiftUI
+import Combine
 import AVFoundation
 import AVKit
 import UIKit
@@ -817,10 +818,15 @@ enum SharedBridgeVerification {
         let returningPayload = IosApplication.shared.createAlarmHandoffJson(alarmId: returningAlarm.alarmId,
             deliveryId: "m5-same-owner-return", activeAt: returningAlarm.pendingTimes.first!)
         verificationCheck(queue.setPendingDeeplink(returningPayload))
+        let presentation = sessions.$deliveryPresented.dropFirst().filter { $0 }.sink { _ in
+            verificationCheck(sessions.challenge?.model.state.readiness == .ready,
+                              "A delivered challenge must be ready before its cover is presented")
+        }
         sessions.refreshPendingDelivery()
         await wait { sessions.challenge?.model.state.readiness == .ready && !queue.hasPendingDeeplink() }
         let interruption = sessions.challenge!
         await wait { visibleDeliveredChallenge(in: host!) }
+        presentation.cancel()
         verificationCheck(interruption.model.state.alarm?.alarmId == returningAlarm.alarmId)
         verificationCheck(sessions.selectedEditor?.model === draft.model && sessions.editorPaths[draft.id] == [.challenge, .sound])
         verificationCheck(sessions.permissionRequests.contains(draft.id) && stagedSound.pendingTone == "alarm_daybreak")

@@ -310,3 +310,7 @@ cancellation remain unavailable/unestablished; screenshot review is explicitly s
 not full linguistic/visual sign-off. No external feedback/share message was sent.
 M8 physical AlarmKit/recovery, PiP over Settings, acoustic/routing output, iOS 26.0
 minimum-runtime and signed distribution/store acceptance remain onward gates.
+
+The [3 October reliability review](native-ui-reliability-review-2026-10-03.md) records
+subsequent corrections to native scheduling, challenge presentation, label preservation
+and reverted edits, with targeted regressions and updated verification evidence.

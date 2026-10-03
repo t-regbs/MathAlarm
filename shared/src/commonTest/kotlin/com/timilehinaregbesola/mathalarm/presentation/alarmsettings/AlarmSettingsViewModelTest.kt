@@ -35,6 +35,37 @@ import kotlinx.coroutines.test.*
 class AlarmSettingsViewModelTest {
 
     @Test
+    fun `reopening and saving preserves literal plus signs in the label`() = runTest {
+        val alarm = Alarm(alarmId = 1010, title = "Coffee + maths", isSaved = true, isOn = false,
+            alarmTone = "test_tone")
+        usecases.addAlarm(alarm)
+        viewModel.setAlarm(alarm)
+        viewModel.state.value.alarmTitle shouldBe alarm.title
+        viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+        advanceUntilIdle()
+        usecases.findAlarm(alarm.alarmId)!!.title shouldBe alarm.title
+    }
+
+    @Test
+    fun `reverting time and weekday edits does not invalidate an active occurrence`() = runTest {
+        val alarm = Alarm(alarmId = 1011, hour = 7, minute = 30, title = "Morning", isSaved = true,
+            isOn = true, repeat = true, repeatDays = "TFTFTFT", alarmTone = "test_tone",
+            activeAt = 1000, pendingTimes = listOf(2000), scheduleInitialized = true)
+        usecases.addAlarm(alarm)
+        viewModel.setAlarm(alarm)
+        viewModel.onEvent(AddEditAlarmEvent.ChangeTime(TimeState(8, 30)))
+        viewModel.onEvent(AddEditAlarmEvent.ChangeTime(TimeState(7, 30)))
+        viewModel.onEvent(AddEditAlarmEvent.ToggleDayChooser("TTTTTTT"))
+        viewModel.onEvent(AddEditAlarmEvent.ToggleDayChooser(alarm.repeatDays))
+        viewModel.state.value.hasUnsavedChanges shouldBe false
+        viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+        advanceUntilIdle()
+        val saved = usecases.findAlarm(alarm.alarmId)!!
+        saved.activeAt shouldBe alarm.activeAt
+        saved.pendingTimes shouldBe alarm.pendingTimes
+    }
+
+    @Test
     fun `new draft can be saved disabled without permission or any scheduled occurrence`() = runTest {
         viewModel.setAlarm(Alarm(alarmTone = "test_tone"))
         viewModel.state.value.isOn shouldBe true
@@ -899,7 +930,7 @@ class AlarmSettingsViewModelTest {
             state.value.vibrate shouldBe true
             state.value.challenge.difficulty shouldBe 2
             state.value.tone shouldBe "content://test/tone"
-            state.value.alarmTitle shouldBe "Test Alarm"
+            state.value.alarmTitle shouldBe "Test+Alarm"
             state.value.isOn shouldBe true
             state.value.isSaved shouldBe true
         }

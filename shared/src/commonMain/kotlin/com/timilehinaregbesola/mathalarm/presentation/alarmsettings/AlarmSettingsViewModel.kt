@@ -61,7 +61,6 @@ class AlarmSettingsViewModel internal constructor(
 
     private var initialDraft: Alarm? = null
     private var isNewAlarm = false
-    private var isRescheduled = false
     private var enabledWasEdited = false
     private var nextResultId = 0L
     val currentAlarmId: Long? get() = state.value.alarmId
@@ -87,9 +86,9 @@ class AlarmSettingsViewModel internal constructor(
                     publish(UiEvent.TestAlarm(createAlarm()))
                 } else publish(UiEvent.ValidationFailed(state.value.validation))
             }
-            is AddEditAlarmEvent.ChangeTime -> edit(reschedule = true) { copy(alarmTime = event.value) }
+            is AddEditAlarmEvent.ChangeTime -> edit { copy(alarmTime = event.value) }
             is AddEditAlarmEvent.EnteredTitle -> edit { copy(alarmTitle = event.value) }
-            is AddEditAlarmEvent.ToggleRepeat -> edit(reschedule = true) { copy(repeatWeekly = event.value) }
+            is AddEditAlarmEvent.ToggleRepeat -> edit { copy(repeatWeekly = event.value) }
             is AddEditAlarmEvent.ToggleEnabled -> {
                 if (!state.value.isSaving) enabledWasEdited = true
                 edit { copy(isOn = event.value) }
@@ -102,7 +101,7 @@ class AlarmSettingsViewModel internal constructor(
             is AddEditAlarmEvent.ChangeSnoozeDuration -> {
                 if (event.minutes in 1..30) edit { copy(snoozeMinutes = event.minutes) }
             }
-            is AddEditAlarmEvent.ToggleDayChooser -> edit(reschedule = true) { copy(dayChooser = event.value) }
+            is AddEditAlarmEvent.ToggleDayChooser -> edit { copy(dayChooser = event.value) }
             is AddEditAlarmEvent.OnChallengeChange -> edit { copy(challenge = event.value.normalized()) }
             is AddEditAlarmEvent.OnToneChange -> edit { copy(tone = event.value) }
             AddEditAlarmEvent.OnToneError -> publish(UiEvent.ShowError(AlarmErrorMessage.TONE))
@@ -145,10 +144,9 @@ class AlarmSettingsViewModel internal constructor(
         )))
     }
 
-    private fun edit(reschedule: Boolean = false, change: AlarmEditorState.() -> AlarmEditorState) {
+    private fun edit(change: AlarmEditorState.() -> AlarmEditorState) {
         // Freeze the accepted save snapshot until its authoritative outcome returns.
         if (state.value.isSaving) return
-        if (reschedule && !isNewAlarm) isRescheduled = true
         mutableState.update { change(it) }
         refreshDraftStatus()
     }
@@ -176,7 +174,10 @@ class AlarmSettingsViewModel internal constructor(
             return
         }
         val edited = createAlarm().copy(isSaved = true)
-        val reschedule = isRescheduled
+        val reschedule = initialDraft?.let { initial ->
+            edited.hour != initial.hour || edited.minute != initial.minute ||
+                edited.repeat != initial.repeat || edited.repeatDays != initial.repeatDays
+        } ?: false
         val wasNew = isNewAlarm
         val enabledChanged = enabledWasEdited
         mutableState.update { it.copy(isSaving = true) }
@@ -218,7 +219,6 @@ class AlarmSettingsViewModel internal constructor(
                 if (accepted != null) {
                     mutableState.update { it.copy(alarmId = accepted.alarmId, isSaved = true, isOn = accepted.isOn) }
                     isNewAlarm = false
-                    isRescheduled = false
                     enabledWasEdited = false
                     initialDraft = createAlarm()
                     refreshDraftStatus()
@@ -275,7 +275,7 @@ class AlarmSettingsViewModel internal constructor(
                 snoozeMinutes = alarm.snooze.takeIf { duration -> duration > 0 }?.coerceAtMost(30) ?: 5,
                 maxSnoozes = alarm.maxSnoozes, challenge = alarm.mathChallenge,
                 tone = alarm.alarmTone.ifEmpty { getDefaultAlarmTone() },
-                alarmTitle = alarm.title.replace('+', ' '), isOn = if (isNewAlarm) true else alarm.isOn, isSaved = alarm.isSaved,
+                alarmTitle = alarm.title, isOn = if (isNewAlarm) true else alarm.isOn, isSaved = alarm.isSaved,
             )
         }
         initialDraft = createAlarm()

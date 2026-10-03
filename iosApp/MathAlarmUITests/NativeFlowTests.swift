@@ -145,7 +145,9 @@ final class NativeFlowTests: XCTestCase {
     }
 
     private func capture(_ app: XCUIApplication, name: String) {
-        let attachment = XCTAttachment(screenshot: app.screenshot())
+        // App-element screenshots can retain portrait crop coordinates after an
+        // iPad rotation. Capture the display so the evidence matches the screen.
+        let attachment = XCTAttachment(screenshot: XCUIScreen.main.screenshot())
         attachment.name = name; attachment.lifetime = .keepAlways; add(attachment)
     }
 
@@ -321,5 +323,117 @@ final class NativeFlowTests: XCTestCase {
             if announcement.waitForExistence(timeout: 2) { announcement.tap() }
         }
         return app
+    }
+
+    func testEnabledAlarmCanBeEditedRepeatedlyWithRealAlarmKit() throws {
+        // System Settings automation must start from a known orientation rather
+        // than inheriting the preceding sidebar/rotation test's device state.
+        XCUIDevice.shared.orientation = .portrait
+        let app = launchEditingApp()
+        app.buttons["add-alarm"].tap()
+        let title = app.textFields["editor-title"]
+        XCTAssertTrue(title.waitForExistence(timeout: 5))
+        let name = "AlarmKit edit " + UUID().uuidString.prefix(8)
+        title.tap(); title.typeText(name)
+        app.buttons["editor-keyboard-done"].tap()
+        app.buttons["save-alarm"].tap()
+        let allow = XCUIApplication(bundleIdentifier: "com.apple.springboard").buttons["Allow"]
+        if allow.waitForExistence(timeout: 5) { allow.tap() }
+        let settingsLink = app.buttons["Go to Settings"]
+        if settingsLink.exists {
+            // iOS 27 iPad Simulator accepts this grant through Settings/Maestro,
+            // but its XCTest switch actions do not change authorization. Keep
+            // that setup limitation distinct from the live save assertions.
+            guard UIDevice.current.userInterfaceIdiom != .pad else {
+                throw XCTSkip("Grant Alarms in Settings before the iPad live AlarmKit save test; see docs/testing.md")
+            }
+            settingsLink.tap()
+            let settings = XCUIApplication(bundleIdentifier: "com.apple.Preferences")
+            let alarms = settings.switches["Alarms"]
+            if !alarms.waitForExistence(timeout: 2) {
+                if !settings.searchFields["Search Apps"].exists {
+                    let apps = settings.buttons["Apps"]
+                    for _ in 0..<8 where !apps.isHittable { settings.swipeUp() }
+                    XCTAssertTrue(apps.isHittable, settings.debugDescription); apps.tap()
+                }
+                let search = settings.searchFields["Search Apps"]
+                XCTAssertTrue(search.waitForExistence(timeout: 5)); search.tap()
+                search.typeText("Math Alarm")
+                let mathAlarm = settings.buttons["com.timilehinaregbesola.mathalarm"]
+                XCTAssertTrue(mathAlarm.waitForExistence(timeout: 5), settings.debugDescription)
+                mathAlarm.tap()
+            }
+            XCTAssertTrue(alarms.waitForExistence(timeout: 10), settings.debugDescription)
+            if alarms.value as? String == "0" {
+                alarms.coordinate(withNormalizedOffset: CGVector(dx: 0.95, dy: 0.5)).tap()
+            }
+            let granted = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "1"), object: alarms)
+            XCTAssertEqual(XCTWaiter.wait(for: [granted], timeout: 5), .completed, settings.debugDescription)
+            app.activate()
+        }
+        XCTAssertTrue(app.buttons["save-alarm"].waitForNonExistence(timeout: 15), app.debugDescription)
+        for suffix in [" first", " second"] {
+            let row = alarmButton(name, in: app)
+            XCTAssertTrue(row.waitForExistence(timeout: 5)); row.tap()
+            XCTAssertTrue(title.waitForExistence(timeout: 5))
+            title.tap(); title.typeText(suffix)
+            app.buttons["editor-keyboard-done"].tap()
+            app.buttons["save-alarm"].tap()
+            XCTAssertTrue(app.buttons["save-alarm"].waitForNonExistence(timeout: 15), app.debugDescription)
+            XCTAssertTrue(alarmButton(name, in: app).exists)
+        }
+        // Snooze/challenge-only edits take the same metadata update path as labels.
+        alarmButton(name, in: app).tap()
+        let snooze = app.buttons["editor-snooze"]
+        for _ in 0..<5 where !snooze.isHittable { app.swipeUp() }
+        snooze.tap()
+        let enabled = app.switches["snooze-enabled"]
+        XCTAssertTrue(enabled.waitForExistence(timeout: 5))
+        enabled.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 0.5))
+            .withOffset(CGVector(dx: -25, dy: 0)).tap()
+        app.buttons.matching(identifier: "BackButton").firstMatch.tap()
+        app.buttons["save-alarm"].tap()
+        XCTAssertTrue(app.buttons["save-alarm"].waitForNonExistence(timeout: 15), app.debugDescription)
+
+        alarmButton(name, in: app).tap()
+        let sound = app.buttons["editor-sound"]
+        for _ in 0..<5 where !sound.isHittable { app.swipeUp() }
+        sound.tap()
+        app.buttons["tone-alarm_daybreak"].tap()
+        app.buttons["sound-done"].tap()
+        app.buttons["save-alarm"].tap()
+        XCTAssertTrue(app.buttons["save-alarm"].waitForNonExistence(timeout: 15), app.debugDescription)
+        capture(app, name: "Enabled alarm after repeated AlarmKit edits")
+        swipeToDelete(alarmButton(name, in: app), in: app)
+    }
+
+    func testPreviewTransitionsPreserveDraftAndLiteralLabel() {
+        let app = launchEditingApp()
+        let name = "Coffee + maths " + UUID().uuidString.prefix(8)
+        addDisabledAlarm(name, in: app)
+        alarmButton(name, in: app).tap()
+        let title = app.textFields["editor-title"]
+        XCTAssertTrue(title.waitForExistence(timeout: 5))
+        XCTAssertEqual(title.value as? String, name)
+        for _ in 0..<2 {
+            let preview = app.buttons["editor-test-alarm"]
+            for _ in 0..<5 where !preview.isHittable { app.swipeUp() }
+            preview.tap()
+            let answer = app.textFields["challenge-answer"]
+            XCTAssertTrue(answer.waitForExistence(timeout: 3))
+            XCTAssertFalse(app.otherElements["challenge-initializing"].exists)
+            answer.tap(); answer.typeText("-999999")
+            app.buttons["challenge-keyboard-done"].tap()
+            app.buttons["challenge-submit"].tap()
+            XCTAssertTrue(app.staticTexts["challenge-feedback"].waitForExistence(timeout: 5))
+            capture(app, name: "Instant preview with wrong-answer feedback")
+            app.buttons["challenge-cancel-preview"].tap()
+            XCTAssertTrue(app.buttons["save-alarm"].waitForExistence(timeout: 5))
+        }
+        for _ in 0..<5 where !title.isHittable { app.swipeDown() }
+        XCTAssertEqual(title.value as? String, name)
+        app.buttons["save-alarm"].tap()
+        XCTAssertTrue(app.buttons["save-alarm"].waitForNonExistence(timeout: 10))
+        swipeToDelete(alarmButton(name, in: app), in: app)
     }
 }

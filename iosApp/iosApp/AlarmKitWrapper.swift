@@ -530,19 +530,7 @@ class AlarmKitWrapperImpl: NSObject {
                     schedule = .fixed(Date(timeIntervalSince1970: Double(request.timeInMillis) / 1000.0))
                 }
 
-                // Create alarm presentation with "Solve Math" as the stop button
                 let alertTitle = title.trimmingCharacters(in: .whitespacesAndNewlines)
-                let solveButton = AlarmButton(
-                    text: LocalizedStringResource("Solve Math"),
-                    textColor: .mathAlarmGreen,
-                    systemImageName: "arrow.up.forward.app"
-                )
-                let alertContent = AlarmPresentation.Alert(
-                    title: alertTitle.isEmpty ? LocalizedStringResource("Solve Math") : LocalizedStringResource(stringLiteral: alertTitle),
-                    stopButton: solveButton
-                )
-                let presentation = AlarmPresentation(alert: alertContent)
-                print("AlarmKitWrapper: Created presentation with title: \(alertTitle)")
                 
                 // Create metadata with all alarm info (needed by intents)
                 let metadata = MathAlarmData(
@@ -560,29 +548,25 @@ class AlarmKitWrapperImpl: NSObject {
                 
                 // Store alarm data so intents can access it when alarm fires
                 let previousRegistrationMetadata = AlarmDataStore.shared.retrieve(alarmUUID: alarmUUID.uuidString)
+                let previousAlarm = try manager.alarms.first { $0.id == alarmUUID }
                 guard AlarmDataStore.shared.store(alarmUUID: alarmUUID, data: metadata) else {
                     throw AlarmKitError.schedulingFailed("Could not persist native registration metadata")
                 }
                 
-                let attributes = AlarmAttributes(
-                    presentation: presentation,
-                    metadata: metadata,
-                    tintColor: .mathAlarmGreen
-                )
-                
                 // Shared snooze policy schedules a concrete replacement after solving.
                 // Native alerts always open the challenge and have no countdown action.
-                let configuration = MathAlarmConfiguration.alarm(
-                    schedule: schedule,
-                    attributes: attributes,
-                    stopIntent: StopAlarmIntent(alarmUUID: alarmUUID),
-                    sound: .named(self.alertSoundName(for: soundName))
-                )
+                let configuration = self.configuration(schedule: schedule, metadata: metadata, id: alarmUUID)
                 print("AlarmKitWrapper: Created configuration with intents, about to schedule...")
                 
-                // Schedule the alarm with id and configuration
+                // AlarmKit rejects duplicate IDs; schedule is not an upsert. Replace
+                // only this registration, leaving snooze/recovery ownership intact.
                 let alarm: AlarmKit.Alarm
+                var removedPrevious = false
                 do {
+                    if previousAlarm != nil {
+                        try manager.cancel(id: alarmUUID)
+                        removedPrevious = true
+                    }
                     alarm = try await manager.schedule(id: alarmUUID, configuration: configuration)
                 } catch {
                     // Rejected native registration must leave the prior accepted
@@ -591,6 +575,16 @@ class AlarmKitWrapperImpl: NSObject {
                         AlarmDataStore.shared.store(alarmUUID: alarmUUID, data: previousRegistrationMetadata)
                     } else {
                         AlarmDataStore.shared.remove(alarmUUID: alarmUUID.uuidString)
+                    }
+                    if removedPrevious, let previousRegistrationMetadata, let schedule = previousAlarm?.schedule {
+                        do {
+                            _ = try await manager.schedule(id: alarmUUID, configuration: self.configuration(
+                                schedule: schedule, metadata: previousRegistrationMetadata, id: alarmUUID))
+                        } catch {
+                            // Shared persistence retains the desired schedule plus its
+                            // failure, so reconciliation can repair an unavailable OS service.
+                            print("AlarmKitWrapper: Could not restore previous registration: \(error)")
+                        }
                     }
                     throw error
                 }
@@ -601,10 +595,6 @@ class AlarmKitWrapperImpl: NSObject {
                 print("  - App Alarm ID: \(alarmId)")
                 print("  - State: \(alarm.state)")
                 print("  - Schedule: \(String(describing: alarm.schedule))")
-                
-                // Verify by listing all alarms
-
-                
             } catch AlarmKitError.notAuthorized {
                 completion.complete(success: false, error: "Not authorized for alarms")
             } catch AlarmKitError.unknownAuthState {
@@ -615,6 +605,18 @@ class AlarmKitWrapperImpl: NSObject {
             }
         }
         
+    }
+
+    private func configuration(schedule: AlarmKit.Alarm.Schedule, metadata: MathAlarmData, id: UUID) -> MathAlarmConfiguration {
+        let alert = AlarmPresentation.Alert(
+            title: metadata.title.isEmpty ? LocalizedStringResource("Solve Math") : LocalizedStringResource(stringLiteral: metadata.title),
+            stopButton: AlarmButton(text: LocalizedStringResource("Solve Math"), textColor: .mathAlarmGreen,
+                                   systemImageName: "arrow.up.forward.app"))
+        return .alarm(schedule: schedule,
+                      attributes: AlarmAttributes(presentation: AlarmPresentation(alert: alert), metadata: metadata,
+                                                  tintColor: .mathAlarmGreen),
+                      stopIntent: StopAlarmIntent(alarmUUID: id),
+                      sound: .named(alertSoundName(for: metadata.alarmTone)))
     }
 
     private func alertSoundName(for soundName: String) -> String {

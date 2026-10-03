@@ -36,6 +36,13 @@ class AlarmMathViewModel internal constructor(
     val questionCount get() = state.value.questionCount.coerceAtLeast(1)
     val currentProblem get() = state.value.currentProblem
 
+    /** Test Alarm needs neither storage nor a coroutine hop before its first frame. */
+    fun preparePreview(alarm: Alarm): Boolean {
+        if (isClosed) return false
+        attach(coordinator.preparePreview(alarm))
+        return true
+    }
+
     /** Native callers supply identity only; all saved configuration is loaded below the UI. */
     @NativeCoroutines
     suspend fun initializeOccurrence(alarmId: Long, activeAt: Long?): Boolean =
@@ -50,12 +57,16 @@ class AlarmMathViewModel internal constructor(
         mutable.value = ChallengeState(readiness = ChallengeReadiness.INITIALIZING, preview = preview)
         val opened = coordinator.open(alarm, preview)
         if (isClosed) { if (preview) coordinator.closePreview(opened); return false }
+        if (preview && !previewAudioEnabled) coordinator.closePreview(opened)
+        attach(opened)
+        return opened.state.value.readiness == ChallengeReadiness.READY
+    }
+
+    private fun attach(opened: ChallengeSession) {
         observation?.cancel()
         session = opened
-        if (preview && !previewAudioEnabled) coordinator.closePreview(opened)
         mutable.value = opened.state.value
         observation = viewModelScope.coroutineScope.launch { opened.state.collect { mutable.value = it } }
-        return opened.state.value.readiness == ChallengeReadiness.READY
     }
 
     fun onEvent(event: MathScreenEvent) {

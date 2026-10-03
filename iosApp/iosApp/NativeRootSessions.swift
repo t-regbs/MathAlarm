@@ -455,8 +455,10 @@ final class NativeWindowSessions: ObservableObject {
     private func presentDelivery(payload: String) {
         if challenge?.payload != payload { retireUnreadyDelivery() }
         pendingPayload = payload
-        deliveryPresented = true
-        guard let decoded = IosApplication.shared.decodeAlarmHandoffJson(payload: payload) else { return }
+        guard let decoded = IosApplication.shared.decodeAlarmHandoffJson(payload: payload) else {
+            deliveryPresented = true
+            return
+        }
         let occurrence = decoded.activeAt.map { String($0.int64Value) } ?? decoded.deliveryId ?? "legacy"
         let id = "native-window/\(windowID)/occurrence/\(decoded.alarmId)/\(occurrence)"
         if let retained = challenges.first(where: { $0.id == id }) { challenge = retained }
@@ -479,9 +481,9 @@ final class NativeWindowSessions: ObservableObject {
         let id = "maths-preview/\(editorID)/\(UUID().uuidString)"
         let preview = NativeChallengeSession(id: id, payload: "", model: SharedFeatures.shared.challenge(sessionId: id),
             editorID: editorID, previewAlarm: event.alarm)
+        preview.model.preparePreview(alarm: event.alarm)
         previews[editorID] = preview
         editor.model.acknowledgeResult(id: result.id)
-        initialize(session: preview)
     }
 
     func initialize(session: NativeChallengeSession) {
@@ -497,6 +499,9 @@ final class NativeWindowSessions: ObservableObject {
                     ready = try await asyncFunction(for: session.model.initializeOccurrence(alarmId: decoded.alarmId, activeAt: decoded.activeAt))
                 } else { return }
                 guard !self.windowEnded, !Task.isCancelled, !session.model.isClosed else { return }
+                // Present the prepared challenge (or its actionable error), never an
+                // intermediate screen while the database/bridge is still loading.
+                if !session.isPreview, self.challenge?.id == session.id { self.deliveryPresented = true }
                 self.receiveChallengeResults(id: session.id)
                 if ready.boolValue {
                     if (self.challengeFailures[session.id]?.outcome as? ChallengeOutcome.Failure)?.error == .initialization {

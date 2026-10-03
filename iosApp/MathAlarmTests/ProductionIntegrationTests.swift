@@ -8,6 +8,19 @@ import KMPObservableViewModelCore
 
 @MainActor
 final class ProductionIntegrationTests: XCTestCase {
+    func testPreviewIsReadyWhenNavigationCommits() throws {
+        let sessions = NativeWindowSessions()
+        defer { sessions.closeWindow() }
+        let editor = sessions.openEditor(alarm: nil)
+        let started = ContinuousClock.now
+        sessions.setEditorPath([.preview], id: editor.id)
+        let preview = try XCTUnwrap(sessions.previews[editor.id])
+        XCTAssertEqual(preview.model.state.readiness, .ready,
+                       "An in-memory draft must have its maths ready before the preview route renders")
+        XCTAssertNotNil(preview.model.state.currentProblem)
+        print("PREVIEW READY \(started.duration(to: .now))")
+    }
+
     func testMountedProductionFrameworkJourney() async {
         // The host runs production bootstrap but leaves its window to this fixture.
         // Every original behavioral assertion is forwarded with its source location.

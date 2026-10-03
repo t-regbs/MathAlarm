@@ -157,7 +157,7 @@ struct NativeApplicationRoot: View {
                     .padding()
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .navigationTitle("Solve maths")
-                } else if !restoration.ready {
+                } else if !restoration.ready && sessions.challenge == nil {
                     ProgressView("Preparing challenge…")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .navigationTitle("Solve maths")

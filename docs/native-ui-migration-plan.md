@@ -1,6 +1,6 @@
 # MathAlarm native UI migration plan
 
-**Decision approved on 2 October 2026. Milestones 1–6 are complete against their documented implementation/simulator gates; physical recovery and release gates remain open. Milestone 7 is the next implementation scope. [Implementation progress and handoff](native-ui-migration-progress.md).**
+**Decision approved on 2 October 2026. Milestones 1–7 are complete against their documented implementation/simulator/CI gates; milestone 8 device and release acceptance remains open. [Implementation progress and handoff](native-ui-migration-progress.md).**
 
 MathAlarm will keep Clean Architecture and MVVM, share Kotlin domain, application, data, and feature ViewModel logic through KMP, and present that logic with **Compose on Android and SwiftUI on iOS**. The shared boundary includes the ViewModels. Native code owns navigation, controls, layout, accessibility, and visual presentation.
 
@@ -221,13 +221,13 @@ python3 -B -m unittest discover -s scripts -p '*_test.py'
 | Physical iOS reliability | Locked delivery/Stop/unlock, abandoned authentication recovery, terminated/background execution, extended repeated recovery, accepted/failed snooze and completion, edit/disable/delete cancellation, interruptions/Bluetooth/DND, permission revoke/regrant, multiple deliveries, recurrence/timezone/DST and overnight/multi-day behavior |
 | Packaging and upgrade | Existing saved data/preferences survive, old queued payloads handled, all tones/locales/assets/privacy files present, device/simulator and Release archive linking/signing workflow checked |
 
-Use [the testing guide](testing.md), [iOS recovery matrix](ios-alarm-recovery-manual-test.md), and [iOS release-readiness audit](ios-release-readiness-2026-09-24.md) as the detailed checklists. Existing Maestro scripts describe Compose accessibility and must be updated for the native tree. CI currently builds the Swift app and runs the durable queue smoke check; it needs genuine SwiftUI feature/ownership tests.
+Use [the testing guide](testing.md), [iOS recovery matrix](ios-alarm-recovery-manual-test.md), and [iOS release-readiness audit](ios-release-readiness-2026-09-24.md) as the detailed checklists. Milestone 7 added native accessibility flows, production SwiftUI feature/ownership tests, fresh-process restoration, and boundary/package checks to CI. The [3 October reliability review](native-ui-reliability-review-2026-10-03.md) records subsequent defects, fixes, and their verification limits.
 
 ## Existing risks and scope limits
 
-The current iOS build has a user-reported successful recovery check, but continuous recovery, background/terminated intent execution, cancellation, and extended physical checks remain incomplete. Stable recurring-delivery identity, recovery failure presentation, and failed-initialization readiness need explicit work in the sequence above. Preserve truthful product language about system dismissal and unlocking; a native UI does not change AlarmKit's system behavior.
+The implementation and simulator records cover recurring-delivery identity, recovery failure presentation, failed-initialization readiness and cancellation. Continuous recovery, background/terminated intent execution and extended physical checks remain milestone 8 gates. Preserve truthful product language about system dismissal and unlocking; a native UI does not change AlarmKit's system behavior.
 
-Privacy/support URLs, distribution signing, archive/TestFlight verification, marketing/build version, and overnight/multi-day reliability remain existing release gates. iPad preview return, dark title contrast, and launch visuals also need revalidation against the native implementation. This document supersedes neither their evidence nor their unresolved status.
+Privacy/support URLs, distribution signing, TestFlight verification, marketing/build version, and overnight/multi-day reliability remain existing release gates. Milestones 6–7 record native iPad preview return, appearance/launch checks and unsigned archive packaging; they do not establish signed distribution or physical acceptance. This document supersedes neither that evidence nor its recorded limits.
 
 The migration adds no new alarm features, changes no supported platform minimums, and does not require a broad database redesign, DI replacement, app rebrand, framework rename, or Swift 6 language-mode migration. Changes needed to preserve reliable delivery and the stated state/ownership contracts are included.
 
@@ -235,4 +235,4 @@ The migration adds no new alarm features, changes no supported platform minimums
 
 The migration is complete when Android uses Compose in Android UI, iOS uses SwiftUI for every app screen, shared Kotlin owns the agreed ViewModels and alarm behavior without either UI toolkit, and durable operations survive native view replacement. All parity, data compatibility, dependency, CI, archive, adaptive-layout, and physical reliability gates must pass. Native Swift export remains an independent future integration decision.
 
-The experiment archive contains only results and supporting evidence. The migration implementation begins with Milestone 1, then the shared contracts and application lifetimes in Milestone 2.
+The experiment archive contains only results and supporting evidence. Milestones 1–7 have implementation records in the [progress document](native-ui-migration-progress.md); milestone 8 remains the release-acceptance gate.

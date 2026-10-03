@@ -29,8 +29,8 @@ xcodebuild "${project[@]}" -configuration Debug -destination "platform=iOS Simul
 app="$derived/Build/Products/Debug-iphonesimulator/MathAlarm.app"
 python3 -B scripts/verify_native_ui_boundaries.py --framework shared/build/bin/iosSimulatorArm64/debugFramework/app.framework --dependencies "$out/ios-dependencies.log"
 python3 -B scripts/verify_ios_release.py --app "$app" | tee "$out/package-Debug-iphonesimulator.log"
-# Retained independent harness is a migration parity check until all permanent gates pass.
-python3 -B scripts/verify_ios_shared_bridge.py --udid "$udid" --app "$app" --output "$out/bridge.log"
+# XCTest above covers all 27 bridge groups, including fresh-process restoration.
+# Keep verify_ios_shared_bridge.py as a standalone diagnostic, not a duplicate CI run.
 python3 -B scripts/verify_ios_native_presentation.py --udid "$udid" --app "$app" --output "$out/presentation"
 python3 -B scripts/native_screenshot_review.py "$out/presentation"
 # Maestro 2.10.0 must be provisioned by CI, never silently use an older driver.

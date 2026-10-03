@@ -112,6 +112,30 @@ class AlarmMathViewModelTest {
     }
 
     @Test
+    fun `preview maths is ready synchronously without storage or audio and presentation starts playback once`() = runTest {
+        var starts = 0
+        val audio = object : com.timilehinaregbesola.mathalarm.interactors.AudioPlayer by audioPlayer {
+            override fun startAlarmAudio() { starts++; audioPlayer.startAlarmAudio() }
+        }
+        val vm = AlarmMathViewModel(usecases, audio, Logger.withTag("instantPreview"), progressStore)
+        val blocked = kotlinx.coroutines.CompletableDeferred<Unit>()
+        val command = launch { usecases.command { blocked.await() } }
+        runCurrent()
+        vm.preparePreview(Alarm(questionCount = 10)) shouldBe true
+        vm.state.value.readiness shouldBe ChallengeReadiness.READY
+        vm.state.value.problems.size shouldBe 10
+        starts shouldBe 0
+        progressSettings.keys shouldBe emptySet()
+        vm.retryAudio()
+        vm.retryAudio() // Native destination replacement must not restart a playing tone.
+        starts shouldBe 1
+        vm.close()
+        audioPlayer.isPlaying shouldBe false
+        blocked.complete(Unit)
+        command.join()
+    }
+
+    @Test
     fun `challenge advances only on correct answers and keeps audio playing until final completion`() = runTest {
         val alarm = Alarm(alarmId = 90, difficulty = 3, questionCount = 3, challengeOperations = "+")
         viewModel.initializeChallenge(alarm, preview = true)

@@ -102,10 +102,11 @@ object IosAlarmAudioManager {
     }
 
     fun stopPreview(result: TonePreviewResult = TonePreviewResult.STOPPED) {
+        val hadPreview = previewPlayer != null
         previewPlayer?.delegate = null
         previewPlayer?.stop()
         previewPlayer = null
-        if (!isAlarmActive && guideOwnerId == null) AVAudioSession.sharedInstance().setActive(false, error = null)
+        if (hadPreview && !isAlarmActive && guideOwnerId == null) AVAudioSession.sharedInstance().setActive(false, error = null)
         previewOwnership.finish(result)
     }
 

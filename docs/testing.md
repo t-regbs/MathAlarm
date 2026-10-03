@@ -422,12 +422,23 @@ xcodebuild -project iosApp/iosApp.xcodeproj -scheme MathAlarmNative \
 The hosted test launch intentionally leaves the production app window to the fixture
 and suppresses ordinary launch restoration; all tested services/factories and mounted
 owners are production implementations. The UI app explicitly clears that hosted-test
-setting. Tests use the controlled scheduler only for OS acceptance; Room, durable
+setting. The 27 integration groups use a controlled scheduler for OS acceptance; Room, durable
 commands, queue ordering, readiness, result acknowledgement, observation and audio
-ownership remain real. No physical AlarmKit registration is made by these fixtures.
+ownership remain real. The enabled-alarm editing UI regression separately uses the
+simulator's real AlarmKit service, grants authorization through the system UI, and
+saves repeated label, snooze and sound changes. Run it only on a disposable simulator.
+On the iOS 27 iPad simulator, XCTest's Settings switch actions did not grant
+authorization, while an independent Maestro tap of the visible switch did. Grant
+Alarms in Settings → Apps → Math Alarm before rerunning this one live-service test
+on iPad. Without that prerequisite it reports an explicit skip; the iPhone scenario
+continues to exercise permission setup. A skip does not establish live scheduling
+on that device. Controlled permission/return tests still run on both families.
+Preview regressions check readiness before navigation, wrong-answer feedback, repeated
+entry/exit and literal label preservation. These checks do not establish physical
+delivery or audible output. See the [reliability review](native-ui-reliability-review-2026-10-03.md).
 
 The full local/CI command creates and deletes its own simulator, builds normally,
-runs native KMP and XCTest/UI suites, retained-harness parity, nine locales on actual
+runs native KMP and XCTest/UI suites (including all retained-harness groups), nine locales on actual
 views, Maestro 2.10.0 client flows, all four Debug/Release SDK links, resource checks
 and an unsigned Release archive:
 
