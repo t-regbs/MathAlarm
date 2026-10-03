@@ -42,7 +42,6 @@ actual fun shouldStartMathScreenAlarmAudio(fromSheet: Boolean): Boolean = true
 
 actual fun isIosPlatform(): Boolean = true
 
-actual fun toPlatformMediaSource(uriString: String): String = uriString
 
 actual fun areNotificationsEnabled(): Boolean {
     return AlarmSchedulerBridge.authorizationStatus() == "authorized"

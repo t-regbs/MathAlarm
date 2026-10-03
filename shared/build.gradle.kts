@@ -21,11 +21,6 @@ kotlin {
         minSdk = libs.versions.android.min.sdk.get().toInt()
         compilerOptions {
             jvmTarget.set(JvmTarget.JVM_17)
-            allWarningsAsErrors = false
-            freeCompilerArgs = listOf("-Xopt-in=kotlin.RequiresOptIn", "-Xopt-in=kotlin.Experimental")
-        }
-        androidResources {
-            enable = true
         }
         withHostTestBuilder {
         }
