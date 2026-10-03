@@ -4957,62 +4957,61 @@
         }
       }
     },
-    "Discard draft" : {
-      "comment" : "Ported from the existing Android Lyricist catalog.",
+    "Discard changes?" : {
       "extractionState" : "manual",
       "localizations" : {
         "bn" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "পরিবর্তন বাতিল করুন"
+            "value" : "পরিবর্তন বাতিল করবেন?"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Änderungen verwerfen"
+            "value" : "Änderungen verwerfen?"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Discard changes"
+            "value" : "Discard changes?"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Descartar cambios"
+            "value" : "¿Descartar los cambios?"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "बदलाव हटाएँ"
+            "value" : "बदलाव हटाएँ?"
           }
         },
         "pa" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ਤਬਦੀਲੀਆਂ ਮਿਟਾਓ"
+            "value" : "ਤਬਦੀਲੀਆਂ ਮਿਟਾਉਣੀਆਂ ਹਨ?"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Descartar alterações"
+            "value" : "Descartar alterações?"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Отменить изменения"
+            "value" : "Отменить изменения?"
           }
         },
         "zh" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "舍弃更改"
+            "value" : "舍弃更改？"
           }
         }
       }
@@ -5137,66 +5136,6 @@
         }
       }
     },
-    "Discard this unsaved draft?" : {
-      "comment" : "Ported from the existing Android Lyricist catalog.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "bn" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "সম্পাদক বন্ধ করবেন?"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Bearbeitung schließen?"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Close this editor?"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "¿Cerrar el editor?"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "संपादक बंद करें?"
-          }
-        },
-        "pa" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ਸੰਪਾਦਕ ਬੰਦ ਕਰਨਾ ਹੈ?"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Fechar o editor?"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Закрыть редактор?"
-          }
-        },
-        "zh" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "关闭编辑器？"
-          }
-        }
-      }
-    },
     "Dismiss keyboard" : {
       "extractionState" : "manual",
       "localizations" : {
@@ -5252,6 +5191,66 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "收起键盘"
+          }
+        }
+      }
+    },
+    "Dismiss notice" : {
+      "comment" : "Dismiss temporary alarm list feedback without undoing the deletion.",
+      "extractionState" : "manual",
+      "localizations" : {
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "বিজ্ঞপ্তি বন্ধ করুন"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Hinweis schließen"
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Dismiss notice"
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Cerrar aviso"
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "सूचना बंद करें"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਸੂਚਨਾ ਬੰਦ ਕਰੋ"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Fechar aviso"
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Закрыть уведомление"
+          }
+        },
+        "zh" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "关闭提示"
           }
         }
       }
@@ -10220,66 +10219,6 @@
         }
       }
     },
-    "Retained drafts" : {
-      "comment" : "Native Milestone 4 presentation.",
-      "extractionState" : "manual",
-      "localizations" : {
-        "bn" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "রাখা খসড়া"
-          }
-        },
-        "de" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Beibehaltene Entwürfe"
-          }
-        },
-        "en" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Retained drafts"
-          }
-        },
-        "es" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Borradores guardados"
-          }
-        },
-        "hi" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "रखे गए ड्राफ़्ट"
-          }
-        },
-        "pa" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ਸੰਭਾਲੇ ਡਰਾਫ਼ਟ"
-          }
-        },
-        "pt" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Rascunhos mantidos"
-          }
-        },
-        "ru" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "Сохранённые черновики"
-          }
-        },
-        "zh" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "保留的草稿"
-          }
-        }
-      }
-    },
     "Retry" : {
       "comment" : "Ported from the existing Android Lyricist catalog.",
       "extractionState" : "manual",
@@ -13331,55 +13270,55 @@
         "bn" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "পূর্বাবস্থায় ফেরান"
+            "value" : "মুছে ফেলা পূর্বাবস্থায় ফেরান"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Rückgängig"
+            "value" : "Löschen rückgängig machen"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Undo"
+            "value" : "Undo delete"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Deshacer"
+            "value" : "Deshacer eliminación"
           }
         },
         "hi" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "पूर्ववत करें"
+            "value" : "हटाना पूर्ववत करें"
           }
         },
         "pa" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "ਵਾਪਸ ਲਓ"
+            "value" : "ਮਿਟਾਉਣਾ ਵਾਪਸ ਲਓ"
           }
         },
         "pt" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Desfazer"
+            "value" : "Desfazer exclusão"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Отменить"
+            "value" : "Отменить удаление"
           }
         },
         "zh" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "撤销"
+            "value" : "撤销删除"
           }
         }
       }
@@ -13739,6 +13678,65 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "木质敲击 · 律动"
+          }
+        }
+      }
+    },
+    "Your changes haven’t been saved." : {
+      "extractionState" : "manual",
+      "localizations" : {
+        "bn" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "আপনার পরিবর্তন সংরক্ষণ করা হয়নি।"
+          }
+        },
+        "de" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Deine Änderungen wurden nicht gespeichert."
+          }
+        },
+        "en" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Your changes haven’t been saved."
+          }
+        },
+        "es" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Tus cambios no se han guardado."
+          }
+        },
+        "hi" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "आपके बदलाव सहेजे नहीं गए हैं।"
+          }
+        },
+        "pa" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ਤੁਹਾਡੀਆਂ ਤਬਦੀਲੀਆਂ ਸੁਰੱਖਿਅਤ ਨਹੀਂ ਕੀਤੀਆਂ ਗਈਆਂ ਹਨ।"
+          }
+        },
+        "pt" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "As suas alterações não foram guardadas."
+          }
+        },
+        "ru" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "Ваши изменения не сохранены."
+          }
+        },
+        "zh" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "你的更改尚未保存。"
           }
         }
       }

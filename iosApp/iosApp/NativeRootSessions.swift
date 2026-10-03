@@ -55,6 +55,12 @@ final class NativeWindowSessions: ObservableObject {
     @Published private(set) var editors: [NativeEditorSession] = []
     @Published private(set) var editorPaths: [String: [NativeEditorDestination]] = [:]
     @Published private(set) var selectedEditorID: String?
+    @Published var editorExitConfirmation = false
+    private enum EditorExitDestination {
+        case list
+        case editor(Alarm?, [NativeEditorDestination])
+    }
+    private var pendingEditorExit: (id: String, destination: EditorExitDestination)?
     @Published private(set) var editorResultsRevision = 0
     @Published private(set) var permissionRequests: Set<String> = []
     private var initialPermissionResults: [String: Int64] = [:]
@@ -68,7 +74,12 @@ final class NativeWindowSessions: ObservableObject {
     @Published private(set) var challenges: [NativeChallengeSession] = []
     @Published private(set) var pendingPayload: String?
     @Published var deliveryPresented = false {
-        didSet { if deliveryPresented { settingsGuide.stop() } }
+        didSet {
+            if deliveryPresented {
+                settingsGuide.stop()
+                keepEditing()
+            }
+        }
     }
     @Published private(set) var previews: [String: NativeChallengeSession] = [:]
     @Published private(set) var challengeFailures: [String: ChallengeResult] = [:]
@@ -94,10 +105,65 @@ final class NativeWindowSessions: ObservableObject {
         self.inspectDelivery = inspectDelivery
     }
 
+    /// User navigation resolves the current edit before opening another one.
+    /// The lower-level session registry still survives native presentation replacement.
+    @discardableResult
+    func requestOpenEditor(alarm: Alarm?, initialPath: [NativeEditorDestination] = []) -> NativeEditorSession? {
+        guard !windowEnded, !deliveryPresented else { return nil }
+        if let alarm, let current = selectedEditor,
+           current.alarmID == alarm.alarmId || current.resolvedAlarmID == alarm.alarmId {
+            if !initialPath.isEmpty { setEditorPath(initialPath, id: current.id) }
+            return current
+        }
+        guard prepareEditorExit(to: .editor(alarm, initialPath)) else { return nil }
+        let editor = openEditor(alarm: alarm)
+        if !initialPath.isEmpty { setEditorPath(initialPath, id: editor.id) }
+        return editor
+    }
+
+    func requestCloseEditor(id: String) {
+        guard selectedEditorID == id else { return }
+        _ = prepareEditorExit(to: .list)
+    }
+
+    func keepEditing() {
+        pendingEditorExit = nil
+        editorExitConfirmation = false
+    }
+
+    func discardEditorChanges() {
+        guard let pending = pendingEditorExit, selectedEditorID == pending.id,
+              let editor = selectedEditor, !editor.model.state.isSaving,
+              !permissionRequests.contains(editor.id), !deliveryPresented else { return }
+        keepEditing()
+        closeEditor(id: editor.id)
+        if case let .editor(alarm, path) = pending.destination {
+            _ = requestOpenEditor(alarm: alarm, initialPath: path)
+        }
+    }
+
+    private func prepareEditorExit(to destination: EditorExitDestination) -> Bool {
+        guard !windowEnded, !deliveryPresented else { return false }
+        if let editor = selectedEditor {
+            guard !editor.model.state.isSaving, !permissionRequests.contains(editor.id) else { return false }
+            if editor.model.state.hasUnsavedChanges {
+                pendingEditorExit = (editor.id, destination)
+                editorExitConfirmation = true
+                return false
+            }
+        }
+        keepEditing()
+        // Production user navigation keeps a single editor. Borrowed native views
+        // disappearing (including previews and delivery) never call this exit path.
+        for editor in editors { closeEditor(id: editor.id) }
+        return true
+    }
+
     @discardableResult
     func openEditor(alarm: Alarm?) -> NativeEditorSession {
         precondition(!windowEnded, "An ended native window cannot create editor sessions")
-        // Re-selecting an existing row (or Add) restores its draft, never reinitializes it.
+        // Session restoration never reinitializes an in-progress edit. User entry
+        // points go through requestOpenEditor to resolve the previous edit first.
         if let existing = editors.first(where: { $0.alarmID == alarm?.alarmId ||
             (alarm?.alarmId != nil && alarm?.alarmId != 0 && $0.resolvedAlarmID == alarm?.alarmId) }) {
             selectEditor(id: existing.id)
@@ -257,6 +323,7 @@ final class NativeWindowSessions: ObservableObject {
     func closeEditor(id: String, acceptedSave: Bool = false) {
         guard let editor = editors.first(where: { $0.id == id }),
               acceptedSave || !editor.model.state.isSaving else { return }
+        if pendingEditorExit?.id == id { keepEditing() }
         permissionRequests.remove(id)
         if selectedEditorID == id { settingsGuide.stop() }
         initialPermissionResults.removeValue(forKey: id)
@@ -276,6 +343,7 @@ final class NativeWindowSessions: ObservableObject {
     func closeWindow() {
         guard !windowEnded else { return }
         windowEnded = true
+        keepEditing()
         settingsGuide.stop()
         replayTask?.cancel()
         initializationTasks.values.forEach { $0.cancel() }

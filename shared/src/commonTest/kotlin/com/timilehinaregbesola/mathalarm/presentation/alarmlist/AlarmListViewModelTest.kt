@@ -232,6 +232,27 @@ class AlarmListViewModelTest {
     }
 
     @Test
+    fun `clear alarms invalidates an earlier deletion undo`() = runTest {
+        val deleted = Alarm(alarmId = 820, hour = 7, minute = 0, isSaved = true, isOn = true)
+        val remaining = Alarm(alarmId = 821, hour = 8, minute = 0, isSaved = true, isOn = true)
+        usecases.addAlarm(deleted)
+        usecases.addAlarm(remaining)
+        usecases.scheduleAlarm(deleted, true)
+        usecases.scheduleAlarm(remaining, true)
+        viewModel.onEvent(AlarmListEvent.OnDeleteAlarmClick(deleted))
+        advanceUntilIdle()
+        viewModel.state.value.canUndoDelete shouldBe true
+
+        viewModel.onEvent(AlarmListEvent.OnClearAlarmsClick)
+        advanceUntilIdle()
+        viewModel.state.value.canUndoDelete shouldBe false
+        viewModel.onEvent(AlarmListEvent.OnUndoDeleteClick)
+        advanceUntilIdle()
+        usecases.getSavedAlarms().first() shouldBe emptyList()
+        alarmInteractor.getScheduledAlarms() shouldBe emptyMap()
+    }
+
+    @Test
     fun `rapid enable disable enable leaves one current schedule`() = runTest {
         val alarm = Alarm(alarmId = 801, hour = 7, minute = 0, isSaved = true)
         usecases.addAlarm(alarm)

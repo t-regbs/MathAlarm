@@ -40,7 +40,6 @@ struct NativeApplicationRoot: View {
     @StateObject private var announcements = NativeAnnouncementPresentation()
     @StateObject private var sessions = NativeWindowSessions()
     @ObservedObject private var restoration = NativeDeliveryRestoration.shared
-    @State private var compactColumn: NavigationSplitViewColumn = .sidebar
     @State private var splitPresentation = 0
     @State private var settingsPresented = false
     @State private var settingsBeforeDelivery = false
@@ -48,10 +47,10 @@ struct NativeApplicationRoot: View {
     var body: some View {
         ZStack {
             NativeSessionOwners(sessions: sessions)
-            NavigationSplitView(preferredCompactColumn: $compactColumn) {
+            NavigationSplitView(preferredCompactColumn: .constant(
+                sessions.selectedEditorID == nil ? .sidebar : .detail)) {
                 NativeAlarmList(model: list, sessions: sessions, openEditor: { alarm in
-                    sessions.openEditor(alarm: alarm)
-                    compactColumn = .detail
+                    sessions.requestOpenEditor(alarm: alarm)
                 }, openSettings: { settingsPresented = true })
             } detail: {
                 NativeEditorStack(sessions: sessions)
@@ -61,7 +60,6 @@ struct NativeApplicationRoot: View {
         .tint(MatAlarmPalette.accent)
         .onChange(of: scenePhase) { phase in sessions.alarmSettingsSceneChanged(phase) }
         .onChange(of: sessions.selectedEditorID) { id in
-            compactColumn = id == nil ? .sidebar : .detail
             // A nested NavigationStack can keep the compact detail visible
             // after its owner closes. Replace the container to show the list;
             // the window's feature owners remain outside this identity.
@@ -114,9 +112,9 @@ struct NativeApplicationRoot: View {
                 if announcements.presented {
                     NativeWhatsNew(model: settings, presentation: announcements, onTryFeature: { id in
                         settingsPresented = false
-                        let editor = sessions.openEditor(alarm: nil)
-                        sessions.setEditorPath([id == "math-challenges-v1" ? .challenge : .snooze], id: editor.id)
-                        compactColumn = .detail
+                        guard sessions.requestOpenEditor(alarm: nil, initialPath: [
+                            id == "math-challenges-v1" ? .challenge : .snooze
+                        ]) != nil else { return }
                     })
                 } else {
                     NativeAppSettings(model: settings, openWhatsNew: {

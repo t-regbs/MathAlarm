@@ -33,6 +33,61 @@ private struct NativeNextAlarmSubtitle: ViewModifier {
     }
 }
 
+/// A single native undo entry mirrors the shared model's latest deleted alarm.
+/// Remove only this target's entries, leaving text editing and other undo owners intact.
+@MainActor
+final class NativeAlarmDeletionUndo: ObservableObject {
+    private weak var manager: UndoManager?
+    private var action: (() -> Void)?
+
+    func synchronize(manager: UndoManager?, available: Bool, perform: @escaping () -> Void) {
+        guard available else { detach(); return }
+        // Update the latest restoration without creating extra (possibly empty) undo groups.
+        if self.manager === manager, action != nil {
+            action = perform
+            return
+        }
+        detach()
+        self.manager = manager
+        action = perform
+        manager?.registerUndo(withTarget: self) { target in
+            MainActor.assumeIsolated { target.undo() }
+        }
+        manager?.setActionName(NativeStrings.text("Delete"))
+    }
+
+    func undo() {
+        let perform = action
+        detach()
+        perform?()
+    }
+
+    func detach() {
+        manager?.removeAllActions(withTarget: self)
+        manager = nil
+        action = nil
+    }
+}
+
+private enum NativeAlarmTimeAlignment: AlignmentID {
+    static func defaultValue(in dimensions: ViewDimensions) -> CGFloat { dimensions[VerticalAlignment.center] }
+}
+
+private extension VerticalAlignment {
+    static let alarmTime = VerticalAlignment(NativeAlarmTimeAlignment.self)
+}
+
+private struct NativeAlarmListNotice: Identifiable {
+    let id: Int64
+    let message: String
+    let offersUndo: Bool
+}
+
+private struct NativeAlarmNoticeExpiry: Equatable {
+    let id: Int64?
+    let paused: Bool
+}
+
 @MainActor
 struct NativeAlarmList: View {
     @ObservedViewModel var model: AlarmListViewModel
@@ -41,7 +96,11 @@ struct NativeAlarmList: View {
     let openSettings: () -> Void
     @State private var clearConfirmation = false
     @State private var errorResult: AlarmListResult?
-    @State private var message: String?
+    @State private var notice: NativeAlarmListNotice?
+    @State private var listEditMode: EditMode = .inactive
+    @StateObject private var deletionUndo = NativeAlarmDeletionUndo()
+    @State private var assistiveTechnologyActive = UIAccessibility.isVoiceOverRunning || UIAccessibility.isSwitchControlRunning
+    @Environment(\.undoManager) private var undoManager
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
 
     var body: some View {
@@ -57,6 +116,17 @@ struct NativeAlarmList: View {
         .modifier(NativeNextAlarmSubtitle(alarms: model.state.alarms, loading: model.state.loading))
         .toolbar {
             listToolbar
+        }
+        .environment(\.editMode, $listEditMode)
+        .safeAreaInset(edge: .bottom) {
+            if let notice { noticeContent(notice) }
+        }
+        .task(id: noticeExpiry) {
+            let expiry = noticeExpiry
+            guard let id = expiry.id, !expiry.paused else { return }
+            do { try await Task.sleep(for: .seconds(dynamicTypeSize.isAccessibilitySize ? 20 : 8)) }
+            catch { return }
+            if notice?.id == id { notice = nil }
         }
         .confirmationDialog("Delete all alarms?", isPresented: $clearConfirmation,
                             titleVisibility: .visible) {
@@ -77,10 +147,28 @@ struct NativeAlarmList: View {
         } message: {
             Text(NativeStrings.error((errorResult?.event as? UiEvent.ShowError)?.error ?? .update))
         }
-        .onAppear { presentResults() }
+        .onAppear { synchronizeUndo(); presentResults() }
+        .onDisappear { deletionUndo.detach() }
+        .onChange(of: undoManager) { synchronizeUndo() }
         .onChange(of: model.state.results.map(\.id)) { presentResults() }
-        .onChange(of: sessions.deliveryPresented) { presented in if !presented { presentResults() } }
-        .onChange(of: model.state.canUndoDelete) { available in if !available { message = nil } }
+        .onChange(of: model.state.pendingOperations) { synchronizeUndo() }
+        .onChange(of: sessions.deliveryPresented) { presented in
+            synchronizeUndo()
+            if !presented { presentResults() }
+        }
+        .onChange(of: model.state.canUndoDelete) { available in
+            if !available && notice?.offersUndo == true { notice = nil }
+            synchronizeUndo()
+        }
+        .onChange(of: model.state.alarms.isEmpty) { empty in
+            if empty { listEditMode = .inactive }
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIAccessibility.voiceOverStatusDidChangeNotification)) { _ in
+            updateAssistiveTechnology()
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIAccessibility.switchControlStatusDidChangeNotification)) { _ in
+            updateAssistiveTechnology()
+        }
     }
 
     private var emptyContent: some View {
@@ -110,55 +198,11 @@ struct NativeAlarmList: View {
             } else {
                 ForEach(model.state.alarms, id: \.alarmId) { alarm in
                     Section {
-                        let layout = dynamicTypeSize.isAccessibilitySize
-                            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 16))
-                            : AnyLayout(HStackLayout(alignment: .center, spacing: 16))
-                        layout {
-                            Button { model.onEvent(event: AlarmListEvent.OnEditAlarmClick(alarm: alarm)) } label: {
-                                VStack(alignment: .leading, spacing: 10) {
-                                    MatAlarmTimeLabel(hour: alarm.hour, minute: alarm.minute, enabled: alarm.isOn)
-                                    if !alarm.title.isEmpty { Text(alarm.title).font(.headline).foregroundStyle(.primary) }
-                                    Text(NativeAlarmPresentation.recurrence(alarm))
-                                        .font(.subheadline).foregroundStyle(.secondary)
-                                        .fixedSize(horizontal: false, vertical: true)
-                                    Text(NativeStrings.questions(alarm.questionCount))
-                                        .font(.caption.weight(.medium))
-                                        .foregroundStyle(MatAlarmPalette.accent)
-                                        .padding(.horizontal, 10).padding(.vertical, 5)
-                                        .background(MatAlarmPalette.wash, in: Capsule())
-                                    if alarm.scheduleError != nil {
-                                        Label {
-                                            Text("Scheduling needs attention").foregroundStyle(Color.primary)
-                                        } icon: {
-                                            Image(systemName: "exclamationmark.triangle").foregroundStyle(Color.red)
-                                        }
-                                        .font(.caption)
-                                    }
-                                }
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .contentShape(Rectangle())
-                            }
-                            .buttonStyle(.plain)
-                            .accessibilityElement(children: .combine)
-                            .accessibilityHint(Text("Change the alarm time, label and settings."))
-                            .accessibilityIdentifier("edit-alarm-\(alarm.alarmId)")
-                            Toggle("Enabled", isOn: Binding(get: { alarm.isOn }, set: {
-                                model.setEnabled(alarm: alarm, enabled: $0)
-                            }))
-                            .labelsHidden()
-                            .fixedSize()
-                            .accessibilityLabel(Text("Enabled") + Text(" " + NativeAlarmPresentation.time(hour: alarm.hour, minute: alarm.minute)) + Text(alarm.title.isEmpty ? "" : " " + alarm.title))
+                        // Keep one grouped card per alarm, with native row deletion controls.
+                        ForEach([alarm], id: \.alarmId) { alarm in
+                            alarmRow(alarm)
                         }
-                        .padding(.vertical, 10)
-                        .swipeActions {
-                            Button("Delete", role: .destructive) {
-                                model.onEvent(event: AlarmListEvent.OnDeleteAlarmClick(alarm: alarm))
-                            }
-                        }
-                        .disabled(model.state.pendingOperations > 0)
-                        .listRowBackground(sessions.selectedEditor?.resolvedAlarmID == alarm.alarmId
-                            ? MatAlarmPalette.wash : MatAlarmPalette.surface)
-                        .accessibilityIdentifier("alarm-row-\(alarm.alarmId)")
+                        .onDelete { _ in deleteAlarm(alarm) }
                     }
                 }
             }
@@ -167,28 +211,147 @@ struct NativeAlarmList: View {
         .listStyle(.insetGrouped)
     }
 
-    private var hasListStatus: Bool {
-        message != nil || model.state.canUndoDelete || sessions.pendingPayload != nil
+    private func alarmRow(_ alarm: app.Alarm) -> some View {
+        let layout = dynamicTypeSize.isAccessibilitySize
+            ? AnyLayout(VStackLayout(alignment: .leading, spacing: 16))
+            : AnyLayout(HStackLayout(alignment: .alarmTime, spacing: 16))
+        return layout {
+            Button { model.onEvent(event: AlarmListEvent.OnEditAlarmClick(alarm: alarm)) } label: {
+                VStack(alignment: .leading, spacing: 10) {
+                    MatAlarmTimeLabel(hour: alarm.hour, minute: alarm.minute, enabled: alarm.isOn)
+                        .alignmentGuide(.alarmTime) { $0[VerticalAlignment.center] }
+                        .accessibilityIdentifier("alarm-time-\(alarm.alarmId)")
+                    if !alarm.title.isEmpty { Text(alarm.title).font(.headline).foregroundStyle(.primary) }
+                    Text(NativeAlarmPresentation.recurrence(alarm))
+                        .font(.subheadline).foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(NativeStrings.questions(alarm.questionCount))
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(MatAlarmPalette.accent)
+                        .padding(.horizontal, 10).padding(.vertical, 5)
+                        .background(MatAlarmPalette.wash, in: Capsule())
+                    if alarm.scheduleError != nil {
+                        Label {
+                            Text("Scheduling needs attention").foregroundStyle(Color.primary)
+                        } icon: {
+                            Image(systemName: "exclamationmark.triangle").foregroundStyle(Color.red)
+                        }
+                        .font(.caption)
+                    }
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
+            .accessibilityHint(Text("Change the alarm time, label and settings."))
+            .accessibilityIdentifier("edit-alarm-\(alarm.alarmId)")
+            .disabled(listEditMode.isEditing)
+            Toggle("Enabled", isOn: Binding(get: { alarm.isOn }, set: {
+                model.setEnabled(alarm: alarm, enabled: $0)
+            }))
+            .labelsHidden()
+            .fixedSize()
+            .alignmentGuide(.alarmTime) { $0[VerticalAlignment.center] }
+            .accessibilityLabel(Text("Enabled") + Text(" " + NativeAlarmPresentation.time(hour: alarm.hour, minute: alarm.minute)) + Text(alarm.title.isEmpty ? "" : " " + alarm.title))
+            .accessibilityIdentifier("alarm-enabled-\(alarm.alarmId)")
+            .disabled(listEditMode.isEditing)
+        }
+        .padding(.vertical, 10)
+        .swipeActions {
+            Button("Delete", role: .destructive) { deleteAlarm(alarm) }
+        }
+        .disabled(model.state.pendingOperations > 0)
+        .deleteDisabled(model.state.pendingOperations > 0)
+        .listRowBackground(sessions.selectedEditor?.resolvedAlarmID == alarm.alarmId
+            ? MatAlarmPalette.wash : MatAlarmPalette.surface)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("alarm-row-\(alarm.alarmId)")
     }
+
+    private var hasListStatus: Bool { sessions.pendingPayload != nil }
 
     @ViewBuilder
     private var listStatus: some View {
-        if let message { Text(message) }
-        if model.state.canUndoDelete {
-            Button("Undo delete") {
-                model.onEvent(event: AlarmListEvent.OnUndoDeleteClick.shared)
-            }.disabled(model.state.pendingOperations > 0)
-        }
         if sessions.pendingPayload != nil {
             Button("Pending alarm delivery") { sessions.deliveryPresented = true }
         }
     }
 
+    private var noticeExpiry: NativeAlarmNoticeExpiry {
+        NativeAlarmNoticeExpiry(id: notice?.id, paused: assistiveTechnologyActive
+            || sessions.deliveryPresented || model.state.pendingOperations > 0)
+    }
+
+    private func noticeContent(_ notice: NativeAlarmListNotice) -> some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(spacing: 12) {
+                Text(verbatim: notice.message).fixedSize(horizontal: false, vertical: true)
+                Spacer(minLength: 8)
+                noticeActions(notice)
+            }
+            VStack(alignment: .leading, spacing: 12) {
+                Text(verbatim: notice.message).fixedSize(horizontal: false, vertical: true)
+                HStack { Spacer(); noticeActions(notice) }
+            }
+        }
+        .fixedSize(horizontal: false, vertical: true)
+        .padding(16)
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 20))
+        .padding(.horizontal, 16).padding(.vertical, 8)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier("alarm-list-notice")
+    }
+
+    @ViewBuilder
+    private func noticeActions(_ notice: NativeAlarmListNotice) -> some View {
+        if notice.offersUndo && model.state.canUndoDelete {
+            Button("Undo") { deletionUndo.undo() }
+                .disabled(model.state.pendingOperations > 0 || sessions.deliveryPresented)
+                .accessibilityIdentifier("undo-delete-notice")
+        }
+        Button("Dismiss notice", systemImage: "xmark") { self.notice = nil }
+            .labelStyle(.iconOnly)
+            .frame(minWidth: 44, minHeight: 44)
+            .accessibilityIdentifier("dismiss-alarm-notice")
+    }
+
+    private func deleteAlarm(_ alarm: app.Alarm) {
+        guard !model.isClosed, model.state.pendingOperations == 0, !sessions.deliveryPresented else { return }
+        model.onEvent(event: AlarmListEvent.OnDeleteAlarmClick(alarm: alarm))
+    }
+
+    private func updateAssistiveTechnology() {
+        assistiveTechnologyActive = UIAccessibility.isVoiceOverRunning || UIAccessibility.isSwitchControlRunning
+    }
+
+    private func synchronizeUndo() {
+        deletionUndo.synchronize(manager: undoManager, available: model.state.canUndoDelete
+            && !model.isClosed && !sessions.deliveryPresented) { [weak model = model, weak sessions = sessions] in
+            guard let model, let sessions, !model.isClosed, model.state.canUndoDelete,
+                  model.state.pendingOperations == 0, !sessions.deliveryPresented else { return }
+            model.onEvent(event: AlarmListEvent.OnUndoDeleteClick.shared)
+        }
+    }
+
     @ToolbarContentBuilder
     private var listToolbar: some ToolbarContent {
+        ToolbarItem(placement: .topBarLeading) {
+            EditButton()
+                .disabled(model.state.loading || model.state.alarms.isEmpty || model.state.pendingOperations > 0)
+                .accessibilityIdentifier("edit-alarm-list")
+        }
+        if model.state.canUndoDelete {
+            ToolbarItem(placement: .secondaryAction) {
+                Button("Undo delete", systemImage: "arrow.uturn.backward") { deletionUndo.undo() }
+                    .disabled(model.state.pendingOperations > 0 || sessions.deliveryPresented)
+                    .accessibilityIdentifier("undo-delete-menu")
+            }
+        }
         ToolbarItem(placement: .primaryAction) {
             Button("Add alarm", systemImage: "plus") { model.onEvent(event: AlarmListEvent.OnAddAlarmClick.shared) }
                 .accessibilityIdentifier("add-alarm")
+                .disabled(listEditMode.isEditing)
         }
         ToolbarItem(placement: .secondaryAction) {
             Button("Settings", systemImage: "gearshape", action: openSettings)
@@ -198,23 +361,6 @@ struct NativeAlarmList: View {
             Button("Clear alarms", systemImage: "trash", role: .destructive) {
                 clearConfirmation = true
             }.disabled(model.state.loading || model.state.alarms.isEmpty || model.state.pendingOperations > 0)
-        }
-        if !sessions.editors.isEmpty {
-            ToolbarItem(placement: .secondaryAction) {
-                Menu("Retained drafts", systemImage: "doc.text") {
-                    ForEach(sessions.editors) { session in
-                        Button(session.model.state.alarmTitle.isEmpty ? NativeStrings.text("New alarm") : session.model.state.alarmTitle) {
-                            if let alarm = model.state.alarms.first(where: { $0.alarmId == session.alarmID }) {
-                                openEditor(alarm)
-                            } else if session.alarmID == nil {
-                                openEditor(nil)
-                            } else {
-                                sessions.selectEditor(id: session.id)
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 
@@ -232,16 +378,17 @@ struct NativeAlarmList: View {
                 if let error = result.event as? UiEvent.ShowError { NativeAccessibility.announce(NativeStrings.error(error.error)) }
                 return
             }
-            if let notice = result.event as? UiEvent.ShowSnackbar {
-                if notice.code == .deleted {
-                    message = NativeStrings.text("Alarm deleted.")
-                } else if notice.code == .empty {
-                    message = NativeStrings.text("There are no alarms to clear.")
-                } else if notice.code == .scheduled {
-                    message = NativeStrings.text("Alarm scheduled.")
+            if let snackbar = result.event as? UiEvent.ShowSnackbar {
+                if snackbar.code == .deleted {
+                    notice = NativeAlarmListNotice(id: result.id, message: NativeStrings.text("Alarm deleted."), offersUndo: true)
+                    synchronizeUndo()
+                } else if snackbar.code == .empty {
+                    notice = NativeAlarmListNotice(id: result.id, message: NativeStrings.text("There are no alarms to clear."), offersUndo: false)
+                } else if snackbar.code == .scheduled {
+                    notice = NativeAlarmListNotice(id: result.id, message: NativeStrings.text("Alarm scheduled."), offersUndo: false)
                 }
                 // Retain the native affordance before acknowledging the semantic result.
-                if let message { NativeAccessibility.announce(message) }
+                if let notice, notice.id == result.id { NativeAccessibility.announce(notice.message) }
                 model.acknowledgeResult(id: result.id)
             }
         }
@@ -444,6 +591,12 @@ private struct NativeEditorNavigation: View {
                     }
                 })
         }
+        .alert("Discard changes?", isPresented: $sessions.editorExitConfirmation) {
+            Button("Keep editing", role: .cancel) { sessions.keepEditing() }
+            Button("Discard changes", role: .destructive) { sessions.discardEditorChanges() }
+        } message: {
+            Text("Your changes haven’t been saved.")
+        }
         .onAppear {
             let wasOwner = sessions.ownsNavigation(id: session.id, observer: observer)
             if !wasOwner { pathInitialized = false }
@@ -501,7 +654,6 @@ struct NativeAlarmEditor: View {
     @ObservedViewModel var model: AlarmSettingsViewModel
     let sessionID: String
     @ObservedObject var sessions: NativeWindowSessions
-    @State private var discardConfirmation = false
     var requestingPermission = false
     var onDestinationAppeared: ((NativeEditorDestination?) -> Void)? = nil
 
@@ -530,16 +682,19 @@ struct NativeAlarmEditor: View {
         .scrollDismissesKeyboard(.interactively)
         .onAppear { onDestinationAppeared?(nil) }
         .navigationTitle(model.state.isSaved ? NativeStrings.text("Edit alarm") : NativeStrings.text("New alarm"))
+        // Cancel/Save finish this editing task. Split-column changes also occur
+        // during nested Back and must never be interpreted as discarding an edit.
+        .navigationBarBackButtonHidden(true)
         .navigationDestination(for: NativeEditorDestination.self) { destination in
             NativeEditorSubpage(model: model, sessionID: sessionID, sessions: sessions, destination: destination)
+                .navigationBarBackButtonHidden(destination == .preview)
                 .id(destination)
                 .onAppear { onDestinationAppeared?(destination) }
         }
         .toolbar {
             ToolbarItem(placement: .cancellationAction) {
                 Button("Cancel", role: .cancel) {
-                    if model.state.hasUnsavedChanges { discardConfirmation = true }
-                    else { sessions.closeEditor(id: sessionID) }
+                    sessions.requestCloseEditor(id: sessionID)
                 }
                 .disabled(model.state.isSaving || requestingPermission)
                 .accessibilityIdentifier("discard-draft")
@@ -549,11 +704,6 @@ struct NativeAlarmEditor: View {
                     .disabled(model.state.isSaving || requestingPermission)
                     .accessibilityIdentifier("save-alarm")
             }
-        }
-        .confirmationDialog("Discard this unsaved draft?", isPresented: $discardConfirmation,
-                            titleVisibility: .visible) {
-            Button("Discard draft", role: .destructive) { sessions.closeEditor(id: sessionID) }
-            Button("Keep editing", role: .cancel) { }
         }
 
     }

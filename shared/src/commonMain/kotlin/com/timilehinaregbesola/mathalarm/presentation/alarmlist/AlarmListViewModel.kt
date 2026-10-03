@@ -123,7 +123,11 @@ class AlarmListViewModel internal constructor(
                 ))
             }
             is AlarmListEvent.DeleteTestAlarm -> launchCommand { deleteAlarm(event.alarmId) }
-            is AlarmListEvent.OnClearAlarmsClick -> launchCommand { clearAlarms(getSavedAlarms().first()) }
+            is AlarmListEvent.OnClearAlarmsClick -> launchCommand {
+                clearAlarms(getSavedAlarms().first())
+                recentlyDeletedAlarm = null
+                _state.value = _state.value.copy(canUndoDelete = false)
+            }
             AlarmListEvent.OnClearEmptyAlarmsClick -> sendUiEvent(ShowSnackbar(UiEvent.ListMessage.EMPTY))
         }
     }

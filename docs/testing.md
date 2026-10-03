@@ -141,6 +141,17 @@ Twenty-seven groups check bootstrap/handoff identity, generated state observatio
 production `NativeSessionOwners` with compact/expanded/detail replacement, multiple
 retained drafts/routes, staged tone choices and permission guards; editor validation,
 duplicate guards, result acknowledgement, cancellation and structural owner cleanup.
+The registry's multiple-session fixtures test ownership across native replacement;
+ordinary user navigation now keeps one active editor. The focused XCTest cases
+`testEditorExitDiscardsOnlyAfterExplicitChoiceAndAddStartsFresh` and
+`testSwitchingAlarmsResolvesChangesAndNeverAccumulatesUserEditors` cover the exit
+policy. UI tests cover Cancel/Keep editing/Discard changes, nested Back after changing
+snooze/challenge values (button and edge swipe), and iPad sidebar switching. The
+main editor uses explicit Cancel/Save; split-column changes never request an exit.
+Save closes the editor, unchanged editors
+leave immediately, and unsaved edits must be resolved before leaving or switching.
+There is no user-facing retained-drafts menu; previews and interruptions preserve
+the current edit without creating another user-managed draft.
 Milestone 5 adds actual native answer-field focus/placeholder/keyboard/input binding and native maths preview validation/progress/cancellation/completion,
 real readiness before exact queue acknowledgement, ordered different-alarm replay,
 return to the identical draft after accepted resolution, failed command retry,
@@ -467,3 +478,39 @@ configured native Mail cancellation must be recorded as client evidence where av
 accessibility identifiers, injected callbacks or screenshots do not substitute for them.
 See the [M7 record](native-ui-migration-milestone-7-2026-10-03.md) for this run's actual
 results and unavailable checks, and the [architecture/build guide](native-architecture.md).
+
+### iPhone Duo layout review
+
+Build with Xcode 27.1 and the iOS 27.1 SDK to review Duo's native full-screen
+layout. A build linked against 27.0 uses different screen accommodation; running
+that binary on a 27.1 runtime alone does not opt into the full-screen experience.
+Use a disposable `com.apple.CoreSimulator.SimDeviceType.iPhone-Duo` device with
+the `com.apple.CoreSimulator.SimRuntime.iOS-27-1` runtime. Select the toolchain
+per command with `DEVELOPER_DIR`, without changing the machine's global selection.
+
+In Device Hub, check closed, unfolded portrait/landscape, partially folded, and
+Split View on both sides. Change poses with a dirty editor and a nested settings
+page open; confirm the label, settings, and navigation survive without an exit
+prompt. Also inspect the keyboard, Test Alarm, deletion notice, and accessibility
+text sizes. A static screenshot does not establish state preservation through a
+pose transition. UI tests locate overflow across native bars, and exercise the
+window-edge Back gesture only when native Back sits at that edge.
+
+Keep foreground controls in the system safe area, allowing asymmetric insets.
+The native split view, forms, and toolbars provide adaptive layout. For custom
+centered content, review the fold's division reserved region before adding
+special positioning. See Apple's [Duo preparation guidance](https://developer.apple.com/videos/play/tech-talks/111461/)
+and [adaptive layout guidance](https://developer.apple.com/videos/play/tech-talks/111463/).
+
+The 2026-10-03 Duo review used Xcode 27.1 (27A9269) and iOS 27.1. The alarm-list
+check passed on the unfolded display, including native Edit deletion, swipe,
+notice expiry, and persistent Undo. Changed Snooze and Math challenge settings
+returned to the same configuration without prompting. A client-assisted live
+open → closed → open check also passed with a dirty editor and its Snooze page
+open: the route, label, enabled value, and changed Snooze value survived both
+transitions. Explicit Cancel produced the expected exit confirmation afterward.
+Evidence is under `build/duo-ui-review/`, including `inner-tests.xcresult`,
+`final-editor-tests.xcresult`, and `transition-tests-2.xcresult`. The temporary
+human-assisted fixture is saved there as `DuoTransitionReview.swift.txt`; it is
+excluded from the unattended test suite. Partially folded layouts and Split View
+on both sides were not covered by this review.
