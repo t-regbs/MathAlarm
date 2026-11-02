@@ -1,10 +1,18 @@
 package com.timilehinaregbesola.mathalarm
 
-import android.os.SystemClock
+import android.os.ParcelFileDescriptor.AutoCloseInputStream
 import androidx.activity.compose.setContent
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.v2.runAndroidComposeUiTest
 import androidx.test.platform.app.InstrumentationRegistry
 import cafe.adriel.lyricist.LocalStrings
 import com.timilehinaregbesola.mathalarm.navigation.NavGraph
@@ -13,25 +21,27 @@ import com.timilehinaregbesola.mathalarm.platform.getRingtoneTitle
 import com.timilehinaregbesola.mathalarm.presentation.MainActivity
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.utils.strings.EnMathAlarmStrings
+import kotlinx.coroutines.InternalCoroutinesApi
 import org.junit.Assert.assertEquals
-import org.junit.Rule
 import org.junit.Test
 
-/** Opens and cancels the native picker; does not save or schedule any alarms. */
-@OptIn(androidx.compose.animation.ExperimentalAnimationApi::class,
-    androidx.compose.foundation.ExperimentalFoundationApi::class,
-    androidx.compose.material3.ExperimentalMaterial3Api::class,
-    androidx.compose.ui.ExperimentalComposeUiApi::class,
-    kotlinx.coroutines.InternalCoroutinesApi::class)
+@OptIn(
+    ExperimentalTestApi::class,
+    ExperimentalAnimationApi::class,
+    ExperimentalFoundationApi::class,
+    ExperimentalMaterial3Api::class,
+    ExperimentalComposeUiApi::class,
+    InternalCoroutinesApi::class,
+)
 class AlarmSoundPickerTest {
-    @get:Rule val compose = createAndroidComposeRule<MainActivity>()
-
-    @Test fun androidOpensSystemPickerDirectlyAndCancellationKeepsDeviceDefault() {
-        compose.runOnUiThread {
-            val preferences = compose.activity.preferences
+    @Test
+    fun androidOpensSystemPickerDirectlyAndCancellationKeepsDeviceDefault() = runAndroidComposeUiTest<MainActivity> {
+        val host = requireNotNull(activity)
+        runOnUiThread {
+            val preferences = host.preferences
             listOf("math-challenges-v1", "skip-next-alarm-v1", "snooze-settings-v1")
                 .forEach(preferences::markAnnouncementSeen)
-            compose.activity.setContent {
+            host.setContent {
                 CompositionLocalProvider(LocalStrings provides EnMathAlarmStrings) {
                     MathAlarmTheme(darkTheme = false) { NavGraph(preferences, null) }
                 }
@@ -43,21 +53,20 @@ class AlarmSoundPickerTest {
         val nativePackage = automation.executeShellCommand(
             "cmd package resolve-activity --brief -a android.intent.action.RINGTONE_PICKER"
         ).use { descriptor ->
-            android.os.ParcelFileDescriptor.AutoCloseInputStream(descriptor).bufferedReader().readText()
+            AutoCloseInputStream(descriptor).bufferedReader().readText()
                 .lineSequence().last { it.contains('/') }.substringBefore('/').trim()
         }
-        compose.onNodeWithContentDescription("Add alarm").performClick()
-        compose.onNodeWithText(defaultTitle).assertIsDisplayed().performClick()
-        val deadline = SystemClock.uptimeMillis() + 5_000
-        while (automation.rootInActiveWindow?.packageName?.toString() != nativePackage && SystemClock.uptimeMillis() < deadline) {
-            SystemClock.sleep(100)
+        onNodeWithContentDescription("Add alarm").performClick()
+        onNodeWithText(defaultTitle).assertIsDisplayed().performClick()
+        waitUntil(timeoutMillis = 5_000) {
+            automation.rootInActiveWindow?.packageName?.toString() == nativePackage
         }
         assertEquals(nativePackage, automation.rootInActiveWindow?.packageName?.toString())
         automation.executeShellCommand("input keyevent 4").use { descriptor ->
-            android.os.ParcelFileDescriptor.AutoCloseInputStream(descriptor).readBytes()
+            AutoCloseInputStream(descriptor).readBytes()
         }
-        compose.onNodeWithText(defaultTitle).assertIsDisplayed()
-        compose.onNodeWithText(EnMathAlarmStrings.alarmSound).assertDoesNotExist()
-        compose.onNodeWithText("Daybreak").assertDoesNotExist()
+        onNodeWithText(defaultTitle).assertIsDisplayed()
+        onNodeWithText(EnMathAlarmStrings.alarmSound).assertDoesNotExist()
+        onNodeWithText("Daybreak").assertDoesNotExist()
     }
 }

@@ -14,7 +14,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -25,16 +27,11 @@ import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import org.koin.compose.viewmodel.koinViewModel
-import com.timilehinaregbesola.mathalarm.presentation.appsettings.AppSettingsViewModel
-import com.timilehinaregbesola.mathalarm.presentation.appsettings.AppSettingsOperation
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,10 +47,8 @@ import com.mohamedrejeb.calf.ui.ExperimentalCalfUiApi
 import com.mohamedrejeb.calf.ui.button.AdaptiveIconButton
 import com.mohamedrejeb.calf.ui.gesture.adaptiveClickable
 import com.mohamedrejeb.calf.ui.navigation.AdaptiveTopBar
-import com.mohamedrejeb.calf.ui.navigation.UIKitUIBarButtonItem
-import com.mohamedrejeb.calf.ui.uikit.UIKitImage
-import com.timilehinaregbesola.mathalarm.platform.getAppShareUrl
 import com.timilehinaregbesola.mathalarm.platform.applyPlatformNightMode
+import com.timilehinaregbesola.mathalarm.platform.getAppShareUrl
 import com.timilehinaregbesola.mathalarm.platform.sendEmail
 import com.timilehinaregbesola.mathalarm.platform.shareText
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.AlarmSortOrder.CREATION
@@ -63,6 +58,8 @@ import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferenc
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.Theme.LIGHT
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.Theme.SYSTEM
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AppSettingsOperation
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AppSettingsViewModel
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.APP_BAR_SHADOW
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.DEFAULT_SETTINGS_CORNER_SHAPE
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen.HELP_ICON_SIZE
@@ -82,6 +79,7 @@ import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Share
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Smartphone
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.WbSunny
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
+import org.koin.compose.viewmodel.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalCalfUiApi::class)
 @Composable
@@ -141,13 +139,6 @@ fun AppSettingsScreen(
                             )
                         }
                     },
-                    iosTitle = strings.appSettings,
-                    iosLeadingItems = listOf(
-                        UIKitUIBarButtonItem(
-                            image = UIKitImage.SystemName("chevron.left"),
-                            onClick = onBackPress,
-                        ),
-                    ),
                 )
             }
         ) { paddingVals ->

@@ -1,7 +1,5 @@
 package com.timilehinaregbesola.mathalarm.platform
 
-import androidx.compose.runtime.staticCompositionLocalOf
-
 import android.Manifest
 import android.app.Activity
 import android.app.AlertDialog
@@ -40,9 +38,6 @@ private fun trackPermissionHandoff(type: String, key: String) {
             .trackSafely(AnalyticsEvents.permissionPrompted(type, "settings"))
     }
 }
-
-// CompositionLocal for optional access to PlatformVibrator (can be replaced in previews/tests)
-val LocalPlatformVibrator = staticCompositionLocalOf<PlatformVibrator?> { null }
 
 /**
  * Platform-specific ringtone picker result handler.

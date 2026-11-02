@@ -3,79 +3,77 @@ package com.timilehinaregbesola.mathalarm.navigation
 import androidx.compose.animation.ContentTransform
 import androidx.compose.animation.EnterTransition
 import androidx.compose.animation.ExitTransition
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.navigation3.scene.Scene
 import androidx.compose.animation.ExperimentalAnimationApi
 import androidx.compose.animation.core.tween
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
 import androidx.compose.animation.slideInHorizontally
 import androidx.compose.animation.slideOutHorizontally
 import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
-import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
-import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
-import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.SideEffect
-import androidx.compose.runtime.DisposableEffect
-import kotlinx.coroutines.delay
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.Saver
-import androidx.compose.runtime.saveable.rememberSaveable
-import com.timilehinaregbesola.mathalarm.domain.model.Alarm
-import com.timilehinaregbesola.mathalarm.analytics.AnalyticsEvents
-import com.timilehinaregbesola.mathalarm.analytics.AnalyticsTracker
-import com.timilehinaregbesola.mathalarm.analytics.NoopAnalyticsTracker
-import com.timilehinaregbesola.mathalarm.analytics.trackSafely
-import com.timilehinaregbesola.mathalarm.framework.NotificationSnoozeEvents
-import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
-import com.timilehinaregbesola.mathalarm.presentation.whatsnew.AnnouncementFeature
-import com.timilehinaregbesola.mathalarm.presentation.whatsnew.WhatsNewDialog
-import com.timilehinaregbesola.mathalarm.presentation.whatsnew.announcementCatalog
-import androidx.compose.ui.ExperimentalComposeUiApi
-import androidx.compose.ui.Modifier
+import androidx.compose.material3.adaptive.ExperimentalMaterial3AdaptiveApi
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfo
+import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.material3.adaptive.layout.calculatePaneScaffoldDirective
 import androidx.compose.material3.adaptive.navigation.BackNavigationBehavior
-import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
+import androidx.compose.material3.adaptive.navigation3.ListDetailSceneStrategy
+import androidx.compose.material3.adaptive.navigation3.rememberListDetailSceneStrategy
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.SideEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.navigation3.rememberViewModelStoreNavEntryDecorator
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberNavBackStack
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
+import androidx.navigation3.scene.Scene
 import androidx.navigation3.ui.NavDisplay
 import androidx.savedstate.serialization.SavedStateConfiguration
+import cafe.adriel.lyricist.strings
+import com.timilehinaregbesola.mathalarm.analytics.AnalyticsEvents
+import com.timilehinaregbesola.mathalarm.analytics.AnalyticsTracker
+import com.timilehinaregbesola.mathalarm.analytics.NoopAnalyticsTracker
+import com.timilehinaregbesola.mathalarm.analytics.trackSafely
+import com.timilehinaregbesola.mathalarm.domain.model.Alarm
+import com.timilehinaregbesola.mathalarm.framework.NotificationSnoozeEvents
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmEntity
-import com.timilehinaregbesola.mathalarm.navigation.NavGraph.ANIM_TRANSITION_DURATION
+import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.DialogArguments
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.ListDisplayScreen
+import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.MathAlarmDialog
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.components.MathScreen
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
-import com.timilehinaregbesola.mathalarm.presentation.appsettings.AppSettingsViewModel
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AppSettingsOperation
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.DialogArguments
-import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.MathAlarmDialog
-import cafe.adriel.lyricist.strings
-import org.koin.compose.viewmodel.koinViewModel
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AppSettingsViewModel
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.components.AppSettingsScreen
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.shouldUseDarkColors
-import com.timilehinaregbesola.mathalarm.platform.isIosPlatform
+import com.timilehinaregbesola.mathalarm.presentation.whatsnew.AnnouncementFeature
+import com.timilehinaregbesola.mathalarm.presentation.whatsnew.WhatsNewDialog
+import com.timilehinaregbesola.mathalarm.presentation.whatsnew.announcementCatalog
 import com.timilehinaregbesola.mathalarm.utils.Destinations.AlarmList
 import com.timilehinaregbesola.mathalarm.utils.Destinations.AlarmMath
 import com.timilehinaregbesola.mathalarm.utils.Destinations.AppSettings
 import com.timilehinaregbesola.mathalarm.utils.Destinations.SettingsSheet
 import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.delay
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.modules.polymorphic
+import org.koin.compose.viewmodel.koinViewModel
 
 @ExperimentalAnimationApi
 @InternalCoroutinesApi
@@ -96,7 +94,6 @@ fun NavGraph(
     onRequestReview: () -> Unit = {},
     analytics: AnalyticsTracker = NoopAnalyticsTracker,
 ) {
-    // One window owner serves settings and announcement consumers across native routes.
     val settingsViewModel: AppSettingsViewModel = koinViewModel()
     val settingsState by settingsViewModel.state.collectAsState()
     val announcementFailure = settingsState.failures.firstOrNull {
@@ -153,11 +150,9 @@ fun NavGraph(
             maxVerticalPartitions = 1,
         ),
     )
-    val mathPreviewStrategy = remember { MathPreviewSceneStrategy<NavKey>(useDialogOverlay = !isIosPlatform()) }
+    val mathPreviewStrategy = remember { MathPreviewSceneStrategy<NavKey>() }
 
-    // Navigate to MathScreen when deeplinkInfo changes (e.g., from notification tap)
     LaunchedEffect(deeplinkInfo, readyAlarmDestinations, backStack.lastOrNull()) {
-        println("NavGraph: LaunchedEffect triggered with deeplinkInfo = $deeplinkInfo")
         deeplinkInfo?.let {
             val incoming = decodeAlarmHandoff(it)
             when (alarmHandoffAction(incoming, backStack.filterIsInstance<AlarmMath>(),
@@ -373,9 +368,7 @@ fun NavGraph(
     }
 }
 
-private object NavGraph {
-    val ANIM_TRANSITION_DURATION = 700
-}
+private const val ANIM_TRANSITION_DURATION = 700
 
 // Modal sheets own their vertical motion; a page slide would move their backdrop too.
 private fun sheetTransition(initialState: Scene<*>, targetState: Scene<*>): ContentTransform? {

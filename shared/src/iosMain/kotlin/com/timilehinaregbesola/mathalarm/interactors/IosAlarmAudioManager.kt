@@ -93,10 +93,6 @@ object IosAlarmAudioManager {
         return null
     }
 
-    fun startPreview(soundName: String, onFinished: () -> Unit) {
-        startOwnedPreview("legacy-tone-preview", soundName) { onFinished() }
-    }
-
     fun startOwnedPreview(ownerId: String, soundName: String, onFinished: (TonePreviewResult) -> Unit) {
         val request = previewOwnership.nextRequest()
         if (previewOwnership.rejectWhileAlarmActive(isAlarmActive, onFinished)) return

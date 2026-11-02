@@ -63,10 +63,6 @@ import com.timilehinaregbesola.mathalarm.framework.database.AlarmMapper
 import com.timilehinaregbesola.mathalarm.platform.areNotificationsEnabled
 import com.timilehinaregbesola.mathalarm.platform.checkRingtonePermissions
 import com.timilehinaregbesola.mathalarm.platform.getRingtoneTitle
-import com.timilehinaregbesola.mathalarm.platform.isIosPlatform
-import com.timilehinaregbesola.mathalarm.platform.alarmSoundPickerKind
-import com.timilehinaregbesola.mathalarm.platform.AlarmSoundPickerKind
-import com.timilehinaregbesola.mathalarm.platform.supportsAlarmVibration
 import com.timilehinaregbesola.mathalarm.platform.openNotificationSettings
 import com.timilehinaregbesola.mathalarm.platform.rememberRingtonePickerLauncher
 import com.timilehinaregbesola.mathalarm.platform.rememberNotificationPermissionHandler
@@ -95,7 +91,6 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.A
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_CARD_HEIGHT
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components.AlarmBottomSheet.TIME_TEXT_FONT_SIZE
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
-import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Check
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Close
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Notifications
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
@@ -228,9 +223,6 @@ fun AlarmBottomSheet(
         showDismissButton = showDismissButton,
         isPane = isPane,
         onSubEditorChanged = { editingSubPage = it },
-        currentTone = state.tone,
-        currentToneTitle = toneText.value ?: strings.defaultAlarmTone,
-        onToneChange = { viewModel.onEvent(OnToneChange(it)) },
         topSection = {
             TopSection(
                 selectedDays = state.dayChooser,
@@ -243,7 +235,7 @@ fun AlarmBottomSheet(
                 }
             )
         },
-        bottomSection = { onEditChallenge, onEditSnooze, onEditSound ->
+        bottomSection = { onEditChallenge, onEditSnooze ->
             val defaultToneText = strings.defaultAlarmTone
             BottomSettingsSection(
                 onEditChallenge = onEditChallenge,
@@ -262,15 +254,11 @@ fun AlarmBottomSheet(
                     viewModel.onEvent(ToggleVibrate(it))
                 },
                 onToneClick = {
-                    if (alarmSoundPickerKind() == AlarmSoundPickerKind.BUNDLED_LIBRARY) {
-                        onEditSound()
-                    } else {
-                        try {
-                            checkNotNull(pickToneLauncher).launch(state.tone.ifEmpty { null })
-                        } catch (error: Exception) {
-                            Logger.e("error launching tone picker", error)
-                            viewModel.onEvent(OnToneError)
-                        }
+                    try {
+                        checkNotNull(pickToneLauncher).launch(state.tone.ifEmpty { null })
+                    } catch (error: Exception) {
+                        Logger.e("error launching tone picker", error)
+                        viewModel.onEvent(OnToneError)
                     }
                 },
                 labelTextField = {
@@ -364,7 +352,7 @@ private fun AlarmBottomSheetContent(
     isPane: Boolean = false,
     onSubEditorChanged: (Boolean) -> Unit = {},
     topSection: @Composable () -> Unit,
-    bottomSection: @Composable (onEditChallenge: () -> Unit, onEditSnooze: () -> Unit, onEditSound: () -> Unit) -> Unit,
+    bottomSection: @Composable (onEditChallenge: () -> Unit, onEditSnooze: () -> Unit) -> Unit,
     onTestClick: () -> Unit,
     onSaveClick: () -> Unit,
     challenge: MathChallenge = MathChallenge(),
@@ -373,9 +361,6 @@ private fun AlarmBottomSheetContent(
     maxSnoozes: Int = 3,
     onChallengeChange: (MathChallenge) -> Unit = {},
     onSnoozeChange: (Boolean, Int, Int) -> Unit = { _, _, _ -> },
-    currentTone: String = "",
-    currentToneTitle: String = "",
-    onToneChange: (String) -> Unit = {},
     dialogSection: @Composable () -> Unit
 ) {
     AlarmSettingsSheetHost(
@@ -387,25 +372,11 @@ private fun AlarmBottomSheetContent(
         onSubEditorChanged = onSubEditorChanged,
         onChallengeApply = onChallengeChange,
         onSnoozeApply = onSnoozeChange,
-        currentTone = currentTone,
-        currentToneTitle = currentToneTitle,
-        onToneApply = onToneChange,
-    ) { onEditChallenge, onEditSnooze, onEditSound ->
+    ) { onEditChallenge, onEditSnooze ->
         with(MaterialTheme) {
-            val useFullHeightSheetLayout = isIosPlatform()
-            Surface(
-                modifier = if (useFullHeightSheetLayout) {
-                    Modifier.fillMaxSize()
-                } else {
-                    Modifier
-                }
-            ) {
+            Surface {
                 BoxWithConstraints(
-                    modifier = if (useFullHeightSheetLayout) {
-                        Modifier.fillMaxSize()
-                    } else {
-                        Modifier.fillMaxWidth()
-                    },
+                    modifier = Modifier.fillMaxWidth(),
                     contentAlignment = TopCenter,
                 ) {
                     val contentWidthModifier = if (maxWidth > SETTINGS_CONTENT_MAX_WIDTH) {
@@ -419,60 +390,28 @@ private fun AlarmBottomSheetContent(
                         bottom = spacing.extraMedium,
                         top = spacing.medium
                     )
-                    if (useFullHeightSheetLayout) {
+                    Column(
+                        contentWidthModifier
+                            .fillMaxSize()
+                            .then(sheetPaddingModifier),
+                    ) {
+                        if (showDismissButton) {
+                            SheetHeader(onCloseClick = onCloseClick)
+                        }
                         Column(
-                            contentWidthModifier
-                                .fillMaxSize()
-                                .then(sheetPaddingModifier),
+                            modifier = Modifier
+                                .weight(1f)
+                                .verticalScroll(rememberScrollState())
                         ) {
-                            SheetHeader(
-                                onCloseClick = onCloseClick,
-                                onSaveClick = onSaveClick,
-                                showSaveAction = true,
-                            )
-                            Column(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .verticalScroll(rememberScrollState()),
-                            ) {
-                                SheetSettingsContent(
-                                    topSection = topSection,
-                                    bottomSection = {
-                                        bottomSection(onEditChallenge, onEditSnooze, onEditSound)
-                                    },
-                                )
-                            }
-                            SheetActionButtons(
-                                onTestClick = onTestClick,
-                                onSaveClick = onSaveClick,
-                                showSaveButton = false,
+                            SheetSettingsContent(
+                                topSection = topSection,
+                                bottomSection = { bottomSection(onEditChallenge, onEditSnooze) },
                             )
                         }
-                    } else {
-                        Column(
-                            contentWidthModifier
-                                .fillMaxSize()
-                                .then(sheetPaddingModifier),
-                        ) {
-                            if (showDismissButton) {
-                                SheetHeader(onCloseClick = onCloseClick)
-                            }
-                            Column(
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .verticalScroll(rememberScrollState())
-                            ) {
-                                SheetSettingsContent(
-                                    topSection = topSection,
-                                    bottomSection = { bottomSection(onEditChallenge, onEditSnooze, onEditSound) },
-                                )
-                            }
-                            SheetActionButtons(
-                                onTestClick = onTestClick,
-                                onSaveClick = onSaveClick,
-                                showSaveButton = true,
-                            )
-                        }
+                        SheetActionButtons(
+                            onTestClick = onTestClick,
+                            onSaveClick = onSaveClick,
+                        )
                     }
                     dialogSection()
                 }
@@ -485,14 +424,12 @@ private fun AlarmBottomSheetContent(
 private fun SheetHeader(
     modifier: Modifier = Modifier,
     onCloseClick: () -> Unit,
-    onSaveClick: (() -> Unit)? = null,
-    showSaveAction: Boolean = false,
 ) {
     Row(
         modifier = modifier
             .fillMaxWidth()
             .padding(bottom = MaterialTheme.spacing.small),
-        horizontalArrangement = if (showSaveAction) SpaceBetween else Arrangement.End,
+        horizontalArrangement = Arrangement.End,
         verticalAlignment = CenterVertically,
     ) {
         AdaptiveIconButton(onClick = onCloseClick) {
@@ -501,16 +438,6 @@ private fun SheetHeader(
                 imageVector = Close,
                 contentDescription = "Dismiss",
             )
-        }
-        if (showSaveAction && onSaveClick != null) {
-            AdaptiveIconButton(onClick = onSaveClick) {
-                Icon(
-                    modifier = Modifier.size(AlarmBottomSheet.HEADER_ICON_SIZE),
-                    imageVector = Check,
-                    contentDescription = strings.save,
-                    tint = MaterialTheme.colorScheme.secondary,
-                )
-            }
         }
     }
 }
@@ -595,8 +522,6 @@ private fun BottomSettingsSection(
     snoozeMinutes: Int = 5,
     onSnoozeToggle: (Boolean) -> Unit = {},
 ) {
-    val showVibrateToggle = supportsAlarmVibration()
-
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -614,13 +539,11 @@ private fun BottomSettingsSection(
             ) {
                 onRepeatToggle(it)
             }
-            if (showVibrateToggle) {
-                TextWithCheckbox(
-                    text = strings.vibrate,
-                    initialState = vibrate,
-                ) {
-                    onVibrateToggle(it)
-                }
+            TextWithCheckbox(
+                text = strings.vibrate,
+                initialState = vibrate,
+            ) {
+                onVibrateToggle(it)
             }
         }
         SnoozeSettings(
@@ -650,14 +573,12 @@ private fun BottomSettingsSection(
 private fun SheetActionButtons(
     onTestClick: () -> Unit,
     onSaveClick: () -> Unit,
-    showSaveButton: Boolean = true,
 ) {
     SheetFooter(
         secondaryLabel = strings.testAlarm.uppercase(),
         primaryLabel = strings.save.uppercase(),
         onSecondaryClick = onTestClick,
         onPrimaryClick = onSaveClick,
-        showPrimary = showSaveButton,
     )
 }
 
@@ -669,7 +590,6 @@ internal fun SheetFooter(
     onSecondaryClick: () -> Unit,
     onPrimaryClick: () -> Unit,
     primaryEnabled: Boolean = true,
-    showPrimary: Boolean = true,
 ) {
     AdaptiveButton(
         modifier = Modifier
@@ -683,18 +603,16 @@ internal fun SheetFooter(
     ) {
         Text(fontSize = TEST_BUTTON_FONT_SIZE, text = secondaryLabel)
     }
-    if (showPrimary) {
-        AdaptiveButton(
-            modifier = Modifier.padding(top = SAVE_BUTTON_TOP_PADDING).fillMaxWidth(),
-            onClick = onPrimaryClick,
-            enabled = primaryEnabled,
-            colors = buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondary,
-                contentColor = MaterialTheme.colorScheme.onSecondary,
-            ),
-        ) {
-            Text(fontSize = SAVE_BUTTON_FONT_SIZE, text = primaryLabel)
-        }
+    AdaptiveButton(
+        modifier = Modifier.padding(top = SAVE_BUTTON_TOP_PADDING).fillMaxWidth(),
+        onClick = onPrimaryClick,
+        enabled = primaryEnabled,
+        colors = buttonColors(
+            containerColor = MaterialTheme.colorScheme.secondary,
+            contentColor = MaterialTheme.colorScheme.onSecondary,
+        ),
+    ) {
+        Text(fontSize = SAVE_BUTTON_FONT_SIZE, text = primaryLabel)
     }
 }
 
@@ -714,7 +632,7 @@ private fun BottomSheetPreview() {
                         onTimeCardClick = {}
                     ) {}
                 },
-                bottomSection = { onEditChallenge, onEditSnooze, onEditSound ->
+                bottomSection = { onEditChallenge, onEditSnooze ->
                     BottomSettingsSection(
                         onEditChallenge = onEditChallenge,
                         onEditSnooze = onEditSnooze,
@@ -724,7 +642,7 @@ private fun BottomSheetPreview() {
                         challenge = MathChallenge(difficulty = 1),
                         onRepeatToggle = {},
                         onVibrateToggle = {},
-                        onToneClick = onEditSound,
+                        onToneClick = {},
                         labelTextField = {
                             LabelTextField(
                                 text = TextFieldValue(),

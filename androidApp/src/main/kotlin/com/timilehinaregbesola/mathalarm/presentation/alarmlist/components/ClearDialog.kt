@@ -7,7 +7,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import cafe.adriel.lyricist.strings
-import com.mohamedrejeb.calf.ui.dialog.uikit.AlertDialogIosActionStyle
 
 @Composable
 fun ClearDialog(
@@ -27,7 +26,6 @@ fun ClearDialog(
                 onClear()
                 onCloseDialog()
             },
-            iosConfirmButtonStyle = AlertDialogIosActionStyle.Destructive,
         ),
         isDialogOpen = openDialog,
         onDismissRequest = onCloseDialog,

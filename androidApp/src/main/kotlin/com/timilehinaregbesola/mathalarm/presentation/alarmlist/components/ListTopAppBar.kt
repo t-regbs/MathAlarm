@@ -9,17 +9,15 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cafe.adriel.lyricist.strings
-import com.mohamedrejeb.calf.ui.button.AdaptiveIconButton
 import com.mohamedrejeb.calf.ui.ExperimentalCalfUiApi
+import com.mohamedrejeb.calf.ui.button.AdaptiveIconButton
 import com.mohamedrejeb.calf.ui.navigation.AdaptiveTopBar
-import com.mohamedrejeb.calf.ui.navigation.UIKitUIBarButtonItem
-import com.mohamedrejeb.calf.ui.uikit.UIKitImage
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.ListTopAppBar.APP_BAR_TITLE
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.ListTopAppBar.LIST_TITLE_FONT_SIZE
-import androidx.compose.ui.tooling.preview.Preview
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.DeleteSweep
 import com.timilehinaregbesola.mathalarm.presentation.ui.icon.Settings
 
@@ -47,17 +45,6 @@ fun ListTopAppBar(
                 Icon(imageVector = Settings, contentDescription = "Settings")
             }
         },
-        iosTitle = strings.alarms,
-        iosTrailingItems = listOf(
-            UIKitUIBarButtonItem(
-                image = UIKitImage.SystemName("xmark.bin"),
-                onClick = { openDialog() },
-            ),
-            UIKitUIBarButtonItem(
-                image = UIKitImage.SystemName("gearshape"),
-                onClick = onSettingsClick,
-            ),
-        ),
     )
 }
 

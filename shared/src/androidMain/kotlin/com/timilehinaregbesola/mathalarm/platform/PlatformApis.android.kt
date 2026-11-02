@@ -33,13 +33,10 @@ actual class PlatformVibrator actual constructor() {
 actual fun getDefaultAlarmTone(): String = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM).toString()
 
 actual fun supportsSkipNext(): Boolean = true
-actual fun supportsAlarmVibration(): Boolean = true
-actual fun alarmSoundPickerKind(): AlarmSoundPickerKind = AlarmSoundPickerKind.SYSTEM
 
 actual fun shouldStartMathScreenAlarmAudio(fromSheet: Boolean): Boolean = fromSheet
 
 actual fun isIosPlatform(): Boolean = false
-
 
 actual fun areNotificationsEnabled(): Boolean {
     val context: Context = getKoinContext()
@@ -50,8 +47,6 @@ actual fun getApplicationId(): String = getKoinContext().packageName
 
 actual fun getAppShareUrl(): String =
     "https://play.google.com/store/apps/details?id=${getApplicationId()}"
-
-actual fun previewAlarmTone(alarmTone: String, onFinished: () -> Unit) = onFinished()
 
 actual fun stopAlarmTonePreview() = Unit
 

@@ -35,13 +35,10 @@ actual fun getDefaultAlarmTone(): String {
 }
 
 actual fun supportsSkipNext(): Boolean = false
-actual fun supportsAlarmVibration(): Boolean = false
-actual fun alarmSoundPickerKind(): AlarmSoundPickerKind = AlarmSoundPickerKind.BUNDLED_LIBRARY
 
 actual fun shouldStartMathScreenAlarmAudio(fromSheet: Boolean): Boolean = true
 
 actual fun isIosPlatform(): Boolean = true
-
 
 actual fun areNotificationsEnabled(): Boolean {
     return AlarmSchedulerBridge.authorizationStatus() == "authorized"
@@ -52,10 +49,6 @@ actual fun getApplicationId(): String {
 }
 
 actual fun getAppShareUrl(): String = "https://github.com/t-regbs/MathAlarm"
-
-actual fun previewAlarmTone(alarmTone: String, onFinished: () -> Unit) {
-    com.timilehinaregbesola.mathalarm.interactors.IosAlarmAudioManager.startPreview(alarmTone, onFinished)
-}
 
 actual fun stopAlarmTonePreview() {
     com.timilehinaregbesola.mathalarm.interactors.IosAlarmAudioManager.stopPreview()

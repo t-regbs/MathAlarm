@@ -13,12 +13,6 @@ expect fun getDefaultAlarmTone(): String
 
 expect fun supportsSkipNext(): Boolean
 
-expect fun supportsAlarmVibration(): Boolean
-
-enum class AlarmSoundPickerKind { SYSTEM, BUNDLED_LIBRARY }
-
-expect fun alarmSoundPickerKind(): AlarmSoundPickerKind
-
 // Whether MathScreen should start its own alarm audio player.
 // Android keeps notification alarm audio in AlarmService; iOS starts audio from
 // the screen after notification tap because background notification audio is limited.
@@ -26,7 +20,6 @@ expect fun shouldStartMathScreenAlarmAudio(fromSheet: Boolean): Boolean
 
 // True when running on iOS.
 expect fun isIosPlatform(): Boolean
-
 
 // Check if notifications are enabled for the app
 expect fun areNotificationsEnabled(): Boolean
@@ -39,8 +32,6 @@ expect fun getAppShareUrl(): String
 
 // Applies platform night mode state for Android XML resources and launch surfaces.
 expect fun applyPlatformNightMode(theme: AlarmPreferences.Theme)
-
-expect fun previewAlarmTone(alarmTone: String, onFinished: () -> Unit)
 
 expect fun stopAlarmTonePreview()
 
