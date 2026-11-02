@@ -12,7 +12,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Alignment.Companion.Center
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight.Companion.Bold
@@ -39,21 +38,13 @@ fun AlarmDays(
         horizontalArrangement = SpaceBetween,
     ) {
         days.forEachIndexed { index, day ->
-            val sb = StringBuilder(currentDays)
-            val sel = currentDays[index] == ACTIVE_ALARM_DAY
-            val checkedState = mutableStateOf(sel)
             RingDayChip(
                 day = day,
-                selected = checkedState.value,
-                onSelectChange = {
-                    checkedState.value = it
-                    if (it) {
-                        sb[index] = ACTIVE_ALARM_DAY
-                        onValueChange(sb.toString())
-                    } else {
-                        sb[index] = INACTIVE_ALARM_DAY
-                        onValueChange(sb.toString())
-                    }
+                selected = currentDays[index] == ACTIVE_ALARM_DAY,
+                onSelectChange = { selected ->
+                    val updatedDays = StringBuilder(currentDays)
+                    updatedDays[index] = if (selected) ACTIVE_ALARM_DAY else INACTIVE_ALARM_DAY
+                    onValueChange(updatedDays.toString())
                 },
             )
         }
