@@ -137,12 +137,15 @@ final class NativeAlarmPermissionGuidePlayer: NSObject, ObservableObject, AVPict
         completionHandler(true) // AVKit returns to this scene; its retained editor is already present.
     }
 
-    isolated deinit {
+    deinit {
         startTimeout?.cancel()
-        pip?.delegate = nil
-        if pip?.isPictureInPictureActive == true { pip?.stopPictureInPicture() }
-        player.pause()
-        if ownsAudio { _ = IosApplication.shared.endSettingsGuideAudio(ownerId: audioOwner) }
+        let pip = pip, player = player, ownsAudio = ownsAudio, audioOwner = audioOwner
+        DispatchQueue.main.async {
+            pip?.delegate = nil
+            if pip?.isPictureInPictureActive == true { pip?.stopPictureInPicture() }
+            player.pause()
+            if ownsAudio { _ = IosApplication.shared.endSettingsGuideAudio(ownerId: audioOwner) }
+        }
     }
 }
 

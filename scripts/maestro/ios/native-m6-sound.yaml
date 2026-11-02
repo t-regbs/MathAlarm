@@ -31,7 +31,7 @@ appId: com.timilehinaregbesola.mathalarm
 - tapOn:
     id: editor-sound
 - assertVisible:
-    id: sound-done
+    id: BackButton
 - scrollUntilVisible:
     element:
       id: preview-alarm_daybreak
@@ -104,7 +104,7 @@ appId: com.timilehinaregbesola.mathalarm
     id: tone-alarm_clear_signal
 - takeScreenshot: native-max-type-sound-clear-selected
 - tapOn:
-    id: sound-done
+    id: BackButton
 - scrollUntilVisible:
     element:
       id: editor-sound

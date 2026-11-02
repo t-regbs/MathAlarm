@@ -3,7 +3,7 @@ package com.timilehinaregbesola.mathalarm.di
 import androidx.room.Room
 import com.timilehinaregbesola.mathalarm.analytics.AnalyticsTracker
 import com.timilehinaregbesola.mathalarm.analytics.NoopAnalyticsTracker
-import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import androidx.sqlite.driver.NativeSQLiteDriver
 import co.touchlab.kermit.Logger
 import co.touchlab.kermit.StaticConfig
 import co.touchlab.kermit.platformLogWriter
@@ -34,11 +34,7 @@ internal val iosModule = module {
     single<AlarmDatabase> {
         println("IosModule: Building Room database (lazy init)")
         val dbFile = documentDirectory() + "/alarm_history_database.db"
-        Room.databaseBuilder<AlarmDatabase>(
-            name = dbFile
-        )
-            .setDriver(BundledSQLiteDriver())
-            .build()
+        buildIosAlarmDatabase(dbFile)
     }
     
     single { get<AlarmDatabase>().alarmDatabaseDao }
@@ -70,6 +66,12 @@ internal val iosModule = module {
         )
     }
 }
+
+/** Reopens existing schema-9 files; the driver change does not migrate/reset data. */
+internal fun buildIosAlarmDatabase(filePath: String): AlarmDatabase =
+    Room.databaseBuilder<AlarmDatabase>(name = filePath)
+        .setDriver(NativeSQLiteDriver())
+        .build()
 
 /**
  * Initialize Koin for iOS.

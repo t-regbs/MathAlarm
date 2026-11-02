@@ -1,0 +1,27 @@
+# English disposable simulator. Verify the native link without contacting any recipient.
+appId: com.timilehinaregbesola.mathalarm
+---
+- launchApp
+- runFlow:
+    when:
+      visible:
+        id: announcementGotIt
+    commands:
+      - tapOn:
+          id: announcementGotIt
+- runFlow:
+    when:
+      notVisible:
+        id: app-settings
+    commands:
+      - tapOn: "More"
+- tapOn: "Settings"
+- assertVisible: "App Settings"
+- scrollUntilVisible:
+    element:
+      id: privacyPolicyLink
+    direction: DOWN
+- assertVisible: "Privacy policy"
+- takeScreenshot: native-privacy-policy-link
+- tapOn:
+    id: appSettingsDone

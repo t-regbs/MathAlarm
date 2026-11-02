@@ -35,6 +35,7 @@ struct ContentView: View {
 @MainActor
 struct NativeApplicationRoot: View {
     @Environment(\.scenePhase) private var scenePhase
+    @Environment(\.horizontalSizeClass) private var horizontalSizeClass
     @StateViewModel private var list = SharedFeatures.shared.list()
     @StateViewModel private var settings = SharedFeatures.shared.settings()
     @StateObject private var announcements = NativeAnnouncementPresentation()
@@ -47,15 +48,7 @@ struct NativeApplicationRoot: View {
     var body: some View {
         ZStack {
             NativeSessionOwners(sessions: sessions)
-            NavigationSplitView(preferredCompactColumn: .constant(
-                sessions.selectedEditorID == nil ? .sidebar : .detail)) {
-                NativeAlarmList(model: list, sessions: sessions, openEditor: { alarm in
-                    sessions.requestOpenEditor(alarm: alarm)
-                }, openSettings: { settingsPresented = true })
-            } detail: {
-                NativeEditorStack(sessions: sessions)
-            }
-            .id(splitPresentation)
+            navigation
         }
         .tint(MatAlarmPalette.accent)
         .onChange(of: scenePhase) { phase in sessions.alarmSettingsSceneChanged(phase) }
@@ -168,6 +161,34 @@ struct NativeApplicationRoot: View {
             .tint(MatAlarmPalette.accent)
             .interactiveDismissDisabled()
         }
+    }
+
+    @ViewBuilder
+    private var navigation: some View {
+        if horizontalSizeClass == .compact {
+            // A collapsed split view can show its sidebar when a nested stack
+            // programmatically pops the completed test. The retained editor,
+            // rather than the split view's column state, owns compact navigation.
+            if sessions.selectedEditorID != nil {
+                NativeEditorStack(sessions: sessions)
+            } else {
+                NavigationStack { alarmList }
+            }
+        } else {
+            NavigationSplitView(preferredCompactColumn: .constant(
+                sessions.selectedEditorID == nil ? .sidebar : .detail)) {
+                alarmList
+            } detail: {
+                NativeEditorStack(sessions: sessions)
+            }
+            .id(splitPresentation)
+        }
+    }
+
+    private var alarmList: some View {
+        NativeAlarmList(model: list, sessions: sessions, openEditor: { alarm in
+            sessions.requestOpenEditor(alarm: alarm)
+        }, openSettings: { settingsPresented = true })
     }
 
     private func interruptSupplementaryPresentation() {

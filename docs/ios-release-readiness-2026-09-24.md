@@ -1,5 +1,104 @@
 # iOS first-release readiness review
 
+**15 October fresh candidate:** **2.3.1(25)** passes signed Release archive,
+development export, strict signature/resource/privacy audits and in-place upgrade
+preservation including full active progress on iPhone 11/iOS 27.0.1. Build 24 reveals
+missing app sound after audible terminated fallback/Stop, despite exact restoration.
+The iOS-only build 25 repair passes **226 shared iOS and 19 native hosted tests**;
+the actual terminated native fallback/Stop/unlock retest restores exact question 2
+and audible app sound by user observation. Physical configured-Mail cancellation
+passes. Only the disposable fixture is deleted; all five original rows are unchanged
+and progress/recovery/queue/failure/native metadata are empty. **100-second acoustic
+no-ring observation passes**, user-confirmed “yes silent.” See the
+[15 October M8 record](native-ui-migration-milestone-8-2026-10-15.md). Milestone 8,
+distribution/TestFlight/store readiness and unobserved physical/client gates
+remain OPEN. Development signing does not establish distribution acceptance;
+earlier audit claims retain their dated evidence limits.
+
+| Release gate as of 15 October | Evidence / remaining blocker |
+| --- | --- |
+| Current candidate identity/signing/resources/privacy | Development Release archive/export and strict audits pass for 2.3.1(25), minimum target 26.0 and both families. Profile expires **22 October 2026 19:33:03 UTC**, superseding the expired 3 October profile below. No current distribution identity/export acceptance |
+| Durable upgrade/terminated fallback | 23 → 24 retains five original rows/preferences; active 24 → 25 retains full progress/recovery/schema/preferences. Audible fallback and exact progress/app sound restoration pass on build 25. Initial terminated delivery, overlapping deliveries, natural recurring dates, old queued/native registrations, reboot and long elapsed-time reliability remain open |
+| Cancellation/audio | State cleanup and user-confirmed ≥100-second acoustic completion quiet pass on build 25. Current armed snooze/edit/disable/delete matrix, interruptions/routes, Silent/Focus and physical timing/stalls remain open |
+| Native/adaptive/client checks | Build 24: iPhone 28 pass/1 iPad-only skip; iPad 24 pass; sampled Duo transitions. Build 25: 19 hosted pass, physical configured-Mail Cancel/discard pass. Real VoiceOver, physical iPad/resizing, full current accessibility/locale/appearance/Duo preview and permission/PiP return remain open |
+| Runtime / minimum OS | SwiftUI negative-frame/publishing warnings persist, physical profiler yields no samples; simulator lease timing is bounded evidence. Exact iOS 26.0 runtime unavailable locally |
+| Support/privacy/store | Configured URLs return HTTP 200 today. Policy accuracy, privacy questionnaire, account/provider access, build uniqueness, final assets/review metadata, distribution and TestFlight processing/install/upgrade are unverified; no submission/upload |
+
+The 3 October table and prose below are dated history. Their “pending” statements
+are superseded only for the checks explicitly passed above; they do not undo
+Milestones 1–7 or establish the remaining physical/release gates.
+
+## Current acceptance status — 3 October 2026
+
+**Do not submit. Milestone 8 remains OPEN.** The [M8 implementation/evidence
+record](native-ui-migration-milestone-8-2026-10-03.md) records that dated run;
+the 15 October record above is the current authority. Milestones 1–7 are complete against their documented gates;
+sections below retain dated audit history. Their earlier source descriptions and
+unchecked items are superseded only to the scope shown here.
+
+| Older audit claim / gate | Current implementation and evidence | Remaining acceptance |
+| --- | --- | --- |
+| Compose/placeholder presentation, native keyboard, incomplete settings/parity | iOS is SwiftUI, shared rules renderer-free, Android retains Compose; M4–7 implement editor/challenge/settings/parity and nine-locale resources. c158fd3 fixes enabled-edit duplicate IDs, premature challenge presentation, literal plus labels, reverted edits and preview restarts. | Live adaptive resizing/Duo, spoken VoiceOver, configured-Mail cancellation and complete localization/appearance signoff remain open. Historical screenshot evidence is sampled. |
+| One pending handoff, interpolation/metadata-loss risks, once-only queue acknowledgement | Durable queued identity and shared progress/restoration, stale-token guards, recurring coalescing, recovery retry presentation and cleanup debt are implemented and tested. Build 21 physical termination/relaunch preserves exact progress with an empty queue; user confirms the same second question/sound. | Background/terminated initial delivery, multiple real deliveries, recurring dates without edits and reboot remain pending. Foreground snooze delivery passes by user observation. |
+| Five attempts / ten-minute recovery limit, missing recovery failure UI | Limits removed; 101 controlled follow-ups pass. Build21 locked recovery/audibility beyond ten minutes, solve/no ring ≥70s and foreground snooze pass. Build22 foreground deferral passes, but lock/unlock exposes a cancellation warning. Build23 protects the refresh lifetime, passes 17 hosted tests and physical lock/unlock before/after snooze, with active progress preserved and snooze/completion state cleanup verified. | New-policy background/termination native fallback and acoustic cancellation ≥100s, failed snooze, edit/disable/delete-with-armed-recovery cancellation and measured acoustic timing remain pending. |
+| Incomplete privacy manifest and missing in-app policy link | Build22 signed archive passes the strict bounded import audit: supported iOS system SQLite removes bundled `_statfs`/`_fstatfs` imports without an unsupported purpose declaration. CA92.1 UserDefaults and C617.1 app-container file timestamps remain. Help has a nine-locale privacy Link; policy/support returned HTTP 200. | Generic older policy needs iOS content confirmation/update and store privacy questionnaire. Import/liveness checks are not comprehensive privacy or store acceptance. Build21's failed audit remains retained history. |
+| Static build 20, unsigned packaging only | Xcode version settings drive Info.plist, current candidate 2.3.1(23). Build21 → 22 simulator/physical upgrades preserve rows/schema/preferences; production-driver legacy fixture/reopen passes. Physical 22 → 23 preserves active progress/recovery session and all rows/schema/stable preferences. Build23 signed development Release archive, strict signature/resources/privacy audit and development IPA export pass. | Earlier released schemas/queued payload and physical registration upgrade, and App Store build uniqueness unverified. Development profile expires 8 October 2026 21:06:55 UTC; renew before later device work. |
+| Signed distribution/TestFlight/store work | Local App Store export attempted with destination export and no upload. It fails for missing matching profile and unavailable local authenticated provider. | Distribution identity/profile, authenticated provider, store record/assets/agreements/privacy/review notes, TestFlight processing/install/upgrade and submission remain unverified. No assertion is made that account-side records are absent. |
+| Minimum iOS 26 and audio/runtime warnings | Deployment target stays 26.0. A real isolated-deinit crash on 26.3.1 is fixed and regressed; simulator audio session timings recorded. Unsupported hosted hierarchy warning removed. Physical locked recovery, wrong-answer and post-relaunch sound pass on build21. | Exact 26.0 runtime unavailable; invalid-frame/publishing/appearance warnings remain unresolved. Physical first-sample latency/main-thread stalls, interruptions, routing, silent/Focus and overnight/multi-day checks remain open; profiler attachment produced no samples. |
+
+Current artifacts are in `build/native-ui-m8/`, including
+`recovery-cancellation23/MathAlarm23.xcarchive`, `recovery-cancellation23/export23/MathAlarm.ipa`, native xcresults, Android delivery logs,
+upgrade snapshots and separate packaging/privacy reports. The IPA uses **development
+signing**, not App Store distribution. Physical observation was initially deferred;
+the subsequently connected iPhone 11 (now 27.0.1) received build 21 in place, with
+all four existing alarm rows and preferences unchanged in before/after copies.
+The first locked Stop/recovery cycle passed by user observation: audible 18:36
+follow-up, unlock to maths, solve and no further ring for at least 70 seconds.
+Snapshots confirm accepted recovery while locked and subsequent queue/recovery
+cleanup. The extended run advances native acceptance from attempt 10 to 11 after
+ten minutes in the same session, with every recovery audible and wrong-answer
+sound retained by user observation. Forced termination/ordinary relaunch preserves
+the exact five-field progress record with an empty queue; the user confirms the
+same second question and sound. Five-minute snooze clears old recovery and rings
+foregrounded on time, then initializes fresh progress. The disposable alarm is
+deleted and original rows remain equal. Other cancellation/delivery states and the
+remaining physical matrix stay open. Candidate **22 is installed**, adding
+foreground fallback renewal requested by the user and replacing bundled SQLite
+with the supported system driver. The user confirms no system notification during
+active solving; snapshots 2m38s apart preserve exact partial progress, the later
+one over three minutes after delivery, and show cleanup after completion.
+The fresh unfinished lock/termination fallback
+test is still pending. Physical 21 → 22 upgrade preserves all four original alarm
+rows/schema/preferences. The public schema-9 legacy fixture/reopen regression,
+actual simulator binary upgrade, 866 fresh shared/Android tests, signed archive,
+strict import audit (zero undeclared categories) and development export pass.
+The full build22 iPhone suite passes 22 tests with one iPad-only skip before the
+final token-selection refinement; final-source serial hosted rerun passes 15 and
+iPad selected checks pass 17. A synthetic Repeat-transition timeout during concurrent
+simulator work remains retained; ordinary serial Repeat/Back and the identical
+hosted rerun pass without source/assertion/deadline changes.
+The next physical lock/unlock run fails on build22 with “Alarm recovery needs
+attention. Try again.” despite preserved question2/audio. Build23 fixes the
+scene-cancellation race, passes 17 hosted tests and signed archive/audit/export,
+and is now installed with the active occurrence/progress/session preserved.
+The user confirms physical lock/unlock without errors both before and after
+snooze. New-policy native fallback acceptance remains pending.
+Build23's subsequent accepted snooze clears old recovery/progress/queue and due
+time is 20:12:27.530 BST; actual ring/no early recovery confirmation is pending.
+The post-due copy has that exact new activeAt, fresh progress/new recovery session
+and no persisted failure; bookkeeping passes without claiming acoustic timing or
+unobserved acoustic timing. Completion later clears all recovery/progress/queue;
+Final 20:18 verification confirms the user-deleted fixture is gone, recovery/
+progress/queue cleared and four original alarms unchanged. The requested 100s
+acoustic no-ring observation is not separately stated; new-policy termination
+fallback remains pending on a fresh unfinished occurrence.
+The Pixel remains untouched.
+Use the
+updated [recovery/device checklist](ios-alarm-recovery-manual-test.md) when available.
+Submission/publication remains a separate action.
+
+## Original review and dated follow-ups
+
 Reviewed 24 September 2026 against commit `8fd60fc`. Implementation is on `codex/ios-first-release`; the first batch is committed as `d6fef01` and later work is recorded below.
 
 **Recommendation: do not submit this build yet.** Source changes address the identified handoff and authorization gaps, but physical alarm delivery, interruption recovery, final privacy details, and App Store packaging still need release-blocking verification.

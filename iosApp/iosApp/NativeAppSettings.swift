@@ -158,6 +158,8 @@ struct NativeAppSettings: View {
                 .accessibilityIdentifier("whatsNewButton")
             }
             Section("Help") {
+                Link("Privacy policy", destination: NativeExternalPresentation.privacyPolicyURL)
+                    .accessibilityIdentifier("privacyPolicyLink")
                 Button { external.presentFeedback() } label: {
                     settingsLabel("Send Feedback", detail: "Send feedback to the developer", symbol: "envelope")
                 }
@@ -355,6 +357,7 @@ final class NativeExternalPresentation: NSObject, ObservableObject, @preconcurre
     private let openURL: @MainActor (URL, @escaping URLCompletion) -> Void
     private let canSendMail: @MainActor () -> Bool
     static let supportEmail = "aregbestimi@gmail.com"
+    static let privacyPolicyURL = URL(string: "https://sites.google.com/view/math-alarm-privacy-policy")!
     static var shareText: String { "MathAlarm Clock\nSolve math problems to wake up! " + PlatformServices_iosKt.getAppShareUrl() }
     static var feedbackURL: URL { URL(string: "mailto:\(supportEmail)")! }
 

@@ -281,9 +281,17 @@ final class NativeFlowTests: XCTestCase {
     func testIPadSwitchingAlarmsResolvesUnsavedChanges() throws {
         guard UIDevice.current.userInterfaceIdiom == .pad else { throw XCTSkip("iPad sidebar switching flow") }
         let orientation = XCUIDevice.shared.orientation
-        XCUIDevice.shared.orientation = .landscapeLeft
         defer { XCUIDevice.shared.orientation = orientation }
         let app = launchEditingApp()
+        // Establish the automation session before rotating. On iPadOS 26.3.1,
+        // launching after rotation can synthesize portrait-coordinate taps
+        // against the landscape hierarchy (the Add tap misses its button).
+        XCUIDevice.shared.orientation = .landscapeLeft
+        let landscape = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            let frame = app.windows.firstMatch.frame
+            return frame.width > frame.height
+        }, object: nil)
+        XCTAssertEqual(XCTWaiter.wait(for: [landscape], timeout: 5), .completed)
         let firstName = "Sidebar first alarm"
         let secondName = "Sidebar second alarm"
         addDisabledAlarm(firstName, in: app)
@@ -400,11 +408,155 @@ final class NativeFlowTests: XCTestCase {
         for _ in 0..<5 where !sound.isHittable { app.swipeUp() }
         sound.tap()
         app.buttons["tone-alarm_daybreak"].tap()
-        app.buttons["sound-done"].tap()
+        app.navigationBars.buttons["BackButton"].firstMatch.tap()
         app.buttons["save-alarm"].tap()
         XCTAssertTrue(app.buttons["save-alarm"].waitForNonExistence(timeout: 15), app.debugDescription)
         capture(app, name: "Enabled alarm after repeated AlarmKit edits")
         swipeToDelete(alarmButton(name, in: app), in: app)
+    }
+
+    func testSoundPickerNativeBackKeepsToneAndConfigurationOpen() {
+        let app = launchEditingApp()
+        let name = "Sound Back draft " + UUID().uuidString.prefix(8)
+        addDisabledAlarm(name, in: app)
+        alarmButton(name, in: app).tap()
+        let title = app.textFields["editor-title"]
+        XCTAssertTrue(title.waitForExistence(timeout: 5))
+        title.tap(); title.typeText(" changed")
+        app.buttons["editor-keyboard-done"].tap()
+        let sound = app.buttons["editor-sound"]
+        for _ in 0..<5 where !sound.isHittable { app.swipeUp() }
+        XCTAssertTrue(sound.isHittable, app.debugDescription)
+        sound.tap()
+
+        let navigation = app.navigationBars.firstMatch
+        let back = navigation.buttons["BackButton"].firstMatch
+        XCTAssertTrue(back.waitForExistence(timeout: 5))
+        XCTAssertEqual(navigation.buttons.count, 1, navigation.debugDescription)
+        XCTAssertFalse(app.buttons["sound-back"].exists)
+        XCTAssertFalse(app.buttons["sound-done"].exists)
+        XCTAssertFalse(navigation.buttons["Options"].exists)
+        app.buttons["tone-alarm_rally"].tap()
+        capture(app, name: "Tone picker with native Back and immediate selection")
+        back.tap()
+        XCTAssertTrue(app.buttons["save-alarm"].waitForExistence(timeout: 5))
+        XCTAssertFalse(app.buttons["Discard selection"].exists)
+        XCTAssertFalse(app.buttons["Discard changes"].exists)
+        XCTAssertTrue(sound.label.contains("Rally"), sound.debugDescription)
+
+        sound.tap()
+        XCTAssertTrue(back.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["tone-alarm_rally"].isSelected)
+        // Previewing a different tone must not change the selected draft tone.
+        app.buttons["preview-alarm_daybreak"].tap()
+        XCTAssertTrue(app.buttons["tone-alarm_rally"].isSelected)
+        back.tap()
+        XCTAssertTrue(app.buttons["save-alarm"].waitForExistence(timeout: 5))
+        sound.tap()
+        XCTAssertTrue(back.waitForExistence(timeout: 5))
+        XCTAssertEqual(app.buttons["preview-alarm_daybreak"].label, "Preview Daybreak")
+        XCTAssertTrue(app.buttons["tone-alarm_rally"].isSelected)
+        app.buttons["tone-alarm_daybreak"].tap()
+        back.tap()
+        XCTAssertTrue(app.buttons["save-alarm"].waitForExistence(timeout: 5))
+        XCTAssertTrue(sound.label.contains("Daybreak"), sound.debugDescription)
+        for _ in 0..<5 where !title.isHittable { app.swipeDown() }
+        XCTAssertEqual(title.value as? String, name + " changed")
+        app.buttons["discard-draft"].tap()
+        app.buttons["Discard changes"].tap()
+        XCTAssertTrue(app.buttons["add-alarm"].waitForExistence(timeout: 5))
+        alarmButton(name, in: app).tap()
+        XCTAssertTrue(title.waitForExistence(timeout: 5))
+        for _ in 0..<5 where !sound.isHittable { app.swipeUp() }
+        sound.tap()
+        XCTAssertTrue(back.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["tone-alarm_orbit"].isSelected, "Main editor Cancel must leave the saved alarm unchanged")
+        back.tap()
+        app.buttons["discard-draft"].tap()
+        XCTAssertTrue(app.buttons["add-alarm"].waitForExistence(timeout: 5))
+        swipeToDelete(alarmButton(name, in: app), in: app)
+    }
+
+    func testCompletedPreviewReturnsToConfigurationAndKeepsUnsavedDraft() throws {
+        let app = launchEditingApp()
+        let savedName = "Preview completion " + UUID().uuidString.prefix(8)
+        addDisabledAlarm(savedName, in: app)
+
+        for editingSavedAlarm in [true, false] {
+            if editingSavedAlarm { alarmButton(savedName, in: app).tap() }
+            else { app.buttons["add-alarm"].tap() }
+            let title = app.textFields["editor-title"]
+            XCTAssertTrue(title.waitForExistence(timeout: 5))
+            title.tap(); title.typeText(" unsaved preview draft")
+            app.buttons["editor-keyboard-done"].tap()
+            let draftTitle = try XCTUnwrap(title.value as? String)
+
+            let sound = app.buttons["editor-sound"]
+            for _ in 0..<5 where !sound.isHittable { app.swipeUp() }
+            sound.tap()
+            XCTAssertTrue(app.buttons["tone-alarm_rally"].waitForExistence(timeout: 5))
+            app.buttons["tone-alarm_rally"].tap()
+            app.buttons["BackButton"].firstMatch.tap()
+
+            let questionCount = editingSavedAlarm ? 2 : 1
+            if editingSavedAlarm {
+                app.buttons["editor-challenge"].tap()
+                let count = app.steppers["challenge-question-count"]
+                XCTAssertTrue(count.waitForExistence(timeout: 5))
+                count.buttons["challenge-question-count-Increment"].tap()
+                app.buttons["BackButton"].firstMatch.tap()
+            }
+            let preview = app.buttons["editor-test-alarm"]
+            for _ in 0..<5 where !preview.isHittable { app.swipeUp() }
+            preview.tap()
+            let answer = app.textFields["challenge-answer"]
+            XCTAssertTrue(answer.waitForExistence(timeout: 5))
+            for question in 1...questionCount {
+                if questionCount > 1 {
+                    XCTAssertTrue(app.staticTexts["Question \(question) of \(questionCount)"].waitForExistence(timeout: 5))
+                }
+                let problem = app.staticTexts["challenge-problem"].label
+                let numbers = problem.replacingOccurrences(of: ",", with: "")
+                    .replacingOccurrences(of: "−", with: "-")
+                    .split(separator: " ").compactMap { Int($0) }
+                XCTAssertEqual(numbers.count, 2, problem)
+                let result: Int
+                if problem.contains("plus") { result = numbers[0] + numbers[1] }
+                else if problem.contains("minus") { result = numbers[0] - numbers[1] }
+                else if problem.contains("multiplied by") { result = numbers[0] * numbers[1] }
+                else {
+                    XCTAssertTrue(problem.contains("divided by"), problem)
+                    result = numbers[0] / numbers[1]
+                }
+                answer.tap(); answer.typeText(String(result))
+                app.buttons["challenge-keyboard-done"].tap()
+                app.buttons["challenge-submit"].tap()
+            }
+            capture(app, name: editingSavedAlarm ? "Completed saved alarm preview destination" : "Completed new alarm preview destination")
+            XCTAssertTrue(app.buttons["save-alarm"].waitForExistence(timeout: 5), app.debugDescription)
+            XCTAssertTrue(app.navigationBars[editingSavedAlarm ? "Edit alarm" : "New alarm"].exists)
+            XCTAssertFalse(app.buttons["Discard changes"].exists)
+            for _ in 0..<5 where !title.isHittable { app.swipeDown() }
+            XCTAssertEqual(title.value as? String, draftTitle)
+            for _ in 0..<5 where !sound.isHittable { app.swipeUp() }
+            XCTAssertTrue(sound.label.contains("Rally"), sound.debugDescription)
+            XCTAssertTrue(app.buttons["editor-challenge"].label.contains("\(questionCount) question"))
+            app.buttons["discard-draft"].tap()
+            app.buttons["Discard changes"].tap()
+            XCTAssertTrue(app.buttons["add-alarm"].waitForExistence(timeout: 5))
+        }
+        // A test must not persist any of the configuration changes.
+        alarmButton(savedName, in: app).tap()
+        let title = app.textFields["editor-title"]
+        XCTAssertTrue(title.waitForExistence(timeout: 5))
+        XCTAssertEqual(title.value as? String, savedName)
+        let sound = app.buttons["editor-sound"]
+        for _ in 0..<5 where !sound.isHittable { app.swipeUp() }
+        XCTAssertTrue(sound.label.contains("Orbit"))
+        XCTAssertTrue(app.buttons["editor-challenge"].label.contains("1 question"))
+        app.buttons["discard-draft"].tap()
+        XCTAssertTrue(app.buttons["add-alarm"].waitForExistence(timeout: 5))
+        swipeToDelete(alarmButton(savedName, in: app), in: app)
     }
 
     func testPreviewTransitionsPreserveDraftAndLiteralLabel() {

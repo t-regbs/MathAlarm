@@ -70,8 +70,7 @@ enum NativeSettingsVerification {
         second.model.onEvent(event: AddEditAlarmEvent.EnteredTitle(value: "M6 retained second draft"))
         sessions.setEditorPath([.sound], id: second.id)
         let sound = sessions.soundSelection(sessionID: second.id)!
-        sound.begin(currentTone: second.model.state.tone)
-        sound.choose("alarm_rally")
+        second.model.onEvent(event: AddEditAlarmEvent.OnToneChange(value: "alarm_rally"))
         verificationCheck(sessions.beginPermissionRequest(id: second.id))
         let originalFirst = first.model
         let originalSecond = second.model
@@ -121,7 +120,8 @@ enum NativeSettingsVerification {
             verificationCheck(sessions.selectedEditor?.model === originalSecond)
             verificationCheck(originalFirst.state.alarmTitle == "M6 retained first draft")
             verificationCheck(originalSecond.state.alarmTitle == "M6 retained second draft")
-            verificationCheck(sessions.editorPaths[second.id] == [.sound] && sound.pendingTone == "alarm_rally")
+            verificationCheck(sessions.editorPaths[second.id] == [.sound] && originalSecond.state.tone == "alarm_rally"
+                && sessions.soundSelection(sessionID: second.id) === sound)
             verificationCheck(sessions.permissionRequests.contains(second.id))
         }
         for sort in [AlarmPreferencesAlarmSortOrder.creation, .time] {
@@ -132,7 +132,7 @@ enum NativeSettingsVerification {
         let replacement = SharedFeatures.shared.settings()
         verificationCheck(replacement.state.theme == .dark && replacement.state.sortOrder == .time)
         replacement.close()
-        VerificationResults.shared.pass("native settings all themes/sorts use persisted keys while two drafts, nested route, staged sound and permission guard retain owners")
+        VerificationResults.shared.pass("native settings all themes/sorts use persisted keys while two drafts, nested route, draft tone and permission guard retain owners")
 
         let announcements = NativeAnnouncementPresentation()
         let seenBefore = model.state.seenAnnouncementIds

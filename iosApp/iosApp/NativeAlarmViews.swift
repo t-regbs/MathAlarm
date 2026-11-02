@@ -10,10 +10,14 @@ private struct NativeNextAlarmSubtitle: ViewModifier {
     let loading: Bool
     @Environment(\.scenePhase) private var scenePhase
     @State private var now = Date()
+    @ScaledMetric(relativeTo: .body) private var subtitleSize = 17
 
     func body(content: Content) -> some View {
+        let subtitle = loading ? "" : NativeAlarmPresentation.nextAlarmSubtitle(alarms, now: now)
         content
-            .navigationSubtitle(Text(verbatim: loading ? "" : NativeAlarmPresentation.nextAlarmSubtitle(alarms, now: now)))
+            .navigationSubtitle(Text(verbatim: subtitle))
+            .background(NativeNextAlarmSubtitleStyle(subtitle: subtitle, pointSize: subtitleSize)
+                .frame(width: 0, height: 0))
             .task {
                 while !Task.isCancelled {
                     now = Date()
@@ -30,6 +34,53 @@ private struct NativeNextAlarmSubtitle: ViewModifier {
             .onReceive(NotificationCenter.default.publisher(for: .NSSystemTimeZoneDidChange)) { _ in
                 now = Date()
             }
+    }
+}
+
+/// SwiftUI's native subtitle currently ignores Text font modifiers. Use the
+/// navigation item's public attributed subtitle so the large title still collapses normally.
+private struct NativeNextAlarmSubtitleStyle: UIViewControllerRepresentable {
+    let subtitle: String
+    let pointSize: CGFloat
+
+    func makeUIViewController(context: Context) -> Controller { Controller() }
+
+    func updateUIViewController(_ controller: Controller, context: Context) {
+        controller.subtitle = subtitle
+        controller.pointSize = pointSize
+        controller.applyStyle()
+    }
+
+    final class Controller: UIViewController {
+        var subtitle = ""
+        var pointSize: CGFloat = 17
+
+        override func loadView() {
+            view = UIView()
+            view.isUserInteractionEnabled = false
+        }
+
+        override func viewDidLayoutSubviews() {
+            super.viewDidLayoutSubviews()
+            applyStyle()
+        }
+
+        override func viewDidAppear(_ animated: Bool) {
+            super.viewDidAppear(animated)
+            applyStyle()
+        }
+
+        func applyStyle() {
+            guard let owner = navigationController?.topViewController,
+                  view.isDescendant(of: owner.view) else { return }
+            var styled = AttributedString(subtitle)
+            styled.uiKit.font = UIFont.systemFont(ofSize: pointSize, weight: .medium)
+            styled.uiKit.foregroundColor = UIColor.label.withAlphaComponent(0.72)
+            let value = subtitle.isEmpty ? nil : styled
+            if owner.navigationItem.largeAttributedSubtitle != value {
+                owner.navigationItem.largeAttributedSubtitle = value
+            }
+        }
     }
 }
 
@@ -209,6 +260,8 @@ struct NativeAlarmList: View {
             if hasListStatus { Section { listStatus } }
         }
         .listStyle(.insetGrouped)
+        // Android cards have 8 dp of padding above and below: a 16 dp gap.
+        .listSectionSpacing(16)
     }
 
     private func alarmRow(_ alarm: app.Alarm) -> some View {
@@ -724,10 +777,7 @@ struct NativeEditorSubpage: View {
             case .snooze: NativeSnoozeSettings(model: model)
             case .sound:
                 if let selection = sessions.soundSelection(sessionID: sessionID) {
-                    NativeSoundPicker(model: model, selection: selection, onClose: {
-                        var path = sessions.editorPaths[sessionID] ?? []
-                        if path.last == .sound { path.removeLast(); sessions.setEditorPath(path, id: sessionID) }
-                    })
+                    NativeSoundPicker(model: model, selection: selection)
                 }
             case .preview:
                 NativeMathPreview(editorID: sessionID, sessions: sessions)
@@ -772,6 +822,7 @@ struct NativeOwnedChallenge: View {
         let failure = (result?.outcome as? ChallengeOutcome.Failure)?.error
         NativeChallengeView(model: session.model, preview: session.isPreview,
             retryInitialization: { sessions.initialize(session: session) },
+            recoveryOwnerID: session.isPreview ? nil : session.id,
             cancelPreview: session.editorID.map { editorID in { sessions.closePreview(editorID: editorID, expectedSessionID: session.id) } },
             returnFromStale: { sessions.returnFromStaleOccurrence(sessionID: session.id) },
             failure: failure, failureResultID: result?.id,
@@ -838,6 +889,17 @@ enum NativeAlarmPresentation {
 
     static func nextAlarmSubtitle(_ alarms: [app.Alarm], now: Date) -> String {
         guard let next = nextAlarmDate(alarms, now: now) else { return "" }
+        return nextAlarmSubtitle(next: next, now: now)
+    }
+
+    static func nextAlarmSubtitle(next: Date, now: Date) -> String {
+        let remaining = next.timeIntervalSince(now)
+        guard remaining > 0 else { return "" }
+        // Match Android's elapsed-time threshold and whole-minute countdown,
+        // including across midnight and daylight-saving changes.
+        if remaining <= 24 * 60 * 60 {
+            return NativeStrings.nextAlarmIn(minutes: Int(remaining / 60))
+        }
         let day = DateFormatter()
         day.locale = .autoupdatingCurrent
         day.calendar = .autoupdatingCurrent

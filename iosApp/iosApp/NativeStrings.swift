@@ -17,6 +17,23 @@ enum NativeStrings {
     }
     static func questions(_ count: Int32) -> String { questions(Int(count)) }
 
+    static func snoozeLimit(_ maximum: Int32) -> String {
+        let count = Int(maximum)
+        return String(localized: "Up to \(count) snoozes")
+    }
+
+    static func nextAlarmIn(minutes totalMinutes: Int) -> String {
+        let hours = totalMinutes / 60
+        let minutes = totalMinutes % 60
+        if hours == 0 && minutes == 0 { return text("Next alarm in less than a minute") }
+        let hourText = String(localized: "\(hours) hours")
+        let minuteText = String(localized: "\(minutes) minutes")
+        if hours > 0 && minutes > 0 {
+            return String(format: text("Next alarm in %@ %@"), hourText, minuteText)
+        }
+        return String(format: text("Next alarm in %@"), hours > 0 ? hourText : minuteText)
+    }
+
     static func questionProgress(index: Int32, count: Int32) -> String {
         String(format: text("Question %@ of %@"), number(index + 1), number(count))
     }

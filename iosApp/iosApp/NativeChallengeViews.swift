@@ -10,6 +10,7 @@ struct NativeChallengeView: View {
     @ObservedViewModel var model: AlarmMathViewModel
     let preview: Bool
     let retryInitialization: () -> Void
+    var recoveryOwnerID: String? = nil
     var cancelPreview: (() -> Void)? = nil
     var returnFromStale: (() -> Void)? = nil
     var failure: AlarmErrorMessage? = nil
@@ -22,6 +23,18 @@ struct NativeChallengeView: View {
     @ScaledMetric(relativeTo: .largeTitle) private var equationSize = 48
     private let answerScrollTarget = "native-challenge-answer-row"
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
+    @Environment(\.scenePhase) private var scenePhase
+
+    private struct RecoveryParticipation: Equatable {
+        let alarmID: Int64
+        let activeAt: Int64
+    }
+    private var recoveryParticipation: RecoveryParticipation? {
+        guard !preview, recoveryOwnerID != nil, scenePhase == .active,
+              model.state.readiness == .ready, let alarm = model.state.alarm,
+              let activeAt = alarm.activeAt?.int64Value else { return nil }
+        return RecoveryParticipation(alarmID: alarm.alarmId, activeAt: activeAt)
+    }
 
     var body: some View {
         Group {
@@ -66,6 +79,11 @@ struct NativeChallengeView: View {
             }
         }
         .onAppear { focusAnswer() }
+        .task(id: recoveryParticipation) {
+            guard let participation = recoveryParticipation, let owner = recoveryOwnerID else { return }
+            await AlarmKitWrapperImpl.shared.maintainRecoveryWhileSolving(owner: owner,
+                alarmId: participation.alarmID, activeAt: participation.activeAt)
+        }
         .onDisappear {
             answerFocused = false
             answerScrollTask?.cancel()
@@ -136,14 +154,10 @@ struct NativeChallengeView: View {
                                     guard canInteract else { return }
                                     model.onEvent(event: MathScreenEvent.OnSnoozeClick(alarm: alarm.alarmId, preview: false))
                                 } label: {
-                                    HStack(spacing: 8) {
-                                        Text("Snooze")
-                                        Text(verbatim: NativeStrings.minutes(count: alarm.snooze))
-                                            .foregroundStyle(Color.secondary)
-                                    }
-                                    .font(.subheadline)
-                                    .frame(maxWidth: .infinity, minHeight: 44)
-                                    .contentShape(Rectangle())
+                                    Text("Snooze")
+                                        .font(.subheadline)
+                                        .frame(maxWidth: .infinity, minHeight: 44)
+                                        .contentShape(Rectangle())
                                 }
                                 .buttonStyle(.plain)
                                 .foregroundStyle(MatAlarmPalette.accent)

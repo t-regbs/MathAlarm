@@ -1,0 +1,22 @@
+#!/bin/sh
+set -eu
+
+# Keep mobile automation tooling out of application dependencies and opt out of
+# telemetry before either npm lifecycle scripts or Argent's server can start.
+task_root=$(CDPATH= cd -- "$(dirname -- "$0")/.." && pwd)
+tooling_root="$task_root/build/argent-tooling"
+argent_bin="$tooling_root/node_modules/.bin/argent"
+export DO_NOT_TRACK=1
+
+if [ "${1:-}" = "setup" ]; then
+    exec npm install --prefix "$tooling_root" --save-exact --no-audit --no-fund \
+        @swmansion/argent@0.29.0
+fi
+
+if [ ! -x "$argent_bin" ]; then
+    printf '%s\n' 'Argent is not installed. Run ./scripts/argent setup first.' >&2
+    exit 1
+fi
+
+cd "$task_root"
+exec "$argent_bin" "$@"

@@ -96,6 +96,21 @@ enum SharedBridgeVerification {
     }
 
     static func run(restoration: Bool = false) async {
+        guard let window = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene })
+            .flatMap(\.windows).first(where: \.isKeyWindow) else {
+            preconditionFailure("Bridge verification requires an attached app window")
+        }
+        let originalRoot = window.rootViewController
+        // UIKit fixture containment belongs in a plain controller. Attaching
+        // hosting views inside the launch UIHostingController's managed view
+        // produces unsupported-hierarchy warnings and stale native navigation.
+        let container = UIViewController()
+        window.rootViewController = container
+        defer { window.rootViewController = originalRoot }
+        await runMounted(restoration: restoration)
+    }
+
+    private static func runMounted(restoration: Bool) async {
         VerificationResults.shared.reset()
         setbuf(stdout, nil) // Preserve the failing group in simulator crash transcripts.
         if ProcessInfo.processInfo.arguments.contains("--verify-m6-settings-only") {
@@ -241,12 +256,11 @@ enum SharedBridgeVerification {
         await waitForDestination(.sound, editorID: session, sessions: sessions!, in: host!, window: window)
         capture(window, name: "sound")
         let sound = sessions!.soundSelection(sessionID: session)!
-        let originalTone = model.state.tone
-        sound.choose("alarm_daybreak")
-        verificationCheck(model.state.tone == originalTone && sound.hasChanges)
+        model.onEvent(event: AddEditAlarmEvent.OnToneChange(value: "alarm_daybreak"))
+        verificationCheck(model.state.tone == "alarm_daybreak" && model.state.hasUnsavedChanges)
         mount.alternateDetail = true
         await waitForDestination(.sound, editorID: session, sessions: sessions!, in: host!, window: window)
-        verificationCheck(sessions!.soundSelection(sessionID: session) === sound && sound.pendingTone == "alarm_daybreak")
+        verificationCheck(sessions!.soundSelection(sessionID: session) === sound && model.state.tone == "alarm_daybreak")
         let oldPresentation = sound.beginPresentation()
         let newPresentation = sound.beginPresentation()
         sound.togglePreview("alarm_orbit")
@@ -255,11 +269,8 @@ enum SharedBridgeVerification {
         verificationCheck(sound.previewingTone == "alarm_orbit")
         sound.endPresentation(newPresentation)
         verificationCheck(sound.previewingTone == nil)
-        sound.finish() // Explicit Back/discard leaves Kotlin selection untouched.
-        sound.begin(currentTone: model.state.tone)
-        verificationCheck(sound.pendingTone == originalTone && !sound.hasChanges)
-        sound.choose("alarm_rally")
-        model.onEvent(event: AddEditAlarmEvent.OnToneChange(value: sound.pendingTone)) // Same Done action.
+        verificationCheck(model.state.tone == "alarm_daybreak") // Preview cleanup keeps the draft choice.
+        model.onEvent(event: AddEditAlarmEvent.OnToneChange(value: "alarm_rally"))
         sound.finish()
         verificationCheck(model.state.tone == "alarm_rally" && model.state.hasUnsavedChanges)
         mount.alternateDetail = false
@@ -275,7 +286,7 @@ enum SharedBridgeVerification {
         window.overrideUserInterfaceStyle = .light
         await wait { host!.traitCollection.userInterfaceStyle == .light }
         await exerciseKeyboard(in: host!.view, title: model.state.alarmTitle, window: window)
-        VerificationResults.shared.pass("native editor subpages and staged sound survive presentation replacement")
+        VerificationResults.shared.pass("native editor subpages and draft tone survive presentation replacement")
 
         pendingStore.setPendingDeeplink(handoff)
         let laterHandoff = IosApplication.shared.createAlarmHandoffJson(
@@ -811,8 +822,8 @@ enum SharedBridgeVerification {
         let returningAlarm = await saveFixture("M5 same-owner draft return")
         sessions.setEditorPath([.challenge, .sound], id: draft.id)
         await waitForDestination(.sound, editorID: draft.id, sessions: sessions, in: host!, window: window)
-        let stagedSound = sessions.soundSelection(sessionID: draft.id)!
-        stagedSound.choose("alarm_daybreak")
+        let soundPreview = sessions.soundSelection(sessionID: draft.id)!
+        draft.model.onEvent(event: AddEditAlarmEvent.OnToneChange(value: "alarm_daybreak"))
         let draftBeforeDelivery = draft.model.state
         verificationCheck(sessions.beginPermissionRequest(id: draft.id))
         let returningPayload = IosApplication.shared.createAlarmHandoffJson(alarmId: returningAlarm.alarmId,
@@ -829,7 +840,7 @@ enum SharedBridgeVerification {
         presentation.cancel()
         verificationCheck(interruption.model.state.alarm?.alarmId == returningAlarm.alarmId)
         verificationCheck(sessions.selectedEditor?.model === draft.model && sessions.editorPaths[draft.id] == [.challenge, .sound])
-        verificationCheck(sessions.permissionRequests.contains(draft.id) && stagedSound.pendingTone == "alarm_daybreak")
+        verificationCheck(sessions.permissionRequests.contains(draft.id) && draft.model.state.tone == "alarm_daybreak")
         for expectedIndex in 0..<Int(interruption.model.state.questionCount) {
             let problem = interruption.model.state.currentProblem!
             interruption.model.onEvent(event: MathScreenEvent.EnteredAnswer(value: String(problem.answer)))
@@ -840,11 +851,11 @@ enum SharedBridgeVerification {
         await waitForDestination(.sound, editorID: draft.id, sessions: sessions, in: host!, window: window)
         verificationCheck(sessions.selectedEditor?.model === draft.model && !draft.model.isClosed && draft.model.state == draftBeforeDelivery)
         verificationCheck(sessions.editorPaths[draft.id] == [.challenge, .sound])
-        verificationCheck(sessions.soundSelection(sessionID: draft.id) === stagedSound && stagedSound.pendingTone == "alarm_daybreak")
+        verificationCheck(sessions.soundSelection(sessionID: draft.id) === soundPreview && draft.model.state.tone == "alarm_daybreak")
         verificationCheck(sessions.permissionRequests.contains(draft.id) && interruption.model.state.results.isEmpty)
         sessions.endPermissionRequest(id: draft.id)
         capture(window, name: "same-owner-draft-and-staged-sound-after-real-completion")
-        VerificationResults.shared.pass("real accepted completion returns to identical retained draft nested route staged sound and permission guard")
+        VerificationResults.shared.pass("real accepted completion returns to identical retained draft nested route draft tone and permission guard")
 
         sessions.setEditorPath([.challenge, .preview], id: draft.id)
         await wait { sessions.previews[draft.id]?.model.state.readiness == .ready }

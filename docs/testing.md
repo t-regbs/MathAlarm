@@ -1,5 +1,121 @@
 # Testing Math Alarm
 
+Argent is available through `./scripts/argent` for native UI operation. The
+[15 October setup/verification record](argent-device-automation-2026-10-15.md)
+covers the pinned local install, telemetry opt-out, verified simulator controls
+and USB-iPhone limits. Use semantic UI waits and explicit disposable target IDs;
+Argent's destructive reinstall command must not be used on existing user data.
+
+## Milestone 8 acceptance and release checks
+
+The [M8 evidence record](native-ui-migration-milestone-8-2026-10-03.md) distinguishes
+simulator/controlled passes, setup failures, unavailable access and pending physical
+acceptance. Do not rerun completed M1–7 gates simply to replace their history.
+Candidate22 has 866 freshly executed shared/Android tests, a full iPhone run with
+22 passes/one iPad-only skip before the final token-selection refinement, and
+final-source serial hosted iPhone 15 / selected iPad 17 passes. Signed development
+archive/export and bounded strict privacy audit pass; physical foreground recovery
+deferral passes by user observation. Remaining physical/distribution gates stay
+open. Preserve the failed concurrent synthetic Repeat-transition run alongside
+ordinary serial reproduction and the identical passing hosted rerun; run native
+UI automation serially across these clients to avoid competing test activity.
+Use disposable devices only: the bridge harness clears its fixture database, and
+Android delivery runners share alarm ID 900001. **Run Android delivery scenarios
+serially on a device**, waiting for each exit/result and cleanup before the next.
+Never overlap Doze/reboot/snooze on that fixture or use a user's physical installation.
+
+Create a dedicated iOS 26.3.1 simulator (exact 26.0 must be tested separately when
+available). For the older-runtime teardown regression and hosted journey:
+
+```sh
+xcodebuild -project iosApp/iosApp.xcodeproj -scheme MathAlarmNative \
+  -configuration Debug -destination 'platform=iOS Simulator,id=DISPOSABLE_UDID' \
+  -derivedDataPath build/native-ui-m8/xcode -disableAutomaticPackageResolution \
+  -parallel-testing-enabled NO -collect-test-diagnostics never \
+  -only-testing:MathAlarmTests -resultBundlePath build/native-ui-m8/hosted.xcresult \
+  CODE_SIGNING_ALLOWED=NO test
+```
+
+`testWindowAndGuideReleaseInsideTaskLocalScope` checks actual owner teardown and
+eventual factory cleanup; it catches the isolated-deinit crash reproduced on 26.3.1.
+`testRecordMainThreadAudioSessionLatency` attaches eight production session lease
+timings and verifies no lease remains; it does not measure acoustic sound or first
+audio samples. Capture warnings and OS build alongside timings. Hosted fixture
+containment uses a plain UIKit controller; it restores the original root afterward.
+The iPad sidebar UI test launches before rotating so XCTest's tap coordinates agree
+with the landscape hierarchy. Preserve failures and diagnose screenshots/event
+records before retrying; no generic retry loop should conceal an assertion failure.
+
+`testScreenCancellationBeforeRecoveryCheckKeepsServiceWorkActive` and
+`testScreenCancellationFinishesAcceptedRecoveryReplacement` reproduce the scene
+cancellation boundaries behind the build22 physical lock/unlock error. Production
+refresh uses `NativeRecoveryDeadlineReplacement.finishRefresh` so locking cancels
+future renewals while an accepted service operation finishes its shared check and
+predecessor cleanup. These regressions do not prove a physical native re-ring;
+verify the new installed build separately with an unfinished occurrence.
+Candidate23 passes these checks within all 17 hosted iPhone tests on iOS26.3.1;
+its signed Release/resource/privacy audit and local development export pass.
+Physical 22 → 23 installation preserves the full active progress and recovery
+session. The user confirms physical lock/unlock without errors before and after
+snooze; final read-only fixture cleanup preserves all originals. New-policy native
+termination fallback remains separate. The build22 visible warning stays a failed
+check, not a simulator setup error.
+
+For an upgrade, use a **separate** disposable simulator and normal launch: install
+the retained old binary, save a disabled uniquely named alarm and nondefault
+theme/sort, terminate, snapshot database/preferences, then `simctl install` the new
+binary **without uninstalling or clearing data**. Compare stored rows/keys before
+acknowledging any remaining announcements, then inspect the real UI. Do not use
+`--verify-shared-bridge` on the preservation fixture. A native build 20 → 21 pass
+does not establish earlier released schemas or physical AlarmKit registration
+preservation. The M8 report records that limit explicitly.
+
+Run the native privacy-link flow with pinned Maestro 2.10.0 on an English disposable
+simulator; it checks presentation/return without sending feedback:
+
+```sh
+MAESTRO_CLI_NO_ANALYTICS=1 maestro --device DISPOSABLE_UDID test \
+  --test-output-dir build/native-ui-m8/privacy-link \
+  scripts/maestro/ios/native-m8-release-links.yaml
+```
+
+Verify the **final** Release archive separately from store acceptance:
+
+```sh
+python3 -B scripts/verify_ios_release.py --release --previous-build 20 \
+  --app build/native-ui-m8/MathAlarm.xcarchive/Products/Applications/MathAlarm.app \
+  --report build/native-ui-m8/packaging.json
+python3 -B scripts/verify_ios_release.py --release --previous-build 20 \
+  --audit-required-reasons \
+  --app build/native-ui-m8/MathAlarm.xcarchive/Products/Applications/MathAlarm.app \
+  --report build/native-ui-m8/privacy-audit.json
+codesign --verify --deep --strict \
+  build/native-ui-m8/MathAlarm.xcarchive/Products/Applications/MathAlarm.app
+```
+
+The first command checks resources, metadata and pins; the second additionally
+fails on bounded undeclared binary imports. A valid reason needs source/purpose
+review, not just a symbol match. At M8, packaging passes while the strict audit
+fails on SQLite `statfs`/`fstatfs`; no unsupported reason was added to manufacture
+readiness. Keep both reports. `--previous-build` compares a known installed build,
+not App Store Connect history. The scanner is not comprehensive privacy certification.
+
+Build/archive with existing automatic development signing if available, then local
+`xcodebuild -exportArchive` with a plist whose `method` is `debugging` and
+`destination` is `export`. A development IPA is only development evidence. Test
+distribution separately using `method=app-store-connect,destination=export`;
+do not upload/substitute `destination=upload` as part of acceptance. Account/profile
+failures, signature/profile expiry, actual version/build and binary hashes belong in
+the report. Current local export plists/logs and development IPA are under
+`build/native-ui-m8/export/`. No provisioning updates or store uploads were made.
+
+Physical delivery, sound, interruptions, permission/PiP return, exact minimum OS,
+VoiceOver/Mail/live resize/Duo and reboot/overnight/multi-day reliability remain the
+[manual acceptance matrix](ios-alarm-recovery-manual-test.md). Archive or player
+telemetry success cannot close those gates. Preserve the evidence root before
+cleaning build artifacts; remove only task-owned fixtures/devices after recording
+their results.
+
 ## Fast checks (every PR)
 
 ```sh
@@ -104,6 +220,22 @@ output. `result.json` records audibility as **not measured**.
 
 ## Production native UI and shared bridge checks
 
+Milestone 8 adds an iOS-only `NativeSQLiteCompatibilityTest` using the production
+database factory and a public legacy schema-9 snapshot. Gradle supplies its fixture
+path to Kotlin/Native simulator tests; the test copies to a unique temporary file,
+checks the complete old row, writes durable occurrence fields, closes/reopens and
+removes only its temporary database. Native frameworks/tests and Xcode link system
+SQLite with `-lsqlite3`; Android driver coordinates are unchanged.
+
+`ProductionIntegrationTests` also executes the actual native recovery replacement
+primitive with controlled OS acceptance/rejection: the previous fallback survives
+suspension/rejection, resolution during acceptance cancels the replacement, and
+every old cancellation is attempted on failure. These checks establish ordering,
+not physical sound or scene timing. Candidate 22's visible ready challenge renews
+an accepted 90-second AlarmKit fallback every 20 seconds; leaving tightens to 60
+seconds. Validate actual foreground continuity and lock/background/termination
+fallback with the [device checklist](ios-alarm-recovery-manual-test.md).
+
 Milestones 1–6 use the production `app` framework and the production Debug app,
 with pinned Kotlin/Swift ObservableViewModel 1.1.0 and NativeCoroutines 1.0.6.
 See [migration baseline](native-ui-migration-baseline-2026-10-02.md) and
@@ -139,7 +271,7 @@ The explicit `--verify-shared-bridge` Debug launch path mounts a real SwiftUI ow
 and observed child in a UIKit window, using `SharedFeatures` and `IosApplication`.
 Twenty-seven groups check bootstrap/handoff identity, generated state observation, the actual
 production `NativeSessionOwners` with compact/expanded/detail replacement, multiple
-retained drafts/routes, staged tone choices and permission guards; editor validation,
+retained drafts/routes, draft tone choices and permission guards; editor validation,
 duplicate guards, result acknowledgement, cancellation and structural owner cleanup.
 The registry's multiple-session fixtures test ownership across native replacement;
 ordinary user navigation now keeps one active editor. The focused XCTest cases

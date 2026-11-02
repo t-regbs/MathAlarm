@@ -29,7 +29,7 @@ MAESTRO_CLI_NO_ANALYTICS=1 maestro --device <simulator-UDID> test \
 
 Run `editor-preview.yaml` on iPhone portrait and iPad portrait. It checks sheet dismissal, quoted-title draft retention after cancelling and completing a preview, wrong-answer feedback, tone selection, and editor dismissal. It also asserts that Skip next is absent in the editor; that assertion does not inspect saved-alarm menus.
 
-`sound-library.yaml` checks preview without selection, automatic preview completion, Back, Done, draft retention, and reopening. The library is a page in the existing alarm editor sheet. Run it on iPhone and iPad; it leaves no saved alarm.
+`sound-library.yaml` checks preview without selection, immediate draft tone selection, native Back without confirmation, draft retention, and reopening. The library is a page in the existing alarm editor sheet. Run it on iPhone and iPad; it leaves no saved alarm.
 
 `ipad-share.yaml` opens the iPad native share popover and captures it. It does not send the share content or select an external destination. The simulator should be in portrait and the app on the alarm list when starting. Native toolbar accessibility labels are supplied by UIKit and may change with iOS versions.
 
@@ -150,7 +150,7 @@ and evidence paths for each case. Do not convert a source/AX-tree inspection to 
   labels, order, focus after Back/Cancel, wrong-answer announcement and return to the same
   draft. Restore the prior setting. A successful XCTest accessibility lookup is not speech.
 - iPad live resizing: while editing a named unsaved draft and nested route, resize the
-  actual app window across compact/expanded widths; verify title, staged tone, navigation
+  actual app window across compact/expanded widths; verify title, draft tone, navigation
   and draft survive, then discard. Layout replacement tests and orientation changes are
   separate evidence, not interactive resizing.
 - Configured native Mail: on an isolated configured client, open feedback, inspect the

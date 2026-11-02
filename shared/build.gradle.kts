@@ -30,6 +30,8 @@ kotlin {
         iosArm64(),
         iosSimulatorArm64()
     ).forEach { iosTarget ->
+        // Both the app framework and standalone native database tests use OS SQLite.
+        iosTarget.binaries.all { linkerOpts.add("-lsqlite3") }
         iosTarget.binaries.framework {
             baseName = "app"
             isStatic = true
@@ -43,6 +45,9 @@ kotlin {
         androidMain.dependencies {
             implementation(libs.androidx.appcompat)
             implementation(libs.androidx.core.ktx)
+        }
+        iosMain.dependencies {
+            implementation(libs.androidx.sqlite.driver.framework)
         }
         commonMain {
             dependencies {
@@ -65,7 +70,6 @@ kotlin {
                 implementation(libs.multiplatform.settings.no.arg)
                 
                 implementation(libs.androidx.room.runtime)
-                implementation(libs.androidx.sqlite.driver.bundled)
 
             }
         }
@@ -106,4 +110,12 @@ tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinNativeCompile>().configur
             }
         }
     }
+}
+
+// The legacy fixture is a public disposable schema-9 snapshot, never phone data.
+tasks.withType<org.jetbrains.kotlin.gradle.targets.native.tasks.KotlinNativeTest>().configureEach {
+    val fixture = file("src/iosTest/resources/legacy-v9-native.sqlite3")
+    inputs.file(fixture)
+    environment("MATHALARM_M8_LEGACY_SQLITE_FIXTURE", fixture.absolutePath)
+    environment("SIMCTL_CHILD_MATHALARM_M8_LEGACY_SQLITE_FIXTURE", fixture.absolutePath)
 }

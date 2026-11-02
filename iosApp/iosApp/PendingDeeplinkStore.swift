@@ -336,3 +336,34 @@ final class AlarmRecoveryStore {
         return save(sessions)
     }
 }
+
+/// Keep the old OS fallback until its replacement has actually been accepted.
+/// Explicit resolution during the suspension wins over the new registration.
+@MainActor
+enum NativeRecoveryDeadlineReplacement {
+    /// View cancellation stops future renewals, not an in-flight native mutation.
+    /// Finish the authoritative check and predecessor cleanup after OS acceptance.
+    static func finishRefresh(_ operation: @escaping @MainActor () async -> Void) async {
+        await Task { @MainActor in await operation() }.value
+    }
+
+    static func perform(previousIDs: [UUID], replacementID: UUID,
+                        schedule: () async throws -> Void,
+                        isCurrent: () async throws -> Bool,
+                        cancel: (UUID) throws -> Void) async throws {
+        try await schedule()
+        guard try await isCurrent() else {
+            try cancel(replacementID)
+            return
+        }
+        var failures: [String] = []
+        for id in previousIDs where id != replacementID {
+            do { try cancel(id) }
+            catch { failures.append(error.localizedDescription) }
+        }
+        if !failures.isEmpty {
+            throw NSError(domain: "MathAlarm.Recovery", code: 1,
+                          userInfo: [NSLocalizedDescriptionKey: failures.joined(separator: "; ")])
+        }
+    }
+}

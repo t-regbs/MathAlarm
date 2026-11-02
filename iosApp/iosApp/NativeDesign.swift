@@ -195,6 +195,27 @@ struct MatAlarmFeatureLabel: View {
     }
 }
 
+/// A short summary keeps the important draft settings visible before navigation.
+struct MatAlarmFeatureSummary: View {
+    let title: LocalizedStringKey
+    let symbol: String
+    let summary: String
+
+    var body: some View {
+        HStack(spacing: 12) {
+            MatAlarmFeatureIcon(symbol: symbol)
+            VStack(alignment: .leading, spacing: 4) {
+                Text(title).foregroundStyle(.primary)
+                Text(verbatim: summary)
+                    .font(.subheadline).foregroundStyle(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            .frame(maxWidth: .infinity, alignment: .leading)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
 /// The Android empty-state artwork, using the same two-image arrangement.
 struct MatAlarmEmptyIllustration: View {
     private let scale: CGFloat = 0.75

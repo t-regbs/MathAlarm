@@ -520,9 +520,8 @@ enum NativePresentationVerification {
         let draft = sessions.openEditor(alarm: nil)
         draft.model.onEvent(event: AddEditAlarmEvent.EnteredTitle(value: "M6 retained delivered draft"))
         sessions.setEditorPath([.challenge, .sound], id: draft.id)
-        let staged = sessions.soundSelection(sessionID: draft.id)!
-        staged.begin(currentTone: draft.model.state.tone)
-        staged.choose("alarm_daybreak")
+        let soundPreview = sessions.soundSelection(sessionID: draft.id)!
+        draft.model.onEvent(event: AddEditAlarmEvent.OnToneChange(value: "alarm_daybreak"))
         precondition(sessions.beginPermissionRequest(id: draft.id))
         let draftSnapshot = draft.model.state
         let mount = Mount()
@@ -595,7 +594,7 @@ enum NativePresentationVerification {
             precondition(delivered.model.state.questionIndex == 1)
             precondition(sessions.selectedEditor?.model === draft.model && draft.model.state == draftSnapshot)
             precondition(sessions.editorPaths[draft.id] == [.challenge, .sound]
-                && sessions.permissionRequests.contains(draft.id) && staged.pendingTone == "alarm_daybreak")
+                && sessions.permissionRequests.contains(draft.id) && draft.model.state.tone == "alarm_daybreak")
         }
         for index in 1..<Int(delivered.model.state.questionCount) {
             let problem = delivered.model.state.currentProblem!
@@ -612,7 +611,7 @@ enum NativePresentationVerification {
         await waitForTitle(NativeStrings.text("Alarm sound"), in: host)
         precondition(delivered.model.state.results.isEmpty && !queue.hasPendingDeeplink())
         precondition(sessions.selectedEditor?.model === draft.model && !draft.model.isClosed && draft.model.state == draftSnapshot)
-        precondition(sessions.soundSelection(sessionID: draft.id) === staged && staged.pendingTone == "alarm_daybreak")
+        precondition(sessions.soundSelection(sessionID: draft.id) === soundPreview && draft.model.state.tone == "alarm_daybreak")
         precondition(sessions.editorPaths[draft.id] == [.challenge, .sound] && sessions.permissionRequests.contains(draft.id))
         await capture(window, host: host, mount: mount, name: "delivered-returned-draft")
         sessions.endPermissionRequest(id: draft.id)

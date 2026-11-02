@@ -36,25 +36,20 @@ struct NativeEditorControls: View {
             }))
             .accessibilityIdentifier("editor-enabled")
             NavigationLink(value: NativeEditorDestination.repeatSettings) {
-                LabeledContent {
-                    Text(NativeEditorPresentation.weekdays(model.state))
-                } label: { MatAlarmFeatureLabel(title: "Repeat", symbol: "repeat") }
+                MatAlarmFeatureSummary(title: "Repeat", symbol: "repeat",
+                    summary: NativeEditorPresentation.repeatSummary(model.state))
             }
             .accessibilityIdentifier("editor-repeat")
         }
         Section {
             NavigationLink(value: NativeEditorDestination.challenge) {
-                LabeledContent {
-                    Text(NativeEditorPresentation.difficulty(model.state.challenge))
-                } label: { MatAlarmFeatureLabel(title: "Challenge settings", symbol: "function") }
+                MatAlarmFeatureSummary(title: "Challenge settings", symbol: "function",
+                    summary: NativeEditorPresentation.challengeSummary(model.state.challenge))
             }
             .accessibilityIdentifier("editor-challenge")
             NavigationLink(value: NativeEditorDestination.snooze) {
-                LabeledContent {
-                    Text(model.state.snoozeEnabled
-                    ? NativeStrings.minutes(count: Int(model.state.snoozeMinutes))
-                    : NSLocalizedString("Off", comment: "Snooze disabled"))
-                } label: { MatAlarmFeatureLabel(title: "Snooze", symbol: "zzz") }
+                MatAlarmFeatureSummary(title: "Snooze", symbol: "zzz",
+                    summary: NativeEditorPresentation.snoozeSummary(model.state))
             }
             .accessibilityIdentifier("editor-snooze")
             NavigationLink(value: NativeEditorDestination.sound) {
@@ -294,6 +289,28 @@ enum NativeEditorPresentation {
     static func difficulty(_ challenge: MathChallenge) -> String {
         challenge.difficultyMix.isEmpty ? difficultyName(Int(challenge.difficulty))
             : NSLocalizedString("Mixed difficulty", comment: "Challenge difficulty summary")
+    }
+
+    static func challengeSummary(_ challenge: MathChallenge) -> String {
+        difficulty(challenge) + " · " + NativeStrings.questions(challenge.questionCount)
+    }
+
+    static func snoozeSummary(_ state: AlarmEditorState) -> String {
+        guard state.snoozeEnabled else { return NativeStrings.text("Off") }
+        let limit = state.maxSnoozes == 0 ? NativeStrings.text("Unlimited")
+            : NativeStrings.snoozeLimit(state.maxSnoozes)
+        return NativeStrings.minutes(count: state.snoozeMinutes) + " · " + limit
+    }
+
+    static func repeatSummary(_ state: AlarmEditorState) -> String {
+        let selectedCount = state.dayChooser.filter { $0 == "T" }.count
+        if state.repeatWeekly {
+            if selectedCount == 7 { return NativeStrings.text("Every day") }
+            let days = selectedCount == 0 ? NativeStrings.text("No weekdays selected") : weekdays(state)
+            return NativeStrings.text("Every week") + " · " + days
+        }
+        return selectedCount == 0 ? NativeStrings.text("Once")
+            : NativeStrings.text("Once") + " · " + weekdays(state)
     }
 
     static func weekdays(_ state: AlarmEditorState) -> String {

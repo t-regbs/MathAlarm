@@ -2,46 +2,25 @@ import SwiftUI
 import KMPObservableViewModelSwiftUI
 import app
 
-/// Native picker state belongs to the retained editor session, above detail replacement.
-/// It holds presentation-only selection; Kotlin still owns the editor draft and audio.
+/// Preview state belongs to the retained editor session, above detail replacement.
+/// Kotlin owns the selected tone in the editor draft and the audio player.
 @MainActor
 final class NativeSoundSelection: ObservableObject {
     let ownerID: String
-    @Published private(set) var pendingTone: String
     @Published private(set) var previewingTone: String?
     @Published private(set) var previewMessage: String?
-    private(set) var originalTone: String
-    private(set) var active = false
     private var playbackGeneration = 0
     private var presentationGeneration = 0
     private var visiblePresentation: Int?
 
-    init(sessionID: String, currentTone: String) {
+    init(sessionID: String) {
         ownerID = "tone-preview/\(sessionID)"
-        let selectionID = Self.selectionID(currentTone)
-        originalTone = selectionID
-        pendingTone = selectionID
     }
-
-    var hasChanges: Bool { pendingTone != originalTone }
-
-    func begin(currentTone: String) {
-        guard !active else { return }
-        active = true
-        originalTone = Self.selectionID(currentTone)
-        pendingTone = originalTone
-        previewMessage = nil
-    }
-
-    private static func selectionID(_ tone: String) -> String {
-        AlarmSoundCatalog.shared.find(tone: tone)?.id ?? (tone.isEmpty ? AlarmSoundCatalog.shared.DEFAULT_SOUND : tone)
-    }
-
-    func choose(_ tone: String) { pendingTone = tone }
 
     func beginPresentation() -> Int {
         presentationGeneration += 1
         visiblePresentation = presentationGeneration
+        previewMessage = nil
         return presentationGeneration
     }
 
@@ -81,23 +60,26 @@ final class NativeSoundSelection: ObservableObject {
         }
     }
 
-    /// Observation/layout disappearance stops only this preview; staged selection survives.
+    /// Observation/layout disappearance stops only this preview.
     func stop() {
         playbackGeneration += 1
         AlarmTonePreview.shared.stop(ownerId: ownerID)
         previewingTone = nil
     }
 
-    /// Called only on explicit Back/discard/Done or when its editor is closed.
+    /// Called when the editor owner is closed.
     func finish() {
         stop()
-        active = false
         visiblePresentation = nil
         previewMessage = nil
     }
 }
 
 enum NativeSoundPresentation {
+    static func selectionID(_ tone: String) -> String {
+        AlarmSoundCatalog.shared.find(tone: tone)?.id ?? (tone.isEmpty ? AlarmSoundCatalog.shared.DEFAULT_SOUND : tone)
+    }
+
     static func displayName(_ tone: String) -> String {
         AlarmSoundCatalog.shared.find(tone: tone)?.displayName ?? NativeStrings.text("Default alarm tone")
     }
@@ -118,19 +100,14 @@ enum NativeSoundPresentation {
 struct NativeSoundPicker: View {
     @ObservedViewModel var model: AlarmSettingsViewModel
     @ObservedObject var selection: NativeSoundSelection
-    let onClose: () -> Void
     @Environment(\.scenePhase) private var scenePhase
     @Environment(\.dynamicTypeSize) private var dynamicTypeSize
-    @State private var discardConfirmation = false
     @State private var presentation: Int?
 
     var body: some View {
+        let selectedTone = NativeSoundPresentation.selectionID(model.state.tone)
         List {
-            Section {
-                Text("Choose a tone, then tap Done to apply it to this draft.")
-                    .foregroundStyle(.secondary)
-            }
-            if AlarmSoundCatalog.shared.find(tone: selection.pendingTone) == nil {
+            if AlarmSoundCatalog.shared.find(tone: selectedTone) == nil {
                 Section("Current sound") {
                     Text("This sound is unavailable. Orbit will play instead.")
                         .foregroundStyle(.secondary)
@@ -142,7 +119,9 @@ struct NativeSoundPicker: View {
                         ? AnyLayout(VStackLayout(alignment: .leading, spacing: 12))
                         : AnyLayout(HStackLayout(alignment: .center, spacing: 16))
                     layout {
-                        Button { selection.choose(sound.id) } label: {
+                        Button {
+                            model.onEvent(event: AddEditAlarmEvent.OnToneChange(value: sound.id))
+                        } label: {
                             HStack(spacing: 12) {
                                 if !dynamicTypeSize.isAccessibilitySize {
                                     MatAlarmFeatureIcon(symbol: "waveform")
@@ -159,7 +138,7 @@ struct NativeSoundPicker: View {
                         }
                         .buttonStyle(.plain)
                         .accessibilityIdentifier("tone-\(sound.id)")
-                        .accessibilityAddTraits(selection.pendingTone == sound.id ? [.isSelected] : [])
+                        .accessibilityAddTraits(selectedTone == sound.id ? [.isSelected] : [])
                         Button { selection.togglePreview(sound.id) } label: {
                             Image(systemName: selection.previewingTone == sound.id ? "stop.fill" : "play.fill")
                                 .frame(minWidth: 44, minHeight: 44)
@@ -172,7 +151,7 @@ struct NativeSoundPicker: View {
                         .accessibilityIdentifier("preview-\(sound.id)")
                     }
                     .padding(.vertical, 6)
-                    .listRowBackground(selection.pendingTone == sound.id ? MatAlarmPalette.wash : MatAlarmPalette.surface)
+                    .listRowBackground(selectedTone == sound.id ? MatAlarmPalette.wash : MatAlarmPalette.surface)
                 }
             }
             if let message = selection.previewMessage {
@@ -183,30 +162,8 @@ struct NativeSoundPicker: View {
         .listStyle(.insetGrouped)
         .matAlarmContent()
         .navigationTitle("Sound library")
-        .navigationBarBackButtonHidden(true)
-        .toolbar {
-            ToolbarItem(placement: .cancellationAction) {
-                Button("Back") {
-                    if selection.hasChanges { discardConfirmation = true }
-                    else { close() }
-                }.accessibilityIdentifier("sound-back")
-            }
-            ToolbarItem(placement: .confirmationAction) {
-                Button("Done") {
-                    guard !model.state.isSaving else { return }
-                    model.onEvent(event: AddEditAlarmEvent.OnToneChange(value: selection.pendingTone))
-                    close()
-                }
-                .disabled(model.state.isSaving)
-                .accessibilityIdentifier("sound-done")
-            }
-        }
-        .confirmationDialog("Discard sound selection?", isPresented: $discardConfirmation, titleVisibility: .visible) {
-            Button("Discard selection", role: .destructive) { close() }
-            Button("Keep choosing", role: .cancel) { }
-        }
+        .disabled(model.state.isSaving)
         .onAppear {
-            selection.begin(currentTone: model.state.tone)
             presentation = selection.beginPresentation()
         }
         .onDisappear { if let presentation { selection.endPresentation(presentation) } }
@@ -218,8 +175,4 @@ struct NativeSoundPicker: View {
         }
     }
 
-    private func close() {
-        selection.finish()
-        onClose()
-    }
 }

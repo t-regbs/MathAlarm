@@ -60,8 +60,7 @@ androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "splashscreen" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "androidx_room" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "androidx_room" }
-androidx-sqlite-driver-android = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqlite" }
-androidx-sqlite-driver-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
+androidx-sqlite-driver-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqlite" }
 androidx-test-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "test_espresso_core" }
 androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "test_junit_ext" }
 foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }

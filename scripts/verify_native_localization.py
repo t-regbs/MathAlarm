@@ -33,7 +33,7 @@ def presentation_keys(source):
     source = re.sub(r"/\*.*?\*/", "", source, flags=re.S)
     source = re.sub(r"//[^\n]*", "", source)
     calls = (r"(?:\b(?:Text|TextField|Label|Button|Toggle|Picker|Section|ProgressView|ContentUnavailableView|"
-             r"LabeledContent|Menu|DatePicker|NavigationLink|NSLocalizedString|rangePicker|settingsLabel)|"
+             r"LabeledContent|Menu|Link|DatePicker|NavigationLink|NSLocalizedString|rangePicker|settingsLabel)|"
              r"\.navigationTitle|\.confirmationDialog|\.alert)\(\s*" + SWIFT_STRING)
     keys = set(re.findall(calls, source))
     keys.update(re.findall(r"String\(localized:\s*" + SWIFT_STRING, source))

@@ -531,12 +531,15 @@ E700000000000000000000CA = {isa = PBXSourcesBuildPhase; buildActionMask = 214748
 					"$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
 				);
 				INFOPLIST_FILE = iosApp/Info.plist;
+				MARKETING_VERSION = 2.3.1;
+				CURRENT_PROJECT_VERSION = 25;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				OTHER_LDFLAGS = (
 					"$(inherited)",
+					"-lsqlite3",
 					"-framework",
 					app,
 				);
@@ -560,12 +563,15 @@ E700000000000000000000CA = {isa = PBXSourcesBuildPhase; buildActionMask = 214748
 					"$(SRCROOT)/../shared/build/xcode-frameworks/$(CONFIGURATION)/$(SDK_NAME)",
 				);
 				INFOPLIST_FILE = iosApp/Info.plist;
+				MARKETING_VERSION = 2.3.1;
+				CURRENT_PROJECT_VERSION = 25;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				OTHER_LDFLAGS = (
 					"$(inherited)",
+					"-lsqlite3",
 					"-framework",
 					app,
 				);

@@ -109,7 +109,7 @@ dependencies {
     implementation(libs.firebase.crashlytics)
     implementation(libs.firebase.messaging)
 
-    testImplementation(libs.androidx.sqlite.driver.android)
+    testImplementation(libs.androidx.sqlite.driver.framework)
     testImplementation(libs.junit)
     testImplementation(kotlin("test-junit"))
     testImplementation(libs.kotest.assertions)

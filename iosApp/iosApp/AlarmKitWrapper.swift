@@ -255,6 +255,7 @@ class AlarmKitWrapperImpl: NSObject {
     static let shared = AlarmKitWrapperImpl()
     private var collectingDeliveries = false
     private var recoveryRegistrationsInFlight: Set<Int64> = []
+    @MainActor private var solvingOwners: [String: (generation: UUID, alarmId: Int64, activeAt: Int64)] = [:]
     
     private override init() {
         super.init()
@@ -297,8 +298,9 @@ class AlarmKitWrapperImpl: NSObject {
 
         do {
             let manager = AlarmManager.shared
-            let id = occurrenceUUID(alarmId: alarmId, key: occurrenceKey)
-            return try manager.alarms.contains { $0.id == id }
+            let ids = occurrenceKey == "recovery" ? recoveryIDs(alarmId: alarmId) :
+                [occurrenceUUID(alarmId: alarmId, key: occurrenceKey)]
+            return try manager.alarms.contains { ids.contains($0.id) }
         } catch {
             print("AlarmKitWrapper: Failed to check pending occurrence for alarm \(alarmId): \(error)")
             return false
@@ -451,24 +453,36 @@ class AlarmKitWrapperImpl: NSObject {
                            bytes[8], bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]))
     }
 
+    private func recoveryIDs(alarmId: Int64) -> [UUID] {
+        ["recovery", "recovery_standby"].map { occurrenceUUID(alarmId: alarmId, key: $0) }
+    }
+
     func cancelOccurrence(alarmId: Int64, occurrenceKey: String) -> String? {
         let priorRecovery = occurrenceKey == "recovery" ? AlarmRecoveryStore.shared.current(alarmId: alarmId) : nil
         if occurrenceKey == "recovery", !AlarmRecoveryStore.shared.cancel(alarmId: alarmId) {
             IosApplication.shared.reportRecoveryFailure(alarmId: alarmId)
             return "Could not persist recovery cancellation"
         }
-        let id = occurrenceUUID(alarmId: alarmId, key: occurrenceKey)
+        let ids = occurrenceKey == "recovery" ? recoveryIDs(alarmId: alarmId) :
+            [occurrenceUUID(alarmId: alarmId, key: occurrenceKey)]
         do {
             let manager = AlarmManager.shared
-            if try manager.alarms.contains(where: { $0.id == id }) {
-                try manager.cancel(id: id)
+            let nativeIDs = Set(try manager.alarms.map(\.id))
+            var failures: [String] = []
+            for id in ids {
+                do {
+                    if nativeIDs.contains(id) { try manager.cancel(id: id) }
+                    if !AlarmDataStore.shared.remove(alarmUUID: id.uuidString) {
+                        failures.append("Could not persist native cancellation")
+                    }
+                } catch { failures.append(error.localizedDescription) }
             }
-            guard AlarmDataStore.shared.remove(alarmUUID: id.uuidString) else {
+            if !failures.isEmpty {
                 if let priorRecovery {
                     AlarmRecoveryStore.shared.restoreAfterFailedCancellation(alarmId: alarmId, session: priorRecovery)
                     IosApplication.shared.reportRecoveryFailure(alarmId: alarmId)
                 }
-                return "Could not persist native cancellation"
+                return failures.joined(separator: "; ")
             }
             return nil
         } catch {
@@ -648,7 +662,16 @@ class AlarmKitWrapperImpl: NSObject {
             IosApplication.shared.reportRecoveryFailure(alarmId: data.alarmId)
             throw error
         }
-        let id = occurrenceUUID(alarmId: data.alarmId, key: "recovery")
+        let ids = recoveryIDs(alarmId: data.alarmId)
+        let nativeIDs = Set(try AlarmManager.shared.alarms.map(\.id))
+        let currentToken = AlarmRecoveryStore.shared.current(alarmId: data.alarmId)
+        let liveCurrentID = ids.first { id in
+            guard nativeIDs.contains(id), let token = currentToken,
+                  let metadata = AlarmDataStore.shared.retrieve(alarmUUID: id.uuidString) else { return false }
+            return metadata.recoverySession == token.id && metadata.recoveryAttempt == token.attempt
+        }
+        let freeID = ids.first { !nativeIDs.contains($0) }
+        let id = data.recoverySession == nil ? (liveCurrentID ?? freeID ?? ids[0]) : (freeID ?? ids[0])
         var previousMetadata = AlarmDataStore.shared.retrieve(alarmUUID: id.uuidString)
         // The approved per-alarm persistence format allows one unresolved occurrence
         // for that alarm. Only shared state may prove a mismatched native token obsolete;
@@ -718,18 +741,7 @@ class AlarmKitWrapperImpl: NSObject {
             IosApplication.shared.reportRecoveryFailure(alarmId: data.alarmId)
             throw AlarmKitError.schedulingFailed("Could not persist native recovery metadata")
         }
-        let solve = AlarmButton(text: "Solve Math", textColor: .mathAlarmGreen, systemImageName: "arrow.up.forward.app")
-        let alert = AlarmPresentation.Alert(
-            title: data.title.isEmpty ? LocalizedStringResource("Solve Math") : LocalizedStringResource(stringLiteral: data.title),
-            stopButton: solve
-        )
-        let configuration = MathAlarmConfiguration.alarm(
-            schedule: .fixed(Date().addingTimeInterval(60)),
-            attributes: AlarmAttributes(presentation: AlarmPresentation(alert: alert),
-                                        metadata: recovery, tintColor: .mathAlarmGreen),
-            stopIntent: StopAlarmIntent(alarmUUID: id),
-            sound: .named(alertSoundName(for: data.alarmTone))
-        )
+        let configuration = recoveryConfiguration(data: recovery, id: id, deadline: Date().addingTimeInterval(60))
         var nativeAccepted = false
         do {
             _ = try await AlarmManager.shared.schedule(id: id, configuration: configuration)
@@ -767,6 +779,19 @@ class AlarmKitWrapperImpl: NSObject {
                     throw AlarmKitError.schedulingFailed("Could not persist recovery acceptance")
                 }
                 IosApplication.shared.clearRecoveryFailure(alarmId: data.alarmId)
+                // A foreground deadline replacement may have been interrupted after
+                // OS acceptance. Retire only registrations carrying the old attempt.
+                for other in ids where other != id {
+                    if let old = AlarmDataStore.shared.retrieve(alarmUUID: other.uuidString),
+                       old.recoverySession == session.id, old.recoveryAttempt != session.attempt {
+                        if try AlarmManager.shared.alarms.contains(where: { $0.id == other }) {
+                            try AlarmManager.shared.cancel(id: other)
+                        }
+                        guard AlarmDataStore.shared.remove(alarmUUID: other.uuidString) else {
+                            throw AlarmKitError.schedulingFailed("Could not persist old recovery cancellation")
+                        }
+                    }
+                }
             }
             print("Alarm recovery accepted: alarm=\(data.alarmId), attempt=\(session.attempt)")
         } catch {
@@ -788,6 +813,121 @@ class AlarmKitWrapperImpl: NSObject {
         }
     }
 
+    private func recoveryConfiguration(data: MathAlarmData, id: UUID, deadline: Date) -> MathAlarmConfiguration {
+        let solve = AlarmButton(text: "Solve Math", textColor: .mathAlarmGreen, systemImageName: "arrow.up.forward.app")
+        let alert = AlarmPresentation.Alert(
+            title: data.title.isEmpty ? LocalizedStringResource("Solve Math") : LocalizedStringResource(stringLiteral: data.title),
+            stopButton: solve)
+        return .alarm(schedule: .fixed(deadline),
+                      attributes: AlarmAttributes(presentation: AlarmPresentation(alert: alert),
+                                                  metadata: data, tintColor: .mathAlarmGreen),
+                      stopIntent: StopAlarmIntent(alarmUUID: id),
+                      sound: .named(alertSoundName(for: data.alarmTone)))
+    }
+
+    /// A visible, ready real challenge renews an OS fallback, rather than removing it.
+    /// If the process disappears without a callback, the last fallback rings within 90s.
+    @MainActor
+    func maintainRecoveryWhileSolving(owner: String, alarmId: Int64, activeAt: Int64) async {
+        let generation = UUID()
+        solvingOwners[owner] = (generation, alarmId, activeAt)
+        defer {
+            if solvingOwners[owner]?.generation == generation {
+                solvingOwners.removeValue(forKey: owner)
+                Task { @MainActor in
+                    await self.refreshRecoveryDeadline(alarmId: alarmId, activeAt: activeAt)
+                }
+            }
+        }
+        while !Task.isCancelled {
+            await refreshRecoveryDeadline(alarmId: alarmId, activeAt: activeAt)
+            do { try await Task.sleep(for: .seconds(20)) }
+            catch { return }
+        }
+    }
+
+    @MainActor
+    private func refreshRecoveryDeadline(alarmId: Int64, activeAt: Int64) async {
+        await NativeRecoveryDeadlineReplacement.finishRefresh {
+            await self.applyRecoveryDeadline(alarmId: alarmId, activeAt: activeAt)
+        }
+    }
+
+    @MainActor
+    private func applyRecoveryDeadline(alarmId: Int64, activeAt: Int64) async {
+        guard !recoveryRegistrationsInFlight.contains(alarmId),
+              let session = AlarmRecoveryStore.shared.current(alarmId: alarmId),
+              session.activeAtMilliseconds == activeAt else { return }
+        recoveryRegistrationsInFlight.insert(alarmId)
+        defer { recoveryRegistrationsInFlight.remove(alarmId) }
+        do {
+            guard try await asyncFunction(for: IosApplication.shared.isUnresolvedOccurrence(
+                alarmId: alarmId, activeAt: activeAt)).boolValue else { return }
+            let ids = recoveryIDs(alarmId: alarmId)
+            let alarms = try AlarmManager.shared.alarms.filter { ids.contains($0.id) }
+            let candidates = alarms.compactMap { alarm -> (UUID, Date, MathAlarmData)? in
+                guard case .fixed(let deadline) = alarm.schedule,
+                      let data = AlarmDataStore.shared.retrieve(alarmUUID: alarm.id.uuidString),
+                      data.recoverySession == session.id, data.recoveryAttempt == session.attempt,
+                      data.activeAtMilliseconds == activeAt else { return nil }
+                return (alarm.id, deadline, data)
+            }
+            guard let previous = candidates.max(by: { $0.1 < $1.1 }) else { return }
+            // Reconcile a process exit between accepting the replacement and retiring
+            // its predecessor, even when the later deadline needs no renewal yet.
+            for alarm in alarms where alarm.id != previous.0 {
+                try AlarmManager.shared.cancel(id: alarm.id)
+                guard AlarmDataStore.shared.remove(alarmUUID: alarm.id.uuidString) else {
+                    throw AlarmKitError.schedulingFailed("Could not persist redundant recovery cancellation")
+                }
+            }
+            let solving = solvingOwners.values.contains { $0.alarmId == alarmId && $0.activeAt == activeAt }
+            let now = Date()
+            // Renew with 70s remaining, well ahead of the native deadline. Leaving
+            // the screen tightens a deferred deadline to the normal 60s interval.
+            if solving ? previous.1.timeIntervalSince(now) > 70 : previous.1.timeIntervalSince(now) <= 60 { return }
+            let replacement = ids.first { $0 != previous.0 }!
+            // A crash can leave both slots accepted. Keep the later one while freeing
+            // only the older slot; at least one fallback remains throughout.
+            let oldMetadata = AlarmDataStore.shared.retrieve(alarmUUID: replacement.uuidString)
+            guard AlarmDataStore.shared.store(alarmUUID: replacement, data: previous.2) else {
+                throw AlarmKitError.schedulingFailed("Could not persist deferred recovery metadata")
+            }
+            var accepted = false
+            do {
+                try await NativeRecoveryDeadlineReplacement.perform(
+                    previousIDs: [previous.0], replacementID: replacement,
+                    schedule: {
+                        _ = try await AlarmManager.shared.schedule(id: replacement, configuration:
+                            self.recoveryConfiguration(data: previous.2, id: replacement,
+                                deadline: now.addingTimeInterval(solving ? 90 : 60)))
+                        accepted = true
+                    }, isCurrent: {
+                        guard AlarmRecoveryStore.shared.isCurrent(alarmId: alarmId, session: session) else { return false }
+                        return try await asyncFunction(for: IosApplication.shared.isUnresolvedOccurrence(
+                            alarmId: alarmId, activeAt: activeAt)).boolValue
+                    }, cancel: { id in
+                        if try AlarmManager.shared.alarms.contains(where: { $0.id == id }) {
+                            try AlarmManager.shared.cancel(id: id)
+                        }
+                        guard AlarmDataStore.shared.remove(alarmUUID: id.uuidString) else {
+                            throw AlarmKitError.schedulingFailed("Could not persist replaced recovery cancellation")
+                        }
+                    })
+                IosApplication.shared.clearRecoveryFailure(alarmId: alarmId)
+            } catch {
+                if !accepted && AlarmRecoveryStore.shared.isCurrent(alarmId: alarmId, session: session) {
+                    if let oldMetadata { AlarmDataStore.shared.store(alarmUUID: replacement, data: oldMetadata) }
+                    else { AlarmDataStore.shared.remove(alarmUUID: replacement.uuidString) }
+                }
+                throw error
+            }
+        } catch {
+            IosApplication.shared.reportRecoveryFailure(alarmId: alarmId)
+            print("Could not defer native recovery; existing fallback retained: \(error)")
+        }
+    }
+
     @available(iOS 26, *)
     private func cancelAlarmKitAlarm(alarmId: Int64) -> String? {
         let priorRecovery = AlarmRecoveryStore.shared.current(alarmId: alarmId)
@@ -800,7 +940,7 @@ class AlarmKitWrapperImpl: NSObject {
         do {
             let manager = AlarmManager.shared
             // Query OS alarms and persisted metadata so cancellation also works after relaunch.
-            let keys = (0...6).map { "day_\($0)" } + ["snooze", "recovery"]
+            let keys = (0...6).map { "day_\($0)" } + ["snooze", "recovery", "recovery_standby"]
             let ids = Set(keys.map { occurrenceUUID(alarmId: alarmId, key: $0) })
             var failures: [String] = []
             for alarm in try manager.alarms {

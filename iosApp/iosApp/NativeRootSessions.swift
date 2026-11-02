@@ -52,7 +52,14 @@ final class NativeWindowSessions: ObservableObject {
     private let inspectDelivery: (String) async throws -> AlarmHandoffDisposition
     private var windowEnded = false
     private let windowID = UUID().uuidString
-    @Published private(set) var editors: [NativeEditorSession] = []
+    // Plain Sendable ID snapshots let nonisolated teardown avoid @Published getters.
+    // They carry no models and are updated only with the authoritative collections.
+    private var editorCleanupIDs: [String] = []
+    private var challengeCleanupIDs: [String] = []
+    private var previewCleanupIDs: [String] = []
+    @Published private(set) var editors: [NativeEditorSession] = [] {
+        didSet { editorCleanupIDs = editors.map(\.id) }
+    }
     @Published private(set) var editorPaths: [String: [NativeEditorDestination]] = [:]
     @Published private(set) var selectedEditorID: String?
     @Published var editorExitConfirmation = false
@@ -71,7 +78,9 @@ final class NativeWindowSessions: ObservableObject {
     private var navigationObservers: [String: Int] = [:]
     private var latestNavigationObservers: [String: Int] = [:]
     @Published private(set) var challenge: NativeChallengeSession?
-    @Published private(set) var challenges: [NativeChallengeSession] = []
+    @Published private(set) var challenges: [NativeChallengeSession] = [] {
+        didSet { challengeCleanupIDs = challenges.map(\.id) }
+    }
     @Published private(set) var pendingPayload: String?
     @Published var deliveryPresented = false {
         didSet {
@@ -81,7 +90,9 @@ final class NativeWindowSessions: ObservableObject {
             }
         }
     }
-    @Published private(set) var previews: [String: NativeChallengeSession] = [:]
+    @Published private(set) var previews: [String: NativeChallengeSession] = [:] {
+        didSet { previewCleanupIDs = previews.values.map(\.id) }
+    }
     @Published private(set) var challengeFailures: [String: ChallengeResult] = [:]
     @Published private(set) var handoffWriteFailed = false
     private var initializationTasks: [String: Task<Void, Never>] = [:]
@@ -174,7 +185,7 @@ final class NativeWindowSessions: ObservableObject {
         if let alarm { model = SharedFeatures.shared.editor(sessionId: id, alarm: alarm) }
         else { model = SharedFeatures.shared.doNewEditor(sessionId: id) }
         let session = NativeEditorSession(id: id, alarmID: alarm?.alarmId, model: model)
-        soundSelections[id] = NativeSoundSelection(sessionID: id, currentTone: model.state.tone)
+        soundSelections[id] = NativeSoundSelection(sessionID: id)
         editors.append(session)
         editorPaths[id] = []
         selectEditor(id: id)
@@ -646,13 +657,15 @@ final class NativeWindowSessions: ObservableObject {
         }
     }
 
-    isolated deinit {
+    deinit {
         // The actual window lifetime ends here. Closing observations cannot resolve a
         // durable occurrence, cancel application commands or silence application audio.
-        let editorIDs = editors.map(\.id)
+        // Avoid isolated-deinit runtime entry points on older supported iOS runtimes.
+        // Snapshot storage only; perform all native/Kotlin cleanup on Main below.
+        let editorIDs = editorCleanupIDs
         let sounds = Array(soundSelections.values)
         let guide = settingsGuide
-        let challengeIDs = challenges.map(\.id) + previews.values.map(\.id)
+        let challengeIDs = challengeCleanupIDs + previewCleanupIDs
         DispatchQueue.main.async {
             guide.stop()
             sounds.forEach { $0.finish() }
@@ -668,7 +681,7 @@ final class NativeWindowSessions: ObservableObject {
 private final class NativeWindowLifetime: ObservableObject {
     private weak var sessions: NativeWindowSessions?
     init(sessions: NativeWindowSessions) { self.sessions = sessions }
-    isolated deinit {
+    deinit {
         guard let sessions else { return }
         DispatchQueue.main.async { sessions.closeWindow() }
     }
