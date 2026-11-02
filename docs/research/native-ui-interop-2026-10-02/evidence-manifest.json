@@ -1,0 +1,50 @@
+{
+  "verified_on": "2026-10-02",
+  "files": [
+    {
+      "file": "bridge-ios-runtime.json",
+      "bytes": 564,
+      "sha256": "ceb754dc315e7208f4c030f49c61ca4c761114809575e8be48dbbd738e8b7eeb"
+    },
+    {
+      "file": "bridge-jvm-tests.json",
+      "bytes": 312,
+      "sha256": "34338c579386a2366ccc95cf0b67b0fd26de1cc6978430d80a22f1b22126a882"
+    },
+    {
+      "file": "bridge-android-runtime.json",
+      "bytes": 655,
+      "sha256": "f9f21c5c50895608503ba92444fdbc2ae54f1f61a0cf099f8617b4ab7298efc1"
+    },
+    {
+      "file": "native-swift-export-ios-runtime.log",
+      "bytes": 606,
+      "sha256": "c25ce32bc13dac55f03c41da3a08633a91fc46608eaa299259a5d67077f1f0eb"
+    },
+    {
+      "file": "native-swift-export-macos-runtime.log",
+      "bytes": 607,
+      "sha256": "6f705305dac71e29d7f0db888d964ce624a9ef2ea21a023cc62a5ae833128099"
+    },
+    {
+      "file": "native-swift-export-direct-link-error.log",
+      "bytes": 929,
+      "sha256": "8e9c8a40248a945f1d7f052ecc65eb822380b0d334b045e6a4db1b3674800337"
+    },
+    {
+      "file": "native-swift-export-swift6-errors.log",
+      "bytes": 529,
+      "sha256": "de6bc0c2a5a76d24c96bf7a025f62614c90a774cb84a88702b077c0050a5216b"
+    },
+    {
+      "file": "bridge-duo-open.png",
+      "bytes": 459042,
+      "sha256": "0f20356f0a31210603edf5b3ed6c9eb0c8b0ab6e84980b93c1a21c06589b9390"
+    },
+    {
+      "file": "native-swift-export-duo-open.png",
+      "bytes": 201017,
+      "sha256": "b445e76c9d8dcbd1955eb48407bb0d1b631105d247c726dfced980155fd8f57f"
+    }
+  ]
+}

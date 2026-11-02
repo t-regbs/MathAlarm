@@ -1,0 +1,94 @@
+# Asserts the native editor/preview Done accessories with software-keyboard captures.
+# Only an unsaved draft/preview is changed; no alarm is scheduled or saved.
+appId: com.timilehinaregbesola.mathalarm
+---
+- launchApp
+- setOrientation: "${typeof CHALLENGE_ORIENTATION === 'undefined' ? 'PORTRAIT' : CHALLENGE_ORIENTATION}"
+- runFlow:
+    when:
+      visible:
+        id: announcementGotIt
+    commands:
+      - tapOn:
+          id: announcementGotIt
+- tapOn:
+    id: add-alarm
+- tapOn:
+    id: editor-title
+- inputText: 'Native M6 "Keyboard" draft'
+- assertVisible:
+    id: editor-keyboard-done
+- waitForAnimationToEnd
+- takeScreenshot: "native-editor-software-keyboard-${typeof CHALLENGE_ORIENTATION === 'undefined' ? 'portrait' : CHALLENGE_ORIENTATION}"
+- tapOn:
+    id: editor-keyboard-done
+- assertVisible: 'Native M6 "Keyboard" draft'
+- assertNotVisible:
+    id: editor-keyboard-done
+- scrollUntilVisible:
+    element:
+      id: editor-test-alarm
+    direction: DOWN
+- tapOn:
+    id: editor-test-alarm
+- scrollUntilVisible:
+    element:
+      id: challenge-answer
+    direction: DOWN
+- assertVisible:
+    id: challenge-answer
+- tapOn:
+    id: challenge-answer
+- inputText: "-123"
+- assertVisible: "-123"
+- assertVisible:
+    id: challenge-clear
+- tapOn:
+    id: challenge-clear
+- assertNotVisible: "-123"
+- assertVisible:
+    id: challenge-keyboard-done
+- inputText: "999999"
+- assertVisible:
+    id: challenge-keyboard-done
+- waitForAnimationToEnd
+- assertVisible:
+    id: challenge-answer
+- runFlow:
+    when:
+      true: ${typeof REQUIRE_VISIBLE_TASK === 'undefined' || REQUIRE_VISIBLE_TASK == 'true'}
+    commands:
+      - assertVisible:
+          id: challenge-problem
+      - assertVisible:
+          id: challenge-submit
+- takeScreenshot: "native-preview-software-keyboard-${typeof CHALLENGE_ORIENTATION === 'undefined' ? 'portrait' : CHALLENGE_ORIENTATION}"
+- tapOn:
+    id: challenge-keyboard-done
+- assertNotVisible:
+    id: challenge-keyboard-done
+- scrollUntilVisible:
+    element:
+      id: challenge-submit
+    direction: DOWN
+- tapOn:
+    id: challenge-submit
+- scrollUntilVisible:
+    element:
+      text: "Incorrect answer. Try again."
+    direction: DOWN
+- assertVisible: "Incorrect answer. Try again."
+- takeScreenshot: "native-preview-wrong-answer-${typeof CHALLENGE_ORIENTATION === 'undefined' ? 'portrait' : CHALLENGE_ORIENTATION}"
+- tapOn:
+    id: challenge-acknowledge-feedback
+- assertNotVisible: "Incorrect answer. Try again."
+- tapOn:
+    id: challenge-cancel-preview
+- scrollUntilVisible:
+    element:
+      id: editor-title
+    direction: UP
+- assertVisible: 'Native M6 "Keyboard" draft'
+- tapOn:
+    id: discard-draft
+- tapOn: "Discard changes"

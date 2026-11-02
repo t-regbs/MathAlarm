@@ -1,0 +1,48 @@
+package com.timilehinaregbesola.mathalarm.platform
+
+import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences
+
+// Vibration
+expect class PlatformVibrator() {
+    fun startWaveform(pattern: LongArray, repeat: Int)
+    fun cancel()
+}
+
+// Default alarm tone uri as String
+expect fun getDefaultAlarmTone(): String
+
+expect fun supportsSkipNext(): Boolean
+
+// Whether MathScreen should start its own alarm audio player.
+// Android keeps notification alarm audio in AlarmService; iOS starts audio from
+// the screen after notification tap because background notification audio is limited.
+expect fun shouldStartMathScreenAlarmAudio(fromSheet: Boolean): Boolean
+
+// True when running on iOS.
+expect fun isIosPlatform(): Boolean
+
+// Check if notifications are enabled for the app
+expect fun areNotificationsEnabled(): Boolean
+
+// Get application ID for sharing
+expect fun getApplicationId(): String
+
+/** URL safe to share for the current platform's release. */
+expect fun getAppShareUrl(): String
+
+// Applies platform night mode state for Android XML resources and launch surfaces.
+expect fun applyPlatformNightMode(theme: AlarmPreferences.Theme)
+
+expect fun stopAlarmTonePreview()
+
+/** Main-thread sound audition. Ownership prevents outgoing picker cleanup stopping a newer one. */
+expect fun previewOwnedAlarmTone(ownerId: String, alarmTone: String,
+    onFinished: (com.timilehinaregbesola.mathalarm.sound.TonePreviewResult) -> Unit)
+expect fun stopOwnedAlarmTonePreview(ownerId: String)
+
+/**
+ * Stop the platform alarm audio.
+ * On iOS, this stops the IosAlarmAudioManager.
+ * On Android, this is a no-op (audio is handled by the service).
+ */
+expect fun stopPlatformAlarmAudio()

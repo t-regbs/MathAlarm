@@ -9,11 +9,15 @@ import com.timilehinaregbesola.mathalarm.provider.DateTimeProviderImpl
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toInstant
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class CompleteAlarm(
     private val alarmRepository: AlarmRepository,
     private val alarmInteractor: AlarmInteractor,
     private val notificationInteractor: NotificationInteractor,
     private val dateTimeProvider: DateTimeProvider = DateTimeProviderImpl(),
+    private val onCleanupFailure: (Long, Exception) -> Unit = { _, _ -> },
+    private val onCleanupSuccess: (Long) -> Unit = {},
     private val onCompleted: () -> Unit = {},
 ) {
     suspend operator fun invoke(alarmId: Long, expectedActiveAt: Long? = null): Boolean {
@@ -25,7 +29,8 @@ class CompleteAlarm(
         if (expectedActiveAt != null && alarm.activeAt != expectedActiveAt) return false
         val now = dateTimeProvider.getCurrentDateTime()
             .toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
-        val pending = alarm.pendingTimes.filter { it > now }
+        val pendingAfter = if (alarm.repeat) alarm.activeAt ?: now else now
+        val pending = alarm.pendingTimes.filter { it > pendingAfter }
         val hasRemaining = if (alarm.scheduleInitialized) {
             pending.isNotEmpty()
         } else {
@@ -41,13 +46,14 @@ class CompleteAlarm(
             scheduleError = if (alarm.repeat || hasRemaining) alarm.scheduleError else null
         )
         alarmInteractor.cancelSnooze(alarm)
-        if (!updated.isOn) alarmInteractor.cancel(alarm)
-        alarmRepository.updateAlarm(updated)
-        notificationInteractor.dismiss(alarmId)
+        if (!updated.isOn) alarmInteractor.cancelRegularOccurrences(alarm)
+        val accepted = updated.copy(scheduleError = AlarmCommandJournal.cleanup(updated.scheduleError))
+        alarmRepository.updateAlarm(accepted)
+        AlarmCommandJournal.cleanupAccepted(accepted, alarmRepository, alarmInteractor,
+            notificationInteractor, onCleanupFailure, onCleanupSuccess)
         if (alarm.activeAt != null) onCompleted()
         return true
     }
 
-    // Never overwrite current settings with the snapshot embedded in a notification.
     suspend operator fun invoke(alarm: Alarm) = invoke(alarm.alarmId)
 }

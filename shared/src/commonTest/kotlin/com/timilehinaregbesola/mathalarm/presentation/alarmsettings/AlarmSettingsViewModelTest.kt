@@ -4,7 +4,6 @@ import com.timilehinaregbesola.mathalarm.provider.AlarmTimeCalculatorImpl
 import kotlinx.datetime.toInstant
 import kotlinx.datetime.TimeZone
 import kotlinx.datetime.LocalDateTime
-import androidx.compose.ui.text.input.TextFieldValue
 import com.timilehinaregbesola.mathalarm.domain.model.MathChallenge
 import com.timilehinaregbesola.mathalarm.domain.model.mathChallenge
 import app.cash.turbine.test
@@ -15,6 +14,8 @@ import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
 import com.timilehinaregbesola.mathalarm.usecases.*
 import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
+import com.timilehinaregbesola.mathalarm.sound.AlarmSoundCatalog
+import com.timilehinaregbesola.mathalarm.platform.isIosPlatform
 import io.kotest.matchers.shouldBe
 import io.kotest.matchers.types.shouldBeInstanceOf
 import kotlin.test.AfterTest
@@ -24,11 +25,455 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.*
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AlarmSettingsViewModelTest {
+
+    @Test
+    fun `reopening and saving preserves literal plus signs in the label`() = runTest {
+        val alarm = Alarm(alarmId = 1010, title = "Coffee + maths", isSaved = true, isOn = false,
+            alarmTone = "test_tone")
+        usecases.addAlarm(alarm)
+        viewModel.setAlarm(alarm)
+        viewModel.state.value.alarmTitle shouldBe alarm.title
+        viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+        advanceUntilIdle()
+        usecases.findAlarm(alarm.alarmId)!!.title shouldBe alarm.title
+    }
+
+    @Test
+    fun `reverting time and weekday edits does not invalidate an active occurrence`() = runTest {
+        val alarm = Alarm(alarmId = 1011, hour = 7, minute = 30, title = "Morning", isSaved = true,
+            isOn = true, repeat = true, repeatDays = "TFTFTFT", alarmTone = "test_tone",
+            activeAt = 1000, pendingTimes = listOf(2000), scheduleInitialized = true)
+        usecases.addAlarm(alarm)
+        viewModel.setAlarm(alarm)
+        viewModel.onEvent(AddEditAlarmEvent.ChangeTime(TimeState(8, 30)))
+        viewModel.onEvent(AddEditAlarmEvent.ChangeTime(TimeState(7, 30)))
+        viewModel.onEvent(AddEditAlarmEvent.ToggleDayChooser("TTTTTTT"))
+        viewModel.onEvent(AddEditAlarmEvent.ToggleDayChooser(alarm.repeatDays))
+        viewModel.state.value.hasUnsavedChanges shouldBe false
+        viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+        advanceUntilIdle()
+        val saved = usecases.findAlarm(alarm.alarmId)!!
+        saved.activeAt shouldBe alarm.activeAt
+        saved.pendingTimes shouldBe alarm.pendingTimes
+    }
+
+    @Test
+    fun `new draft can be saved disabled without permission or any scheduled occurrence`() = runTest {
+        viewModel.setAlarm(Alarm(alarmTone = "test_tone"))
+        viewModel.state.value.isOn shouldBe true
+        viewModel.onEvent(AddEditAlarmEvent.ToggleEnabled(false))
+        viewModel.onEvent(AddEditAlarmEvent.EnteredTitle("Disabled native draft"))
+        permission.setPermission(false)
+        viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+        advanceUntilIdle()
+
+        val saved = usecases.getSavedAlarms().first().single()
+        saved.isOn shouldBe false
+        saved.isSaved shouldBe true
+        saved.title shouldBe "Disabled native draft"
+        saved.pendingTimes shouldBe emptyList()
+        saved.activeAt shouldBe null
+        alarmInteractor.getScheduledAlarms() shouldBe emptyMap()
+        viewModel.state.value.hasUnsavedChanges shouldBe false
+        viewModel.state.value.results.single().event shouldBe AlarmSettingsViewModel.UiEvent.SaveAlarm
+    }
+
+    @Test
+    fun `explicitly enabling an existing editor draft persists and registers its occurrence`() = runTest {
+        val original = Alarm(alarmId = 1001, isSaved = true, isOn = false, alarmTone = "test_tone")
+        usecases.addAlarm(original)
+        viewModel.setAlarm(original)
+        viewModel.onEvent(AddEditAlarmEvent.ToggleEnabled(true))
+        viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+        advanceUntilIdle()
+
+        val saved = usecases.findAlarm(original.alarmId)!!
+        saved.isOn shouldBe true
+        saved.pendingTimes.isNotEmpty() shouldBe true
+        listOf(alarmInteractor.getScheduledAlarms()[saved.alarmId]!!.timeInMillis) shouldBe saved.pendingTimes
+        viewModel.state.value.isOn shouldBe true
+        viewModel.state.value.hasUnsavedChanges shouldBe false
+        viewModel.state.value.results.single().event shouldBe AlarmSettingsViewModel.UiEvent.SaveAlarm
+    }
+
+    @Test
+    fun `failed editor disable retains the real occurrence and draft then retries cancellation`() = runTest {
+        val original = Alarm(alarmId = 1002, isSaved = true, isOn = true, alarmTone = "test_tone")
+        usecases.addAlarm(original)
+        usecases.scheduleAlarm(original, true)
+        val scheduled = usecases.findAlarm(original.alarmId)!!
+        val active = scheduled.copy(activeAt = scheduled.pendingTimes.single(), snoozeCount = 2)
+        usecases.addAlarm(active)
+        val registered = alarmInteractor.getScheduledAlarms()
+        var failCancellation = true
+        val backend = object : AlarmInteractor by alarmInteractor {
+            override fun cancel(alarm: Alarm) {
+                if (failCancellation) error("cancellation unavailable")
+                alarmInteractor.cancel(alarm)
+            }
+        }
+        val commands = usecases.copy(cancelAlarm = CancelAlarm(backend))
+        viewModel = AlarmSettingsViewModel(commands, permission)
+        viewModel.setAlarm(active)
+        viewModel.onEvent(AddEditAlarmEvent.ToggleEnabled(false))
+        viewModel.onEvent(AddEditAlarmEvent.EnteredTitle("Retained disable draft"))
+        permission.setPermission(false)
+        viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+        advanceUntilIdle()
+
+        usecases.findAlarm(original.alarmId) shouldBe active
+        alarmInteractor.getScheduledAlarms() shouldBe registered
+        viewModel.state.value.isOn shouldBe false
+        viewModel.state.value.alarmTitle shouldBe "Retained disable draft"
+        viewModel.state.value.hasUnsavedChanges shouldBe true
+        viewModel.state.value.isSaving shouldBe false
+        val failure = viewModel.state.value.results.single()
+        failure.event shouldBe AlarmSettingsViewModel.UiEvent.ShowError(AlarmErrorMessage.SAVE)
+
+        failCancellation = false
+        viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+        advanceUntilIdle()
+        val disabled = usecases.findAlarm(original.alarmId)!!
+        disabled.isOn shouldBe false
+        disabled.title shouldBe "Retained disable draft"
+        disabled.pendingTimes shouldBe emptyList()
+        disabled.activeAt shouldBe null
+        disabled.snoozedUntil shouldBe null
+        disabled.snoozeCount shouldBe 0
+        alarmInteractor.getScheduledAlarms() shouldBe emptyMap()
+        viewModel.state.value.hasUnsavedChanges shouldBe false
+        viewModel.state.value.results.first() shouldBe failure
+        viewModel.state.value.results.last().event shouldBe AlarmSettingsViewModel.UiEvent.SaveAlarm
+    }
+
+    @Test
+    fun `shared mixing intents clamp counts preserve one question and persist normalized configuration`() = runTest {
+        viewModel.setAlarm(Alarm(alarmTone = "test_tone"))
+        viewModel.onEvent(AddEditAlarmEvent.OnChallengeChange(MathChallenge(difficulty = 1, questionCount = 2)))
+        viewModel.setChallengeMixing(true)
+        viewModel.state.value.challenge.difficultyMix shouldBe "11"
+        viewModel.setMixedQuestionCount(0, 100)
+        viewModel.state.value.challenge.difficultyMix shouldBe "0000000011"
+        viewModel.state.value.challenge.questionCount shouldBe MathChallenge.MAX_QUESTIONS
+        viewModel.setMixedQuestionCount(1, -5)
+        viewModel.state.value.challenge.difficultyMix shouldBe "00000000"
+        viewModel.setMixedQuestionCount(0, 0)
+        viewModel.state.value.challenge.difficultyMix shouldBe "0"
+        viewModel.state.value.challenge.questionCount shouldBe 1
+        viewModel.setMixedQuestionCount(2, 2)
+        viewModel.setChallengeMixing(false)
+        viewModel.state.value.challenge.difficultyMix shouldBe ""
+        viewModel.state.value.challenge.difficulty shouldBe 0
+        viewModel.state.value.challenge.questionCount shouldBe 3
+        viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+        advanceUntilIdle()
+        val saved = usecases.getSavedAlarms().first().single()
+        saved.mathChallenge shouldBe viewModel.state.value.challenge
+        listOf(alarmInteractor.getScheduledAlarms()[saved.alarmId]!!.timeInMillis) shouldBe saved.pendingTimes
+    }
+
+    @Test
+    fun `mixing intents preserve custom configuration and reject invalid difficulty changes`() {
+        viewModel.setAlarm(Alarm(alarmTone = "test_tone"))
+        val custom = MathChallenge(difficulty = MathChallenge.CUSTOM, questionCount = 4,
+            operations = "+", additionRange = 2)
+        viewModel.onEvent(AddEditAlarmEvent.OnChallengeChange(custom))
+        viewModel.setChallengeMixing(true)
+        viewModel.setMixedQuestionCount(MathChallenge.CUSTOM, 2)
+        viewModel.setMixedQuestionCount(-1, 2)
+        viewModel.state.value.challenge shouldBe custom
+    }
+
+    @Test
+    fun `existing draft enable scheduling failure retains identity and retries its failed registration`() = runTest {
+        val original = Alarm(alarmId = 1003, isSaved = true, isOn = false, alarmTone = "test_tone")
+        usecases.addAlarm(original)
+        var failRegistration = true
+        val backend = object : AlarmInteractor by alarmInteractor {
+            override suspend fun schedule(alarm: Alarm, timeInMillis: Long) {
+                if (failRegistration) error("registration unavailable")
+                alarmInteractor.schedule(alarm, timeInMillis)
+            }
+        }
+        val commands = usecases.copy(scheduleAlarm = ScheduleAlarm(repository, backend, AlarmTimeCalculatorFake()))
+        viewModel = AlarmSettingsViewModel(commands, permission)
+        viewModel.setAlarm(original)
+        viewModel.onEvent(AddEditAlarmEvent.ToggleEnabled(true))
+        viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+        advanceUntilIdle()
+        val failed = usecases.findAlarm(original.alarmId)!!
+        failed.isOn shouldBe true
+        failed.scheduleError shouldBe "registration unavailable"
+        failed.pendingTimes.isNotEmpty() shouldBe true
+        alarmInteractor.getScheduledAlarms() shouldBe emptyMap()
+        viewModel.state.value.hasUnsavedChanges shouldBe true
+        viewModel.state.value.results.single().event shouldBe AlarmSettingsViewModel.UiEvent.ShowError(AlarmErrorMessage.SAVE)
+
+        failRegistration = false
+        viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+        advanceUntilIdle()
+        val accepted = usecases.getSavedAlarms().first().single()
+        accepted.alarmId shouldBe original.alarmId
+        accepted.scheduleError shouldBe null
+        accepted.pendingTimes shouldBe failed.pendingTimes
+        listOf(alarmInteractor.getScheduledAlarms()[accepted.alarmId]!!.timeInMillis) shouldBe accepted.pendingTimes
+        viewModel.state.value.hasUnsavedChanges shouldBe false
+        viewModel.state.value.results.last().event shouldBe AlarmSettingsViewModel.UiEvent.SaveAlarm
+    }
+
+    @Test
+    fun `failed enable can be explicitly reverted disabled despite matching original enabled state`() = runTest {
+        val original = Alarm(alarmId = 1004, isSaved = true, isOn = false, alarmTone = "test_tone")
+        usecases.addAlarm(original)
+        val backend = object : AlarmInteractor by alarmInteractor {
+            override suspend fun schedule(alarm: Alarm, timeInMillis: Long) {
+                // Model a native acceptance followed by a reported failure. Reverting must
+                // cancel this registration rather than trusting the original disabled draft.
+                alarmInteractor.schedule(alarm, timeInMillis)
+                error("registration response unavailable")
+            }
+        }
+        val commands = usecases.copy(scheduleAlarm = ScheduleAlarm(repository, backend, AlarmTimeCalculatorFake()))
+        viewModel = AlarmSettingsViewModel(commands, permission)
+        viewModel.setAlarm(original)
+        viewModel.onEvent(AddEditAlarmEvent.ToggleEnabled(true))
+        viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+        advanceUntilIdle()
+        val failed = usecases.findAlarm(original.alarmId)!!
+        failed.isOn shouldBe true
+        failed.scheduleError shouldBe "registration response unavailable"
+        listOf(alarmInteractor.getScheduledAlarms()[failed.alarmId]!!.timeInMillis) shouldBe failed.pendingTimes
+        viewModel.state.value.results.single().event shouldBe AlarmSettingsViewModel.UiEvent.ShowError(AlarmErrorMessage.SAVE)
+
+        viewModel.onEvent(AddEditAlarmEvent.ToggleEnabled(false))
+        permission.setPermission(false)
+        viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+        advanceUntilIdle()
+        val reverted = usecases.getSavedAlarms().first().single()
+        reverted.alarmId shouldBe original.alarmId
+        reverted.isOn shouldBe false
+        reverted.pendingTimes shouldBe emptyList()
+        reverted.scheduleError shouldBe null
+        alarmInteractor.getScheduledAlarms() shouldBe emptyMap()
+        viewModel.state.value.hasUnsavedChanges shouldBe false
+        viewModel.state.value.results.last().event shouldBe AlarmSettingsViewModel.UiEvent.SaveAlarm
+    }
+
+    @Test
+    fun `repeated enable mixing intent preserves configured difficulty counts`() {
+        viewModel.setAlarm(Alarm(alarmTone = "test_tone"))
+        viewModel.onEvent(AddEditAlarmEvent.OnChallengeChange(MathChallenge(difficulty = 1, questionCount = 2)))
+        viewModel.setChallengeMixing(true)
+        viewModel.setMixedQuestionCount(0, 3)
+        viewModel.setMixedQuestionCount(2, 1)
+        val mixed = viewModel.state.value.challenge
+        mixed.difficultyMix shouldBe "000112"
+        viewModel.setChallengeMixing(true)
+        viewModel.state.value.challenge shouldBe mixed
+        viewModel.state.value.hasUnsavedChanges shouldBe true
+    }
+
+    @Test
+    fun `custom operation intents retain the final operation and ignore unknown symbols`() {
+        viewModel.setAlarm(Alarm(alarmTone = "test_tone"))
+        viewModel.onEvent(AddEditAlarmEvent.OnChallengeChange(MathChallenge(difficulty = 3, operations = "+")))
+        viewModel.setChallengeOperation("+", false)
+        viewModel.state.value.challenge.operations shouldBe "+"
+        viewModel.setChallengeOperation("?", true)
+        viewModel.state.value.challenge.operations shouldBe "+"
+        viewModel.setChallengeOperation("×", true)
+        viewModel.state.value.challenge.operations shouldBe "+×"
+        viewModel.setChallengeOperation("+", false)
+        viewModel.state.value.challenge.operations shouldBe "×"
+    }
+
+    @Test
+    fun `failed new alarm scheduling retains its allocated identity for retry`() = runTest {
+        var failSchedule = true
+        val backend = object : AlarmInteractor by alarmInteractor {
+            override suspend fun schedule(alarm: Alarm, timeInMillis: Long) {
+                if (failSchedule) error("registration unavailable")
+                alarmInteractor.schedule(alarm, timeInMillis)
+            }
+        }
+        val commands = usecases.copy(scheduleAlarm = ScheduleAlarm(repository, backend, AlarmTimeCalculatorFake()))
+        viewModel = AlarmSettingsViewModel(commands, permission)
+        viewModel.setAlarm(Alarm(alarmTone = "test_tone"))
+        viewModel.onEvent(AddEditAlarmEvent.EnteredTitle("Retained scheduling draft"))
+        viewModel.onEvent(AddEditAlarmEvent.ChangeTime(TimeState(8, 30)))
+        viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+        advanceUntilIdle()
+        val inserted = usecases.getSavedAlarms().first().single()
+        (inserted.alarmId != 0L) shouldBe true
+        viewModel.currentAlarmId shouldBe inserted.alarmId
+        inserted.scheduleError shouldBe "registration unavailable"
+        inserted.pendingTimes.isNotEmpty() shouldBe true
+        alarmInteractor.getScheduledAlarms().isEmpty() shouldBe true
+        viewModel.state.value.alarmTitle shouldBe "Retained scheduling draft"
+        viewModel.state.value.alarmTime shouldBe TimeState(8, 30)
+        viewModel.state.value.hasUnsavedChanges shouldBe true
+        val failure = viewModel.state.value.results.single()
+        failure.event shouldBe AlarmSettingsViewModel.UiEvent.ShowError(AlarmErrorMessage.SAVE)
+        failSchedule = false
+        viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+        advanceUntilIdle()
+        val saved = usecases.getSavedAlarms().first().single()
+        saved.alarmId shouldBe inserted.alarmId
+        viewModel.currentAlarmId shouldBe inserted.alarmId
+        saved.title shouldBe "Retained scheduling draft"
+        saved.hour shouldBe 8
+        saved.minute shouldBe 30
+        saved.scheduleError shouldBe null
+        saved.pendingTimes shouldBe inserted.pendingTimes
+        listOf(alarmInteractor.getScheduledAlarms()[saved.alarmId]!!.timeInMillis) shouldBe saved.pendingTimes
+        viewModel.state.value.hasUnsavedChanges shouldBe false
+        viewModel.state.value.results.first() shouldBe failure
+        viewModel.state.value.results.last().event shouldBe AlarmSettingsViewModel.UiEvent.SaveAlarm
+    }
+
+    @Test
+    fun `cancelling a result waiter preserves a later accepted save failure and retry`() = runTest {
+        viewModel.setAlarm(Alarm(alarmTone = "test_tone"))
+        viewModel.onEvent(AddEditAlarmEvent.EnteredTitle("Retained waiter draft"))
+        permission.setPermission(false)
+        val locked = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val command = launch { usecases.command { locked.complete(Unit); release.await() } }
+        locked.await()
+        val waiter = async { viewModel.awaitResult(0L) }
+        runCurrent()
+        viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+        waiter.cancelAndJoin()
+        release.complete(Unit)
+        command.join()
+        advanceUntilIdle()
+        val failure = viewModel.state.value.results.single()
+        failure.event shouldBe AlarmSettingsViewModel.UiEvent.RequestExactAlarmPermission
+        viewModel.awaitResult(0L) shouldBe failure
+        viewModel.state.value.alarmTitle shouldBe "Retained waiter draft"
+        viewModel.state.value.hasUnsavedChanges shouldBe true
+        usecases.getSavedAlarms().first() shouldBe emptyList()
+        alarmInteractor.getScheduledAlarms().isEmpty() shouldBe true
+        permission.setPermission(true)
+        viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+        advanceUntilIdle()
+        val success = viewModel.awaitResult(failure.id)
+        success.event shouldBe AlarmSettingsViewModel.UiEvent.SaveAlarm
+        viewModel.state.value.hasUnsavedChanges shouldBe false
+        viewModel.state.value.results.first() shouldBe failure
+        val saved = usecases.getSavedAlarms().first().single()
+        saved.title shouldBe "Retained waiter draft"
+        listOf(alarmInteractor.getScheduledAlarms()[saved.alarmId]!!.timeInMillis) shouldBe saved.pendingTimes
+    }
+
+    @Test
+    fun `accepted save survives owner closure and retains its result`() = runTest {
+        viewModel.setAlarm(Alarm(alarmTone = "test_tone"))
+        val locked = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val command = launch { usecases.command { locked.complete(Unit); release.await() } }
+        locked.await()
+        viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+        viewModel.close()
+        release.complete(Unit)
+        command.join()
+        advanceUntilIdle()
+        val saved = usecases.getSavedAlarms().first().single()
+        saved.isSaved shouldBe true
+        saved.pendingTimes.isNotEmpty() shouldBe true
+        listOf(alarmInteractor.getScheduledAlarms()[saved.alarmId]!!.timeInMillis) shouldBe saved.pendingTimes
+        viewModel.state.value.isSaving shouldBe false
+        val result = viewModel.state.value.results.single()
+        result.event shouldBe AlarmSettingsViewModel.UiEvent.SaveAlarm
+        viewModel.acknowledgeResult(result.id)
+        viewModel.state.value.results shouldBe emptyList()
+        viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+        advanceUntilIdle()
+        usecases.getSavedAlarms().first().size shouldBe 1
+    }
+
+    @Test
+    fun `invalid time fails without writing and remains retryable`() = runTest {
+        viewModel.setAlarm(Alarm(alarmTone = "test_tone"))
+        viewModel.onEvent(AddEditAlarmEvent.ChangeTime(TimeState(24, 0)))
+        viewModel.state.value.validation shouldBe AlarmEditorValidation.INVALID_TIME
+        viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+        advanceUntilIdle()
+        usecases.getSavedAlarms().first() shouldBe emptyList()
+        alarmInteractor.getScheduledAlarms().isEmpty() shouldBe true
+        viewModel.state.value.results.single().event shouldBe
+            AlarmSettingsViewModel.UiEvent.ValidationFailed(AlarmEditorValidation.INVALID_TIME)
+        viewModel.onEvent(AddEditAlarmEvent.ChangeTime(TimeState(7, 0)))
+        viewModel.state.value.validation shouldBe AlarmEditorValidation.NONE
+        viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+        advanceUntilIdle()
+        val saved = usecases.getSavedAlarms().first().single()
+        saved.hour shouldBe 7
+        listOf(alarmInteractor.getScheduledAlarms()[saved.alarmId]!!.timeInMillis) shouldBe saved.pendingTimes
+        viewModel.state.value.results.last().event shouldBe AlarmSettingsViewModel.UiEvent.SaveAlarm
+    }
+
+    @Test
+    fun `preview result is retained and cannot persist an occurrence`() = runTest {
+        viewModel.setAlarm(Alarm(alarmTone = "test_tone"))
+        viewModel.onEvent(AddEditAlarmEvent.EnteredTitle("Unsaved preview"))
+        viewModel.onEvent(AddEditAlarmEvent.OnTestClick)
+        val result = viewModel.state.value.results.single()
+        (result.event as AlarmSettingsViewModel.UiEvent.TestAlarm).alarm.title shouldBe "Unsaved preview"
+        usecases.getSavedAlarms().first() shouldBe emptyList()
+        alarmInteractor.getScheduledAlarms().isEmpty() shouldBe true
+        viewModel.state.value.hasUnsavedChanges shouldBe true
+        viewModel.acknowledgeResult(result.id)
+        viewModel.state.value.hasUnsavedChanges shouldBe true
+        viewModel.state.value.alarmTitle shouldBe "Unsaved preview"
+    }
+
+    @Test
+    fun `new iOS alarm defaults to Orbit and saves that tone with its occurrence`() = runTest {
+        if (!isIosPlatform()) return@runTest
+        viewModel.setAlarm(Alarm(isOn = true))
+        viewModel.state.value.tone shouldBe AlarmSoundCatalog.DEFAULT_SOUND
+        viewModel.hasUnsavedChanges shouldBe false
+        viewModel.resultEvents().test {
+            viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+            awaitItem() shouldBe AlarmSettingsViewModel.UiEvent.SaveAlarm
+        }
+        val saved = usecases.findAlarm(viewModel.currentAlarmId!!)!!
+        saved.alarmTone shouldBe "alarm_orbit"
+        saved.pendingTimes.isNotEmpty() shouldBe true
+        listOf(alarmInteractor.getScheduledAlarms()[saved.alarmId]!!.timeInMillis) shouldBe saved.pendingTimes
+    }
+
+    @Test
+    fun `editing existing alarm preserves its bundled or device selection and occurrence`() = runTest {
+        for ((index, tone) in listOf("alarm_glass_garden", "alarm_daybreak", "content://media/internal/audio/media/42",
+            "content://settings/system/alarm_alert").withIndex()) {
+            val original = Alarm(alarmId = 980L + index, isSaved = true, isOn = true, alarmTone = tone)
+            usecases.addAlarm(original)
+            usecases.scheduleAlarm(original, true)
+            val scheduled = usecases.findAlarm(original.alarmId)!!
+            viewModel = AlarmSettingsViewModel(usecases, permission)
+            viewModel.setAlarm(scheduled)
+            viewModel.state.value.tone shouldBe tone
+            viewModel.onEvent(AddEditAlarmEvent.EnteredTitle("Edited sound fixture"))
+            viewModel.resultEvents().test {
+                viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+                awaitItem() shouldBe AlarmSettingsViewModel.UiEvent.SaveAlarm
+            }
+            val saved = usecases.findAlarm(original.alarmId)!!
+            saved.alarmTone shouldBe tone
+            saved.pendingTimes shouldBe scheduled.pendingTimes
+            listOf(alarmInteractor.getScheduledAlarms()[saved.alarmId]!!.timeInMillis) shouldBe saved.pendingTimes
+        }
+    }
 
     private val permission = AlarmPermissionFake()
     private lateinit var viewModel: AlarmSettingsViewModel
@@ -43,6 +488,7 @@ class AlarmSettingsViewModelTest {
     @BeforeTest
     fun setup() {
         Dispatchers.setMain(testDispatcher)
+        permission.setPermission(true)
         
         dataSource = AlarmRepositoryFake()
         repository = AlarmRepository(dataSource)
@@ -55,6 +501,7 @@ class AlarmSettingsViewModelTest {
         val rescheduleFutureAlarms = RescheduleFutureAlarms(repository, alarmInteractor, alarmTimeCalculator)
         
         usecases = Usecases(
+            applicationScope = kotlinx.coroutines.CoroutineScope(testDispatcher + kotlinx.coroutines.SupervisorJob()),
             addAlarm = AddAlarm(repository),
             findAlarm = FindAlarm(repository),
             deleteAlarm = DeleteAlarm(repository, alarmInteractor, notificationInteractor),
@@ -83,7 +530,7 @@ class AlarmSettingsViewModelTest {
             usecases.command { locked.complete(Unit); release.await() }
         }
         locked.await()
-        viewModel.eventFlow.test {
+        viewModel.resultEvents().test {
             viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
             viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
             release.complete(Unit)
@@ -99,7 +546,7 @@ class AlarmSettingsViewModelTest {
     fun `saving without exact alarm permission requests permission before writing`() = runTest {
         permission.setPermission(false)
         viewModel.setAlarm(Alarm(alarmTone = "test_tone"))
-        viewModel.eventFlow.test {
+        viewModel.resultEvents().test {
             viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
             awaitItem() shouldBe AlarmSettingsViewModel.UiEvent.RequestExactAlarmPermission
             usecases.getSavedAlarms().first().size shouldBe 0
@@ -120,9 +567,9 @@ class AlarmSettingsViewModelTest {
             viewModel.setAlarm(original)
             usecases.command { scheduleAlarm(original, true) }
             val enabled = usecases.findAlarm(original.alarmId)!!
-            viewModel.onEvent(AddEditAlarmEvent.EnteredTitle(TextFieldValue("Edited")))
+            viewModel.onEvent(AddEditAlarmEvent.EnteredTitle("Edited"))
             if (changeTime) viewModel.onEvent(AddEditAlarmEvent.ChangeTime(TimeState(8, 30)))
-            viewModel.eventFlow.test {
+            viewModel.resultEvents().test {
                 viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
                 awaitItem() shouldBe AlarmSettingsViewModel.UiEvent.SaveAlarm
             }
@@ -149,9 +596,9 @@ class AlarmSettingsViewModelTest {
                 updateAlarm(latest.copy(isOn = false, pendingTimes = emptyList()))
             }
             permission.setPermission(false)
-            viewModel.onEvent(AddEditAlarmEvent.EnteredTitle(TextFieldValue("Edited")))
+            viewModel.onEvent(AddEditAlarmEvent.EnteredTitle("Edited"))
             if (changeTime) viewModel.onEvent(AddEditAlarmEvent.ChangeTime(TimeState(8, 30)))
-            viewModel.eventFlow.test {
+            viewModel.resultEvents().test {
                 viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
                 awaitItem() shouldBe AlarmSettingsViewModel.UiEvent.SaveAlarm
             }
@@ -172,8 +619,8 @@ class AlarmSettingsViewModelTest {
         val enabled = usecases.findAlarm(original.alarmId)!!
         val scheduled = alarmInteractor.getScheduledAlarms()
         permission.setPermission(false)
-        viewModel.onEvent(AddEditAlarmEvent.EnteredTitle(TextFieldValue("Edited")))
-        viewModel.eventFlow.test {
+        viewModel.onEvent(AddEditAlarmEvent.EnteredTitle("Edited"))
+        viewModel.resultEvents().test {
             viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
             awaitItem() shouldBe AlarmSettingsViewModel.UiEvent.RequestExactAlarmPermission
             usecases.findAlarm(original.alarmId) shouldBe enabled
@@ -186,12 +633,12 @@ class AlarmSettingsViewModelTest {
         viewModel.hasUnsavedChanges shouldBe false
         viewModel.setAlarm(Alarm(alarmId = 99, title = "Morning", alarmTone = "test_tone"))
         viewModel.hasUnsavedChanges shouldBe false
-        viewModel.onEvent(AddEditAlarmEvent.EnteredTitle(androidx.compose.ui.text.input.TextFieldValue("Changed")))
+        viewModel.onEvent(AddEditAlarmEvent.EnteredTitle("Changed"))
         viewModel.hasUnsavedChanges shouldBe true
         // Re-entering an existing destination after a resize must not reset its draft.
         viewModel.setAlarm(Alarm(alarmId = 99, title = "Morning", alarmTone = "test_tone"))
-        viewModel.alarmTitle.value.text shouldBe "Changed"
-        viewModel.onEvent(AddEditAlarmEvent.EnteredTitle(androidx.compose.ui.text.input.TextFieldValue("Morning")))
+        viewModel.state.value.alarmTitle shouldBe "Changed"
+        viewModel.onEvent(AddEditAlarmEvent.EnteredTitle("Morning"))
         viewModel.hasUnsavedChanges shouldBe false
         viewModel.onEvent(AddEditAlarmEvent.ToggleVibrate(true))
         viewModel.hasUnsavedChanges shouldBe true
@@ -199,6 +646,8 @@ class AlarmSettingsViewModelTest {
 
     @AfterTest
     fun tearDown() {
+        viewModel.close()
+        usecases.applicationScope.cancel()
         Dispatchers.resetMain()
     }
 
@@ -207,7 +656,7 @@ class AlarmSettingsViewModelTest {
         viewModel.setAlarm(Alarm(alarmId = 732, alarmTone = "test_tone"))
         val config = MathChallenge(3, 7, "+×", 1, 2)
         viewModel.onEvent(AddEditAlarmEvent.OnChallengeChange(config))
-        viewModel.eventFlow.test {
+        viewModel.resultEvents().test {
             viewModel.onEvent(AddEditAlarmEvent.OnTestClick)
             (awaitItem() as AlarmSettingsViewModel.UiEvent.TestAlarm).alarm.mathChallenge shouldBe config
             viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
@@ -217,9 +666,9 @@ class AlarmSettingsViewModelTest {
         saved.mathChallenge shouldBe config
         val reopened = AlarmSettingsViewModel(usecases, permission)
         reopened.setAlarm(saved)
-        reopened.challenge.value shouldBe config
+        reopened.state.value.challenge shouldBe config
         reopened.onEvent(AddEditAlarmEvent.OnChallengeChange(config.copy(questionCount = 99)))
-        reopened.challenge.value.questionCount shouldBe 10
+        reopened.state.value.challenge.questionCount shouldBe 10
     }
 
     @Test
@@ -227,7 +676,7 @@ class AlarmSettingsViewModelTest {
         viewModel.setAlarm(Alarm(alarmId = 733, alarmTone = "test_tone"))
         val config = MathChallenge(difficultyMix = "00112").normalized()
         viewModel.onEvent(AddEditAlarmEvent.OnChallengeChange(config))
-        viewModel.eventFlow.test {
+        viewModel.resultEvents().test {
             viewModel.onEvent(AddEditAlarmEvent.OnTestClick)
             (awaitItem() as AlarmSettingsViewModel.UiEvent.TestAlarm).alarm.mathChallenge shouldBe config
             viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
@@ -235,7 +684,7 @@ class AlarmSettingsViewModelTest {
         }
         val reopened = AlarmSettingsViewModel(usecases, permission)
         reopened.setAlarm(usecases.findAlarm(733)!!)
-        reopened.challenge.value shouldBe config
+        reopened.state.value.challenge shouldBe config
     }
 
     @Test
@@ -249,7 +698,7 @@ class AlarmSettingsViewModelTest {
         viewModel = AlarmSettingsViewModel(commands, permission)
         viewModel.setAlarm(Alarm(isOn = true, alarmTone = "test_tone"))
         advanceUntilIdle()
-        viewModel.eventFlow.test {
+        viewModel.resultEvents().test {
             viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
             awaitItem() shouldBe AlarmSettingsViewModel.UiEvent.ShowError(AlarmErrorMessage.SAVE)
             advanceUntilIdle()
@@ -278,6 +727,26 @@ class AlarmSettingsViewModelTest {
             advanceUntilIdle()
             commands.findAlarm(881)!!.pendingTimes shouldBe listOf(remaining)
         }
+    }
+
+    @Test
+    fun `disabling snooze on the final occurrence turns off the saved alarm and editor switch`() = runTest {
+        val alarm = Alarm(alarmId = 883, isOn = true, isSaved = true, alarmTone = "test_tone",
+            scheduleInitialized = true, snoozedUntil = 1_999_999_000_000)
+        usecases.addAlarm(alarm)
+        viewModel.setAlarm(alarm)
+
+        viewModel.onEvent(AddEditAlarmEvent.ToggleSnooze(false))
+        viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+        advanceUntilIdle()
+
+        val saved = usecases.findAlarm(883)!!
+        saved.isOn shouldBe false
+        saved.snoozedUntil shouldBe null
+        saved.pendingTimes shouldBe emptyList()
+        viewModel.state.value.isOn shouldBe false
+        viewModel.state.value.hasUnsavedChanges shouldBe false
+        viewModel.state.value.results.single().event shouldBe AlarmSettingsViewModel.UiEvent.SaveAlarm
     }
 
     @Test
@@ -312,63 +781,63 @@ class AlarmSettingsViewModelTest {
     @Test
     fun `initial state should have default values`() {
         with(viewModel) {
-            alarmTime.value shouldBe TimeState()
-            alarmTitle.value.text shouldBe "Good day"
-            dayChooser.value shouldBe "FFFFFFF"
-            repeatWeekly.value shouldBe false
-            vibrate.value shouldBe false
-            snoozeEnabled.value shouldBe true
-            challenge.value.difficulty shouldBe 0
-            isOn.value shouldBe false
-            isSaved.value shouldBe false
+            state.value.alarmTime shouldBe TimeState()
+            state.value.alarmTitle shouldBe "Good day"
+            state.value.dayChooser shouldBe "FFFFFFF"
+            state.value.repeatWeekly shouldBe false
+            state.value.vibrate shouldBe false
+            state.value.snoozeEnabled shouldBe true
+            state.value.challenge.difficulty shouldBe 0
+            state.value.isOn shouldBe false
+            state.value.isSaved shouldBe false
         }
     }
 
     @Test
     fun `onEvent ChangeTime should update alarm time`() {
-        val newTime = TimeState(hour = 8, minute = 30, formattedTime = "08:30 AM")
+        val newTime = TimeState(hour = 8, minute = 30)
         
         viewModel.onEvent(AddEditAlarmEvent.ChangeTime(newTime))
         
-        viewModel.alarmTime.value shouldBe newTime
+        viewModel.state.value.alarmTime shouldBe newTime
     }
 
     @Test
     fun `onEvent EnteredTitle should update alarm title`() {
-        val newTitle = TextFieldValue("Wake up!")
+        val newTitle = "Wake up!"
         
         viewModel.onEvent(AddEditAlarmEvent.EnteredTitle(newTitle))
         
-        viewModel.alarmTitle.value shouldBe newTitle
+        viewModel.state.value.alarmTitle shouldBe newTitle
     }
 
     @Test
     fun `onEvent ToggleRepeat should update repeat weekly state`() {
         viewModel.onEvent(AddEditAlarmEvent.ToggleRepeat(true))
         
-        viewModel.repeatWeekly.value shouldBe true
+        viewModel.state.value.repeatWeekly shouldBe true
         
         viewModel.onEvent(AddEditAlarmEvent.ToggleRepeat(false))
         
-        viewModel.repeatWeekly.value shouldBe false
+        viewModel.state.value.repeatWeekly shouldBe false
     }
 
     @Test
     fun `onEvent ToggleVibrate should update vibrate state`() {
         viewModel.onEvent(AddEditAlarmEvent.ToggleVibrate(true))
         
-        viewModel.vibrate.value shouldBe true
+        viewModel.state.value.vibrate shouldBe true
     }
 
     @Test
     fun `onEvent ToggleSnooze should update snooze enabled state`() {
         viewModel.onEvent(AddEditAlarmEvent.ToggleSnooze(false))
 
-        viewModel.snoozeEnabled.value shouldBe false
+        viewModel.state.value.snoozeEnabled shouldBe false
 
         viewModel.onEvent(AddEditAlarmEvent.ToggleSnooze(true))
 
-        viewModel.snoozeEnabled.value shouldBe true
+        viewModel.state.value.snoozeEnabled shouldBe true
     }
 
     @Test
@@ -377,7 +846,7 @@ class AlarmSettingsViewModelTest {
         
         viewModel.onEvent(AddEditAlarmEvent.ToggleDayChooser(selectedDays))
         
-        viewModel.dayChooser.value shouldBe selectedDays
+        viewModel.state.value.dayChooser shouldBe selectedDays
     }
 
     @Test
@@ -386,15 +855,15 @@ class AlarmSettingsViewModelTest {
         
         viewModel.onEvent(AddEditAlarmEvent.OnToneChange(toneUri))
         
-        viewModel.tone.value shouldBe toneUri
+        viewModel.state.value.tone shouldBe toneUri
     }
 
     @Test
     fun `onEvent OnToneError should emit a localizable error`() = runTest {
         val errorMessage = "Failed to load tone"
         
-        viewModel.eventFlow.test {
-            viewModel.onEvent(AddEditAlarmEvent.OnToneError(errorMessage))
+        viewModel.resultEvents().test {
+            viewModel.onEvent(AddEditAlarmEvent.OnToneError)
             
             val event = awaitItem()
             event.shouldBeInstanceOf<AlarmSettingsViewModel.UiEvent.ShowError>()
@@ -407,7 +876,7 @@ class AlarmSettingsViewModelTest {
         val testAlarm = Alarm(alarmId = 123, hour = 9, minute = 0, alarmTone = "test_tone")
         viewModel.setAlarm(testAlarm)
         
-        viewModel.eventFlow.test {
+        viewModel.resultEvents().test {
             viewModel.onEvent(AddEditAlarmEvent.OnTestClick)
             
             val event = awaitItem()
@@ -420,10 +889,10 @@ class AlarmSettingsViewModelTest {
         val newAlarm = Alarm(alarmId = 456, hour = 7, minute = 30, alarmTone = "test_tone")
         viewModel.setAlarm(newAlarm)
         viewModel.onEvent(AddEditAlarmEvent.ChangeTime(TimeState(hour = 8, minute = 0)))
-        viewModel.onEvent(AddEditAlarmEvent.EnteredTitle(TextFieldValue("Morning alarm")))
+        viewModel.onEvent(AddEditAlarmEvent.EnteredTitle("Morning alarm"))
         viewModel.onEvent(AddEditAlarmEvent.ToggleVibrate(true))
         
-        viewModel.eventFlow.test {
+        viewModel.resultEvents().test {
             viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
             advanceUntilIdle()
             
@@ -448,9 +917,9 @@ class AlarmSettingsViewModelTest {
 
         with(viewModel) {
             currentAlarmId shouldBe 0
-            alarmTime.value.hour shouldBe 6
-            alarmTime.value.minute shouldBe 45
-            dayChooser.value.count { it == 'T' } shouldBe 1
+            state.value.alarmTime.hour shouldBe 6
+            state.value.alarmTime.minute shouldBe 45
+            state.value.dayChooser.count { it == 'T' } shouldBe 1
         }
     }
 
@@ -474,16 +943,16 @@ class AlarmSettingsViewModelTest {
 
         with(viewModel) {
             currentAlarmId shouldBe 999
-            alarmTime.value.hour shouldBe 10
-            alarmTime.value.minute shouldBe 15
-            repeatWeekly.value shouldBe true
-            dayChooser.value shouldBe "TFTFTFT"
-            vibrate.value shouldBe true
-            challenge.value.difficulty shouldBe 2
-            tone.value shouldBe "content://test/tone"
-            alarmTitle.value.text shouldBe "Test Alarm"
-            isOn.value shouldBe true
-            isSaved.value shouldBe true
+            state.value.alarmTime.hour shouldBe 10
+            state.value.alarmTime.minute shouldBe 15
+            state.value.repeatWeekly shouldBe true
+            state.value.dayChooser shouldBe "TFTFTFT"
+            state.value.vibrate shouldBe true
+            state.value.challenge.difficulty shouldBe 2
+            state.value.tone shouldBe "content://test/tone"
+            state.value.alarmTitle shouldBe "Test+Alarm"
+            state.value.isOn shouldBe true
+            state.value.isSaved shouldBe true
         }
     }
 
@@ -493,7 +962,7 @@ class AlarmSettingsViewModelTest {
 
         viewModel.setAlarm(alarm)
 
-        viewModel.snoozeEnabled.value shouldBe false
+        viewModel.state.value.snoozeEnabled shouldBe false
     }
 
     @Test
@@ -510,8 +979,8 @@ class AlarmSettingsViewModelTest {
         
         viewModel.onEvent(AddEditAlarmEvent.ChangeTime(TimeState(hour = 10, minute = 0)))
         
-        viewModel.alarmTime.value.hour shouldBe 10
-        viewModel.alarmTime.value.minute shouldBe 0
+        viewModel.state.value.alarmTime.hour shouldBe 10
+        viewModel.state.value.alarmTime.minute shouldBe 0
     }
 
     @Test
@@ -521,7 +990,7 @@ class AlarmSettingsViewModelTest {
         viewModel.onEvent(AddEditAlarmEvent.ToggleRepeat(true))
         viewModel.onEvent(AddEditAlarmEvent.ToggleDayChooser("TTTTTTT")) // All days
         
-        viewModel.eventFlow.test {
+        viewModel.resultEvents().test {
             viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
             advanceUntilIdle()
             
@@ -539,7 +1008,7 @@ class AlarmSettingsViewModelTest {
         viewModel.setAlarm(alarm)
         viewModel.onEvent(AddEditAlarmEvent.ToggleSnooze(false))
 
-        viewModel.eventFlow.test {
+        viewModel.resultEvents().test {
             viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
             advanceUntilIdle()
 
@@ -556,7 +1025,7 @@ class AlarmSettingsViewModelTest {
         viewModel.setAlarm(alarm)
         viewModel.onEvent(AddEditAlarmEvent.ToggleSnooze(true))
 
-        viewModel.eventFlow.test {
+        viewModel.resultEvents().test {
             viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
             advanceUntilIdle()
 
@@ -584,7 +1053,7 @@ class AlarmSettingsViewModelTest {
         viewModel.setAlarm(existingAlarm)
         viewModel.onEvent(AddEditAlarmEvent.ToggleSnooze(false))
 
-        viewModel.eventFlow.test {
+        viewModel.resultEvents().test {
             viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
             advanceUntilIdle()
 
@@ -611,7 +1080,7 @@ class AlarmSettingsViewModelTest {
         viewModel.setAlarm(existingAlarm)
         viewModel.onEvent(AddEditAlarmEvent.ToggleSnooze(false))
 
-        viewModel.eventFlow.test {
+        viewModel.resultEvents().test {
             viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
             advanceUntilIdle()
 
@@ -638,7 +1107,7 @@ class AlarmSettingsViewModelTest {
         viewModel.setAlarm(existingAlarm)
         viewModel.onEvent(AddEditAlarmEvent.ToggleDayChooser("FFTFFFF")) // Tuesday only
 
-        viewModel.eventFlow.test {
+        viewModel.resultEvents().test {
             viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
             advanceUntilIdle()
 
@@ -679,17 +1148,17 @@ class AlarmSettingsViewModelTest {
         viewModel.setAlarm(alarm)
         
         viewModel.onEvent(AddEditAlarmEvent.ChangeTime(TimeState(hour = 11, minute = 30)))
-        viewModel.onEvent(AddEditAlarmEvent.EnteredTitle(TextFieldValue("Custom Title")))
+        viewModel.onEvent(AddEditAlarmEvent.EnteredTitle("Custom Title"))
         viewModel.onEvent(AddEditAlarmEvent.ToggleVibrate(true))
         viewModel.onEvent(AddEditAlarmEvent.OnChallengeChange(MathChallenge(difficulty = 1)))
         viewModel.onEvent(AddEditAlarmEvent.ToggleRepeat(true))
         
-        viewModel.alarmTime.value.hour shouldBe 11
-        viewModel.alarmTime.value.minute shouldBe 30
-        viewModel.alarmTitle.value.text shouldBe "Custom Title"
-        viewModel.vibrate.value shouldBe true
-        viewModel.challenge.value.difficulty shouldBe 1
-        viewModel.repeatWeekly.value shouldBe true
+        viewModel.state.value.alarmTime.hour shouldBe 11
+        viewModel.state.value.alarmTime.minute shouldBe 30
+        viewModel.state.value.alarmTitle shouldBe "Custom Title"
+        viewModel.state.value.vibrate shouldBe true
+        viewModel.state.value.challenge.difficulty shouldBe 1
+        viewModel.state.value.repeatWeekly shouldBe true
     }
 
     @Test
@@ -701,13 +1170,13 @@ class AlarmSettingsViewModelTest {
         viewModel.setAlarm(alarm2) // Should be ignored
         
         viewModel.currentAlarmId shouldBe 444
-        viewModel.alarmTime.value.hour shouldBe 8
+        viewModel.state.value.alarmTime.hour shouldBe 8
     }
 
     @Test
     fun `new alarms default to three snoozes of five minutes`() = runTest {
         viewModel.setAlarm(Alarm(alarmTone = "test_tone"))
-        viewModel.eventFlow.test {
+        viewModel.resultEvents().test {
             viewModel.onEvent(AddEditAlarmEvent.OnTestClick)
             val draft = (awaitItem() as AlarmSettingsViewModel.UiEvent.TestAlarm).alarm
             draft.maxSnoozes shouldBe 3
@@ -721,10 +1190,10 @@ class AlarmSettingsViewModelTest {
             snoozeCount = 1, activeAt = 1000)
         usecases.addAlarm(alarm)
         viewModel.setAlarm(alarm)
-        viewModel.maxSnoozes.value shouldBe 0
+        viewModel.state.value.maxSnoozes shouldBe 0
         viewModel.onEvent(AddEditAlarmEvent.ChangeMaxSnoozes(2))
         viewModel.onEvent(AddEditAlarmEvent.ChangeSnoozeDuration(12))
-        viewModel.eventFlow.test {
+        viewModel.resultEvents().test {
             viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
             awaitItem() shouldBe AlarmSettingsViewModel.UiEvent.SaveAlarm
         }
@@ -734,8 +1203,8 @@ class AlarmSettingsViewModelTest {
         saved.snooze shouldBe 12
         val reopened = AlarmSettingsViewModel(usecases, permission)
         reopened.setAlarm(saved)
-        reopened.snoozeMinutes shouldBe 12
-        reopened.maxSnoozes.value shouldBe 2
+        reopened.state.value.snoozeMinutes shouldBe 12
+        reopened.state.value.maxSnoozes shouldBe 2
     }
 
 
@@ -743,15 +1212,15 @@ class AlarmSettingsViewModelTest {
     fun `snooze duration validates boundaries and survives toggling snooze`() = runTest {
         viewModel.setAlarm(Alarm(alarmTone = "test_tone"))
         viewModel.onEvent(AddEditAlarmEvent.ChangeSnoozeDuration(1))
-        viewModel.snoozeMinutes shouldBe 1
+        viewModel.state.value.snoozeMinutes shouldBe 1
         viewModel.onEvent(AddEditAlarmEvent.ChangeSnoozeDuration(30))
-        viewModel.snoozeMinutes shouldBe 30
+        viewModel.state.value.snoozeMinutes shouldBe 30
         for (invalid in listOf(0, -1, 31, 60)) {
             viewModel.onEvent(AddEditAlarmEvent.ChangeSnoozeDuration(invalid))
-            viewModel.snoozeMinutes shouldBe 30
+            viewModel.state.value.snoozeMinutes shouldBe 30
         }
         viewModel.onEvent(AddEditAlarmEvent.ToggleSnooze(false))
-        viewModel.eventFlow.test {
+        viewModel.resultEvents().test {
             viewModel.onEvent(AddEditAlarmEvent.OnTestClick)
             (awaitItem() as AlarmSettingsViewModel.UiEvent.TestAlarm).alarm.snooze shouldBe 0
             viewModel.onEvent(AddEditAlarmEvent.ToggleSnooze(true))
@@ -764,7 +1233,18 @@ class AlarmSettingsViewModelTest {
     @Test
     fun `editing a duration above the new maximum clamps it to thirty minutes`() {
         viewModel.setAlarm(Alarm(alarmId = 905, alarmTone = "test_tone", snooze = 60))
-        viewModel.snoozeMinutes shouldBe 30
+        viewModel.state.value.snoozeMinutes shouldBe 30
     }
 
+}
+
+/** Assertions consume retained semantic outcomes; no production event-only channel exists. */
+private fun AlarmSettingsViewModel.resultEvents() = kotlinx.coroutines.flow.flow {
+    var lastId = state.value.results.lastOrNull()?.id ?: 0L
+    state.collect { current ->
+        for (result in current.results.filter { it.id > lastId }) {
+            lastId = result.id
+            emit(result.event)
+        }
+    }
 }

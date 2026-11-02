@@ -7,6 +7,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 @Entity(tableName = "alarms")
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 data class AlarmEntity(
     @PrimaryKey(autoGenerate = true)
     val alarmId: Long,

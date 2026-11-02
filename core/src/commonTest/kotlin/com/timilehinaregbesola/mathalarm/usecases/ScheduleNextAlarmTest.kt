@@ -46,6 +46,21 @@ class ScheduleNextAlarmTest {
     }
 
     @Test
+    fun `delivery uses the recurrence advancement hook`() = runTest {
+        var advanced = false
+        val nativeWeeklyInteractor = object : com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor by alarmInteractor {
+            override suspend fun scheduleNextRepeating(alarm: Alarm, times: List<Long>) {
+                advanced = true
+            }
+        }
+
+        ScheduleNextAlarm(nativeWeeklyInteractor, alarmTimeCalculator)(baseAlarm.copy(repeat = true))
+
+        assertTrue(advanced)
+        assertTrue(alarmInteractor.getScheduledAlarms().isEmpty())
+    }
+
+    @Test
     fun `test if fails if not repeating`() = runTest {
         val alarm = baseAlarm.copy(repeat = false)
         assertFailsWith<IllegalArgumentException> {

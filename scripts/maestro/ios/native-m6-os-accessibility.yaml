@@ -1,0 +1,136 @@
+# Disposable English 402-point iPhone only. Native OS controls, not injected view flags.
+# Requires original Reduce Motion and Reduce Transparency both Off; restores Off.
+# If interrupted after an On capture, restore that setting through native Settings.
+appId: com.apple.Preferences
+---
+- launchApp
+- repeat:
+    times: 4
+    commands:
+      - tapOn:
+          id: BackButton
+          optional: true
+- scrollUntilVisible:
+    element:
+      text: Accessibility
+    direction: DOWN
+- tapOn: Accessibility
+- tapOn: Motion
+- assertVisible:
+    id: REDUCE_MOTION
+    checked: false
+- tapOn:
+    id: REDUCE_MOTION
+    width: 330
+    tolerance: 3
+    point: "90%,50%"
+- assertVisible:
+    id: REDUCE_MOTION
+    checked: true
+- takeScreenshot: native-os-reduce-motion-on
+- tapOn:
+    id: BackButton
+- tapOn: Display & Text Size
+- scrollUntilVisible:
+    element:
+      text: Reduce Transparency
+    direction: DOWN
+- assertVisible:
+    text: Reduce Transparency
+    checked: false
+- takeScreenshot: native-os-reduce-transparency-original
+- tapOn:
+    text: Reduce Transparency
+    width: 330
+    tolerance: 3
+    point: "90%,50%"
+- assertVisible:
+    text: Reduce Transparency
+    checked: true
+- takeScreenshot: native-os-reduce-transparency-on
+- launchApp:
+    appId: com.timilehinaregbesola.mathalarm
+- assertVisible:
+    id: add-alarm
+- assertVisible: Math Alarm
+- waitForAnimationToEnd
+- takeScreenshot: native-os-reduced-effects-root
+- runFlow:
+    when:
+      notVisible:
+        id: app-settings
+    commands:
+      - tapOn: More
+      - tapOn: Settings
+- runFlow:
+    when:
+      visible:
+        id: app-settings
+    commands:
+      - tapOn:
+          id: app-settings
+- assertVisible:
+    id: appThemePicker
+- waitForAnimationToEnd
+- takeScreenshot: native-os-reduced-effects-settings
+- tapOn:
+    id: appSettingsDone
+- tapOn:
+    id: add-alarm
+- assertVisible:
+    id: editor-title
+- assertVisible:
+    id: editor-enabled
+- assertVisible:
+    id: save-alarm
+- waitForAnimationToEnd
+- takeScreenshot: native-os-reduced-effects-editor
+- tapOn:
+    id: discard-draft
+- launchApp:
+    appId: com.apple.Preferences
+- repeat:
+    times: 4
+    commands:
+      - tapOn:
+          id: BackButton
+          optional: true
+- scrollUntilVisible:
+    element:
+      text: Accessibility
+    direction: DOWN
+- tapOn: Accessibility
+- tapOn: Display & Text Size
+- scrollUntilVisible:
+    element:
+      text: Reduce Transparency
+    direction: DOWN
+- assertVisible:
+    text: Reduce Transparency
+    checked: true
+- tapOn:
+    text: Reduce Transparency
+    width: 330
+    tolerance: 3
+    point: "90%,50%"
+- assertVisible:
+    text: Reduce Transparency
+    checked: false
+- takeScreenshot: native-os-reduce-transparency-restored
+- tapOn:
+    id: BackButton
+- tapOn: Motion
+- assertVisible:
+    id: REDUCE_MOTION
+    checked: true
+- tapOn:
+    id: REDUCE_MOTION
+    width: 330
+    tolerance: 3
+    point: "90%,50%"
+- assertVisible:
+    id: REDUCE_MOTION
+    checked: false
+- takeScreenshot: native-os-reduce-motion-restored
+- launchApp:
+    appId: com.timilehinaregbesola.mathalarm

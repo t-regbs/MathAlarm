@@ -1,0 +1,19 @@
+{
+  "suites": [
+    {
+      "suite": "AlarmEditorViewModelTest[jvm]",
+      "tests": 6,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    {
+      "suite": "AndroidOwnerLifecycleTest[jvm]",
+      "tests": 1,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  ],
+  "total": 7
+}

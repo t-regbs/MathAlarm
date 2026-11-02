@@ -1,0 +1,54 @@
+{
+  "date": "2026-10-01",
+  "android_build": "passed; iOS-only library split",
+  "ios_swift_build": "passed",
+  "tests": {
+    "shared_android_host": 185,
+    "shared_ios_simulator_native": 203,
+    "pixel_native_picker_instrumentation": 2
+  },
+  "audio": {
+    "asset_count": 6,
+    "clipped_samples": 0,
+    "all_under_30_seconds": true,
+    "target_lufs": -16.5,
+    "ios_pcm_matches_mastered_wav": true,
+    "packaged_android_bespoke_assets": 0
+  },
+  "pixel_9": {
+    "direct_system_picker": "passed",
+    "device_default_and_cancellation": "passed",
+    "native_picker_uri_contract": "passed"
+  },
+  "ios_ui": {
+    "iphone_sound_library": "passed: preview-only, one-cycle completion, Back discards choice, Done applies choice to alarm draft, title retention, reopening with applied choice and no playback",
+    "ipad_sound_library": "passed: same editor sheet, light appearance, accessibility-large text, all six sounds visible, Back/Done controls and selection confirmed",
+    "preview_completion_fix": "Use Objective-C equality for delegate player identity; verified automatic reset after one cycle.",
+    "presentation": "Sound library is a page owned by AlarmSettingsSheetHost, shared with Challenge and Snooze; no second modal sheet.",
+    "preview_footer": "Removed; iPhone UI verified no footer text or Stop action, and the playing row control stops preview without changing selection."
+  },
+  "physical_iphone_alarm_audibility": "not tested",
+  "reports": [
+    "build/sound-ios-only-checks.log",
+    "build/sound-ios-only-pixel.log",
+    "build/sound-ios-build.log",
+    "build/sound-library-checks.log",
+    "build/sound-library-ios-build.log",
+    "build/sound-library-android-final.log",
+    "build/sound-library-ios-ui.log",
+    "build/sound-library-ipad-ui.log",
+    "build/sound-page-checks.log",
+    "build/sound-page-ios-build.log",
+    "build/sound-page-phone-ui.log",
+    "build/sound-page-ipad-ui.log",
+    "build/sound-footer-removal-ios-build.log",
+    "build/sound-footer-removal-android-compile.log",
+    "build/sound-footer-removal-ui.log"
+  ],
+  "android_debug_installed_on_pixel_9": true,
+  "platforms": {
+    "android": "Native device alarm sounds and direct system picker; bespoke resources excluded.",
+    "ios": "Six bundled sounds, Orbit for new alarms, existing sound selections retained."
+  },
+  "ios_shared_native_tests": "passed"
+}

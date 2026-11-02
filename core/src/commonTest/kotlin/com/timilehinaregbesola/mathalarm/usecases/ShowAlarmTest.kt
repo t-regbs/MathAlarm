@@ -88,13 +88,18 @@ class ShowAlarmTest {
 
     @Test
     fun `snooze delivery and duplicate broadcasts preserve count but a new occurrence resets it`() = runTest {
-        addAlarmUseCase(Alarm(alarmId = 77, isOn = true, scheduleInitialized = true,
+        addAlarmUseCase(Alarm(alarmId = 77, isOn = true, repeat = true, scheduleInitialized = true,
             snoozeCount = 2, snoozedUntil = 1000, pendingTimes = listOf(2000)))
         showAlarmUseCase(77, 1000, snoozed = true)
         kotlin.test.assertEquals(2, alarmRepository.findAlarm(77)!!.snoozeCount)
         showAlarmUseCase(77, 1000, snoozed = true)
         kotlin.test.assertEquals(2, alarmRepository.findAlarm(77)!!.snoozeCount)
         showAlarmUseCase(77, 2000)
+        kotlin.test.assertEquals(1000L, alarmRepository.findAlarm(77)!!.activeAt)
+        kotlin.test.assertEquals(2, alarmRepository.findAlarm(77)!!.snoozeCount)
+        CompleteAlarm(alarmRepository, alarmInteractor, notificationInteractor)(77, expectedActiveAt = 1000)
+        showAlarmUseCase(77, 2000)
+        kotlin.test.assertEquals(2000L, alarmRepository.findAlarm(77)!!.activeAt)
         kotlin.test.assertEquals(0, alarmRepository.findAlarm(77)!!.snoozeCount)
     }
 

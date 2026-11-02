@@ -1,6 +1,15 @@
 package com.timilehinaregbesola.mathalarm.presentation.appsettings
 
+import kotlinx.coroutines.flow.StateFlow
+
 interface AlarmPreferences {
+    val themeState: StateFlow<Theme>
+    val alarmSortOrderState: StateFlow<AlarmSortOrder>
+    val seenAnnouncementIds: StateFlow<Set<String>>
+    fun hasSeenAnnouncement(id: String): Boolean
+    fun markAnnouncementSeen(id: String)
+    fun latestAnnouncementBatch(catalogIds: List<String>): List<String>
+
 
     /**
      * Updates the current app theme.

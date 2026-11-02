@@ -1,0 +1,85 @@
+# Fresh disposable simulator only: AlarmKit authorization must be undetermined or
+# denied. Cancel/deny every request. Do not run on an authorized/physical device.
+# No alarm is accepted or registered and the unsaved fixture is discarded.
+appId: com.timilehinaregbesola.mathalarm
+---
+- launchApp:
+    permissions:
+      all: unset
+- runFlow:
+    when:
+      visible:
+        id: announcementGotIt
+    commands:
+      - tapOn:
+          id: announcementGotIt
+- tapOn:
+    id: add-alarm
+- tapOn:
+    id: editor-title
+- inputText: "Native M6 permission denial"
+- tapOn:
+    id: editor-keyboard-done
+- tapOn:
+    id: save-alarm
+- runFlow:
+    when:
+      visible: "Don’t Allow|Don't Allow"
+    commands:
+      - takeScreenshot: native-alarmkit-permission
+      - tapOn: "Don’t Allow|Don't Allow"
+- takeScreenshot: native-permission-guard
+- runFlow:
+    when:
+      visible: "Enable alarms in Settings"
+    commands:
+      - assertVisible: "Go to Settings"
+      - assertVisible: ".*Apps.*"
+      - assertVisible: ".*Math Alarm.*"
+      - assertVisible: ".*Alarms.*"
+      - tapOn:
+          id: alarm-permission-guide-close
+- runFlow:
+    when:
+      visible: "Permission Required"
+    commands:
+      - assertNotVisible: "Go to Settings"
+      - tapOn: "Allow alarms"
+      - runFlow:
+          when:
+            visible: "Don’t Allow|Don't Allow"
+          commands:
+            - takeScreenshot: native-alarmkit-permission-retry
+            - tapOn: "Don’t Allow|Don't Allow"
+- assertVisible: "Native M6 permission denial"
+- assertNotVisible: "Permission Required"
+- assertNotVisible: "Enable alarms in Settings"
+- takeScreenshot: native-permission-denied-retained-draft
+- tapOn:
+    id: save-alarm
+- runFlow:
+    when:
+      visible: "Don’t Allow|Don't Allow"
+    commands:
+      - tapOn: "Don’t Allow|Don't Allow"
+- runFlow:
+    when:
+      visible: "Enable alarms in Settings"
+    commands:
+      - assertVisible: "Go to Settings"
+      - assertVisible: ".*Apps.*"
+      - assertVisible: ".*Math Alarm.*"
+      - assertVisible: ".*Alarms.*"
+      - tapOn:
+          id: alarm-permission-guide-close
+- runFlow:
+    when:
+      visible: "Permission Required"
+    commands:
+      - assertVisible: "Allow alarms"
+      - assertNotVisible: "Go to Settings"
+      - tapOn: "Keep editing"
+- assertVisible: "Native M6 permission denial"
+- tapOn:
+    id: discard-draft
+- tapOn: "Discard changes"

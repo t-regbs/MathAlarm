@@ -1,0 +1,42 @@
+# Focused native share presentation/cancellation. No external destination is
+# selected and no share content is sent. English disposable iPhone/iPad only.
+appId: com.timilehinaregbesola.mathalarm
+---
+- launchApp
+- runFlow:
+    when:
+      visible:
+        id: announcementGotIt
+    commands:
+      - tapOn:
+          id: announcementGotIt
+- runFlow:
+    when:
+      notVisible:
+        id: app-settings
+    commands:
+      - tapOn: "More"
+- tapOn: "Settings"
+- tapOn:
+    id: shareButton
+- assertVisible: "Close|dismiss popup"
+- waitForAnimationToEnd
+- takeScreenshot: native-share-presented
+- runFlow:
+    when:
+      visible: "Close"
+    commands:
+      - tapOn: "Close"
+- runFlow:
+    when:
+      visible: "dismiss popup"
+    commands:
+      # UIKit's iPad dismissal accessibility backdrop spans the screen, whose
+      # center intersects the popover. Tap its observed outside region instead.
+      - tapOn:
+          point: "5%,20%"
+- assertVisible:
+    id: appSettingsDone
+- takeScreenshot: native-share-cancelled-settings-retained
+- tapOn:
+    id: appSettingsDone

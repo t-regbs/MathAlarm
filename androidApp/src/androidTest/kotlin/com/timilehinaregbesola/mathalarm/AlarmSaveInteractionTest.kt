@@ -4,9 +4,19 @@ import android.os.SystemClock
 import android.view.InputDevice
 import android.view.MotionEvent
 import androidx.activity.compose.setContent
+import androidx.compose.animation.ExperimentalAnimationApi
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.ui.test.*
-import androidx.compose.ui.test.junit4.v2.createAndroidComposeRule
+import androidx.compose.ui.ExperimentalComposeUiApi
+import androidx.compose.ui.test.ExperimentalTestApi
+import androidx.compose.ui.test.hasSetTextAction
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.v2.runAndroidComposeUiTest
 import androidx.test.platform.app.InstrumentationRegistry
 import cafe.adriel.lyricist.LocalStrings
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
@@ -15,63 +25,92 @@ import com.timilehinaregbesola.mathalarm.navigation.NavGraph
 import com.timilehinaregbesola.mathalarm.presentation.MainActivity
 import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.utils.strings.EnMathAlarmStrings
-import kotlinx.coroutines.*
+import java.io.File
+import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.InternalCoroutinesApi
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertTrue
-import org.junit.Rule
 import org.junit.Test
 import org.koin.core.context.GlobalContext
-import java.io.File
 
-/** Real touch events, Room and AlarmManager; no delayed/fake save implementation. */
-@OptIn(androidx.compose.animation.ExperimentalAnimationApi::class,
-    androidx.compose.foundation.ExperimentalFoundationApi::class,
-    androidx.compose.material3.ExperimentalMaterial3Api::class,
-    androidx.compose.ui.ExperimentalComposeUiApi::class, InternalCoroutinesApi::class)
+@OptIn(
+    ExperimentalTestApi::class,
+    ExperimentalAnimationApi::class,
+    ExperimentalFoundationApi::class,
+    ExperimentalMaterial3Api::class,
+    ExperimentalComposeUiApi::class,
+    InternalCoroutinesApi::class,
+)
 class AlarmSaveInteractionTest {
-    @get:Rule val compose = createAndroidComposeRule<MainActivity>()
-
-    @Test fun rapidSaveTapsWithIdleAndRealResumeWork() {
+    @Test
+    fun rapidSaveTapsWithIdleAndRealResumeWork() = runAndroidComposeUiTest<MainActivity> {
+        val testActivity = requireNotNull(activity)
         val usecases = GlobalContext.get().get<Usecases>()
         val labels = EnMathAlarmStrings
         val prefix = "Save interaction regression "
         val results = mutableListOf<String>()
         var duplicates = false
-        val output = File(compose.activity.getExternalFilesDir(null), "save-interaction-results.txt")
+        val output = File(testActivity.getExternalFilesDir(null), "save-interaction-results.txt")
         val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
         try {
-            compose.runOnUiThread {
-                val preferences = compose.activity.preferences
+            runOnUiThread {
+                val preferences = testActivity.preferences
                 listOf("math-challenges-v1", "skip-next-alarm-v1", "snooze-settings-v1")
                     .forEach(preferences::markAnnouncementSeen)
-                compose.activity.setContent {
+                testActivity.setContent {
                     CompositionLocalProvider(LocalStrings provides labels) {
                         MathAlarmTheme(darkTheme = false) { NavGraph(preferences, null) }
                     }
                 }
             }
             for (busy in listOf(false, true)) {
-                if (busy) runBlocking { usecases.command {
-                    repeat(10) { index ->
-                        addAlarm(Alarm(alarmId = 910000L + index, title = prefix + "work $index",
-                            hour = 1, minute = 0, isSaved = true, isOn = true,
-                            repeat = true, repeatDays = "TTTTTTT"))
+                if (busy) {
+                    runBlocking {
+                        usecases.command {
+                            repeat(10) { index ->
+                                addAlarm(
+                                    Alarm(
+                                        alarmId = 910000L + index,
+                                        title = prefix + "work $index",
+                                        hour = 1,
+                                        minute = 0,
+                                        isSaved = true,
+                                        isOn = true,
+                                        repeat = true,
+                                        repeatDays = "TTTTTTT",
+                                    )
+                                )
+                            }
+                        }
                     }
-                } }
+                }
                 repeat(5) { iteration ->
                     val title = prefix + "$busy $iteration"
-                    compose.onNodeWithContentDescription("Add alarm").performClick()
-                    compose.onNode(hasSetTextAction()).performTextReplacement(title)
-                    val bounds = compose.onNodeWithText(labels.save.uppercase()).fetchSemanticsNode().boundsInWindow
+                    onNodeWithContentDescription("Add alarm").performClick()
+                    waitUntil(timeoutMillis = 5_000) {
+                        onAllNodes(hasSetTextAction()).fetchSemanticsNodes().size == 1
+                    }
+                    onNode(hasSetTextAction()).performTextReplacement(title)
+                    val bounds = onNodeWithText(labels.save.uppercase()).fetchSemanticsNode().boundsInWindow
                     val started = CompletableDeferred<Unit>()
                     var workMillis = 0L
                     val work = scope.launch {
-                        if (busy) usecases.command {
-                            val start = SystemClock.uptimeMillis()
+                        if (busy) {
+                            usecases.command {
+                                val start = SystemClock.uptimeMillis()
+                                started.complete(Unit)
+                                rescheduleFutureAlarms.onAppResume()
+                                workMillis = SystemClock.uptimeMillis() - start
+                            }
+                        } else {
                             started.complete(Unit)
-                            rescheduleFutureAlarms.onAppResume()
-                            workMillis = SystemClock.uptimeMillis() - start
-                        } else started.complete(Unit)
+                        }
                     }
                     runBlocking { started.await() }
                     // Inject without Compose's idle wait so real background work can overlap.
@@ -79,10 +118,10 @@ class AlarmSaveInteractionTest {
                     SystemClock.sleep(80)
                     tap(bounds.center.x, bounds.center.y)
                     runBlocking { work.join() }
-                    compose.waitUntil(10_000) {
-                        compose.onAllNodesWithText(labels.save.uppercase()).fetchSemanticsNodes().isEmpty()
+                    waitUntil(timeoutMillis = 10_000) {
+                        onAllNodesWithText(labels.save.uppercase()).fetchSemanticsNodes().isEmpty()
                     }
-                    compose.waitForIdle()
+                    waitForIdle()
                     val saved = runBlocking { usecases.getSavedAlarms().first().filter { it.title == title } }
                     results += "busy=$busy iteration=$iteration resumeWorkMs=$workMillis saved=${saved.size} ids=${saved.map { it.alarmId }}"
                     output.writeText(results.joinToString("\n"))
@@ -93,9 +132,13 @@ class AlarmSaveInteractionTest {
             assertTrue(results.joinToString("\n"), !duplicates)
         } finally {
             scope.cancel()
-            runBlocking { usecases.command {
-                getSavedAlarms().first().filter { it.title.startsWith(prefix) }.forEach { deleteAlarm(it.alarmId) }
-            } }
+            runBlocking {
+                usecases.command {
+                    getSavedAlarms().first()
+                        .filter { it.title.startsWith(prefix) }
+                        .forEach { deleteAlarm(it.alarmId) }
+                }
+            }
         }
     }
 

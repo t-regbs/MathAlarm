@@ -1,0 +1,61 @@
+# Disposable English simulator; unsaved draft only. No alarm is saved.
+appId: com.timilehinaregbesola.mathalarm
+---
+- launchApp
+- tapOn:
+    id: announcementGotIt
+    optional: true
+- tapOn:
+    id: add-alarm
+- tapOn:
+    id: editor-title
+- inputText: "Sound library draft"
+- tapOn:
+    id: editor-keyboard-done
+- scrollUntilVisible:
+    element:
+      id: editor-sound
+    direction: DOWN
+- tapOn:
+    id: editor-sound
+- assertVisible: "Alarm sound"
+- assertVisible:
+    id: BackButton
+- assertNotVisible:
+    id: sound-done
+# Auditioning Daybreak leaves Orbit selected.
+- tapOn:
+    id: preview-alarm_daybreak
+- assertVisible: "Stop preview Daybreak"
+- tapOn:
+    id: preview-alarm_daybreak
+- assertVisible: "Preview Daybreak"
+- tapOn:
+    id: BackButton
+- assertVisible: ".*Orbit.*"
+- assertVisible:
+    id: save-alarm
+# Selecting Rally updates the draft; native Back returns without a prompt.
+- tapOn:
+    id: editor-sound
+- tapOn:
+    id: tone-alarm_rally
+- takeScreenshot: library-selected
+- tapOn:
+    id: BackButton
+- assertNotVisible: "Discard sound selection?"
+- assertVisible: ".*Rally.*"
+- assertVisible:
+    id: save-alarm
+# Reopening retains the choice without resuming audio.
+- tapOn:
+    id: editor-sound
+- assertVisible: "Preview Rally"
+- assertNotVisible: "Stop preview Rally"
+- tapOn:
+    id: BackButton
+- tapOn:
+    id: discard-draft
+- tapOn: "Discard changes"
+- assertVisible:
+    id: add-alarm

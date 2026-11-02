@@ -1,277 +1,285 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmsettings
 
-import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermission
+import co.touchlab.kermit.Logger
+import com.rickclephas.kmp.nativecoroutines.NativeCoroutines
+import com.rickclephas.kmp.nativecoroutines.NativeCoroutinesState
+import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
 import com.timilehinaregbesola.mathalarm.analytics.AnalyticsEvents
 import com.timilehinaregbesola.mathalarm.analytics.AnalyticsTracker
 import com.timilehinaregbesola.mathalarm.analytics.NoopAnalyticsTracker
 import com.timilehinaregbesola.mathalarm.analytics.trackSafely
-
+import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.domain.model.MathChallenge
 import com.timilehinaregbesola.mathalarm.domain.model.mathChallenge
-import co.touchlab.kermit.Logger
-import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
-import com.timilehinaregbesola.mathalarm.platform.getDefaultAlarmTone
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.setValue
-import androidx.compose.runtime.MutableState
-import androidx.compose.runtime.State
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.text.input.TextFieldValue
-import androidx.lifecycle.ViewModel
-import androidx.lifecycle.viewModelScope
-import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.framework.Usecases
-import com.timilehinaregbesola.mathalarm.utils.getFormatTime
+import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermission
+import com.timilehinaregbesola.mathalarm.platform.getDefaultAlarmTone
+import com.timilehinaregbesola.mathalarm.presentation.SharedFeatureViewModel
+import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
 import com.timilehinaregbesola.mathalarm.utils.initLocalDateTimeInSystemZone
 import com.timilehinaregbesola.mathalarm.utils.toIndex
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.launch
 import kotlinx.coroutines.CancellationException
-import kotlinx.datetime.LocalDateTime
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.mapNotNull
+import kotlinx.coroutines.flow.update
 
-class AlarmSettingsViewModel(
+/** Immutable draft and durable outcomes. Cursor, focus, formatting and navigation belong to the view. */
+data class AlarmEditorState(
+    val alarmId: Long? = null,
+    val alarmTime: TimeState = TimeState(),
+    val alarmTitle: String = "Good day",
+    val dayChooser: String = "FFFFFFF",
+    val repeatWeekly: Boolean = false,
+    val vibrate: Boolean = false,
+    val snoozeEnabled: Boolean = true,
+    val maxSnoozes: Int = 3,
+    val snoozeMinutes: Int = 5,
+    val challenge: MathChallenge = MathChallenge(),
+    val tone: String = "",
+    val isOn: Boolean = false,
+    val isSaved: Boolean = false,
+    val hasUnsavedChanges: Boolean = false,
+    val isSaving: Boolean = false,
+    val validation: AlarmEditorValidation = AlarmEditorValidation.NOT_INITIALIZED,
+    val results: List<AlarmEditorResult> = emptyList(),
+)
+
+enum class AlarmEditorValidation { NONE, NOT_INITIALIZED, INVALID_TIME, INVALID_DAYS }
+
+data class AlarmEditorResult(val id: Long, val event: AlarmSettingsViewModel.UiEvent)
+
+class AlarmSettingsViewModel internal constructor(
     private val usecases: Usecases,
     private val permission: AlarmPermission,
     private val analytics: AnalyticsTracker = NoopAnalyticsTracker,
-) : ViewModel() {
+) : SharedFeatureViewModel() {
+    private val mutableState = MutableStateFlow(viewModelScope, AlarmEditorState())
+    @NativeCoroutinesState
+    val state: StateFlow<AlarmEditorState> = mutableState.asStateFlow()
 
     private var initialDraft: Alarm? = null
-    val hasUnsavedChanges: Boolean
-        get() = initialDraft?.let { initial ->
-            // Alarm's constructor timestamps are defaults, not editable fields.
+    private var isNewAlarm = false
+    private var enabledWasEdited = false
+    private var nextResultId = 0L
+    val currentAlarmId: Long? get() = state.value.alarmId
+    val hasUnsavedChanges: Boolean get() = state.value.hasUnsavedChanges
+
+    /** Waiting observes retained outcomes only. Cancellation cannot cancel an accepted save. */
+    @NativeCoroutines
+    suspend fun awaitResult(afterId: Long): AlarmEditorResult = state
+        .mapNotNull { current -> current.results.firstOrNull { it.id > afterId } }
+        .first()
+
+    /** Results replay until the native owner acknowledges the matching stable ID. */
+    fun acknowledgeResult(id: Long) {
+        mutableState.update { it.copy(results = it.results.filterNot { result -> result.id == id }) }
+    }
+
+    fun onEvent(event: AddEditAlarmEvent) {
+        if (isClosed) return
+        when (event) {
+            AddEditAlarmEvent.OnSaveTodoClick -> save()
+            AddEditAlarmEvent.OnTestClick -> {
+                if (state.value.validation == AlarmEditorValidation.NONE) {
+                    publish(UiEvent.TestAlarm(createAlarm()))
+                } else publish(UiEvent.ValidationFailed(state.value.validation))
+            }
+            is AddEditAlarmEvent.ChangeTime -> edit { copy(alarmTime = event.value) }
+            is AddEditAlarmEvent.EnteredTitle -> edit { copy(alarmTitle = event.value) }
+            is AddEditAlarmEvent.ToggleRepeat -> edit { copy(repeatWeekly = event.value) }
+            is AddEditAlarmEvent.ToggleEnabled -> {
+                if (!state.value.isSaving) enabledWasEdited = true
+                edit { copy(isOn = event.value) }
+            }
+            is AddEditAlarmEvent.ToggleVibrate -> edit { copy(vibrate = event.value) }
+            is AddEditAlarmEvent.ToggleSnooze -> edit { copy(snoozeEnabled = event.value) }
+            is AddEditAlarmEvent.ChangeMaxSnoozes -> {
+                if (event.value in listOf(0, 1, 2, 3, 5)) edit { copy(maxSnoozes = event.value) }
+            }
+            is AddEditAlarmEvent.ChangeSnoozeDuration -> {
+                if (event.minutes in 1..30) edit { copy(snoozeMinutes = event.minutes) }
+            }
+            is AddEditAlarmEvent.ToggleDayChooser -> edit { copy(dayChooser = event.value) }
+            is AddEditAlarmEvent.OnChallengeChange -> edit { copy(challenge = event.value.normalized()) }
+            is AddEditAlarmEvent.OnToneChange -> edit { copy(tone = event.value) }
+            AddEditAlarmEvent.OnToneError -> publish(UiEvent.ShowError(AlarmErrorMessage.TONE))
+        }
+    }
+
+    /** Semantic mixing intents keep preset/count policy below both native renderers. */
+    fun setChallengeMixing(enabled: Boolean) {
+        if (isClosed || state.value.isSaving) return
+        val current = state.value.challenge
+        if (enabled == current.difficultyMix.isNotEmpty()) return
+        val changed = if (enabled && current.difficulty != MathChallenge.CUSTOM) {
+            current.copy(difficultyMix = current.difficulty.toString().repeat(current.questionCount))
+        } else current.copy(
+            difficulty = current.mixedDifficulties.firstOrNull() ?: current.difficulty,
+            questionCount = current.mixedDifficulties.size.takeIf { it > 0 } ?: current.questionCount,
+            difficultyMix = "",
+        )
+        onEvent(AddEditAlarmEvent.OnChallengeChange(changed))
+    }
+
+    /** Keep at least one selected custom operation; the domain still normalizes all fields. */
+    fun setChallengeOperation(operation: String, enabled: Boolean) {
+        if (operation.length != 1 || operation !in MathChallenge.ALL_OPERATIONS) return
+        val current = state.value.challenge
+        val operations = if (enabled) current.operations + operation else current.operations.replace(operation, "")
+        if (operations.isEmpty()) return
+        onEvent(AddEditAlarmEvent.OnChallengeChange(current.copy(operations = operations)))
+    }
+
+    fun setMixedQuestionCount(difficulty: Int, count: Int) {
+        if (isClosed || state.value.isSaving || difficulty !in 0 until MathChallenge.CUSTOM) return
+        val current = state.value.challenge
+        if (current.difficulty == MathChallenge.CUSTOM || current.difficultyMix.isEmpty()) return
+        val others = current.mixedDifficulties.filterNot { it == difficulty }
+        val available = MathChallenge.MAX_QUESTIONS - others.size
+        val requested = count.coerceIn(if (others.isEmpty()) 1 else 0, available)
+        onEvent(AddEditAlarmEvent.OnChallengeChange(current.copy(
+            difficultyMix = (others + List(requested) { difficulty }).sorted().joinToString("")
+        )))
+    }
+
+    private fun edit(change: AlarmEditorState.() -> AlarmEditorState) {
+        if (state.value.isSaving) return
+        mutableState.update { change(it) }
+        refreshDraftStatus()
+    }
+
+    private fun refreshDraftStatus() {
+        val draft = state.value
+        val validation = when {
+            draft.alarmId == null -> AlarmEditorValidation.NOT_INITIALIZED
+            draft.alarmTime.hour !in 0..23 || draft.alarmTime.minute !in 0..59 -> AlarmEditorValidation.INVALID_TIME
+            draft.dayChooser.length != 7 || draft.dayChooser.any { it != 'T' && it != 'F' } -> AlarmEditorValidation.INVALID_DAYS
+            else -> AlarmEditorValidation.NONE
+        }
+        val dirty = initialDraft?.let { initial ->
             createAlarm().copy(newDateTime = initial.newDateTime,
                 newHour = initial.newHour, newMinute = initial.newMinute) != initial
         } ?: false
-
-    private var isNewAlarm: Boolean? = null
-
-    private var isRescheduled: Boolean? = null
-
-    private val _alarmTime = mutableStateOf(TimeState())
-    val alarmTime: State<TimeState> = _alarmTime
-
-    private val _alarmTitle = mutableStateOf(TextFieldValue("Good day"))
-    val alarmTitle: MutableState<TextFieldValue> = _alarmTitle
-
-    private val _dayChooser = mutableStateOf("FFFFFFF")
-    val dayChooser: State<String> = _dayChooser
-
-    private val _repeatWeekly = mutableStateOf(false)
-    val repeatWeekly: State<Boolean>
-        get() = _repeatWeekly
-
-    private val _vibrate = mutableStateOf(false)
-    val vibrate: State<Boolean> = _vibrate
-
-    private val _snoozeEnabled = mutableStateOf(true)
-    val snoozeEnabled: State<Boolean> = _snoozeEnabled
-
-    private val _maxSnoozes = mutableStateOf(3)
-    val maxSnoozes: State<Int> = _maxSnoozes
-    var snoozeMinutes by mutableStateOf(DEFAULT_SNOOZE_MINUTES)
-        private set
-
-    private val _challenge = mutableStateOf(MathChallenge())
-    val challenge: State<MathChallenge> = _challenge
-
-    private val _tone = mutableStateOf("")
-    val tone: State<String> = _tone
-
-    private val _isOn = mutableStateOf(false)
-    val isOn: State<Boolean> = _isOn
-
-    private val _isSaved = mutableStateOf(false)
-    val isSaved: State<Boolean> = _isSaved
-
-    private val _eventFlow = MutableSharedFlow<UiEvent>()
-    val eventFlow = _eventFlow.asSharedFlow()
-
-    var currentAlarmId: Long? = null
-    private var saveInFlight = false
-
-    fun onEvent(event: AddEditAlarmEvent) {
-        when (event) {
-            is AddEditAlarmEvent.OnSaveTodoClick -> {
-                if (saveInFlight) return
-                val edited = createAlarm().copy(isSaved = true)
-                saveInFlight = true
-                viewModelScope.launch {
-                    try {
-                        val didSave = usecases.command {
-                            val old = findAlarm(edited.alarmId)
-                            val alarm = edited.copy(
-                                // The list can toggle this alarm while its editor is open.
-                                isOn = old?.isOn ?: edited.isOn,
-                                pendingTimes = old?.pendingTimes.orEmpty(),
-                                scheduleInitialized = old?.scheduleInitialized ?: false,
-                                snoozedUntil = old?.snoozedUntil,
-                                activeAt = old?.activeAt,
-                                snoozeCount = old?.snoozeCount ?: 0,
-                                skippedDate = old?.skippedDate.takeIf { isRescheduled != true },
-                                scheduleError = old?.scheduleError,
-                                scheduleTimeZone = old?.scheduleTimeZone
-                            )
-                            if (alarm.isOn && !permission.hasExactAlarmPermission()) {
-                                return@command false
-                            }
-                            // Cancel using the old snapshot as well, for pre-migration identities.
-                            if (old != null && isRescheduled == true) cancelAlarm(old)
-                            val id = addAlarm(alarm)
-                            val saved = alarm.copy(
-                                alarmId = if (alarm.alarmId == 0L) id else alarm.alarmId
-                            )
-                            currentAlarmId = saved.alarmId
-                            if (saved.isOn && (isNewAlarm == true || isRescheduled == true)) {
-                                scheduleAlarm(saved, true)
-                            } else {
-                                updateAlarm(saved)
-                            }
-                            true
-                        }
-                        if (didSave) {
-                            analytics.trackSafely(AnalyticsEvents.alarmSaved(edited, isNewAlarm == true))
-                        } else {
-                            analytics.trackSafely(AnalyticsEvents.alarmSaveFailed("exact_alarm_permission"))
-                        }
-                        _eventFlow.emit(if (didSave) UiEvent.SaveAlarm else UiEvent.RequestExactAlarmPermission)
-                    } catch (e: CancellationException) {
-                        throw e
-                    } catch (e: Exception) {
-                        Logger.e(e) { "Unable to save alarm" }
-                        analytics.trackSafely(AnalyticsEvents.alarmSaveFailed("operation_error"))
-                        _eventFlow.emit(UiEvent.ShowError(AlarmErrorMessage.SAVE))
-                    } finally {
-                        saveInFlight = false
-                    }
-                }
-            }
-            is AddEditAlarmEvent.OnTestClick -> {
-                viewModelScope.launch {
-                    _eventFlow.emit(UiEvent.TestAlarm(createAlarm()))
-                }
-            }
-            is AddEditAlarmEvent.ChangeTime -> {
-                markExistingAlarmForReschedule()
-                _alarmTime.value = event.value
-            }
-            is AddEditAlarmEvent.EnteredTitle -> {
-                _alarmTitle.value = event.value
-            }
-            is AddEditAlarmEvent.ToggleRepeat -> {
-                markExistingAlarmForReschedule()
-                _repeatWeekly.value = event.value
-            }
-            is AddEditAlarmEvent.ToggleVibrate -> {
-                _vibrate.value = event.value
-            }
-            is AddEditAlarmEvent.ToggleSnooze -> {
-                _snoozeEnabled.value = event.value
-            }
-            is AddEditAlarmEvent.ChangeMaxSnoozes -> {
-                if (event.value in listOf(0, 1, 2, 3, 5)) _maxSnoozes.value = event.value
-            }
-            is AddEditAlarmEvent.ChangeSnoozeDuration -> {
-                if (event.minutes in 1..30) snoozeMinutes = event.minutes
-            }
-            is AddEditAlarmEvent.ToggleDayChooser -> {
-                markExistingAlarmForReschedule()
-                _dayChooser.value = event.value
-            }
-            is AddEditAlarmEvent.OnChallengeChange -> {
-                _challenge.value = event.value.normalized()
-            }
-            is AddEditAlarmEvent.OnToneChange -> {
-                _tone.value = event.value
-            }
-            is AddEditAlarmEvent.OnToneError -> {
-                viewModelScope.launch {
-                    _eventFlow.emit(UiEvent.ShowError(AlarmErrorMessage.TONE))
-                }
-            }
-        }
+        mutableState.update { it.copy(validation = validation, hasUnsavedChanges = dirty) }
     }
 
-    private fun createAlarm() = Alarm(
-        alarmId = currentAlarmId!!,
-        hour = _alarmTime.value.hour,
-        minute = _alarmTime.value.minute,
-        repeat = _repeatWeekly.value,
-        repeatDays = _dayChooser.value,
-        isOn = isNewAlarm?.let {
-            if (it) true else _isOn.value
-        } ?: false,
-        vibrate = _vibrate.value,
-        title = _alarmTitle.value.text,
-        difficulty = _challenge.value.difficulty,
-        questionCount = _challenge.value.questionCount,
-        challengeOperations = _challenge.value.operations,
-        additionRange = _challenge.value.additionRange,
-        factorRange = _challenge.value.factorRange,
-        difficultyMix = _challenge.value.difficultyMix,
-        alarmTone = _tone.value,
-        isSaved = _isSaved.value,
-        snooze = if (_snoozeEnabled.value) snoozeMinutes else 0,
-        maxSnoozes = _maxSnoozes.value,
-    )
-
-    private fun initDateTime(alarm: Alarm): LocalDateTime = alarm.initLocalDateTimeInSystemZone()
-
-    private fun markExistingAlarmForReschedule() {
-        isNewAlarm?.let {
-            if (!it) {
-                isRescheduled = true
-            }
+    private fun save() {
+        if (state.value.isSaving) return
+        if (state.value.validation != AlarmEditorValidation.NONE) {
+            publish(UiEvent.ValidationFailed(state.value.validation))
+            return
         }
-    }
-
-    fun setAlarm(curAlarm: Alarm) {
-        if (currentAlarmId == null) {
-            curAlarm.let { alarm ->
-                currentAlarmId = alarm.alarmId
-                _alarmTime.value = TimeState(
-                    hour = alarm.hour,
-                    minute = alarm.minute,
-                    formattedTime = alarm.getFormatTime(),
-                )
-                if (alarm.alarmId == 0L) {
-                    isNewAlarm = true
-                    val sb = StringBuilder("FFFFFFF")
-                    val dateTime = initDateTime(alarm)
-                    val dayOfTheWeek = dateTime.date.dayOfWeek.toIndex()
-                    sb[dayOfTheWeek] = 'T'
-                    _dayChooser.value = sb.toString()
-                } else {
+        val edited = createAlarm().copy(isSaved = true)
+        val reschedule = initialDraft?.let { initial ->
+            edited.hour != initial.hour || edited.minute != initial.minute ||
+                edited.repeat != initial.repeat || edited.repeatDays != initial.repeatDays
+        } ?: false
+        val wasNew = isNewAlarm
+        val enabledChanged = enabledWasEdited
+        mutableState.update { it.copy(isSaving = true) }
+        usecases.launchCommand {
+            try {
+                val accepted = command {
+                    val old = findAlarm(edited.alarmId)
+                    val alarm = edited.copy(
+                        isOn = if (wasNew || enabledChanged) edited.isOn else old?.isOn ?: edited.isOn,
+                        pendingTimes = old?.pendingTimes.orEmpty(),
+                        scheduleInitialized = old?.scheduleInitialized ?: false,
+                        snoozedUntil = old?.snoozedUntil,
+                        activeAt = old?.activeAt,
+                        snoozeCount = old?.snoozeCount ?: 0,
+                        skippedDate = old?.skippedDate.takeIf { !reschedule },
+                        scheduleError = old?.scheduleError,
+                        scheduleTimeZone = old?.scheduleTimeZone,
+                    )
+                    if (alarm.isOn && !permission.hasExactAlarmPermission()) return@command null
+                    if (!alarm.isOn && old?.isOn == true) cancelAlarm(old)
+                    val desired = if (!alarm.isOn && old?.isOn == true) alarm.copy(
+                        pendingTimes = emptyList(), snoozedUntil = null, activeAt = null,
+                        snoozeCount = 0, skippedDate = null, scheduleError = null
+                    ) else alarm
+                    val id = addAlarm(desired)
+                    val saved = desired.copy(alarmId = if (desired.alarmId == 0L) id else desired.alarmId)
+                    mutableState.update { it.copy(alarmId = saved.alarmId) }
+                    refreshDraftStatus()
+                    if (saved.isOn && (wasNew || reschedule || old?.isOn != true || old?.scheduleError != null)) scheduleAlarm(saved, true)
+                    else updateAlarm(saved)
+                    findAlarm(saved.alarmId) ?: saved
+                }
+                if (accepted != null) {
+                    mutableState.update { it.copy(alarmId = accepted.alarmId, isSaved = true, isOn = accepted.isOn) }
                     isNewAlarm = false
-                    _dayChooser.value = alarm.repeatDays
-                }
-                _repeatWeekly.value = alarm.repeat
-                _vibrate.value = alarm.vibrate
-                _snoozeEnabled.value = alarm.snooze != 0
-                snoozeMinutes = alarm.snooze.takeIf { it > 0 }?.coerceAtMost(30) ?: DEFAULT_SNOOZE_MINUTES
-                _maxSnoozes.value = alarm.maxSnoozes
-                _challenge.value = alarm.mathChallenge
-                if (alarm.alarmTone == "") {
-                    _tone.value = getDefaultAlarmTone()
+                    enabledWasEdited = false
+                    initialDraft = createAlarm()
+                    refreshDraftStatus()
+                    analytics.trackSafely(AnalyticsEvents.alarmSaved(edited, wasNew))
+                    publish(UiEvent.SaveAlarm)
                 } else {
-                    _tone.value = alarm.alarmTone
+                    analytics.trackSafely(AnalyticsEvents.alarmSaveFailed("exact_alarm_permission"))
+                    publish(UiEvent.RequestExactAlarmPermission)
                 }
-                val formattedTitle = alarm.title.replace('+', ' ')
-                _alarmTitle.value = TextFieldValue(formattedTitle)
-                _isOn.value = alarm.isOn
-                _isSaved.value = alarm.isSaved
-                initialDraft = createAlarm()
-                analytics.trackSafely(AnalyticsEvents.alarmEditorOpened(alarm.alarmId == 0L))
+            } catch (error: CancellationException) {
+                throw error
+            } catch (error: Exception) {
+                Logger.e(error) { "Unable to save alarm" }
+                analytics.trackSafely(AnalyticsEvents.alarmSaveFailed("operation_error"))
+                publish(UiEvent.ShowError(AlarmErrorMessage.SAVE))
+            } finally {
+                mutableState.update { it.copy(isSaving = false) }
             }
         }
+    }
+
+    private fun publish(event: UiEvent) {
+        val result = AlarmEditorResult(++nextResultId, event)
+        mutableState.update { it.copy(results = it.results + result) }
+    }
+
+    private fun createAlarm(): Alarm = with(state.value) {
+        Alarm(
+            alarmId = alarmId ?: 0L, hour = alarmTime.hour, minute = alarmTime.minute,
+            repeat = repeatWeekly, repeatDays = dayChooser,
+            isOn = isOn, vibrate = vibrate, title = alarmTitle,
+            difficulty = challenge.difficulty, questionCount = challenge.questionCount,
+            challengeOperations = challenge.operations, additionRange = challenge.additionRange,
+            factorRange = challenge.factorRange, difficultyMix = challenge.difficultyMix,
+            alarmTone = tone, isSaved = isSaved,
+            snooze = if (snoozeEnabled) snoozeMinutes else 0, maxSnoozes = maxSnoozes,
+        )
+    }
+
+    /** One initialization per retained editing session; nested views never overwrite the draft. */
+    fun setAlarm(alarm: Alarm) {
+        if (isClosed || currentAlarmId != null) return
+        isNewAlarm = alarm.alarmId == 0L
+        val days = if (isNewAlarm) {
+            StringBuilder("FFFFFFF").apply {
+                this[alarm.initLocalDateTimeInSystemZone().date.dayOfWeek.toIndex()] = 'T'
+            }.toString()
+        } else alarm.repeatDays
+        mutableState.update {
+            it.copy(
+                alarmId = alarm.alarmId, alarmTime = TimeState(alarm.hour, alarm.minute),
+                dayChooser = days, repeatWeekly = alarm.repeat, vibrate = alarm.vibrate,
+                snoozeEnabled = alarm.snooze != 0,
+                snoozeMinutes = alarm.snooze.takeIf { duration -> duration > 0 }?.coerceAtMost(30) ?: 5,
+                maxSnoozes = alarm.maxSnoozes, challenge = alarm.mathChallenge,
+                tone = alarm.alarmTone.ifEmpty { getDefaultAlarmTone() },
+                alarmTitle = alarm.title, isOn = if (isNewAlarm) true else alarm.isOn, isSaved = alarm.isSaved,
+            )
+        }
+        initialDraft = createAlarm()
+        refreshDraftStatus()
+        analytics.trackSafely(AnalyticsEvents.alarmEditorOpened(isNewAlarm))
     }
 
     sealed class UiEvent {
         object RequestExactAlarmPermission : UiEvent()
         data class ShowError(val error: AlarmErrorMessage) : UiEvent()
+        data class ValidationFailed(val validation: AlarmEditorValidation) : UiEvent()
         object SaveAlarm : UiEvent()
         data class TestAlarm(val alarm: Alarm) : UiEvent()
     }
 }
-
-private const val DEFAULT_SNOOZE_MINUTES = 5

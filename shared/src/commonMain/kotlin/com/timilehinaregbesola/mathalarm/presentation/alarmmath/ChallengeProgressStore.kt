@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 
 /** Keeps each alarm's latest occurrence separate, including simultaneous ringing alarms. */
-class ChallengeProgressStore(private val settings: Settings) {
+internal class ChallengeProgressStore(private val settings: Settings) {
     @Serializable
     data class Progress(
         val activeAt: Long,

@@ -2,6 +2,8 @@ package com.timilehinaregbesola.mathalarm.data
 
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class AlarmRepository(private val dataSource: AlarmDataSource) {
     suspend fun addAlarm(alarm: Alarm) = dataSource.addAlarm(alarm)
 

@@ -2,9 +2,6 @@ package com.timilehinaregbesola.mathalarm.interactors
 
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 
-/**
- * Contract to interact with the Alarm layer.
- */
 interface AlarmInteractor {
 
     /**
@@ -20,9 +17,15 @@ interface AlarmInteractor {
         times.forEach { schedule(alarm, it) }
     }
 
+    /** Advance after delivery. Native weekly backends may retain existing registrations. */
+    suspend fun scheduleNextRepeating(alarm: Alarm, times: List<Long>) = scheduleRepeating(alarm, times)
+
     suspend fun scheduleSnooze(alarm: Alarm, timeInMillis: Long) = schedule(alarm, timeInMillis)
 
     fun cancelSnooze(alarm: Alarm) = Unit
+
+    /** Cancel unresolved recovery only as part of an accepted resolution/invalidation. */
+    fun cancelRecovery(alarm: Alarm) = Unit
 
     /**
      * Cancels an alarm.

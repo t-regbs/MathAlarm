@@ -3,36 +3,21 @@ package com.timilehinaregbesola.mathalarm.di
 import androidx.room.Room
 import com.timilehinaregbesola.mathalarm.analytics.AnalyticsTracker
 import com.timilehinaregbesola.mathalarm.analytics.NoopAnalyticsTracker
-import androidx.sqlite.driver.bundled.BundledSQLiteDriver
+import androidx.sqlite.driver.NativeSQLiteDriver
 import co.touchlab.kermit.Logger
 import co.touchlab.kermit.StaticConfig
 import co.touchlab.kermit.platformLogWriter
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermission
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AlarmPermissionImpl
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmDatabase
-import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_2_3
-import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_3_4
-import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_5_6
-import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_6_7
-import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_8_9
-import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_7_8
-import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_4_5
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractorImpl
 import com.timilehinaregbesola.mathalarm.interactors.AudioPlayer
 import com.timilehinaregbesola.mathalarm.interactors.IosAudioPlayer
 import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractor
 import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractorImpl
-import com.timilehinaregbesola.mathalarm.notification.IosAlarmNotification
 import com.timilehinaregbesola.mathalarm.notification.IosAlarmScheduler
-import com.timilehinaregbesola.mathalarm.notification.NotificationActionDelegate
 import kotlinx.cinterop.ExperimentalForeignApi
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.IO
-import kotlinx.coroutines.launch
-import org.koin.core.component.KoinComponent
-import org.koin.core.component.inject
 import org.koin.core.context.startKoin
 import org.koin.dsl.module
 import platform.Foundation.NSDocumentDirectory
@@ -42,55 +27,30 @@ import platform.Foundation.NSUserDomainMask
 /**
  * iOS-specific Koin module
  */
-val iosModule = module {
+internal val iosModule = module {
     single<AnalyticsTracker> { NoopAnalyticsTracker }
     // Room Database for iOS - uses lazy initialization
     // The database will only be built when first injected
     single<AlarmDatabase> {
         println("IosModule: Building Room database (lazy init)")
         val dbFile = documentDirectory() + "/alarm_history_database.db"
-        Room.databaseBuilder<AlarmDatabase>(
-            name = dbFile
-        )
-            .addMigrations(
-                MIGRATION_2_3,
-                MIGRATION_3_4,
-                MIGRATION_4_5,
-                MIGRATION_5_6,
-                MIGRATION_6_7,
-                MIGRATION_7_8,
-                MIGRATION_8_9,
-            )
-            .setDriver(BundledSQLiteDriver())
-            .build()
+        buildIosAlarmDatabase(dbFile)
     }
     
     single { get<AlarmDatabase>().alarmDatabaseDao }
     
-    // iOS Alarm Scheduler - schedules notifications
+    // AlarmKit scheduler shared by both interactors
     single { IosAlarmScheduler(getWith("IosAlarmScheduler")) }
-    
-    // iOS Alarm Notification - handles showing/dismissing delivered notifications
-    single { IosAlarmNotification(getWith("IosAlarmNotification")) }
-    
-    // Notification Action Delegate - handles snooze/dismiss actions from notifications
-    single { 
-        NotificationActionDelegate(
-            appCoroutineScope = get(),
-            usecases = get(),
-            logger = getWith("NotificationActionDelegate")
-        )
-    }
     
     // iOS Audio Player
     single<AudioPlayer> { IosAudioPlayer(getWith("IosAudioPlayer")) }
     
     // Alarm Interactor (iOS implementation)
-    single<AlarmInteractor> { AlarmInteractorImpl(getWith("AlarmInteractorImpl")) }
+    single<AlarmInteractor> { AlarmInteractorImpl(get()) }
     
     // Notification Interactor (iOS implementation)
     single<NotificationInteractor> {
-        NotificationInteractorImpl(getWith("NotificationInteractorImpl"))
+        NotificationInteractorImpl(get())
     }
     
     // Alarm Permission (iOS doesn't need exact alarm permission)
@@ -107,37 +67,20 @@ val iosModule = module {
     }
 }
 
+/** Reopens existing schema-9 files; the driver change does not migrate/reset data. */
+internal fun buildIosAlarmDatabase(filePath: String): AlarmDatabase =
+    Room.databaseBuilder<AlarmDatabase>(name = filePath)
+        .setDriver(NativeSQLiteDriver())
+        .build()
+
 /**
  * Initialize Koin for iOS.
  * Called once from Swift's App init() before UI loads.
  */
-fun initKoin() {
+internal fun initKoin() {
     println("IosModule: Initializing Koin")
     startKoin {
         modules(commonModule, iosModule)
-    }
-}
-
-/**
- * Prewarm the database in background.
- * Call this after Koin init to initialize Room on a background thread,
- * so it's ready when the UI needs it.
- * 
- */
-fun prewarmDatabase() {
-    CoroutineScope(Dispatchers.IO).launch {
-        try {
-            println("IosModule: Prewarming database in background")
-            val helper = object : KoinComponent {
-                val database: AlarmDatabase by inject()
-            }
-            // Trigger lazy initialization by accessing the database
-            // This runs the Room builder and migrations off the main thread
-            helper.database.alarmDatabaseDao
-            println("IosModule: Database prewarmed successfully")
-        } catch (e: Exception) {
-            println("IosModule: Database prewarm failed: ${e.message}")
-        }
     }
 }
 

@@ -3,6 +3,8 @@ package com.timilehinaregbesola.mathalarm.presentation.appsettings
 /**
  * Maps AppThemeOptions between Repository and DataStore.
  */
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class AppThemeOptionsMapper {
 
     /**

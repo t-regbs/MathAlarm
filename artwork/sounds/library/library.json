@@ -1,0 +1,87 @@
+{
+  "purpose": "Original Math Alarm sound library for iOS.",
+  "sample_rate": 44100,
+  "channels": 1,
+  "format": "16-bit PCM WAV",
+  "target_lufs": -16.5,
+  "candidates": [
+    {
+      "id": "alarm_daybreak",
+      "name": "Daybreak",
+      "description": "Soft, rounded mallets with a warm background.",
+      "filename": "alarm_daybreak.wav",
+      "duration_seconds": 12.0,
+      "integrated_lufs": -16.49,
+      "true_peak_dbtp": -6.69,
+      "loudness_range_lu": 1.2,
+      "peak_sample": 15163,
+      "clipped_samples": 0,
+      "loop_join_difference": 0
+    },
+    {
+      "id": "alarm_glass_garden",
+      "name": "Glass Garden",
+      "description": "Clear, shimmering bells with a simple melodic pattern.",
+      "filename": "alarm_glass_garden.wav",
+      "duration_seconds": 10.909,
+      "integrated_lufs": -16.5,
+      "true_peak_dbtp": -6.7,
+      "loudness_range_lu": 1.0,
+      "peak_sample": 15137,
+      "clipped_samples": 0,
+      "loop_join_difference": 0
+    },
+    {
+      "id": "alarm_stepping_stones",
+      "name": "Stepping Stones",
+      "description": "Wooden mallets and a light, purposeful rhythm.",
+      "filename": "alarm_stepping_stones.wav",
+      "duration_seconds": 9.6,
+      "integrated_lufs": -16.5,
+      "true_peak_dbtp": -6.79,
+      "loudness_range_lu": 0.6,
+      "peak_sample": 14998,
+      "clipped_samples": 0,
+      "loop_join_difference": 0
+    },
+    {
+      "id": "alarm_orbit",
+      "name": "Orbit",
+      "description": "A bright, flowing synth arpeggio with a gentle pulse.",
+      "filename": "alarm_orbit.wav",
+      "duration_seconds": 8.889,
+      "integrated_lufs": -16.51,
+      "true_peak_dbtp": -6.91,
+      "loudness_range_lu": 0.9,
+      "peak_sample": 14785,
+      "clipped_samples": 0,
+      "loop_join_difference": 0
+    },
+    {
+      "id": "alarm_clear_signal",
+      "name": "Clear Signal",
+      "description": "Distinct pairs of clean, bright tones with breathing space.",
+      "filename": "alarm_clear_signal.wav",
+      "duration_seconds": 9.6,
+      "integrated_lufs": -16.5,
+      "true_peak_dbtp": -7.47,
+      "loudness_range_lu": 1.8,
+      "peak_sample": 13859,
+      "clipped_samples": 0,
+      "loop_join_difference": 0
+    },
+    {
+      "id": "alarm_rally",
+      "name": "Rally",
+      "description": "A more insistent rhythmic electronic alarm.",
+      "filename": "alarm_rally.wav",
+      "duration_seconds": 8.276,
+      "integrated_lufs": -16.5,
+      "true_peak_dbtp": -5.27,
+      "loudness_range_lu": 0.5,
+      "peak_sample": 17871,
+      "clipped_samples": 0,
+      "loop_join_difference": 0
+    }
+  ]
+}

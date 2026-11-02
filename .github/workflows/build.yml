@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [main, master, develop, "codex/**"]
   workflow_dispatch:
+    inputs:
+      scope:
+        description: 'Validation scope (a focused run establishes only its platform gate)'
+        type: choice
+        options: [all, android, ios]
+        default: all
   schedule:
     - cron: "17 3 * * *"
 
@@ -13,11 +19,12 @@ permissions:
   contents: read
 
 concurrency:
-  group: testing-${{ github.workflow }}-${{ github.ref }}
+  group: testing-${{ github.workflow }}-${{ github.ref }}-${{ inputs.scope || 'all' }}
   cancel-in-progress: true
 
 jobs:
   build:
+    if: ${{ inputs.scope != 'ios' }}
     name: Build & Test
     runs-on: ubuntu-latest
     timeout-minutes: 30
@@ -41,6 +48,12 @@ jobs:
 
       - name: Check device runner cleanup
         run: python3 -B -m unittest discover -s scripts -p '*_test.py'
+
+      - name: Enforce renderer and locale boundaries
+        run: |
+          python3 -B scripts/verify_native_ui_boundaries.py
+          python3 -B scripts/verify_native_localization.py
+          python3 -B scripts/verify_ios_release.py
 
       # Runs common and Android host tests across all modules
       - name: Run host suites
@@ -66,6 +79,7 @@ jobs:
           retention-days: 7
 
   device:
+    if: ${{ inputs.scope != 'ios' }}
     name: Alarm delivery API ${{ matrix.api }}
     runs-on: ubuntu-latest
     timeout-minutes: 35
@@ -95,7 +109,9 @@ jobs:
           arch: x86_64
           target: google_apis
           disable-animations: true
-          script: bash scripts/ci_alarm_delivery.sh
+          script: |
+            bash scripts/ci_alarm_delivery.sh
+            bash scripts/ci_android_native_ui.sh
       - name: Upload device evidence
         if: always()
         uses: actions/upload-artifact@v4
@@ -104,25 +120,55 @@ jobs:
           path: build/alarm-device-results/
 
   ios:
-    name: iOS simulator tests
-    if: github.event_name == 'schedule' || github.event_name == 'workflow_dispatch'
-    runs-on: macos-15
-    timeout-minutes: 40
+    name: Native iOS — ${{ matrix.family }}
+    if: ${{ inputs.scope != 'android' }}
+    # GitHub-hosted Apple Silicon image; select the approved toolchain explicitly.
+    runs-on: xcode-27
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        family: [iphone, ipad]
+    env:
+      DEVELOPER_DIR: /Applications/Xcode_27.0.app/Contents/Developer
+      M7_DEVICE: ${{ matrix.family == 'ipad' && 'com.apple.CoreSimulator.SimDeviceType.iPad-Pro-11-inch-M5-12GB' || 'com.apple.CoreSimulator.SimDeviceType.iPhone-17' }}
+      M7_RUNTIME: com.apple.CoreSimulator.SimRuntime.iOS-27-0
+      M7_OUTPUT: build/native-ui-m7-ci
+      MAESTRO_CLI_NO_ANALYTICS: '1'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '17'
+          java-version: '21'
       - uses: gradle/actions/setup-gradle@v4
       - uses: android-actions/setup-android@v4
-      - name: Run native shared and platform tests
-        run: ./gradlew :core:iosSimulatorArm64Test :shared:iosSimulatorArm64Test --continue
-      - name: Upload native reports
+      - name: Record fixed toolchain
+        run: |
+          xcodebuild -version
+          test "$(xcodebuild -version)" = $'Xcode 27.0\nBuild version 27A266a'
+          java -version
+          xcrun simctl list runtimes
+      - name: Install pinned Maestro
+        run: |
+          curl --fail --location https://github.com/mobile-dev-inc/Maestro/releases/download/cli-2.10.0/maestro.zip -o "$RUNNER_TEMP/maestro.zip"
+          echo "29b675e10cc12080e445e9bfb2e2b4e4dfb9c0f2e30d5884120d258b5e1cd991  $RUNNER_TEMP/maestro.zip" | shasum -a 256 -c -
+          unzip -q "$RUNNER_TEMP/maestro.zip" -d "$RUNNER_TEMP/maestro-2.10.0"
+          echo "MAESTRO_BIN=$RUNNER_TEMP/maestro-2.10.0/maestro/bin/maestro" >> "$GITHUB_ENV"
+      - name: Permanent native tests, client flows, nine locales and archive packaging
+        run: bash scripts/ci_native_ios.sh
+      - name: Upload native evidence (including failures)
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: ios-test-reports
+          name: native-ios-${{ matrix.family }}
+          retention-days: 14
           path: |
+            build/native-ui-m7-ci/*.log
+            build/native-ui-m7-ci/simulator.txt
+            build/native-ui-m7-ci/native-tests.xcresult
+            build/native-ui-m7-ci/presentation/
+            build/native-ui-m7-ci/client/
+            build/native-ui-m7-ci/MathAlarm.xcarchive/
             **/build/reports/tests/**
             **/build/test-results/**

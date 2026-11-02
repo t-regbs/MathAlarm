@@ -16,3 +16,7 @@
 /.worktrees/
 /docs/superpowers/
 .hotswan/
+
+# Argent captures and secrets are local; config and reviewed flows may be tracked.
+/.argent/recordings/
+/.argent/secrets.env

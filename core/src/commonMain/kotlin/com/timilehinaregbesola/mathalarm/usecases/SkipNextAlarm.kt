@@ -9,6 +9,8 @@ import kotlinx.datetime.TimeZone
 import kotlinx.datetime.toLocalDateTime
 import kotlin.time.Instant
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class SkipNextAlarm(
     private val alarmRepository: AlarmRepository,
     private val alarmTimeCalculator: AlarmTimeCalculator,
@@ -46,7 +48,6 @@ class SkipNextAlarm(
 
     suspend fun undo(alarmId: Long, expectedSkippedDate: String? = null): Boolean {
         val alarm = alarmRepository.findAlarm(alarmId) ?: return false
-        // A queued snackbar must never undo a more recent skip.
         if (expectedSkippedDate != null && alarm.skippedDate != expectedSkippedDate) return false
         val zone = timeZone()
         val skippedTime = alarm.skippedTime(zone)

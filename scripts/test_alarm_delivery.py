@@ -30,6 +30,38 @@ def run_cleanup(steps):
     return errors
 
 
+def apply_idle_test_overrides(adb, api, restorations):
+    """Record restoration before each mutation, including partial setup failures.
+
+    Android 12–14 read device_idle DeviceConfig directly. Android 11 and
+    15+ support the Settings override. Never reset an entire config namespace.
+    """
+    if 31 <= api <= 34:
+        for key, value in (("min_time_to_alarm", "0"), ("idle_to", "30000")):
+            previous = adb("shell", "device_config", "get", "device_idle", key).strip()
+            command = ("delete", "device_idle", key) if previous == "null" else (
+                "put", "device_idle", key, previous)
+            restorations.append((f"restore idle config {key}",
+                                 lambda command=command: adb("shell", "device_config", *command)))
+            adb("shell", "device_config", "put", "device_idle", key, value)
+    else:
+        previous = adb("shell", "settings", "get", "global", "device_idle_constants").strip()
+        command = ("delete", "global", "device_idle_constants") if previous in ("", "null") else (
+            "put", "global", "device_idle_constants", previous)
+        restorations.append(("restore idle settings",
+                             lambda: adb("shell", "settings", *command)))
+        constants = [] if previous in ("", "null") else previous.split(",")
+        constants = [c for c in constants if not c.startswith(("min_time_to_alarm=", "idle_to="))]
+        adb("shell", "settings", "put", "global", "device_idle_constants",
+            ",".join(constants + ["min_time_to_alarm=0", "idle_to=30000"]))
+
+
+def idle_test_overrides_applied(dump):
+    # Check effective service values, not merely the settings/config write result.
+    return bool(re.search(r"^\s*min_time_to_alarm=0(?:ms)?\s*$", dump, re.M) and
+                re.search(r"^\s*idle_to=\+?30s0ms\s*$", dump, re.M))
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--serial", required=True)
@@ -83,7 +115,7 @@ def main():
 
     result = {"scenario": args.scenario, "serial": args.serial, "audibility": "not measured"}
     seeded = False
-    idle_constants = None
+    idle_restorations = []
     try:
         api = int(adb("shell", "getprop", "ro.build.version.sdk").strip())
         if api >= 33:
@@ -106,13 +138,9 @@ def main():
             # Android normally avoids Doze for an alarm-clock event within one hour.
             # Use a 30-second initial idle window with the alarm three minutes away,
             # outside AlarmManager's two-minute early-wake margin. Restore both settings.
-            idle_constants = adb("shell", "settings", "get", "global", "device_idle_constants").strip()
-            constants = [] if idle_constants in ("", "null") else idle_constants.split(",")
-            constants = [c for c in constants if not c.startswith(("min_time_to_alarm=", "idle_to="))]
-            adb("shell", "settings", "put", "global", "device_idle_constants",
-                ",".join(constants + ["min_time_to_alarm=0", "idle_to=30000"]))
-            wait_for("test idle threshold applied", lambda: "min_time_to_alarm=0" in
-                     adb("shell", "dumpsys", "deviceidle"), 10)
+            apply_idle_test_overrides(adb, api, idle_restorations)
+            wait_for("test idle thresholds applied", lambda: idle_test_overrides_applied(
+                     adb("shell", "dumpsys", "deviceidle")), 10)
             adb("shell", "dumpsys", "battery", "unplug")
             idle_output = adb("shell", "dumpsys", "deviceidle", "force-idle", "deep")
             def is_deep_idle():
@@ -177,10 +205,7 @@ def main():
                 ("exit idle", lambda: adb("shell", "dumpsys", "deviceidle", "unforce")),
                 ("reset battery", lambda: adb("shell", "dumpsys", "battery", "reset")),
             ])
-            if idle_constants is not None:
-                restore = ("delete", "global", "device_idle_constants") if idle_constants in ("", "null") else (
-                    "put", "global", "device_idle_constants", idle_constants)
-                cleanup_steps.append(("restore idle settings", lambda: adb("shell", "settings", *restore)))
+            cleanup_steps.extend(idle_restorations)
         if seeded:
             cleanup_steps.append(("remove test alarm", lambda: instrument("cleanup")))
         cleanup_errors = run_cleanup(cleanup_steps)

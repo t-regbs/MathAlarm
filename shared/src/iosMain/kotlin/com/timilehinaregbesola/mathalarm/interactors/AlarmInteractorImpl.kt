@@ -1,12 +1,15 @@
 package com.timilehinaregbesola.mathalarm.interactors
 
 import kotlin.time.Clock
-import co.touchlab.kermit.Logger
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.notification.IosAlarmScheduler
+import com.timilehinaregbesola.mathalarm.alarm.AlarmSchedulerBridge
 
-class AlarmInteractorImpl(logger: Logger) : AlarmInteractor {
-    private val scheduler = IosAlarmScheduler(logger)
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
+class AlarmInteractorImpl(
+    private val scheduler: IosAlarmScheduler,
+) : AlarmInteractor {
 
     override suspend fun schedule(alarm: Alarm, timeInMillis: Long) =
         scheduler.scheduleOccurrence(alarm, timeInMillis)
@@ -15,14 +18,26 @@ class AlarmInteractorImpl(logger: Logger) : AlarmInteractor {
         times.forEach { scheduler.scheduleOccurrence(alarm, it, repeating = true) }
     }
 
-    override suspend fun scheduleSnooze(alarm: Alarm, timeInMillis: Long) =
+    override suspend fun scheduleNextRepeating(alarm: Alarm, times: List<Long>) {
+        times.forEach { scheduler.ensureRepeatingOccurrence(alarm, it) }
+    }
+
+    override suspend fun scheduleSnooze(alarm: Alarm, timeInMillis: Long) {
         scheduler.scheduleOccurrence(alarm, timeInMillis, snooze = true)
+        // Core cancels recovery only after the accepted snooze is durable.
+    }
 
     override fun cancel(alarm: Alarm) = scheduler.cancelAlarm(alarm)
 
     override fun cancelRegularOccurrences(alarm: Alarm) = scheduler.cancelRegularOccurrences(alarm)
 
-    override fun cancelSnooze(alarm: Alarm) = scheduler.cancelSnooze(alarm)
+    override fun cancelSnooze(alarm: Alarm) {
+        scheduler.cancelSnooze(alarm)
+    }
+
+    override fun cancelRecovery(alarm: Alarm) {
+        AlarmSchedulerBridge.cancelOccurrence(alarm.alarmId, "recovery")
+    }
 
     override suspend fun update(alarm: Alarm) {
         // Replacing an identifier updates metadata without changing concrete one-time dates.

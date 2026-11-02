@@ -1,0 +1,17 @@
+{
+  "failures" : [
+
+  ],
+  "passed" : [
+    "Shared validation and typed draft updates",
+    "Kotlin state invalidates Swift Observation",
+    "Save success and repeated-tap guard",
+    "Save failure and successful retry",
+    "Typed Flow observation and Swift Task cancellation",
+    "Swift Task cancellation reaches Kotlin suspend call",
+    "Explicit cleanup cancels in-flight model work",
+    "Session owner retains draft through native detail layout replacement",
+    "SwiftUI owner automatically clears and cancels its ViewModel"
+  ],
+  "status" : "passed"
+}

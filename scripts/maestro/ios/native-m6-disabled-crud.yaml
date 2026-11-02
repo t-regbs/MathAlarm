@@ -1,0 +1,61 @@
+# Disposable English simulator only. The unique fixture is disabled before Save,
+# so this tests native durable CRUD without accepting an AlarmKit registration.
+# Run with -e FIXTURE_TITLE=...; never target an existing alarm or enable this one.
+appId: com.timilehinaregbesola.mathalarm
+---
+- launchApp
+- tapOn:
+    id: add-alarm
+- tapOn:
+    id: editor-title
+- inputText: ${FIXTURE_TITLE}
+- tapOn:
+    id: editor-keyboard-done
+- tapOn:
+    id: editor-enabled
+    point: "90%,50%"
+- assertVisible:
+    id: editor-enabled
+    checked: false
+- takeScreenshot: native-disabled-crud-before-preview
+- scrollUntilVisible:
+    element:
+      id: editor-test-alarm
+    direction: DOWN
+- tapOn:
+    id: editor-test-alarm
+- assertVisible:
+    id: challenge-cancel-preview
+- tapOn:
+    id: challenge-cancel-preview
+- assertVisible:
+    id: save-alarm
+- takeScreenshot: native-disabled-crud-returned-draft
+- tapOn:
+    id: save-alarm
+- assertVisible:
+    text: ".*${FIXTURE_TITLE}.*"
+- assertNotVisible:
+    id: save-alarm
+- takeScreenshot: native-disabled-crud-saved
+- swipe:
+    from:
+      text: ".*, ${FIXTURE_TITLE}, .*"
+      id: "alarm-row-.*"
+    direction: LEFT
+- tapOn: Delete
+- assertNotVisible:
+    text: ".*${FIXTURE_TITLE}.*"
+- tapOn: Undo
+- assertVisible:
+    text: ".*${FIXTURE_TITLE}.*"
+- takeScreenshot: native-disabled-crud-undo
+- swipe:
+    from:
+      text: ".*, ${FIXTURE_TITLE}, .*"
+      id: "alarm-row-.*"
+    direction: LEFT
+- tapOn: Delete
+- assertNotVisible:
+    text: ".*${FIXTURE_TITLE}.*"
+- takeScreenshot: native-disabled-crud-final-delete

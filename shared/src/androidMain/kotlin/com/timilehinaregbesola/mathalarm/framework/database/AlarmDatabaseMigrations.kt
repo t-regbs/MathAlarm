@@ -1,0 +1,117 @@
+package com.timilehinaregbesola.mathalarm.framework.database
+
+import androidx.room.migration.Migration
+import androidx.sqlite.SQLiteConnection
+import androidx.sqlite.execSQL
+
+/**
+ * Migration from version 2 to 3 - adds title column
+ */
+val MIGRATION_2_3 = object : Migration(2, 3) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(
+            """
+                CREATE TABLE new_alarms (
+                    alarmId INTEGER PRIMARY KEY NOT NULL,
+                    hour INTEGER NOT NULL,
+                    minute INTEGER NOT NULL,
+                    repeat INTEGER NOT NULL,
+                    daysoftheweek TEXT NOT NULL,
+                    ison INTEGER NOT NULL,
+                    difficulty INTEGER NOT NULL,
+                    tone TEXT NOT NULL,
+                    vibrate INTEGER NOT NULL,
+                    snooze INTEGER NOT NULL,
+                    title TEXT NOT NULL DEFAULT ''
+                )
+            """.trimIndent()
+        )
+        connection.execSQL(
+            """
+                INSERT INTO new_alarms (alarmId, hour, minute, repeat, daysoftheweek, ison, difficulty, tone, vibrate, snooze)
+                SELECT alarmId, hour, minute, repeat, daysoftheweek, ison, difficulty, tone, vibrate, snooze FROM alarms
+            """.trimIndent()
+        )
+        connection.execSQL("DROP TABLE alarms")
+        connection.execSQL("ALTER TABLE new_alarms RENAME TO alarms")
+    }
+}
+
+/**
+ * Migration from version 3 to 4 - adds isSaved column
+ */
+val MIGRATION_3_4 = object : Migration(3, 4) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL(
+            """
+                CREATE TABLE new_alarms (
+                    alarmId INTEGER PRIMARY KEY NOT NULL,
+                    hour INTEGER NOT NULL,
+                    minute INTEGER NOT NULL,
+                    repeat INTEGER NOT NULL,
+                    daysoftheweek TEXT NOT NULL,
+                    ison INTEGER NOT NULL,
+                    difficulty INTEGER NOT NULL,
+                    tone TEXT NOT NULL,
+                    vibrate INTEGER NOT NULL,
+                    snooze INTEGER NOT NULL,
+                    title TEXT NOT NULL DEFAULT '',
+                    isSaved INTEGER NOT NULL DEFAULT 1
+                )
+            """.trimIndent()
+        )
+        connection.execSQL(
+            """
+                INSERT INTO new_alarms (alarmId, hour, minute, repeat, daysoftheweek, ison, difficulty, tone, vibrate, snooze, title)
+                SELECT alarmId, hour, minute, repeat, daysoftheweek, ison, difficulty, tone, vibrate, snooze, title FROM alarms
+            """.trimIndent()
+        )
+        connection.execSQL("DROP TABLE alarms")
+        connection.execSQL("ALTER TABLE new_alarms RENAME TO alarms")
+    }
+}
+
+/** Preserve existing alarms while adding durable occurrence state. */
+val MIGRATION_4_5 = object : Migration(4, 5) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN pendingTimes TEXT NOT NULL DEFAULT ''")
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN scheduleInitialized INTEGER NOT NULL DEFAULT 0")
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN snoozedUntil INTEGER")
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN activeAt INTEGER")
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN scheduleError TEXT")
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN scheduleTimeZone TEXT")
+    }
+}
+
+/** Existing alarms remain single-question presets. */
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN questionCount INTEGER NOT NULL DEFAULT 1")
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN challengeOperations TEXT NOT NULL DEFAULT '+−×÷'")
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN additionRange INTEGER NOT NULL DEFAULT 0")
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN factorRange INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
+/** Preserve existing single-difficulty challenges. */
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN difficultyMix TEXT NOT NULL DEFAULT ''")
+    }
+}
+
+/** Adds the local date of a recurring occurrence that the user chose to skip. */
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN skippedDate TEXT")
+    }
+}
+
+/** Existing alarms keep unlimited snoozes; new alarms choose their default in the domain model. */
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(connection: SQLiteConnection) {
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN maxSnoozes INTEGER NOT NULL DEFAULT 0")
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN snoozeRequiresQuestion INTEGER NOT NULL DEFAULT 0")
+        connection.execSQL("ALTER TABLE alarms ADD COLUMN snoozeCount INTEGER NOT NULL DEFAULT 0")
+    }
+}

@@ -1,0 +1,87 @@
+{
+  "purpose": "Original synthesized sound candidates for audition; not installed in the app.",
+  "sample_rate": 44100,
+  "channels": 1,
+  "format": "16-bit PCM WAV",
+  "target_lufs": -18,
+  "candidates": [
+    {
+      "id": "01_daybreak",
+      "name": "Daybreak",
+      "description": "Soft, rounded mallets with a warm background.",
+      "filename": "01_daybreak.wav",
+      "duration_seconds": 12.0,
+      "integrated_lufs": -18.0,
+      "true_peak_dbtp": -8.3,
+      "loudness_range_lu": 1.1,
+      "peak_sample": 12604,
+      "clipped_samples": 0,
+      "loop_join_difference": 0
+    },
+    {
+      "id": "02_glass_garden",
+      "name": "Glass Garden",
+      "description": "Clear, shimmering bells with a simple melodic pattern.",
+      "filename": "02_glass_garden.wav",
+      "duration_seconds": 10.909,
+      "integrated_lufs": -18.0,
+      "true_peak_dbtp": -8.27,
+      "loudness_range_lu": 1.0,
+      "peak_sample": 12633,
+      "clipped_samples": 0,
+      "loop_join_difference": 0
+    },
+    {
+      "id": "03_stepping_stones",
+      "name": "Stepping Stones",
+      "description": "Wooden mallets and a light, purposeful rhythm.",
+      "filename": "03_stepping_stones.wav",
+      "duration_seconds": 9.6,
+      "integrated_lufs": -18.0,
+      "true_peak_dbtp": -8.21,
+      "loudness_range_lu": 0.6,
+      "peak_sample": 12706,
+      "clipped_samples": 0,
+      "loop_join_difference": 0
+    },
+    {
+      "id": "04_orbit",
+      "name": "Orbit",
+      "description": "A bright, flowing synth arpeggio with a gentle pulse.",
+      "filename": "04_orbit.wav",
+      "duration_seconds": 8.889,
+      "integrated_lufs": -18.0,
+      "true_peak_dbtp": -8.33,
+      "loudness_range_lu": 0.8,
+      "peak_sample": 12561,
+      "clipped_samples": 0,
+      "loop_join_difference": 0
+    },
+    {
+      "id": "05_clear_signal",
+      "name": "Clear Signal",
+      "description": "Distinct pairs of clean, bright tones with breathing space.",
+      "filename": "05_clear_signal.wav",
+      "duration_seconds": 9.6,
+      "integrated_lufs": -18.0,
+      "true_peak_dbtp": -8.99,
+      "loudness_range_lu": 1.8,
+      "peak_sample": 11642,
+      "clipped_samples": 0,
+      "loop_join_difference": 0
+    },
+    {
+      "id": "06_rally",
+      "name": "Rally",
+      "description": "A more insistent rhythmic electronic alarm.",
+      "filename": "06_rally.wav",
+      "duration_seconds": 8.276,
+      "integrated_lufs": -18.01,
+      "true_peak_dbtp": -6.88,
+      "loudness_range_lu": 0.4,
+      "peak_sample": 14843,
+      "clipped_samples": 0,
+      "loop_join_difference": 0
+    }
+  ]
+}

@@ -21,7 +21,9 @@ import kotlin.test.AfterTest
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.*
@@ -32,6 +34,83 @@ import kotlinx.datetime.toLocalDateTime
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AlarmListViewModelTest {
+
+    @Test
+    fun `pending list operation survives owner closure until its accepted deletion finishes`() = runTest {
+        val commands = usecases.copy(applicationScope = backgroundScope)
+        viewModel = AlarmListViewModel(commands, permission, preferences, Logger.withTag("PendingDeleteTest"))
+        val original = Alarm(alarmId = 810, isSaved = true, isOn = true)
+        commands.addAlarm(original)
+        commands.scheduleAlarm(original, true)
+        val scheduled = commands.findAlarm(original.alarmId)!!
+        val locked = CompletableDeferred<Unit>()
+        val release = CompletableDeferred<Unit>()
+        val blocking = launch { commands.command { locked.complete(Unit); release.await() } }
+        locked.await()
+
+        viewModel.onEvent(AlarmListEvent.OnDeleteAlarmClick(scheduled))
+        viewModel.state.value.pendingOperations shouldBe 1
+        runCurrent()
+        commands.findAlarm(original.alarmId) shouldBe scheduled
+        listOf(alarmInteractor.getScheduledAlarms()[original.alarmId]!!.timeInMillis) shouldBe scheduled.pendingTimes
+        viewModel.close()
+        release.complete(Unit)
+        blocking.join()
+        runCurrent()
+
+        commands.findAlarm(original.alarmId) shouldBe null
+        alarmInteractor.getScheduledAlarms() shouldBe emptyMap()
+        viewModel.state.value.pendingOperations shouldBe 0
+        val retained = viewModel.state.value.results.single()
+        retained.event shouldBe UiEvent.ShowSnackbar(UiEvent.ListMessage.DELETED,
+            actionType = UiEvent.SnackbarAction.UNDO_DELETE)
+        viewModel.acknowledgeResult(retained.id)
+        viewModel.state.value.results shouldBe emptyList()
+        viewModel.onEvent(AlarmListEvent.OnUndoDeleteClick)
+        runCurrent()
+        commands.findAlarm(original.alarmId) shouldBe null
+        viewModel.state.value.pendingOperations shouldBe 0
+    }
+
+    @Test
+    fun `failed list cancellation clears pending state retains occurrence and permits retry`() = runTest {
+        val original = Alarm(alarmId = 811, isSaved = true, isOn = true)
+        usecases.addAlarm(original)
+        usecases.scheduleAlarm(original, true)
+        val scheduled = usecases.findAlarm(original.alarmId)!!
+        val registered = alarmInteractor.getScheduledAlarms()
+        var failCancellation = true
+        val backend = object : AlarmInteractor by alarmInteractor {
+            override fun cancel(alarm: Alarm) {
+                if (failCancellation) error("cancellation unavailable")
+                alarmInteractor.cancel(alarm)
+            }
+        }
+        val commands = usecases.copy(cancelAlarm = CancelAlarm(backend))
+        viewModel = AlarmListViewModel(commands, permission, preferences, Logger.withTag("PendingFailureTest"))
+        viewModel.setEnabled(scheduled, false)
+        viewModel.state.value.pendingOperations shouldBe 1
+        advanceUntilIdle()
+
+        usecases.findAlarm(original.alarmId) shouldBe scheduled
+        alarmInteractor.getScheduledAlarms() shouldBe registered
+        viewModel.state.value.pendingOperations shouldBe 0
+        val error = viewModel.state.value.results.single()
+        error.event shouldBe UiEvent.ShowError(AlarmErrorMessage.UPDATE)
+        failCancellation = false
+        viewModel.setEnabled(scheduled, false)
+        advanceUntilIdle()
+        val disabled = usecases.findAlarm(original.alarmId)!!
+        disabled.isOn shouldBe false
+        disabled.pendingTimes shouldBe emptyList()
+        disabled.activeAt shouldBe null
+        disabled.snoozedUntil shouldBe null
+        alarmInteractor.getScheduledAlarms() shouldBe emptyMap()
+        viewModel.state.value.pendingOperations shouldBe 0
+        viewModel.state.value.results shouldBe listOf(error)
+        viewModel.acknowledgeResult(error.id)
+        viewModel.state.value.results shouldBe emptyList()
+    }
 
     private lateinit var viewModel: AlarmListViewModel
     private lateinit var dataSource: AlarmRepositoryFake
@@ -85,7 +164,8 @@ class AlarmListViewModelTest {
             usecases = usecases,
             permission = permission,
             preferences = preferences,
-            logger = Logger.withTag("AlarmListViewModelTest")
+            logger = Logger.withTag("AlarmListViewModelTest"),
+            skipNextSupported = true,
         )
     }
 
@@ -105,7 +185,7 @@ class AlarmListViewModelTest {
         viewModel = AlarmListViewModel(commands, permission, preferences, Logger.withTag("ErrorTest"))
         val alarm = Alarm(alarmId = 803, isSaved = true)
         commands.addAlarm(alarm)
-        viewModel.uiEvent.test {
+        viewModel.resultEvents().test {
             viewModel.onEvent(AlarmListEvent.OnAlarmOnChange(alarm, true))
             awaitItem() shouldBe UiEvent.ShowError(AlarmErrorMessage.UPDATE)
         }
@@ -152,6 +232,27 @@ class AlarmListViewModelTest {
     }
 
     @Test
+    fun `clear alarms invalidates an earlier deletion undo`() = runTest {
+        val deleted = Alarm(alarmId = 820, hour = 7, minute = 0, isSaved = true, isOn = true)
+        val remaining = Alarm(alarmId = 821, hour = 8, minute = 0, isSaved = true, isOn = true)
+        usecases.addAlarm(deleted)
+        usecases.addAlarm(remaining)
+        usecases.scheduleAlarm(deleted, true)
+        usecases.scheduleAlarm(remaining, true)
+        viewModel.onEvent(AlarmListEvent.OnDeleteAlarmClick(deleted))
+        advanceUntilIdle()
+        viewModel.state.value.canUndoDelete shouldBe true
+
+        viewModel.onEvent(AlarmListEvent.OnClearAlarmsClick)
+        advanceUntilIdle()
+        viewModel.state.value.canUndoDelete shouldBe false
+        viewModel.onEvent(AlarmListEvent.OnUndoDeleteClick)
+        advanceUntilIdle()
+        usecases.getSavedAlarms().first() shouldBe emptyList()
+        alarmInteractor.getScheduledAlarms() shouldBe emptyMap()
+    }
+
+    @Test
     fun `rapid enable disable enable leaves one current schedule`() = runTest {
         val alarm = Alarm(alarmId = 801, hour = 7, minute = 0, isSaved = true)
         usecases.addAlarm(alarm)
@@ -173,7 +274,7 @@ class AlarmListViewModelTest {
 
     @Test
     fun `onEvent OnAddAlarmClick should navigate with new alarm`() = runTest {
-        viewModel.uiEvent.test {
+        viewModel.resultEvents().test {
             viewModel.onEvent(AlarmListEvent.OnAddAlarmClick)
             
             val event = awaitItem()
@@ -187,7 +288,7 @@ class AlarmListViewModelTest {
     fun `onEvent OnEditAlarmClick should navigate with selected alarm`() = runTest {
         val testAlarm = Alarm(alarmId = 123, hour = 8, minute = 30)
         
-        viewModel.uiEvent.test {
+        viewModel.resultEvents().test {
             viewModel.onEvent(AlarmListEvent.OnEditAlarmClick(testAlarm))
             
             val event = awaitItem()
@@ -202,15 +303,15 @@ class AlarmListViewModelTest {
         usecases.addAlarm(testAlarm)
         advanceUntilIdle()
         
-        viewModel.uiEvent.test {
+        viewModel.resultEvents().test {
             viewModel.onEvent(AlarmListEvent.OnDeleteAlarmClick(testAlarm))
             advanceUntilIdle()
             
             val event = awaitItem()
             event.shouldBeInstanceOf<UiEvent.ShowSnackbar>()
             val snackbarEvent = event as UiEvent.ShowSnackbar
-            snackbarEvent.message shouldBe "Alarm Deleted"
-            snackbarEvent.action shouldBe "Undo"
+            snackbarEvent.code shouldBe UiEvent.ListMessage.DELETED
+            snackbarEvent.actionType shouldBe UiEvent.SnackbarAction.UNDO_DELETE
             
             val alarms = viewModel.alarms.filterNotNull().first()
             alarms.none { it.alarmId == testAlarm.alarmId } shouldBe true
@@ -229,12 +330,12 @@ class AlarmListViewModelTest {
         )
         usecases.addAlarm(alarm)
 
-        viewModel.uiEvent.test {
+        viewModel.resultEvents().test {
             viewModel.onEvent(AlarmListEvent.OnSkipNextClick(alarm.alarmId))
             advanceUntilIdle()
 
             awaitItem() shouldBe UiEvent.ShowSnackbar(
-                message = "",
+                code = UiEvent.ListMessage.SKIPPED,
                 skippedDate = kotlin.time.Instant.fromEpochMilliseconds(1_893_913_200_000L)
                     .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString(),
                 actionType = UiEvent.SnackbarAction.UNDO_SKIP,
@@ -246,6 +347,25 @@ class AlarmListViewModelTest {
                 .toLocalDateTime(TimeZone.currentSystemDefault()).date.toString()
 
         viewModel.onEvent(AlarmListEvent.OnUndoSkipClick(alarm.alarmId))
+        advanceUntilIdle()
+
+        usecases.findAlarm(alarm.alarmId)!!.skippedDate shouldBe null
+    }
+
+    @Test
+    fun `skip command is ignored when platform does not support date exceptions`() = runTest {
+        val alarm = Alarm(alarmId = 458, hour = 7, repeat = true,
+            repeatDays = "FTFFFFF", isOn = true, isSaved = true)
+        usecases.addAlarm(alarm)
+        val unsupportedViewModel = AlarmListViewModel(
+            usecases = usecases,
+            permission = permission,
+            preferences = preferences,
+            logger = Logger.withTag("AlarmListViewModelTest"),
+            skipNextSupported = false,
+        )
+
+        unsupportedViewModel.onEvent(AlarmListEvent.OnSkipNextClick(alarm.alarmId))
         advanceUntilIdle()
 
         usecases.findAlarm(alarm.alarmId)!!.skippedDate shouldBe null
@@ -326,12 +446,12 @@ class AlarmListViewModelTest {
 
     @Test
     fun `onEvent OnClearEmptyAlarmsClick should show appropriate message`() = runTest {
-        viewModel.uiEvent.test {
+        viewModel.resultEvents().test {
             viewModel.onEvent(AlarmListEvent.OnClearEmptyAlarmsClick)
             
             val event = awaitItem()
             event.shouldBeInstanceOf<UiEvent.ShowSnackbar>()
-            event.message shouldBe "There are no alarms to clear"
+            event.code shouldBe UiEvent.ListMessage.EMPTY
         }
     }
 
@@ -340,13 +460,13 @@ class AlarmListViewModelTest {
         val testAlarm = Alarm(alarmId = 666, hour = 9, minute = 30)
         val message = "Alarm scheduled"
         
-        viewModel.uiEvent.test {
-            viewModel.scheduleAlarm(testAlarm, reschedule = false, message = message)
+        viewModel.resultEvents().test {
+            viewModel.scheduleAlarm(testAlarm, reschedule = false)
             advanceUntilIdle()
             
             val event = awaitItem()
             event.shouldBeInstanceOf<UiEvent.ShowSnackbar>()
-            event.message shouldBe message
+            event.code shouldBe UiEvent.ListMessage.SCHEDULED
         }
     }
 
@@ -365,11 +485,11 @@ class AlarmListViewModelTest {
     fun `permission hasExactAlarmPermission should return correct value`() {
         permission.setPermission(true)
         
-        viewModel.permission.hasExactAlarmPermission() shouldBe true
+        viewModel.canSchedule shouldBe true
         
         permission.setPermission(false)
         
-        viewModel.permission.hasExactAlarmPermission() shouldBe false
+        viewModel.canSchedule shouldBe false
     }
 
     @Test
@@ -447,4 +567,9 @@ class AlarmListViewModelTest {
 
         alarms.map { it.alarmId } shouldBe listOf(2L, 4L, 3L, 1L)
     }
+}
+
+private fun AlarmListViewModel.resultEvents() = kotlinx.coroutines.flow.flow {
+    val delivered = mutableSetOf<Long>()
+    state.collect { value -> value.results.forEach { if (delivered.add(it.id)) { emit(it.event); acknowledgeResult(it.id) } } }
 }

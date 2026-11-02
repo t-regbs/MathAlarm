@@ -1,0 +1,43 @@
+# Disposable English iPhone simulator, starting on the alarm list.
+# Native Back must stay at the editor; Cancel must return to the compact list.
+# Only an unsaved draft is opened. No alarm is saved or scheduled.
+appId: com.timilehinaregbesola.mathalarm
+---
+- launchApp
+- runFlow:
+    when:
+      visible:
+        id: announcementGotIt
+    commands:
+      - tapOn:
+          id: announcementGotIt
+- tapOn:
+    id: add-alarm
+- scrollUntilVisible:
+    element:
+      id: editor-snooze
+    direction: DOWN
+- tapOn:
+    id: editor-snooze
+- waitForAnimationToEnd
+- tapOn:
+    id: BackButton
+    retryTapIfNoChange: false
+- waitForAnimationToEnd
+- assertVisible:
+    id: editor-snooze
+- assertVisible:
+    id: save-alarm
+- takeScreenshot: native-phone-back-retains-editor
+- tapOn:
+    id: discard-draft
+- runFlow:
+    when:
+      visible: Discard changes
+    commands:
+      - tapOn: Discard changes
+- assertVisible:
+    id: add-alarm
+- assertNotVisible:
+    id: save-alarm
+- takeScreenshot: native-phone-cancel-returns-list

@@ -7,7 +7,7 @@ Generated assets:
 - `mathalarm-adaptive-foreground.svg`: transparent foreground for the Android adaptive canvas.
 - `mathalarm-icon-1024.png`: high-resolution export.
 - Android: vector adaptive foreground, Android 13 themed icon layer, and standard/round legacy PNGs at 36, 48, 72, 96, 144, and 192 pixels. Debug retains its white background; release retains dark.
-- iOS: all declared AppIcon catalog slots, including the opaque 1024px marketing icon, and existing launch-screen sizes.
+- iOS: all declared AppIcon catalog slots, including the opaque 1024px marketing icon, and transparent launch-screen marks over an adaptive light/dark background.
 - Shared UI, notification bitmap, and 512px Play/Fastlane artwork.
 
 Regenerate from the repository root:
@@ -16,6 +16,8 @@ Regenerate from the repository root:
 python3 -m pip install cairosvg pillow
 python3 scripts/generate_icons.py
 ```
+
+Use `python3 scripts/generate_icons.py --ios-launch-only` to regenerate only the iOS splash artwork.
 
 Edit paths in the master SVG (filled paths only); the generator derives Android VectorDrawable paths and rasterizes exports directly from the master, without upscaling the previous bitmap. Background settings and adaptive sizing live in the generator.
 

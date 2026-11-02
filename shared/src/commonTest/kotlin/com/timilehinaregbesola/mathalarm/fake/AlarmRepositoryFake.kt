@@ -3,10 +3,14 @@ package com.timilehinaregbesola.mathalarm.fake
 import com.timilehinaregbesola.mathalarm.data.AlarmDataSource
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class AlarmRepositoryFake : AlarmDataSource {
 
+    private val changes = kotlinx.coroutines.flow.MutableStateFlow<List<Alarm>>(emptyList())
+    private fun changed() { changes.value = alarmMap.values.sortedByDescending { it.alarmId } }
     private val alarmMap: MutableMap<Long, Alarm> = mutableMapOf()
 
     override suspend fun addAlarm(alarm: Alarm): Long {
@@ -17,32 +21,32 @@ class AlarmRepositoryFake : AlarmDataSource {
         }
 
         alarmMap[id] = alarm.copy(alarmId = id)
+        changed()
         return id
     }
 
     override suspend fun deleteAlarm(alarm: Alarm) {
         alarmMap.remove(alarm.alarmId)
+        changed()
     }
 
     override suspend fun deleteAlarmFromId(id: Long) {
         alarmMap.remove(id)
+        changed()
     }
 
     override suspend fun updateAlarm(alarm: Alarm) {
         alarmMap[alarm.alarmId] = alarm
+        changed()
     }
 
-    override fun getAlarms(): Flow<List<Alarm>> = flow {
-        emit(alarmMap.values.sortedByDescending { it.alarmId })
-    }
+    override fun getAlarms(): Flow<List<Alarm>> = changes
 
-    override fun getSavedAlarms(): Flow<List<Alarm>> = flow {
-        emit(alarmMap.values.filter { it.isSaved }.sortedByDescending { it.alarmId })
-    }
+    override fun getSavedAlarms(): Flow<List<Alarm>> = changes.map { alarms -> alarms.filter { it.isSaved } }
 
     override suspend fun getLatestAlarmFromDatabase(): Alarm? = alarmMap.values.maxByOrNull { it.alarmId }
 
     override suspend fun findAlarm(id: Long): Alarm? = alarmMap[id]
 
-    override suspend fun clear() = alarmMap.clear()
+    override suspend fun clear() { alarmMap.clear(); changed() }
 }

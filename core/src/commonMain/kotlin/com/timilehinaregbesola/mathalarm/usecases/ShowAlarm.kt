@@ -5,6 +5,8 @@ import com.timilehinaregbesola.mathalarm.interactors.NotificationInteractor
 import kotlinx.coroutines.CancellationException
 import kotlin.time.Clock
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class ShowAlarm(
     private val alarmRepository: AlarmRepository,
     private val notificationInteractor: NotificationInteractor,
@@ -15,8 +17,9 @@ class ShowAlarm(
         if (!saved.isOn) return
         if (triggerAt != null && saved.scheduleInitialized) {
             val expected = if (snoozed) saved.snoozedUntil == triggerAt else triggerAt in saved.pendingTimes
-            if (!expected && saved.activeAt != triggerAt) return // obsolete or canceled broadcast
+            if (!expected && saved.activeAt != triggerAt) return
         }
+        if (saved.activeAt != null && triggerAt != null && saved.activeAt != triggerAt) return
         val active = triggerAt ?: saved.activeAt ?: Clock.System.now().toEpochMilliseconds()
         val alarm = saved.copy(
             activeAt = active,
@@ -25,7 +28,6 @@ class ShowAlarm(
             snoozedUntil = if (snoozed) null else saved.snoozedUntil
         )
         alarmRepository.updateAlarm(alarm)
-        // Start playback before doing next-week scheduling; rearming failure must not silence today.
         try {
             notificationInteractor.show(alarm)
         } catch (e: CancellationException) {
@@ -37,7 +39,9 @@ class ShowAlarm(
         if (alarm.repeat && saved.activeAt != active) {
             try {
                 val times = scheduleNextAlarm(alarm)
-                alarmRepository.updateAlarm(alarm.copy(pendingTimes = times, scheduleError = null))
+                alarmRepository.updateAlarm(alarm.copy(
+                    pendingTimes = (alarm.pendingTimes.filter { it > active } + times).distinct().sorted(),
+                    scheduleError = null))
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {

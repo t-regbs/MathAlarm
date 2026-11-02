@@ -4,6 +4,8 @@ import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
 import com.timilehinaregbesola.mathalarm.provider.AlarmTimeCalculator
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 class ScheduleNextAlarm(
     private val alarmInteractor: AlarmInteractor,
     private val alarmTimeCalculator: AlarmTimeCalculator,
@@ -11,7 +13,7 @@ class ScheduleNextAlarm(
     suspend operator fun invoke(alarm: Alarm): List<Long> {
         require(alarm.repeat && alarm.isOn)
         val times = alarmTimeCalculator.calculateAlarmTimes(alarm).sorted()
-        alarmInteractor.scheduleRepeating(alarm, times)
+        alarmInteractor.scheduleNextRepeating(alarm, times)
         return times
     }
 }

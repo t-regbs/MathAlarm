@@ -42,13 +42,15 @@ import org.koin.core.parameter.parametersOf
 import org.koin.core.scope.Scope
 import org.koin.dsl.module
 
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 val commonModule = module {
     // Mappers
     single { AlarmMapper() }
     single { AppThemeOptionsMapper() }
     
     // Coroutine Scope - replaces GlobalScope usage
-    single { AppCoroutineScope() }
+    single { AppCoroutineScope(kotlinx.coroutines.Dispatchers.Main.immediate) }
     
     // DateTime Provider
     single<DateTimeProvider> { DateTimeProviderImpl() }
@@ -77,7 +79,13 @@ val commonModule = module {
     // Usecases
     single {
         val deleteAlarm = DeleteAlarm(get(), get(), get())
-        val rescheduleFutureAlarms = RescheduleFutureAlarms(get(), get(), get())
+        val cleanupFailure: (Long, Exception) -> Unit = { id, error ->
+            Logger.e(error) { "Accepted alarm cleanup remains pending" }
+            com.timilehinaregbesola.mathalarm.application.AlarmApplicationStatus.reportRecoveryFailure(id)
+        }
+        val rescheduleFutureAlarms = RescheduleFutureAlarms(get(), get(), get(),
+            notificationInteractor = get(), onCleanupFailure = cleanupFailure,
+            onCleanupSuccess = { com.timilehinaregbesola.mathalarm.application.AlarmApplicationStatus.clearRecoveryFailure(it) })
         val reviewEligibility by lazy { get<ReviewEligibilityStore>() }
         val analytics by lazy { get<AnalyticsTracker>() }
         Usecases(
@@ -87,21 +95,25 @@ val commonModule = module {
             findAlarm = FindAlarm(get()),
             getSavedAlarms = GetSavedAlarms(get()),
             updateAlarm = UpdateAlarm(get(), get()),
-            scheduleAlarm = ScheduleAlarm(get(), get(), get()),
+            scheduleAlarm = ScheduleAlarm(get(), get(), get(), notificationInteractor = get(), onCleanupFailure = cleanupFailure,
+            onCleanupSuccess = { com.timilehinaregbesola.mathalarm.application.AlarmApplicationStatus.clearRecoveryFailure(it) }),
             completeAlarm = CompleteAlarm(get(), get(), get(), get(), onCompleted = {
                 // Optional review bookkeeping must never turn a successful dismissal into an error.
                 runCatching { reviewEligibility.recordAlarmCompleted() }
                     .onFailure { Logger.w(it) { "Unable to record review eligibility" } }
                 runCatching { analytics.trackSafely(AnalyticsEvents.alarmCompleted) }
-            }),
+            }, onCleanupFailure = cleanupFailure,
+            onCleanupSuccess = { com.timilehinaregbesola.mathalarm.application.AlarmApplicationStatus.clearRecoveryFailure(it) }),
             rescheduleFutureAlarms = rescheduleFutureAlarms,
             scheduleNextAlarm = get(),
             showAlarm = ShowAlarm(get(), get(), get()),
             snoozeAlarm = SnoozeAlarm(get(), get(), get(), get(), onSnoozed = {
                 runCatching { analytics.trackSafely(AnalyticsEvents.alarmSnoozed) }
-            }),
+            }, onCleanupFailure = cleanupFailure,
+            onCleanupSuccess = { com.timilehinaregbesola.mathalarm.application.AlarmApplicationStatus.clearRecoveryFailure(it) }),
             cancelAlarm = CancelAlarm(get()),
             skipNextAlarm = SkipNextAlarm(get(), get(), rescheduleFutureAlarms),
+            applicationScope = get<AppCoroutineScope>(),
         )
     }
     
@@ -109,7 +121,10 @@ val commonModule = module {
     viewModel { AlarmListViewModel(get(), get(), get(), getWith("AlarmListViewModel"), get()) }
     single { ChallengeProgressStore(get()) }
     viewModel { AlarmSettingsViewModel(get(), get(), get()) }
-    viewModel { AlarmMathViewModel(get(), get(), getWith("AlarmMathViewModel"), get(), get()) }
+    single { com.timilehinaregbesola.mathalarm.application.ChallengeCoordinator(get(), get(), getWith("ChallengeCoordinator"), get(), get(), { com.timilehinaregbesola.mathalarm.platform.getDefaultAlarmTone() }, { com.timilehinaregbesola.mathalarm.platform.PlatformPreviewVibration() }) }
+    viewModel { AlarmMathViewModel(get(), get(), getWith("AlarmMathViewModel"), get(), get(), get()) }
+    viewModel { com.timilehinaregbesola.mathalarm.presentation.appsettings.AppSettingsViewModel(get<AlarmPreferencesImpl>(),
+        listOf("math-challenges-v1") + (if (com.timilehinaregbesola.mathalarm.platform.supportsSkipNext()) listOf("skip-next-alarm-v1") else emptyList()) + listOf("snooze-settings-v1")) }
 }
 
 /**

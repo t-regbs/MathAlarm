@@ -1,4 +1,6 @@
 [versions]
+observableViewModel = "1.1.0"
+nativeCoroutines = "1.0.6"
 play-review = "2.0.2"
 haze = "1.7.3"
 # @keep
@@ -46,22 +48,23 @@ calf = "0.14.0"
 sqlite = "2.7.1"
 
 [libraries]
+observable-viewmodel = { module = "com.rickclephas.kmp:kmp-observableviewmodel-core", version.ref = "observableViewModel" }
+native-coroutines-annotations = { module = "com.rickclephas.kmp:kmp-nativecoroutines-annotations", version.ref = "nativeCoroutines" }
 play-review = { module = "com.google.android.play:review", version.ref = "play-review" }
 haze = { module = "dev.chrisbanes.haze:haze", version.ref = "haze" }
 androidx-activity-compose = { module = "androidx.activity:activity-compose", version.ref = "androidx_activity_compose" }
 androidx-appcompat = { module = "androidx.appcompat:appcompat", version.ref = "appcompat" }
 androidx-compose-bom = { module = "androidx.compose:compose-bom", version.ref = "compose" }
-androidx-compose-ui-test = { module = "androidx.compose.ui:ui-test-junit4" }
+androidx-compose-ui-test = { module = "androidx.compose.ui:ui-test" }
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "androidx_ktx" }
 androidx-core-splashscreen = { module = "androidx.core:core-splashscreen", version.ref = "splashscreen" }
 androidx-room-compiler = { module = "androidx.room:room-compiler", version.ref = "androidx_room" }
 androidx-room-runtime = { module = "androidx.room:room-runtime", version.ref = "androidx_room" }
-androidx-sqlite-driver-android = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqlite" }
-androidx-sqlite-driver-bundled = { module = "androidx.sqlite:sqlite-bundled", version.ref = "sqlite" }
+androidx-sqlite-driver-framework = { module = "androidx.sqlite:sqlite-framework", version.ref = "sqlite" }
 androidx-test-espresso-core = { module = "androidx.test.espresso:espresso-core", version.ref = "test_espresso_core" }
 androidx-test-ext-junit = { module = "androidx.test.ext:junit", version.ref = "test_junit_ext" }
-components-resources = { module = "org.jetbrains.compose.components:components-resources", version.ref = "composeMultiplatform" }
 foundation = { module = "org.jetbrains.compose.foundation:foundation", version.ref = "composeMultiplatform" }
+jetbrains-lifecycle-viewmodel = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel", version.ref = "jetbrainsLifecycleViewmodel" }
 jetbrains-lifecycle-viewmodel-navigation3 = { module = "org.jetbrains.androidx.lifecycle:lifecycle-viewmodel-navigation3", version.ref = "jetbrainsLifecycleViewmodel" }
 jetbrains-navigation3-ui = { module = "org.jetbrains.androidx.navigation3:navigation3-ui", version.ref = "jetbrains-navigation3" }
 coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "coroutines" }
@@ -90,6 +93,7 @@ kotlinx-datetime = { module = "org.jetbrains.kotlinx:kotlinx-datetime", version.
 koin-bom = { module = "io.insert-koin:koin-bom", version.ref = "koin-bom" }
 koin-android = { module = "io.insert-koin:koin-android" }
 koin-core = { module = "io.insert-koin:koin-core" }
+koin-core-viewmodel = { module = "io.insert-koin:koin-core-viewmodel" }
 koin-compose = { module = "io.insert-koin:koin-compose" }
 koin-compose-viewmodel = { module = "io.insert-koin:koin-compose-viewmodel" }
 kotlin-test = { group = "org.jetbrains.kotlin", name = "kotlin-test", version.ref = "kotlin" }
@@ -100,6 +104,7 @@ ui-tooling-preview = { module = "org.jetbrains.compose.ui:ui-tooling-preview", v
 calf-ui = { module = "com.mohamedrejeb.calf:calf-ui", version.ref = "calf" }
 
 [plugins]
+native-coroutines = { id = "com.rickclephas.kmp.nativecoroutines", version.ref = "nativeCoroutines" }
 compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 android-gradle = { id = "com.android.application", version.ref = "android_gradle_plugin" }
 crashlytics-gradle = { id = "com.google.firebase.crashlytics", version.ref = "crashlytics_plugin" }
@@ -109,6 +114,5 @@ ksp = { id = "com.google.devtools.ksp", version.ref = "ksp" }
 androidx-room = { id = "androidx.room", version.ref = "androidx_room" }
 
 kotlinMultiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
-composeMultiplatform = { id = "org.jetbrains.compose", version.ref = "composeMultiplatform" }
 android-kotlin-multiplatform-library = { id = "com.android.kotlin.multiplatform.library", version.ref = "android_gradle_plugin" }
 android-lint = { id = "com.android.lint", version.ref = "android_gradle_plugin" }

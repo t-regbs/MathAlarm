@@ -3,7 +3,7 @@
 
 ![Android Build](https://github.com/t-regbs/MathAlarm/workflows/Android%20Build/badge.svg) ![My twitter](https://img.shields.io/twitter/url?style=social&url=https%3A%2F%2Ftwitter.com%2Ftimiaregbs) ![Shield](https://img.shields.io/badge/contributions-welcome-brightgreen) [![Made in Nigeria](https://img.shields.io/badge/made%20in-nigeria-008751.svg?style=flat-square)](https://github.com/acekyd/made-in-nigeria)
 
-A **Kotlin Multiplatform** alarm app for Android and iOS where you solve math problems of varying difficulty to dismiss the alarm. Built with Compose Multiplatform, Clean Architecture, and modern KMP libraries.
+A **Kotlin Multiplatform** alarm app for Android and iOS where you solve math problems of varying difficulty to dismiss the alarm. Built with Clean Architecture and shared Kotlin ViewModels, Android Compose, and a native SwiftUI development UI.
 
 <a href='https://play.google.com/store/apps/details?id=com.timilehinaregbesola.mathalarm'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' width="280"/></a>
 
@@ -11,21 +11,23 @@ A **Kotlin Multiplatform** alarm app for Android and iOS where you solve math pr
 
 The project follows **Clean Architecture** with the **MVVM** pattern:
 
-- **`:androidApp`** - Android application entry points, packaging, platform wiring, and Android resources
-- **`:shared`** - Shared Compose UI, data layer, and Android/iOS platform implementations
+- **`:androidApp`** - All Compose screens/navigation/theme/localization/resources, application entry points and Android platform wiring
+- **`:shared`** - UI-free feature ViewModels, application coordination, data and platform service adapters
 - **`:core`** - Shared domain logic and business rules
-- **`iosApp/`** - Native iOS application consuming the framework produced by `:shared`
+- **`iosApp/`** - SwiftUI screens and session/navigation owners consuming the `app` framework produced by `:shared`
+
+The native migration uses shared Kotlin ViewModels and alarm logic with Compose on Android and SwiftUI on iOS. All native parity screens are implemented. Permanent XCTest/UI targets, native client flows, renderer/resource gates and archive checks are documented in [architecture and build](docs/native-architecture.md) and [testing](docs/testing.md). [Migration progress](docs/native-ui-migration-progress.md) separates implementation evidence from physical AlarmKit, acoustic, minimum-runtime and release acceptance gates. This development build is not yet release ready.
 
 ## Technologies Used
 
 ### Kotlin Multiplatform
 * [Kotlin Multiplatform](https://kotlinlang.org/docs/multiplatform.html) - Share code between Android and iOS
-* [Compose Multiplatform](https://www.jetbrains.com/lp/compose-multiplatform/) - Declarative UI framework for both platforms
+* [Compose Multiplatform](https://www.jetbrains.com/lp/compose-multiplatform/) - Android declarative UI renderer
 
 ### UI & Navigation
 * [Material 3](https://m3.material.io/) - Modern Material Design components
-* [Navigation 3](https://developer.android.com/guide/navigation) - Jetpack Navigation for Compose Multiplatform
-* [Compottie](https://github.com/alexzhirkevich/compottie) - Lottie animations for Compose Multiplatform
+* [Navigation 3](https://developer.android.com/guide/navigation) - Android Compose navigation
+* [Compottie](https://github.com/alexzhirkevich/compottie) - Android Compose Lottie animations
 
 ### Data & Storage
 * [Room KMP](https://developer.android.com/kotlin/multiplatform/room) - Multiplatform database with SQLite
@@ -54,6 +56,8 @@ See [the testing guide](docs/testing.md) for host suites, real-device lifecycle 
 * [Turbine](https://github.com/cashapp/turbine) - Flow testing
 * [Kotest](https://kotest.io/) - Assertions library
 * [MockK](https://mockk.io/) - Mocking library (Android)
+* XCTest / XCUITest - Production framework, native owners, navigation and fresh-process restoration
+* Maestro - Native client flows and software-keyboard/accessibility-size evidence
 
 ## Installation
 
@@ -67,7 +71,15 @@ git clone https://github.com/t-regbs/MathAlarm.git
 ```
 
 ### Building for iOS
-The iOS app is located in the `iosApp/` directory and consumes the framework produced by `:shared`. Open the Xcode project to build and run on iOS devices/simulators.
+The iOS app supports iPhone and iPad running iOS/iPadOS **26 or later**. The current build is verified locally with Xcode 27.0 and JDK 21. Open the shared `iosApp` scheme in `iosApp/iosApp.xcodeproj`, or run:
+
+```bash
+./gradlew :core:iosSimulatorArm64Test :shared:iosSimulatorArm64Test --continue
+xcodebuild -project iosApp/iosApp.xcodeproj -scheme MathAlarmNative -configuration Debug \
+  -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+```
+
+The PR workflow runs permanent native tests, client flows, nine-locale screenshots and archive packaging on the GitHub-hosted `xcode-27` Apple Silicon image, explicitly selecting Xcode 27.0 (27A266a). Use iPad simulators for layout/navigation checks and a physical iPhone for AlarmKit delivery and audio validation. Signed device builds require your Apple development team and provisioning profile; a simulator build does not establish alarm delivery reliability.
 
 ## Contribution
 All contributions are welcome. Simply make a PR!

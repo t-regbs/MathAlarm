@@ -4,6 +4,8 @@ import androidx.room.* // ktlint-disable no-wildcard-imports
 import kotlinx.coroutines.flow.Flow
 
 @Dao
+@OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
+@kotlin.native.HiddenFromObjC
 interface AlarmDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun addAlarm(alarm: AlarmEntity): Long
