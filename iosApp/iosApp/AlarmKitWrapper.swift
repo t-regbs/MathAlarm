@@ -161,14 +161,18 @@ struct StopAlarmIntent: LiveActivityIntent {
                     throw AlarmIntentError.handoffPersistenceFailed
                 }
                 IosApplication.shared.reportRecoveryFailure(alarmId: rawDelivery.alarmId)
-                throw error
+                return .result(opensIntent: OpenMathChallengeIntent())
             }
             let deeplinkJson = createDeeplinkJson(from: delivery)
             guard PendingDeeplinkStore.shared.setPendingDeeplink(deeplinkJson) else {
                 throw AlarmIntentError.handoffPersistenceFailed
             }
             print("StopAlarmIntent: Stored pending deeplink for MathScreen")
-            try await AlarmKitWrapperImpl.shared.armRecovery(for: delivery)
+            do {
+                try await AlarmKitWrapperImpl.shared.armRecovery(for: delivery)
+            } catch {
+                IosApplication.shared.reportRecoveryFailure(alarmId: delivery.alarmId)
+            }
         } else {
             print("StopAlarmIntent: No alarm data found for UUID \(alarmUUID)")
             throw AlarmIntentError.invalidAlarmId
