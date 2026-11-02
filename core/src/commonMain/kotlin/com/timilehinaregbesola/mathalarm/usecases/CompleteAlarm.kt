@@ -29,8 +29,6 @@ class CompleteAlarm(
         if (expectedActiveAt != null && alarm.activeAt != expectedActiveAt) return false
         val now = dateTimeProvider.getCurrentDateTime()
             .toInstant(TimeZone.currentSystemDefault()).toEpochMilliseconds()
-        // Known later repeating deliveries remain valid while presentation is serialized,
-        // even if their wall-clock time passed while this occurrence was unresolved.
         val pendingAfter = if (alarm.repeat) alarm.activeAt ?: now else now
         val pending = alarm.pendingTimes.filter { it > pendingAfter }
         val hasRemaining = if (alarm.scheduleInitialized) {
@@ -48,8 +46,6 @@ class CompleteAlarm(
             scheduleError = if (alarm.repeat || hasRemaining) alarm.scheduleError else null
         )
         alarmInteractor.cancelSnooze(alarm)
-        // Native cancellation may fail, but must not cancel unresolved recovery before
-        // the accepted resolution is durable. A failed write retains the active occurrence.
         if (!updated.isOn) alarmInteractor.cancelRegularOccurrences(alarm)
         val accepted = updated.copy(scheduleError = AlarmCommandJournal.cleanup(updated.scheduleError))
         alarmRepository.updateAlarm(accepted)
@@ -59,6 +55,5 @@ class CompleteAlarm(
         return true
     }
 
-    // Never overwrite current settings with the snapshot embedded in a notification.
     suspend operator fun invoke(alarm: Alarm) = invoke(alarm.alarmId)
 }

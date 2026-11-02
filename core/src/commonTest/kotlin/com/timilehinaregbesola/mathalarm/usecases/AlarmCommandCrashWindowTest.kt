@@ -325,4 +325,69 @@ class AlarmCommandCrashWindowTest {
         assertTrue(CompleteAlarm(repository, backend, notifications, clock)(51, 1000))
         assertEquals("next weekday repair failed", repository.findAlarm(51)!!.scheduleError)
     }
+
+    @Test fun bootRestoresFutureOccurrencesAfterAcceptedCleanup() = runTest {
+        val accepted = active.copy(activeAt = null, scheduleError = AlarmCommandJournal.cleanup(null))
+        repository.addAlarm(accepted)
+
+        RescheduleFutureAlarms(repository, backend, calculator)(clearActive = true)
+
+        assertEquals(calculator.calculateAlarmTimes(accepted),
+            native.getScheduledAlarms()[51].orEmpty().map { it.timeInMillis })
+        assertNull(repository.findAlarm(51)!!.scheduleError)
+        assertNull(repository.findAlarm(51)!!.activeAt)
+    }
+
+    @Test fun bootRestoresRegularOccurrencesAlongsideReplayedSnooze() = runTest {
+        val snoozeTime = calculator.calculateNextAlarmTime(active)!! - 30_000
+        repository.addAlarm(active.copy(scheduleError = AlarmCommandJournal.snooze(snoozeTime, null)))
+
+        RescheduleFutureAlarms(repository, backend, calculator)(clearActive = true)
+
+        val scheduled = native.getScheduledAlarms()[51].orEmpty()
+        assertEquals(calculator.calculateAlarmTimes(active), scheduled.filterNot { it.snoozed }.map { it.timeInMillis })
+        assertEquals(listOf(snoozeTime), scheduled.filter { it.snoozed }.map { it.timeInMillis })
+        assertEquals(active.snoozeCount + 1, repository.findAlarm(51)!!.snoozeCount)
+        assertNull(repository.findAlarm(51)!!.activeAt)
+    }
+
+    @Test fun bootDoesNotEraseFailedCleanupDebtWhileRestoring() = runTest {
+        val accepted = active.copy(activeAt = null, scheduleError = AlarmCommandJournal.cleanup(null))
+        repository.addAlarm(accepted)
+        val rejecting = object : AlarmInteractor by backend {
+            override fun cancelRecovery(alarm: Alarm) { error("cleanup failed") }
+        }
+
+        RescheduleFutureAlarms(repository, rejecting, calculator)(clearActive = true)
+
+        assertEquals(accepted, repository.findAlarm(51))
+        assertFalse(native.isAlarmScheduled(accepted))
+    }
+
+    @Test fun bootDoesNotReenableCompletedOneTimeAlarmAfterCleanup() = runTest {
+        val completed = active.copy(isOn = false, repeat = false, activeAt = null,
+            pendingTimes = emptyList(), scheduleError = AlarmCommandJournal.cleanup(null))
+        repository.addAlarm(completed)
+
+        RescheduleFutureAlarms(repository, backend, calculator)(clearActive = true)
+
+        assertFalse(repository.findAlarm(51)!!.isOn)
+        assertNull(repository.findAlarm(51)!!.scheduleError)
+        assertFalse(native.isAlarmScheduled(completed))
+    }
+
+
+    @Test fun bootRestoresRemainingOneTimeDatesAfterAcceptedCleanup() = runTest {
+        val remainingTime = calculator.calculateNextAlarmTime(active)!! + 86_400_000
+        val accepted = active.copy(repeat = false, activeAt = null,
+            pendingTimes = listOf(remainingTime), scheduleError = AlarmCommandJournal.cleanup(null))
+        repository.addAlarm(accepted)
+
+        RescheduleFutureAlarms(repository, backend, calculator)(clearActive = true)
+
+        assertEquals(listOf(remainingTime), native.getScheduledAlarms()[51].orEmpty().map { it.timeInMillis })
+        assertTrue(repository.findAlarm(51)!!.isOn)
+        assertNull(repository.findAlarm(51)!!.scheduleError)
+    }
+
 }

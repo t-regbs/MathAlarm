@@ -12,9 +12,13 @@ class UpdateAlarm(
     private val interactor: AlarmInteractor? = null
 ) {
     suspend operator fun invoke(alarm: Alarm) {
-        val updated = if (alarm.snooze == 0) alarm.copy(snoozedUntil = null) else alarm
+        val updated = if (alarm.snooze == 0) {
+            interactor?.cancelSnooze(alarm)
+            val removesFinalOccurrence = alarm.snoozedUntil != null && alarm.scheduleInitialized &&
+                !alarm.repeat && alarm.pendingTimes.isEmpty() && alarm.activeAt == null
+            alarm.copy(snoozedUntil = null, isOn = alarm.isOn && !removesFinalOccurrence)
+        } else alarm
         try {
-            if (alarm.snooze == 0) interactor?.cancelSnooze(alarm)
             alarmRepository.updateAlarm(updated)
             if (updated.isOn) interactor?.update(updated)
         } catch (e: CancellationException) {

@@ -30,19 +30,13 @@ class ScheduleAlarm(
             isOn = times.isNotEmpty(),
             pendingTimes = times,
             scheduleInitialized = true,
-            // Keep authoritative unresolved state through native acceptance and storage.
-            snoozedUntil = saved.snoozedUntil,
-            activeAt = saved.activeAt,
-            snoozeCount = saved.snoozeCount,
             skippedDate = null,
             scheduleError = Alarm.SCHEDULING_IN_PROGRESS,
             scheduleTimeZone = TimeZone.currentSystemDefault().id
         )
-        // Persist the desired occurrences first so interrupted scheduling can be recovered.
         alarmRepository.updateAlarm(planned)
         try {
             if (reschedule) {
-                // Keep unresolved recovery alive until the replacement schedule is accepted.
                 alarmInteractor.cancelRegularOccurrences(saved)
                 alarmInteractor.cancelSnooze(saved)
             }
@@ -56,7 +50,6 @@ class ScheduleAlarm(
             throw e
         } catch (e: Exception) {
             alarmRepository.updateAlarm(planned.copy(
-                activeAt = saved.activeAt, snoozeCount = saved.snoozeCount, snoozedUntil = saved.snoozedUntil,
                 scheduleError = e.message ?: "Unable to schedule alarm"
             ))
             throw e

@@ -35,7 +35,6 @@ class AppSettingsViewModel internal constructor(
     private var announcementIds = try {
         preferences.latestAnnouncementBatch(supportedAnnouncementIds)
     } catch (_: Exception) {
-        // Announcement bookkeeping must never prevent a delivered alarm from rendering.
         initialFailure = AppSettingsFailure(++nextFailureId, AppSettingsOperation.ANNOUNCEMENT)
         supportedAnnouncementIds
     }
@@ -44,8 +43,6 @@ class AppSettingsViewModel internal constructor(
     val state: StateFlow<AppSettingsState> = mutableState.asStateFlow()
 
     init {
-        // Application preferences keep running without observers; only this owner's
-        // projection is cancelled when the settings screen closes.
         viewModelScope.coroutineScope.launch {
             combine(preferences.themeState, preferences.alarmSortOrderState, preferences.seenAnnouncementIds) { theme, sort, seen ->
                 AppSettingsState(theme, sort, announcementIds, seen.toSet(), supportedAnnouncementIds = supportedAnnouncementIds)

@@ -7,7 +7,6 @@ import com.timilehinaregbesola.mathalarm.domain.model.mathChallenge
 import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.framework.consumeDueOccurrence
 import com.timilehinaregbesola.mathalarm.interactors.AudioPlayer
-import com.timilehinaregbesola.mathalarm.platform.getDefaultAlarmTone
 import com.timilehinaregbesola.mathalarm.platform.shouldStartMathScreenAlarmAudio
 import com.timilehinaregbesola.mathalarm.platform.stopAlarmTonePreview
 import com.timilehinaregbesola.mathalarm.platform.stopPlatformAlarmAudio
@@ -19,7 +18,6 @@ import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlin.time.Clock
 
-/** Application-owned real sessions. Observer removal never stops audio, progress or commands. */
 internal class ChallengeCoordinator(
     private val usecases: Usecases,
     private val audio: AudioPlayer,
@@ -63,13 +61,11 @@ internal class ChallengeCoordinator(
         }
     }
 
-    /** Awaiting may be cancelled; initialization itself continues in the application scope. */
     suspend fun open(alarm: Alarm, preview: Boolean): ChallengeSession = if (preview) {
         currentCoroutineContext().ensureActive()
         preparePreview(alarm).also(::retryAudio)
     } else usecases.applicationScope.async { openReal(alarm) }.await()
 
-    /** In-memory maths is ready before native navigation. Playback starts when presented. */
     fun preparePreview(alarm: Alarm): ChallengeSession {
         val session = ChallengeSession(true) { ++nextResultId }
         session.previewAudioAllowed = false
@@ -93,9 +89,8 @@ internal class ChallengeCoordinator(
                     if (active?.readiness == ChallengeReadiness.READY) {
                         if (active.alarm?.alarmId == current.alarmId &&
                             (alarm.activeAt == null || alarm.activeAt == active.alarm.activeAt)) return@command current
-                        return@command null // Later handoff remains in the native ordered queue.
+                        return@command null
                     }
-                    // An unresolved occurrence takes priority over later deliveries of the same alarm.
                     if (current.activeAt == null && alarm.activeAt != null) {
                         val expected = alarm.activeAt
                         if (expected !in current.pendingTimes && expected != current.snoozedUntil) return@command null
@@ -114,7 +109,6 @@ internal class ChallengeCoordinator(
                         realSession = existing
                         return@withLock existing
                     }
-                    // A failed first progress write retains its exact problems for retry.
                     session = existing
                     session.update { it.copy(readiness = ChallengeReadiness.INITIALIZING, error = null) }
                 }
@@ -129,7 +123,7 @@ internal class ChallengeCoordinator(
                     incorrectAnswers = if (session.state.value.problems.isNotEmpty()) session.state.value.incorrectAnswers else restored?.incorrectAnswers ?: 0,
                 ) }
                 retained[key] = session
-                persist(session) // Durable unresolved record precedes readiness and native acknowledgement.
+                persist(session)
                 session.update { it.copy(readiness = ChallengeReadiness.READY) }
                 realSession = session
                 if (restored == null) analytics.trackSafely(AnalyticsEvents.challengeStarted(false, authoritative))
@@ -142,7 +136,7 @@ internal class ChallengeCoordinator(
             catch (error: Exception) {
                 logger.e(error) { "Challenge initialization failed" }
                 session.fail(AlarmErrorMessage.INITIALIZATION)
-                session // No successful key is cached; retry repeats the authoritative load.
+                session
             }
         }
 
@@ -203,9 +197,6 @@ internal class ChallengeCoordinator(
                     .onFailure { logger.e(it) { "Progress cleanup failed after accepted resolution" } }
                 if (!snooze) analytics.trackSafely(AnalyticsEvents.challengeCompleted(state.preview,
                     (Clock.System.now().toEpochMilliseconds() - state.startedAt).coerceAtLeast(0) / 1000, state.incorrectAnswers))
-                // Cleanup status is managed by the accepting usecase/reconciler.
-                // Never perform a new authoritative read that could downgrade an
-                // already durable accepted result or erase its cleanup debt.
                 session.update { it.copy(readiness = ChallengeReadiness.RESOLVED, answerText = "") }
                 releaseAudio(session)
                 if (realSession === session) realSession = null
@@ -242,7 +233,6 @@ internal class ChallengeCoordinator(
         if (!state.preview) audioOwner?.takeIf { it.state.value.preview }?.let(::releaseAudio)
         if (!shouldStartMathScreenAlarmAudio(state.preview)) return // Android real audio remains service-owned.
         val alarm = state.alarm ?: return
-        // Own partially initialized resources too, so a tone/setup failure can clean them.
         audioOwner = session
         try {
             stopAlarmTonePreview()

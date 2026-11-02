@@ -43,14 +43,14 @@ class RescheduleFutureAlarms(
         val alarms = alarmRepository.getSavedAlarms().first().filter {
             it.isOn || AlarmCommandJournal.needsCleanup(it)
         }
-        for (alarm in alarms) {
-            if (AlarmCommandJournal.needsCleanup(alarm)) {
+        for (saved in alarms) {
+            var alarm = saved
+            val needsCleanup = AlarmCommandJournal.needsCleanup(alarm)
+            val pendingSnooze = AlarmCommandJournal.pendingSnooze(alarm)
+            if (needsCleanup) {
                 AlarmCommandJournal.cleanupAccepted(alarm, alarmRepository, alarmInteractor,
                     notificationInteractor, onCleanupFailure, onCleanupSuccess)
-                continue
-            }
-            val pendingSnooze = AlarmCommandJournal.pendingSnooze(alarm)
-            if (pendingSnooze != null) {
+            } else if (pendingSnooze != null) {
                 try {
                     if (alarm.activeAt != null && alarmTimeCalculator.isInFuture(pendingSnooze)) {
                         val snoozed = alarm.copy(activeAt = null, snoozedUntil = pendingSnooze,
@@ -62,17 +62,19 @@ class RescheduleFutureAlarms(
                         AlarmCommandJournal.cleanupAccepted(accepted, alarmRepository, alarmInteractor,
                             notificationInteractor, onCleanupFailure, onCleanupSuccess)
                     } else {
-                        // An interrupted intent that is already due must not be silently
-                        // accepted as a fresh delayed snooze. Keep the unresolved session.
                         alarmInteractor.cancelSnooze(alarm)
                         alarmRepository.updateAlarm(alarm.copy(scheduleError = AlarmCommandJournal.previousError(alarm)))
                     }
                 } catch (error: CancellationException) { throw error }
                 catch (error: Exception) {
-                    // Durable exact intent remains retryable; present service failure too.
                     runCatching { onCleanupFailure(alarm.alarmId, error) }
                 }
-                continue
+            }
+            if (needsCleanup || pendingSnooze != null) {
+                if (preservePendingDelivery) continue
+                alarm = alarmRepository.findAlarm(alarm.alarmId) ?: continue
+                if (!alarm.isOn || AlarmCommandJournal.needsCleanup(alarm) ||
+                    AlarmCommandJournal.pendingSnooze(alarm) != null) continue
             }
             val scheduleIsCurrent = alarm.scheduleInitialized &&
                 alarm.scheduleError == null && alarm.scheduleTimeZone == zone.id
@@ -98,7 +100,6 @@ class RescheduleFutureAlarms(
             } catch (e: CancellationException) {
                 throw e
             } catch (_: Exception) {
-                // restoreAlarm records the failure; continue restoring the other alarms.
             }
         }
     }
@@ -109,8 +110,6 @@ class RescheduleFutureAlarms(
             val zone = timeZone()
             val normalized = alarm.copy(skippedDate = alarm.activeSkippedDate(alarmTimeCalculator, zone))
             val times = normalized.remainingOccurrences(alarmTimeCalculator, zone)
-            // Skip/Undo change only normal occurrences. Leave the OS snooze untouched
-            // while it is future or recently due, so queued delivery remains valid.
             val keepSnooze = preserveSnooze && normalized.snoozedUntil?.let {
                 alarmTimeCalculator.isInFuture(it + DELIVERY_GRACE_MILLIS)
             } == true
@@ -129,7 +128,6 @@ class RescheduleFutureAlarms(
                 isOn = alarm.repeat || times.isNotEmpty() || snooze != null || active != null
             )
             alarmRepository.updateAlarm(planned)
-            // Remove old-zone weekday identities before installing the restored schedule.
             if (keepSnooze || active != null) {
                 alarmInteractor.cancelRegularOccurrences(alarm)
                 if (!keepSnooze) alarmInteractor.cancelSnooze(alarm)

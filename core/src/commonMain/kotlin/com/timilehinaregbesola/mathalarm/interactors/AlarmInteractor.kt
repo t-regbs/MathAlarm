@@ -2,9 +2,6 @@ package com.timilehinaregbesola.mathalarm.interactors
 
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 
-/**
- * Contract to interact with the Alarm layer.
- */
 interface AlarmInteractor {
 
     /**

@@ -48,7 +48,6 @@ class SkipNextAlarm(
 
     suspend fun undo(alarmId: Long, expectedSkippedDate: String? = null): Boolean {
         val alarm = alarmRepository.findAlarm(alarmId) ?: return false
-        // A queued snackbar must never undo a more recent skip.
         if (expectedSkippedDate != null && alarm.skippedDate != expectedSkippedDate) return false
         val zone = timeZone()
         val skippedTime = alarm.skippedTime(zone)

@@ -14,7 +14,6 @@ class DeleteAlarm(
 ) {
     suspend operator fun invoke(alarmId: Long) {
         alarmRepository.findAlarm(alarmId)?.let { alarmInteractor.cancel(it) }
-        // Playback can outlive its database row, including while waiting in the service queue.
         notificationInteractor.dismiss(alarmId)
         alarmRepository.deleteAlarmWithId(alarmId)
     }

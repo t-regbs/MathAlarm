@@ -145,7 +145,6 @@ class AlarmSettingsViewModel internal constructor(
     }
 
     private fun edit(change: AlarmEditorState.() -> AlarmEditorState) {
-        // Freeze the accepted save snapshot until its authoritative outcome returns.
         if (state.value.isSaving) return
         mutableState.update { change(it) }
         refreshDraftStatus()
@@ -160,7 +159,6 @@ class AlarmSettingsViewModel internal constructor(
             else -> AlarmEditorValidation.NONE
         }
         val dirty = initialDraft?.let { initial ->
-            // Constructor timestamps are defaults, not editable fields.
             createAlarm().copy(newDateTime = initial.newDateTime,
                 newHour = initial.newHour, newMinute = initial.newMinute) != initial
         } ?: false
@@ -181,8 +179,6 @@ class AlarmSettingsViewModel internal constructor(
         val wasNew = isNewAlarm
         val enabledChanged = enabledWasEdited
         mutableState.update { it.copy(isSaving = true) }
-        // The application owns an accepted save. Removing the UI observer or closing
-        // this ViewModel cannot abort storage/scheduling or lose its retained result.
         usecases.launchCommand {
             try {
                 val accepted = command {
@@ -199,8 +195,6 @@ class AlarmSettingsViewModel internal constructor(
                         scheduleTimeZone = old?.scheduleTimeZone,
                     )
                     if (alarm.isOn && !permission.hasExactAlarmPermission()) return@command null
-                    // Cancel before committing an explicit disable. A rejected cancellation
-                    // keeps the prior occurrence/progress/recovery authoritative and retryable.
                     if (!alarm.isOn && old?.isOn == true) cancelAlarm(old)
                     val desired = if (!alarm.isOn && old?.isOn == true) alarm.copy(
                         pendingTimes = emptyList(), snoozedUntil = null, activeAt = null,
@@ -208,8 +202,6 @@ class AlarmSettingsViewModel internal constructor(
                     ) else alarm
                     val id = addAlarm(desired)
                     val saved = desired.copy(alarmId = if (desired.alarmId == 0L) id else desired.alarmId)
-                    // Insertion can succeed before OS scheduling fails. Retain its allocated
-                    // identity immediately so retry updates this row instead of creating another.
                     mutableState.update { it.copy(alarmId = saved.alarmId) }
                     refreshDraftStatus()
                     if (saved.isOn && (wasNew || reschedule || old?.isOn != true || old?.scheduleError != null)) scheduleAlarm(saved, true)

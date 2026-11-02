@@ -730,6 +730,26 @@ class AlarmSettingsViewModelTest {
     }
 
     @Test
+    fun `disabling snooze on the final occurrence turns off the saved alarm and editor switch`() = runTest {
+        val alarm = Alarm(alarmId = 883, isOn = true, isSaved = true, alarmTone = "test_tone",
+            scheduleInitialized = true, snoozedUntil = 1_999_999_000_000)
+        usecases.addAlarm(alarm)
+        viewModel.setAlarm(alarm)
+
+        viewModel.onEvent(AddEditAlarmEvent.ToggleSnooze(false))
+        viewModel.onEvent(AddEditAlarmEvent.OnSaveTodoClick)
+        advanceUntilIdle()
+
+        val saved = usecases.findAlarm(883)!!
+        saved.isOn shouldBe false
+        saved.snoozedUntil shouldBe null
+        saved.pendingTimes shouldBe emptyList()
+        viewModel.state.value.isOn shouldBe false
+        viewModel.state.value.hasUnsavedChanges shouldBe false
+        viewModel.state.value.results.single().event shouldBe AlarmSettingsViewModel.UiEvent.SaveAlarm
+    }
+
+    @Test
     fun `disabling snooze cancels pending snooze without changing normal occurrences`() = runTest {
         var canceledSnoozeId: Long? = null
         var platformUpdate: Alarm? = null
