@@ -14,6 +14,38 @@ import kotlin.test.Test
 class MathProblemGeneratorTest {
 
     @Test
+    fun `broad generated questions agree with independently evaluated displayed arithmetic`() {
+        val operations = MathChallenge.ALL_OPERATIONS
+        val configs = (0..2).map { MathChallenge(difficulty = it, questionCount = 10) } +
+            (1 until (1 shl operations.length)).flatMap { mask ->
+                (0..2).flatMap { addition -> (0..2).map { factors ->
+                    MathChallenge(difficulty = 3, questionCount = 10,
+                        operations = operations.filterIndexed { index, _ -> mask and (1 shl index) != 0 },
+                        additionRange = addition, factorRange = factors)
+                } }
+            } + listOf(MathChallenge(questionCount = 10, difficultyMix = "0001112222"))
+        configs.forEachIndexed { configIndex, config ->
+            repeat(100) { seed ->
+                generateChallengeProblems(config, Random(configIndex * 100 + seed)).forEach { problem ->
+                    val rendered = buildQuestionString(problem).split(" ")
+                    val first = rendered[0].toLong()
+                    val second = rendered[2].toLong()
+                    val evaluated = when (rendered[1]) {
+                        "+" -> first + second
+                        "-" -> first - second
+                        "x" -> first * second
+                        "/" -> { assertTrue(second != 0L && first % second == 0L); first / second }
+                        else -> error("Unknown displayed operator")
+                    }
+                    evaluated shouldBe problem.answer.toLong()
+                    assertTrue(evaluated >= 0 && evaluated.toString().length <= 8)
+                    parseChallengeAnswer(evaluated.toString()) shouldBe problem.answer
+                }
+            }
+        }
+    }
+
+    @Test
     fun `presets generate every operator with valid answers and operand ranges`() {
         val ranges = listOf(10..99 to 3..12, 100..999 to 3..15, 1000..9999 to 12..25)
         ranges.forEachIndexed { difficulty, (additionRange, factorRange) ->

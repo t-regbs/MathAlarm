@@ -142,7 +142,9 @@ internal class ChallengeCoordinator(
 
     fun answer(session: ChallengeSession, value: String) {
         if (session.state.value.finishing || session.state.value.readiness != ChallengeReadiness.READY) return
-        session.update { it.copy(answerText = value) }
+        session.update {
+            it.copy(answerText = value, results = if (value != it.answerText) it.results.withoutAnswerErrors() else it.results)
+        }
     }
 
     fun retryAudio(session: ChallengeSession) {
@@ -162,7 +164,7 @@ internal class ChallengeCoordinator(
             return
         }
         if (state.questionIndex < state.problems.lastIndex) {
-            session.update { it.copy(questionIndex = it.questionIndex + 1, answerText = "") }
+            session.update { it.copy(questionIndex = it.questionIndex + 1, answerText = "", results = it.results.withoutAnswerErrors()) }
             persistProgressChange(session, state)
         } else finish(session, snooze = false)
     }
@@ -197,7 +199,7 @@ internal class ChallengeCoordinator(
                     .onFailure { logger.e(it) { "Progress cleanup failed after accepted resolution" } }
                 if (!snooze) analytics.trackSafely(AnalyticsEvents.challengeCompleted(state.preview,
                     (Clock.System.now().toEpochMilliseconds() - state.startedAt).coerceAtLeast(0) / 1000, state.incorrectAnswers))
-                session.update { it.copy(readiness = ChallengeReadiness.RESOLVED, answerText = "") }
+                session.update { it.copy(readiness = ChallengeReadiness.RESOLVED, answerText = "", results = it.results.withoutAnswerErrors()) }
                 releaseAudio(session)
                 if (realSession === session) realSession = null
                 state.occurrenceId?.let { retained.remove(it) }
@@ -274,4 +276,9 @@ internal class ChallengeSession(preview: Boolean, private val nextResultId: () -
         update { it.copy(readiness = ChallengeReadiness.ERROR, error = error) }
         result(ChallengeOutcome.Failure(error))
     }
+}
+
+/** Answer feedback belongs to the submitted text/question; other failures remain actionable. */
+private fun List<ChallengeResult>.withoutAnswerErrors() = filterNot {
+    (it.outcome as? ChallengeOutcome.Failure)?.error == AlarmErrorMessage.INCORRECT_ANSWER
 }
