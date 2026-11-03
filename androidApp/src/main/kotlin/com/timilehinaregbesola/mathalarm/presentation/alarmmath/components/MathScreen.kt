@@ -3,6 +3,7 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmmath.components
 import androidx.compose.runtime.collectAsState
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.ChallengeOutcome
 import com.timilehinaregbesola.mathalarm.utils.resolve
+import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement.Center
 import androidx.compose.foundation.layout.Arrangement.spacedBy
@@ -87,6 +88,7 @@ import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.presentation.ui.shapes
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.InternalCoroutinesApi
 import androidx.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
@@ -128,7 +130,7 @@ fun MathScreen(
     )
     val errorStrings = strings
     LaunchedEffect(errorStrings) {
-        var snackbarJob: kotlinx.coroutines.Job? = null
+        var snackbarJob: Job? = null
         var answerFeedback = false
         var feedbackQuestion = -1
         var feedbackText = ""
@@ -142,7 +144,7 @@ fun MathScreen(
                 when (val outcome = result.outcome) {
                     is ChallengeOutcome.Failure -> {
                         snackbarJob?.cancel()
-                        answerFeedback = outcome.error == com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage.INCORRECT_ANSWER
+                        answerFeedback = outcome.error == AlarmErrorMessage.INCORRECT_ANSWER
                         feedbackQuestion = state.questionIndex
                         feedbackText = state.answerText
                         snackbarJob = launch { snackbarHostState.showSnackbar(message = outcome.error.resolve(errorStrings)) }

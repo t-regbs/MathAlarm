@@ -26,7 +26,12 @@ import org.junit.Assert.*
 import org.junit.Test
 import org.koin.core.context.GlobalContext
 
-/** Regressions for the two review-related UI failures reproduced before the fix. */
+/**
+ * Regressions for the two review-related UI failures reproduced before the fix.
+ * MainActivity already installs content, so these tests replace it through Activity.setContent
+ * on the UI thread rather than ComposeUiTest.setContent. Cleanup also runs on the UI thread
+ * to serialize ViewModel disposal with its UI callbacks.
+ */
 @OptIn(ExperimentalTestApi::class, ExperimentalAnimationApi::class,
     ExperimentalFoundationApi::class, ExperimentalMaterial3Api::class,
     ExperimentalComposeUiApi::class, InternalCoroutinesApi::class)
