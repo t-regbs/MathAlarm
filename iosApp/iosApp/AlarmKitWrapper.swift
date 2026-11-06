@@ -445,73 +445,7 @@ class AlarmKitWrapperImpl: NSObject {
         }
     }
     
-    /// Schedule an alarm using AlarmKit
-    /// - Returns: true if successfully scheduled, false otherwise
     func scheduleAlarm(request: AlarmScheduleRequest, completion: AlarmScheduleCompletion) {
-        scheduleWithAlarmKit(request: request, completion: completion)
-    }
-
-    private func occurrenceUUID(alarmId: Int64, key: String) -> UUID {
-        let bytes = Array(SHA256.hash(data: Data("mathalarm/\(alarmId)/\(key)".utf8)))
-        return UUID(uuid: (bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
-                           bytes[8], bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]))
-    }
-
-    private func recoveryIDs(alarmId: Int64) -> [UUID] {
-        ["recovery", "recovery_standby"].map { occurrenceUUID(alarmId: alarmId, key: $0) }
-    }
-
-    func cancelOccurrence(alarmId: Int64, occurrenceKey: String) -> String? {
-        let priorRecovery = occurrenceKey == "recovery" ? AlarmRecoveryStore.shared.current(alarmId: alarmId) : nil
-        if occurrenceKey == "recovery", !AlarmRecoveryStore.shared.cancel(alarmId: alarmId) {
-            IosApplication.shared.reportRecoveryFailure(alarmId: alarmId)
-            return "Could not persist recovery cancellation"
-        }
-        let ids = occurrenceKey == "recovery" ? recoveryIDs(alarmId: alarmId) :
-            [occurrenceUUID(alarmId: alarmId, key: occurrenceKey)]
-        do {
-            let manager = AlarmManager.shared
-            let nativeIDs = Set(try manager.alarms.map(\.id))
-            var failures: [String] = []
-            for id in ids {
-                do {
-                    if nativeIDs.contains(id) { try manager.cancel(id: id) }
-                    if !AlarmDataStore.shared.remove(alarmUUID: id.uuidString) {
-                        failures.append("Could not persist native cancellation")
-                    }
-                } catch { failures.append(error.localizedDescription) }
-            }
-            if !failures.isEmpty {
-                if let priorRecovery {
-                    AlarmRecoveryStore.shared.restoreAfterFailedCancellation(alarmId: alarmId, session: priorRecovery)
-                    IosApplication.shared.reportRecoveryFailure(alarmId: alarmId)
-                }
-                return failures.joined(separator: "; ")
-            }
-            return nil
-        } catch {
-            if let priorRecovery {
-                AlarmRecoveryStore.shared.restoreAfterFailedCancellation(alarmId: alarmId, session: priorRecovery)
-                IosApplication.shared.reportRecoveryFailure(alarmId: alarmId)
-            }
-            print("Failed to cancel occurrence: \(error)")
-            return error.localizedDescription
-        }
-    }
-
-    /// Cancel an alarm scheduled with AlarmKit
-    func cancelAlarm(alarmId: Int64) -> String? {
-        return cancelAlarmKitAlarm(alarmId: alarmId)
-    }
-    
-    // MARK: - AlarmKit Implementation (iOS 26+)
-    
-    // Typealias for AlarmConfiguration with our metadata type
-    @available(iOS 26, *)
-    typealias MathAlarmConfiguration = AlarmManager.AlarmConfiguration<MathAlarmData>
-    
-    @available(iOS 26, *)
-    private func scheduleWithAlarmKit(request: AlarmScheduleRequest, completion: AlarmScheduleCompletion) {
         let alarmId = request.alarmId
         let hour = request.hour
         let minute = request.minute
@@ -624,6 +558,99 @@ class AlarmKitWrapperImpl: NSObject {
         }
         
     }
+
+    private func occurrenceUUID(alarmId: Int64, key: String) -> UUID {
+        let bytes = Array(SHA256.hash(data: Data("mathalarm/\(alarmId)/\(key)".utf8)))
+        return UUID(uuid: (bytes[0], bytes[1], bytes[2], bytes[3], bytes[4], bytes[5], bytes[6], bytes[7],
+                           bytes[8], bytes[9], bytes[10], bytes[11], bytes[12], bytes[13], bytes[14], bytes[15]))
+    }
+
+    private func recoveryIDs(alarmId: Int64) -> [UUID] {
+        ["recovery", "recovery_standby"].map { occurrenceUUID(alarmId: alarmId, key: $0) }
+    }
+
+    func cancelOccurrence(alarmId: Int64, occurrenceKey: String) -> String? {
+        let priorRecovery = occurrenceKey == "recovery" ? AlarmRecoveryStore.shared.current(alarmId: alarmId) : nil
+        if occurrenceKey == "recovery", !AlarmRecoveryStore.shared.cancel(alarmId: alarmId) {
+            IosApplication.shared.reportRecoveryFailure(alarmId: alarmId)
+            return "Could not persist recovery cancellation"
+        }
+        let ids = occurrenceKey == "recovery" ? recoveryIDs(alarmId: alarmId) :
+            [occurrenceUUID(alarmId: alarmId, key: occurrenceKey)]
+        do {
+            let manager = AlarmManager.shared
+            let nativeIDs = Set(try manager.alarms.map(\.id))
+            var failures: [String] = []
+            for id in ids {
+                do {
+                    if nativeIDs.contains(id) { try manager.cancel(id: id) }
+                    if !AlarmDataStore.shared.remove(alarmUUID: id.uuidString) {
+                        failures.append("Could not persist native cancellation")
+                    }
+                } catch { failures.append(error.localizedDescription) }
+            }
+            if !failures.isEmpty {
+                if let priorRecovery {
+                    AlarmRecoveryStore.shared.restoreAfterFailedCancellation(alarmId: alarmId, session: priorRecovery)
+                    IosApplication.shared.reportRecoveryFailure(alarmId: alarmId)
+                }
+                return failures.joined(separator: "; ")
+            }
+            return nil
+        } catch {
+            if let priorRecovery {
+                AlarmRecoveryStore.shared.restoreAfterFailedCancellation(alarmId: alarmId, session: priorRecovery)
+                IosApplication.shared.reportRecoveryFailure(alarmId: alarmId)
+            }
+            print("Failed to cancel occurrence: \(error)")
+            return error.localizedDescription
+        }
+    }
+
+    func cancelAlarm(alarmId: Int64) -> String? {
+        let priorRecovery = AlarmRecoveryStore.shared.current(alarmId: alarmId)
+        let recoveryID = occurrenceUUID(alarmId: alarmId, key: "recovery")
+        let priorRecoveryMetadata = AlarmDataStore.shared.retrieve(alarmUUID: recoveryID.uuidString)
+        guard AlarmRecoveryStore.shared.cancel(alarmId: alarmId) else {
+            IosApplication.shared.reportRecoveryFailure(alarmId: alarmId)
+            return "Could not persist recovery cancellation"
+        }
+        do {
+            let manager = AlarmManager.shared
+            // Query OS alarms and persisted metadata so cancellation also works after relaunch.
+            let keys = (0...6).map { "day_\($0)" } + ["snooze", "recovery", "recovery_standby"]
+            let ids = Set(keys.map { occurrenceUUID(alarmId: alarmId, key: $0) })
+            var failures: [String] = []
+            for alarm in try manager.alarms {
+                if ids.contains(alarm.id) || AlarmDataStore.shared.retrieve(alarmUUID: alarm.id.uuidString)?.alarmId == alarmId {
+                    do {
+                        try manager.cancel(id: alarm.id)
+                        if !AlarmDataStore.shared.remove(alarmUUID: alarm.id.uuidString) {
+                            failures.append("\(alarm.id): Could not persist native cancellation")
+                        }
+                    } catch {
+                        failures.append("\(alarm.id): \(error.localizedDescription)")
+                    }
+                }
+            }
+            if !failures.isEmpty, let priorRecovery {
+                AlarmRecoveryStore.shared.restoreAfterFailedCancellation(alarmId: alarmId, session: priorRecovery)
+                if let priorRecoveryMetadata { AlarmDataStore.shared.store(alarmUUID: recoveryID, data: priorRecoveryMetadata) }
+                IosApplication.shared.reportRecoveryFailure(alarmId: alarmId)
+            }
+            return failures.isEmpty ? nil : failures.joined(separator: "; ")
+        } catch {
+            if let priorRecovery {
+                AlarmRecoveryStore.shared.restoreAfterFailedCancellation(alarmId: alarmId, session: priorRecovery)
+                IosApplication.shared.reportRecoveryFailure(alarmId: alarmId)
+            }
+            print("Failed to list alarms for cancellation: \(error)")
+            return error.localizedDescription
+        }
+    }
+
+    @available(iOS 26, *)
+    typealias MathAlarmConfiguration = AlarmManager.AlarmConfiguration<MathAlarmData>
 
     private func configuration(schedule: AlarmKit.Alarm.Schedule, metadata: MathAlarmData, id: UUID) -> MathAlarmConfiguration {
         let alert = AlarmPresentation.Alert(
@@ -929,49 +956,6 @@ class AlarmKitWrapperImpl: NSObject {
         } catch {
             IosApplication.shared.reportRecoveryFailure(alarmId: alarmId)
             print("Could not defer native recovery; existing fallback retained: \(error)")
-        }
-    }
-
-    @available(iOS 26, *)
-    private func cancelAlarmKitAlarm(alarmId: Int64) -> String? {
-        let priorRecovery = AlarmRecoveryStore.shared.current(alarmId: alarmId)
-        let recoveryID = occurrenceUUID(alarmId: alarmId, key: "recovery")
-        let priorRecoveryMetadata = AlarmDataStore.shared.retrieve(alarmUUID: recoveryID.uuidString)
-        guard AlarmRecoveryStore.shared.cancel(alarmId: alarmId) else {
-            IosApplication.shared.reportRecoveryFailure(alarmId: alarmId)
-            return "Could not persist recovery cancellation"
-        }
-        do {
-            let manager = AlarmManager.shared
-            // Query OS alarms and persisted metadata so cancellation also works after relaunch.
-            let keys = (0...6).map { "day_\($0)" } + ["snooze", "recovery", "recovery_standby"]
-            let ids = Set(keys.map { occurrenceUUID(alarmId: alarmId, key: $0) })
-            var failures: [String] = []
-            for alarm in try manager.alarms {
-                if ids.contains(alarm.id) || AlarmDataStore.shared.retrieve(alarmUUID: alarm.id.uuidString)?.alarmId == alarmId {
-                    do {
-                        try manager.cancel(id: alarm.id)
-                        if !AlarmDataStore.shared.remove(alarmUUID: alarm.id.uuidString) {
-                            failures.append("\(alarm.id): Could not persist native cancellation")
-                        }
-                    } catch {
-                        failures.append("\(alarm.id): \(error.localizedDescription)")
-                    }
-                }
-            }
-            if !failures.isEmpty, let priorRecovery {
-                AlarmRecoveryStore.shared.restoreAfterFailedCancellation(alarmId: alarmId, session: priorRecovery)
-                if let priorRecoveryMetadata { AlarmDataStore.shared.store(alarmUUID: recoveryID, data: priorRecoveryMetadata) }
-                IosApplication.shared.reportRecoveryFailure(alarmId: alarmId)
-            }
-            return failures.isEmpty ? nil : failures.joined(separator: "; ")
-        } catch {
-            if let priorRecovery {
-                AlarmRecoveryStore.shared.restoreAfterFailedCancellation(alarmId: alarmId, session: priorRecovery)
-                IosApplication.shared.reportRecoveryFailure(alarmId: alarmId)
-            }
-            print("Failed to list alarms for cancellation: \(error)")
-            return error.localizedDescription
         }
     }
 
