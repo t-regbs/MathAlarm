@@ -58,18 +58,12 @@ fun getRingtoneTitle(alarmTone: String): String {
 
 fun openNotificationSettings() {
     val context: Context = getKoinContext()
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        context.startActivity(intent)
-        trackPermissionHandoff("notifications", PermissionAnalyticsPending.NOTIFICATIONS)
-    } else {
-        val intent = Intent(Settings.ACTION_SETTINGS).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-        context.startActivity(intent)
-        trackPermissionHandoff("notifications", PermissionAnalyticsPending.NOTIFICATIONS)
+    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
+    context.startActivity(intent)
+    trackPermissionHandoff("notifications", PermissionAnalyticsPending.NOTIFICATIONS)
 }
 
 fun requestExactAlarmPermission() {

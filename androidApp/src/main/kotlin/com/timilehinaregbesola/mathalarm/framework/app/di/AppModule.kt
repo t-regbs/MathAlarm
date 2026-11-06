@@ -20,8 +20,6 @@ import com.timilehinaregbesola.mathalarm.framework.app.permission.AndroidVersion
 import com.timilehinaregbesola.mathalarm.framework.app.permission.AndroidVersionImpl
 import com.timilehinaregbesola.mathalarm.framework.app.permission.PermissionChecker
 import com.timilehinaregbesola.mathalarm.framework.app.permission.PermissionCheckerImpl
-import com.timilehinaregbesola.mathalarm.framework.app.permission.ScreenNavigator
-import com.timilehinaregbesola.mathalarm.framework.app.permission.ScreenNavigatorImpl
 import com.timilehinaregbesola.mathalarm.framework.database.AlarmDatabase
 import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_2_3
 import com.timilehinaregbesola.mathalarm.framework.database.MIGRATION_3_4
@@ -118,12 +116,10 @@ val androidModule = module {
 
     // Permission abstractions
     single<AndroidVersion> { AndroidVersionImpl() }
-    single<ScreenNavigator> { ScreenNavigatorImpl(androidContext()) }
     single<PermissionChecker> { PermissionCheckerImpl(androidContext().getAlarmManager()) }
 
     single<AlarmPermission> {
         AlarmPermissionImpl(
-            screenNavigator = get(),
             permissionChecker = get(),
             androidVersion = get()
         )
