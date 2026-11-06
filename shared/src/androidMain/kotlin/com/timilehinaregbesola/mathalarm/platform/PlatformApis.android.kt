@@ -2,7 +2,6 @@ package com.timilehinaregbesola.mathalarm.platform
 
 import android.content.Context
 import android.media.RingtoneManager
-import android.os.Build
 import android.os.VibrationEffect
 import android.os.Vibrator
 import androidx.core.app.NotificationManagerCompat
@@ -17,12 +16,7 @@ actual class PlatformVibrator actual constructor() {
 
     actual fun startWaveform(pattern: LongArray, repeat: Int) {
         if (vibrator == null) return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            vibrator.vibrate(VibrationEffect.createWaveform(pattern, repeat))
-        } else {
-            @Suppress("DEPRECATION")
-            vibrator.vibrate(pattern, repeat)
-        }
+        vibrator.vibrate(VibrationEffect.createWaveform(pattern, repeat))
     }
 
     actual fun cancel() {

@@ -27,19 +27,13 @@ import androidx.core.net.toUri
 class FirebaseMessagingService : FirebaseMessagingService() {
     val channel: MathAlarmNotificationChannel by inject()
     override fun onMessageReceived(remoteMessage: RemoteMessage) {
-        if (remoteMessage.data.isNotEmpty()) {
-            val updateApp = remoteMessage.data["updateApp"]!!.toInt()
-            val versionCode = remoteMessage.data["versionCode"]!!.toInt()
-            val title = remoteMessage.data["title"]
-            val message = remoteMessage.data["message"]
-            if (updateApp == 1) {
-                if (BuildConfig.VERSION_CODE < versionCode) {
-                    if (title != null && message != null) {
-                        sendUpdateApp(title, message)
-                    }
-                }
-            }
-        }
+        val data = remoteMessage.data
+        if (data["updateApp"]?.toIntOrNull() != 1) return
+        val versionCode = data["versionCode"]?.toIntOrNull() ?: return
+        if (versionCode <= BuildConfig.VERSION_CODE) return
+        val title = data["title"] ?: return
+        val message = data["message"] ?: return
+        sendUpdateApp(title, message)
     }
 
     @SuppressLint("UnspecifiedImmutableFlag", "MutableImplicitPendingIntent")

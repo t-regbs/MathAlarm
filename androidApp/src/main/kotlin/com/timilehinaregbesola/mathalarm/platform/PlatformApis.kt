@@ -8,7 +8,6 @@ import android.content.Intent
 import android.content.pm.PackageManager
 import android.media.MediaPlayer
 import android.media.RingtoneManager
-import android.net.Uri
 import android.os.Build
 import android.provider.Settings
 import androidx.activity.compose.LocalActivity
@@ -50,7 +49,12 @@ fun interface RingtonePickerLauncher {
 fun getRingtoneTitle(alarmTone: String): String {
     val context: Context = getKoinContext()
     return try {
-        RingtoneManager.getRingtone(context, alarmTone.toUri()).getTitle(context)
+        val ringtone = RingtoneManager.getRingtone(context, alarmTone.toUri())
+        try {
+            ringtone?.getTitle(context).orEmpty()
+        } finally {
+            ringtone?.stop()
+        }
     } catch (_: Exception) {
         ""
     }
@@ -58,18 +62,12 @@ fun getRingtoneTitle(alarmTone: String): String {
 
 fun openNotificationSettings() {
     val context: Context = getKoinContext()
-    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-        val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
-            putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
-            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-        }
-        context.startActivity(intent)
-        trackPermissionHandoff("notifications", PermissionAnalyticsPending.NOTIFICATIONS)
-    } else {
-        val intent = Intent(Settings.ACTION_SETTINGS).apply { addFlags(Intent.FLAG_ACTIVITY_NEW_TASK) }
-        context.startActivity(intent)
-        trackPermissionHandoff("notifications", PermissionAnalyticsPending.NOTIFICATIONS)
+    val intent = Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).apply {
+        putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName)
+        addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
     }
+    context.startActivity(intent)
+    trackPermissionHandoff("notifications", PermissionAnalyticsPending.NOTIFICATIONS)
 }
 
 fun requestExactAlarmPermission() {
@@ -169,36 +167,35 @@ fun rememberNotificationPermissionHandler(onResult: (Boolean) -> Unit): () -> Un
 }
 
 fun checkRingtonePermissions(
+    activity: Activity,
     tones: List<String>,
     unplayableDialogTitle: String,
     unplayableDialogMessage: (String) -> String
 ) {
-    val context: Context = getKoinContext()
-    val activity = (context as? Activity) ?: return
-
-    if (Build.VERSION.SDK_INT >= 23 &&
+    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2 &&
         activity.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
     ) {
         val unplayable = tones
-            .filter { alarmtone ->
-                runCatching {
-                    val player = MediaPlayer()
-                    player.setDataSource(activity, alarmtone.toUri())
-                    player.apply {
-                        setOnErrorListener { mp, _, _ ->
-                            Logger.e("Error occurred while playing audio.")
-                            mp.stop()
-                            mp.release()
-                            true
-                        }
-                    }
-                }.isFailure
+            .filter { tone ->
+                val player = MediaPlayer()
+                try {
+                    player.setDataSource(activity, tone.toUri())
+                    false
+                } catch (_: Exception) {
+                    true
+                } finally {
+                    player.release()
+                }
             }
-            .mapNotNull { tone -> RingtoneManager.getRingtone(activity, Uri.parse(tone)) }
-            .map { ringtone ->
+            .map { tone ->
                 runCatching {
-                    ringtone.getTitle(activity) ?: "null"
-                }.getOrDefault("null")
+                    val ringtone = RingtoneManager.getRingtone(activity, tone.toUri())
+                    try {
+                        ringtone?.getTitle(activity)
+                    } finally {
+                        ringtone?.stop()
+                    }
+                }.getOrNull()?.takeIf { it.isNotBlank() } ?: tone
             }
 
         if (unplayable.isNotEmpty()) {

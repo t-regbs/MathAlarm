@@ -3,6 +3,7 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmsettings.components
 import com.timilehinaregbesola.mathalarm.utils.resolve
 import com.timilehinaregbesola.mathalarm.presentation.alarmlist.components.AlarmPermissionDialog
 
+import androidx.activity.compose.LocalActivity
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Arrangement.SpaceBetween
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -152,9 +153,10 @@ fun AlarmBottomSheet(
     val alertTitle = strings.alert
     val storagePermissionTextFn = strings.permissionsExternalStorageText
 
+    val activity = LocalActivity.current
     val pickToneLauncher = rememberRingtonePickerLauncher { selectedTone ->
         selectedTone?.let { tone ->
-            checkRingtonePermissions(listOf(tone), alertTitle, storagePermissionTextFn)
+            activity?.let { checkRingtonePermissions(it, listOf(tone), alertTitle, storagePermissionTextFn) }
             viewModel.onEvent(OnToneChange(tone))
         }
     }

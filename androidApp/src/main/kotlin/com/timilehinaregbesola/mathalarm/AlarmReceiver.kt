@@ -110,7 +110,6 @@ class AlarmReceiver : BroadcastReceiver(), KoinComponent {
 
         const val EXTRA_TASK = "extra_task"
 
-        const val EXTRA_PENDING_INTENT_ID = "extra_pending_intent_id"
 
         const val ALARM_ACTION = "com.timilehinaregbesola.mathalarm.SET_ALARM"
 

@@ -6,7 +6,6 @@ import android.os.Build
  * Android implementation of [AlarmPermission] using abstracted dependencies.
  */
 class AlarmPermissionImpl(
-    private val screenNavigator: ScreenNavigator,
     private val permissionChecker: PermissionChecker,
     private val androidVersion: AndroidVersion
 ) : AlarmPermission {
@@ -22,13 +21,5 @@ class AlarmPermissionImpl(
         } else {
             true
         }
-    }
-
-    override fun openExactAlarmPermissionScreen() {
-        screenNavigator.openExactAlarmPermissionScreen()
-    }
-
-    override fun openAppSettings() {
-        screenNavigator.openAppSettings()
     }
 }

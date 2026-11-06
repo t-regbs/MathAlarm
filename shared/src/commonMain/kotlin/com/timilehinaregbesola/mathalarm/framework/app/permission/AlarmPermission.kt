@@ -1,7 +1,7 @@
 package com.timilehinaregbesola.mathalarm.framework.app.permission
 
 /**
- * Platform-abstracted interface for checking and managing alarm permissions.
+ * Platform-abstracted interface for checking alarm permissions.
  */
 @OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
 @kotlin.native.HiddenFromObjC
@@ -12,16 +12,4 @@ interface AlarmPermission {
      * @return `true` if the permission is granted, `false` otherwise
      */
     fun hasExactAlarmPermission(): Boolean
-
-    /**
-     * Opens the system settings screen for exact alarm permission.
-     * On Android S+, this opens the SCHEDULE_EXACT_ALARM permission screen.
-     */
-    fun openExactAlarmPermissionScreen()
-
-    /**
-     * Opens the app settings screen.
-     * Useful for directing users to manually enable permissions.
-     */
-    fun openAppSettings()
 }

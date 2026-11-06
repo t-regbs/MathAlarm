@@ -2,18 +2,12 @@
 
 package com.timilehinaregbesola.mathalarm.utils
 
-import android.app.Activity
 import android.app.AlarmManager
 import android.app.PendingIntent
 import android.content.Context
-import android.content.pm.PackageManager
 import android.os.Build
-import androidx.core.app.ActivityCompat
 import androidx.core.app.AlarmManagerCompat
-import androidx.core.content.ContextCompat
 import co.touchlab.kermit.Logger
-import kotlin.time.Clock
-import kotlin.time.ExperimentalTime
 
 /**
  * Sets a alarm using [AlarmManagerCompat] to be triggered based on the given parameter.
@@ -23,9 +17,13 @@ import kotlin.time.ExperimentalTime
  * @param operation action to perform when the alarm goes off
  * @param type type to define how the alarm will behave
  */
-@OptIn(ExperimentalTime::class, androidx.compose.foundation.ExperimentalFoundationApi::class,
-    androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.ui.ExperimentalComposeUiApi::class,
-    kotlinx.coroutines.InternalCoroutinesApi::class, androidx.compose.animation.ExperimentalAnimationApi::class)
+@OptIn(
+    androidx.compose.foundation.ExperimentalFoundationApi::class,
+    androidx.compose.material3.ExperimentalMaterial3Api::class,
+    androidx.compose.ui.ExperimentalComposeUiApi::class,
+    kotlinx.coroutines.InternalCoroutinesApi::class,
+    androidx.compose.animation.ExperimentalAnimationApi::class,
+)
 fun Context.setExactAlarm(
     triggerAtMillis: Long,
     operation: PendingIntent?,
@@ -72,16 +70,5 @@ fun Context.cancelAlarm(operation: PendingIntent?) {
         Logger.d(messageString = "Alarm canceled successfully", tag = "Context cancelAlarm")
     } catch (e: Exception) {
         Logger.e(e, tag = "Context cancelAlarm") {"Failed to cancel alarm"}
-    }
-}
-
-fun Context.hasPermission(permission: String) =
-    ContextCompat.checkSelfPermission(this, permission) == PackageManager.PERMISSION_GRANTED
-
-fun Activity.handlePermission(permission: String, callback: (granted: Boolean) -> Unit) {
-    if (hasPermission(permission)) {
-        callback(true)
-    } else {
-        ActivityCompat.requestPermissions(this, arrayOf(permission), 3)
     }
 }
