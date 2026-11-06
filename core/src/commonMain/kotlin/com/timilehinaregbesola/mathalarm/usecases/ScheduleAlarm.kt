@@ -20,11 +20,8 @@ class ScheduleAlarm(
     private val onCleanupSuccess: (Long) -> Unit = {},
 ) {
     suspend operator fun invoke(alarm: Alarm, reschedule: Boolean) {
-        val saved = if (alarm.alarmId == 0L) {
-            alarmRepository.getLatestAlarm()
-        } else {
-            alarmRepository.findAlarm(alarm.alarmId)
-        } ?: return
+        require(alarm.alarmId != 0L) { "Save an alarm before scheduling it" }
+        val saved = alarmRepository.findAlarm(alarm.alarmId) ?: return
         val times = alarmTimeCalculator.calculateAlarmTimes(saved.copy(skippedDate = null)).sorted()
         val planned = saved.copy(
             isOn = times.isNotEmpty(),
