@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """Check the approved native renderer boundaries in production source and framework exports."""
+from __future__ import annotations
+
 import argparse
 import pathlib
 import re

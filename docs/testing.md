@@ -118,6 +118,15 @@ their results.
 
 ## Fast checks (every PR)
 
+Repository verification scripts support Python 3.9 or newer. Python 3.14 is the
+recommended interpreter in `.python-version`; CI tests both 3.9 and 3.14. Asset
+generation scripts document their separate third-party dependencies.
+Confirm the interpreter before running the checks:
+
+```sh
+python3 -c 'import sys; sys.exit("Python 3.9 or newer is required" if sys.version_info < (3, 9) else 0)'
+```
+
 ```sh
 ./gradlew :core:testAndroidHostTest :shared:testAndroidHostTest :androidApp:testDebugUnitTest --continue
 python3 -B -m unittest discover -s scripts -p '*_test.py'

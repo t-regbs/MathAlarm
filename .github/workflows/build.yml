@@ -23,6 +23,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  python:
+    name: Python tooling ${{ matrix.python }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python: ['3.9', '3.14']
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Run script regressions and source gates
+        run: |
+          python3 -B -m unittest discover -s scripts -p '*_test.py'
+          python3 -B scripts/verify_native_ui_boundaries.py
+          python3 -B scripts/verify_native_localization.py
+          python3 -B scripts/verify_ios_release.py
+
   build:
     if: ${{ inputs.scope != 'ios' }}
     name: Build & Test
@@ -45,15 +64,6 @@ jobs:
         uses: gradle/actions/setup-gradle@v4
         with:
           cache-read-only: ${{ github.ref != 'refs/heads/main' }}
-
-      - name: Check device runner cleanup
-        run: python3 -B -m unittest discover -s scripts -p '*_test.py'
-
-      - name: Enforce renderer and locale boundaries
-        run: |
-          python3 -B scripts/verify_native_ui_boundaries.py
-          python3 -B scripts/verify_native_localization.py
-          python3 -B scripts/verify_ios_release.py
 
       # Runs common and Android host tests across all modules
       - name: Run host suites
@@ -89,6 +99,9 @@ jobs:
         api: ${{ fromJSON((github.event_name == 'schedule' || github.event_name == 'workflow_dispatch') && '[30, 32, 35, 36]' || '[35]') }}
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: '.python-version'
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -137,6 +150,9 @@ jobs:
       MAESTRO_CLI_NO_ANALYTICS: '1'
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version-file: '.python-version'
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
