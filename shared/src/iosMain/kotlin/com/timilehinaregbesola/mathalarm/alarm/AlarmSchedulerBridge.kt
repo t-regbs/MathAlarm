@@ -19,7 +19,6 @@ data class AlarmScheduleRequest(
 
 data class AlarmScheduleResult(
     val success: Boolean,
-    val usedAlarmKit: Boolean,
     val errorMessage: String? = null
 )
 
@@ -50,12 +49,12 @@ object AlarmSchedulerBridge {
     fun registerScheduler(scheduler: NativeAlarmScheduler) { nativeScheduler = scheduler }
     fun isAlarmKitAvailable(): Boolean = nativeScheduler?.isAlarmKitAvailable() == true
     suspend fun scheduleWithAlarmKit(request: AlarmScheduleRequest): AlarmScheduleResult {
-        val scheduler = nativeScheduler ?: return AlarmScheduleResult(false, false)
-        if (!scheduler.isAlarmKitAvailable()) return AlarmScheduleResult(false, false)
+        val scheduler = nativeScheduler ?: return AlarmScheduleResult(false)
+        if (!scheduler.isAlarmKitAvailable()) return AlarmScheduleResult(false)
         return suspendCoroutine { continuation ->
             scheduler.scheduleAlarm(request, object : AlarmScheduleCompletion {
                 override fun complete(success: Boolean, error: String?) {
-                    continuation.resume(AlarmScheduleResult(success, true, error))
+                    continuation.resume(AlarmScheduleResult(success, error))
                 }
             })
         }
