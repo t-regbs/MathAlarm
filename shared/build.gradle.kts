@@ -9,7 +9,6 @@ plugins {
     alias(libs.plugins.native.coroutines)
 }
 
-// Room KMP configuration
 room {
     schemaDirectory("$projectDir/schemas")
 }
@@ -85,7 +84,6 @@ kotlin {
 }
 
 dependencies {
-    // Room KMP - compiler for each platform
     add("kspAndroid", libs.androidx.room.compiler)
     add("kspIosArm64", libs.androidx.room.compiler)
     add("kspIosSimulatorArm64", libs.androidx.room.compiler)
