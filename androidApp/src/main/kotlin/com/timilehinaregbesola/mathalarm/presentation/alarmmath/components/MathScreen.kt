@@ -3,6 +3,7 @@ package com.timilehinaregbesola.mathalarm.presentation.alarmmath.components
 import androidx.compose.runtime.collectAsState
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.ChallengeOutcome
 import com.timilehinaregbesola.mathalarm.utils.resolve
+import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.layout.Arrangement.Center
 import androidx.compose.foundation.layout.Arrangement.spacedBy
@@ -87,6 +88,7 @@ import com.timilehinaregbesola.mathalarm.presentation.ui.MathAlarmTheme
 import com.timilehinaregbesola.mathalarm.presentation.ui.shapes
 import com.timilehinaregbesola.mathalarm.presentation.ui.spacing
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.InternalCoroutinesApi
 import androidx.compose.ui.tooling.preview.Preview
 import org.koin.compose.viewmodel.koinViewModel
@@ -128,11 +130,28 @@ fun MathScreen(
     )
     val errorStrings = strings
     LaunchedEffect(errorStrings) {
+        var snackbarJob: Job? = null
+        var answerFeedback = false
+        var feedbackQuestion = -1
+        var feedbackText = ""
         viewModel.state.collect { state ->
+            if (answerFeedback && (feedbackQuestion != state.questionIndex || feedbackText != state.answerText)) {
+                snackbarJob?.cancel()
+                snackbarHostState.currentSnackbarData?.dismiss()
+                answerFeedback = false
+            }
             for (result in state.results) {
                 when (val outcome = result.outcome) {
-                    is ChallengeOutcome.Failure -> snackbarHostState.showSnackbar(message = outcome.error.resolve(errorStrings))
+                    is ChallengeOutcome.Failure -> {
+                        snackbarJob?.cancel()
+                        answerFeedback = outcome.error == AlarmErrorMessage.INCORRECT_ANSWER
+                        feedbackQuestion = state.questionIndex
+                        feedbackText = state.answerText
+                        snackbarJob = launch { snackbarHostState.showSnackbar(message = outcome.error.resolve(errorStrings)) }
+                    }
                     ChallengeOutcome.Completed, ChallengeOutcome.Snoozed -> {
+                        snackbarJob?.cancel()
+                        snackbarHostState.currentSnackbarData?.dismiss()
                         keyboardController?.hide()
                         if (backStack.size > 1) backStack.removeLastOrNull()
                     }
@@ -173,7 +192,7 @@ fun MathScreen(
                 onValueChange = { newVal ->
                     if (newVal.length <= MAX_ANSWER_CHARS) {
                         viewModel.onEvent(
-                            EnteredAnswer(newVal.filter { it.isDigit() }),
+                            EnteredAnswer(newVal),
                         )
                     }
                 }
@@ -445,7 +464,7 @@ private object MathScreen {
     val PRIMARY_ACTION_MIN_HEIGHT = 56.dp
     val SECONDARY_ACTION_MIN_HEIGHT = 48.dp
     const val INITIAL_INDICATOR_PROGRESS = 0.1f
-    const val MAX_ANSWER_CHARS = 8
+    const val MAX_ANSWER_CHARS = 32
     const val PROGRESS_LABEL = "ProgressBar"
     val PROGRESS_INDICATOR_HEIGHT = 10.dp
     val QUESTION_FONT_SIZE = 70.sp

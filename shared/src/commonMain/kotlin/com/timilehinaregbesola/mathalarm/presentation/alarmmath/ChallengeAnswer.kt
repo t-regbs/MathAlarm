@@ -21,5 +21,10 @@ internal fun parseChallengeAnswer(value: String): Int? {
             })
         }
     }
-    return normalized.toIntOrNull()
+    val decimal = normalized.indexOf('.')
+    if (decimal < 0) return normalized.toIntOrNull()
+    // Accept exact whole-number decimals without floating-point rounding or changing magnitude.
+    val fraction = normalized.substring(decimal + 1)
+    if (fraction.isEmpty() || fraction.any { it != '0' }) return null
+    return normalized.substring(0, decimal).toIntOrNull()
 }

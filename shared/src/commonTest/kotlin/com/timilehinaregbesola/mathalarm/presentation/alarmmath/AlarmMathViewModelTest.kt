@@ -262,6 +262,21 @@ class AlarmMathViewModelTest {
     }
 
     @Test
+    fun `editing clears unconsumed answer errors without hiding other failures`() = runTest {
+        viewModel.initializeChallenge(Alarm(questionCount = 2), true)
+        val problem = viewModel.currentProblem!!
+        viewModel.onEvent(MathScreenEvent.EnteredAnswer((problem.answer + 1).toString()))
+        viewModel.onEvent(MathScreenEvent.OnEnterClick(problem))
+        viewModel.onEvent(MathScreenEvent.OnToneError)
+        viewModel.state.value.results.size shouldBe 2
+        viewModel.onEvent(MathScreenEvent.EnteredAnswer("${problem.answer}.0"))
+        viewModel.state.value.results.map { it.outcome } shouldBe listOf(ChallengeOutcome.Failure(AlarmErrorMessage.TONE))
+        viewModel.onEvent(MathScreenEvent.OnEnterClick(problem))
+        viewModel.state.value.questionIndex shouldBe 1
+        viewModel.state.value.incorrectAnswers shouldBe 1
+    }
+
+    @Test
     fun `enter before initialization and stale questions cannot complete a challenge`() = runTest {
         viewModel.resultEvents().test {
             viewModel.onEvent(MathScreenEvent.EnteredAnswer("0"))
