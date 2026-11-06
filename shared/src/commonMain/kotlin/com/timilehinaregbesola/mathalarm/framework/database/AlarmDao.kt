@@ -13,9 +13,6 @@ interface AlarmDao {
     @Update
     suspend fun updateAlarm(alarm: AlarmEntity)
 
-    @Delete
-    suspend fun deleteAlarm(alarm: AlarmEntity)
-
     @Query("DELETE FROM alarms WHERE alarmid = :id")
     suspend fun deleteAlarmWithId(id: Long?)
 
@@ -25,17 +22,11 @@ interface AlarmDao {
     @Query("SELECT * FROM alarms WHERE alarmid = :alarmUid LIMIT 1")
     suspend fun getAlarm(alarmUid: Long?): AlarmEntity?
 
-    @Query("SELECT * FROM alarms WHERE alarmid = :alarmUid LIMIT 1")
-    suspend fun search(alarmUid: Long?): AlarmEntity?
-
     @Query("SELECT * FROM alarms ORDER BY alarmid DESC LIMIT 1")
     suspend fun getLastAlarm(): AlarmEntity?
 
     @Query("SELECT * FROM alarms ORDER BY alarmid DESC")
     fun getAlarms(): Flow<List<AlarmEntity>>
-
-    @Query("SELECT * FROM alarms WHERE ison = :state")
-    suspend fun getActiveAlarms(state: Boolean = true): List<AlarmEntity>
 
     @Query("SELECT * FROM alarms WHERE isSaved = :state ORDER BY alarmid DESC")
     fun getSavedAlarms(state: Boolean = true): Flow<List<AlarmEntity>>

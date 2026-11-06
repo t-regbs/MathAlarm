@@ -105,7 +105,6 @@ val commonModule = module {
             }, onCleanupFailure = cleanupFailure,
             onCleanupSuccess = { com.timilehinaregbesola.mathalarm.application.AlarmApplicationStatus.clearRecoveryFailure(it) }),
             rescheduleFutureAlarms = rescheduleFutureAlarms,
-            scheduleNextAlarm = get(),
             showAlarm = ShowAlarm(get(), get(), get()),
             snoozeAlarm = SnoozeAlarm(get(), get(), get(), get(), onSnoozed = {
                 runCatching { analytics.trackSafely(AnalyticsEvents.alarmSnoozed) }

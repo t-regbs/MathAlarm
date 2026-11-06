@@ -9,7 +9,6 @@ import com.timilehinaregbesola.mathalarm.usecases.FindAlarm
 import com.timilehinaregbesola.mathalarm.usecases.GetSavedAlarms
 import com.timilehinaregbesola.mathalarm.usecases.RescheduleFutureAlarms
 import com.timilehinaregbesola.mathalarm.usecases.ScheduleAlarm
-import com.timilehinaregbesola.mathalarm.usecases.ScheduleNextAlarm
 import com.timilehinaregbesola.mathalarm.usecases.ShowAlarm
 import com.timilehinaregbesola.mathalarm.usecases.SkipNextAlarm
 import com.timilehinaregbesola.mathalarm.usecases.SnoozeAlarm
@@ -34,7 +33,6 @@ data class Usecases(
     val scheduleAlarm: ScheduleAlarm,
     val completeAlarm: CompleteAlarm,
     val rescheduleFutureAlarms: RescheduleFutureAlarms,
-    val scheduleNextAlarm: ScheduleNextAlarm,
     val showAlarm: ShowAlarm,
     val snoozeAlarm: SnoozeAlarm,
     val cancelAlarm: CancelAlarm,
