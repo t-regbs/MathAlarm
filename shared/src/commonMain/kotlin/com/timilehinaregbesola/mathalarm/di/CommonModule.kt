@@ -117,7 +117,7 @@ val commonModule = module {
     single { ChallengeProgressStore(get()) }
     viewModel { AlarmSettingsViewModel(get(), get(), get()) }
     single { com.timilehinaregbesola.mathalarm.application.ChallengeCoordinator(get(), get(), getWith("ChallengeCoordinator"), get(), get(), { com.timilehinaregbesola.mathalarm.platform.getDefaultAlarmTone() }, { com.timilehinaregbesola.mathalarm.platform.PlatformPreviewVibration() }) }
-    viewModel { AlarmMathViewModel(get(), get(), getWith("AlarmMathViewModel"), get(), get(), get()) }
+    viewModel { AlarmMathViewModel(get()) }
     viewModel { com.timilehinaregbesola.mathalarm.presentation.appsettings.AppSettingsViewModel(get<AlarmPreferencesImpl>(),
         listOf("math-challenges-v1") + (if (com.timilehinaregbesola.mathalarm.platform.supportsSkipNext()) listOf("skip-next-alarm-v1") else emptyList()) + listOf("snooze-settings-v1")) }
 }
