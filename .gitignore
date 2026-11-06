@@ -7,7 +7,7 @@
 /.idea/workspace.xml
 /.idea/navEditor.xml
 /.idea/assetWizardSettings.xml
-/.kotlin/metadata/
+/.kotlin/
 .DS_Store
 /build
 /captures
@@ -20,3 +20,18 @@
 # Argent captures and secrets are local; config and reviewed flows may be tracked.
 /.argent/recordings/
 /.argent/secrets.env
+
+/.idea/firebender/
+/.idea/ChatHistory_schema_v2.xml
+/.idea/ChatHistory_schema_v4.xml
+/.idea/cody_history.xml
+/.idea/deploymentTargetDropDown.xml
+/.idea/deploymentTargetSelector.xml
+/.idea/deviceManager.xml
+/.idea/studiobot.xml
+**/xcuserdata/
+__pycache__/
+*.py[cod]
+/release-archives/
+/androidApp/release/*.aab
+/androidApp/release/mapping.txt
