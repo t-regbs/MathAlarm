@@ -62,6 +62,23 @@ def idle_test_overrides_applied(dump):
                 re.search(r"^\s*idle_to=\+?30s0ms\s*$", dump, re.M))
 
 
+def read_delivery_events(read, attempts=5, pause=time.sleep):
+    """Retry torn SharedPreferences XML reads, but fail if no valid snapshot arrives."""
+    for attempt in range(attempts):
+        raw = read()  # adb/permission errors are not parsing races.
+        try:
+            root = ET.fromstring(raw)
+        except ET.ParseError:
+            if attempt == attempts - 1:
+                raise
+            pause(0.1)
+            continue
+        entry = root.find("string[@name='events']")
+        if entry is None or entry.text is None:
+            raise ValueError("Delivery telemetry is missing its events entry")
+        return [event for event in json.loads(entry.text) if event["alarmId"] == ALARM_ID]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--serial", required=True)
@@ -88,9 +105,8 @@ def main():
             raise AssertionError(output)
 
     def events():
-        raw = adb("shell", "run-as", PACKAGE, "cat", "shared_prefs/alarm_delivery_log.xml")
-        return [e for e in json.loads(ET.fromstring(raw).find("string[@name='events']").text)
-                if e["alarmId"] == ALARM_ID]
+        return read_delivery_events(lambda: adb(
+            "shell", "run-as", PACKAGE, "cat", "shared_prefs/alarm_delivery_log.xml"))
 
     def wait_for(description, predicate, timeout):
         deadline = time.monotonic() + timeout
