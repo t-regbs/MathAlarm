@@ -1,15 +1,15 @@
 ![](media/math_alarm_github.png)
-# Math Alarm :alarm_clock:
+# Math Alarm
 
 ![Android Build](https://github.com/t-regbs/MathAlarm/workflows/Android%20Build/badge.svg) ![My twitter](https://img.shields.io/twitter/url?style=social&url=https%3A%2F%2Ftwitter.com%2Ftimiaregbs) ![Shield](https://img.shields.io/badge/contributions-welcome-brightgreen) [![Made in Nigeria](https://img.shields.io/badge/made%20in-nigeria-008751.svg?style=flat-square)](https://github.com/acekyd/made-in-nigeria)
 
-A **Kotlin Multiplatform** alarm app for Android and iOS where you solve math problems of varying difficulty to dismiss the alarm. Built with Clean Architecture and shared Kotlin ViewModels, Android Compose, and a native SwiftUI development UI.
+Math Alarm is an Android and iOS app that asks you to solve math problems to dismiss an alarm. It shares Kotlin alarm logic and ViewModels, with Compose screens on Android and SwiftUI screens on iOS.
 
 <a href='https://play.google.com/store/apps/details?id=com.timilehinaregbesola.mathalarm'><img alt='Get it on Google Play' src='https://play.google.com/intl/en_us/badges/static/images/badges/en_badge_web_generic.png' width="280"/></a>
 
 ## Architecture
 
-The project follows **Clean Architecture** with the **MVVM** pattern:
+The project has four modules:
 
 - **`:androidApp`** - All Compose screens/navigation/theme/localization/resources, application entry points and Android platform wiring
 - **`:shared`** - UI-free feature ViewModels, application coordination, data and platform service adapters
@@ -18,30 +18,30 @@ The project follows **Clean Architecture** with the **MVVM** pattern:
 
 The native migration uses shared Kotlin ViewModels and alarm logic with Compose on Android and SwiftUI on iOS. All native parity screens are implemented. Permanent XCTest/UI targets, native client flows, renderer/resource gates and archive checks are documented in [architecture and build](docs/native-architecture.md) and [testing](docs/testing.md). [Migration progress](docs/native-ui-migration-progress.md) separates implementation evidence from physical AlarmKit, acoustic, minimum-runtime and release acceptance gates. This development build is not yet release ready.
 
-## Technologies Used
+## Libraries
 
 ### Kotlin Multiplatform
 * [Kotlin Multiplatform](https://kotlinlang.org/docs/multiplatform.html) - Share code between Android and iOS
 * [Compose Multiplatform](https://www.jetbrains.com/lp/compose-multiplatform/) - Android declarative UI renderer
 
-### UI & Navigation
-* [Material 3](https://m3.material.io/) - Modern Material Design components
+### UI and navigation
+* [Material 3](https://m3.material.io/) - Material Design components
 * [Navigation 3](https://developer.android.com/guide/navigation) - Android Compose navigation
 * [Compottie](https://github.com/alexzhirkevich/compottie) - Android Compose Lottie animations
 
-### Data & Storage
+### Data and storage
 * [Room KMP](https://developer.android.com/kotlin/multiplatform/room) - Multiplatform database with SQLite
 * [Multiplatform Settings](https://github.com/russhwolf/multiplatform-settings) - Key-value storage across platforms
 * [Kotlinx Serialization](https://github.com/Kotlin/kotlinx.serialization) - JSON serialization
 
-### Dependency Injection
-* [Koin](https://insert-koin.io/) - Lightweight dependency injection framework for KMP
+### Dependency injection
+* [Koin](https://insert-koin.io/) - Dependency injection for KMP
 
-### Async & Reactive
+### Asynchronous code
 * [Coroutines](https://kotlinlang.org/docs/coroutines-overview.html) - Asynchronous programming
 * [Kotlinx DateTime](https://github.com/Kotlin/kotlinx-datetime) - Multiplatform date/time library
 
-### Logging & Analytics (Android)
+### Logging and analytics on Android
 * [Kermit](https://github.com/touchlab/Kermit) - Multiplatform logging library
 * [Firebase Analytics](https://firebase.google.com/docs/analytics) - App analytics
 * [Firebase Crashlytics](https://firebase.google.com/docs/crashlytics) - Crash reporting
@@ -82,9 +82,9 @@ xcodebuild -project iosApp/iosApp.xcodeproj -scheme MathAlarmNative -configurati
 The PR workflow runs permanent native tests, client flows, nine-locale screenshots and archive packaging on the GitHub-hosted `xcode-27` Apple Silicon image, explicitly selecting Xcode 27.0 (27A266a). Use iPad simulators for layout/navigation checks and a physical iPhone for AlarmKit delivery and audio validation. Signed device builds require your Apple development team and provisioning profile; a simulator build does not establish alarm delivery reliability.
 
 ## Contribution
-All contributions are welcome. Simply make a PR!
+Open a pull request with a description of the change and how you tested it.
 
-## LICENSE
+## License
 ```
 MIT License
 

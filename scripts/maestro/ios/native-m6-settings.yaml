@@ -17,7 +17,7 @@ appId: com.timilehinaregbesola.mathalarm
     commands:
       - tapOn: "More"
 - tapOn: "Settings"
-- assertVisible: "App Settings"
+- assertVisible: "App settings"
 - tapOn:
     id: appThemePicker
 - tapOn: "Dark"
@@ -27,11 +27,11 @@ appId: com.timilehinaregbesola.mathalarm
 - takeScreenshot: native-settings-dark
 - tapOn:
     id: whatsNewButton
-- assertVisible: "More ways to wake up"
+- assertVisible: "Custom math challenges"
 - takeScreenshot: native-announcement-maths
 - tapOn:
     id: announcementNext
-- assertVisible: "Snooze on your terms"
+- assertVisible: "Snooze limits and duration"
 - takeScreenshot: native-announcement-snooze
 - tapOn:
     id: announcementSnoozeExample
@@ -61,7 +61,7 @@ appId: com.timilehinaregbesola.mathalarm
 - takeScreenshot: native-settings-after-restart
 - tapOn:
     id: whatsNewButton
-- assertVisible: "More ways to wake up"
+- assertVisible: "Custom math challenges"
 - tapOn:
     id: announcementGotIt
 - tapOn:
@@ -82,7 +82,7 @@ appId: com.timilehinaregbesola.mathalarm
           point: "5%,20%"
 - assertVisible:
     id: appSettingsDone
-- assertVisible: "App Settings"
+- assertVisible: "App settings"
 - tapOn:
     id: feedbackButton
 - assertVisible: "No email app is available. Email aregbestimi@gmail.com to send feedback."
@@ -97,6 +97,6 @@ appId: com.timilehinaregbesola.mathalarm
 - tapOn: "System"
 - tapOn:
     id: alarmSortPicker
-- tapOn: "Creation Order"
+- tapOn: "Creation order"
 - tapOn:
     id: appSettingsDone

@@ -554,7 +554,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "A delivered alarm has priority over tone previews."
+            "value" : "Alarm playback takes priority over sound previews."
           }
         },
         "es" : {
@@ -1091,7 +1091,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alarm Order"
+            "value" : "Alarm order"
           }
         },
         "es" : {
@@ -1151,7 +1151,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alarm Title"
+            "value" : "Alarm title"
           }
         },
         "es" : {
@@ -1211,7 +1211,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alarm Tone (Default)"
+            "value" : "Default alarm tone"
           }
         },
         "es" : {
@@ -1331,7 +1331,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Permission Required"
+            "value" : "Permission required"
           }
         },
         "es" : {
@@ -1631,7 +1631,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn’t update alarm. Try again."
+            "value" : "Couldn't update alarm. Try again."
           }
         },
         "es" : {
@@ -1991,7 +1991,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Any unsaved changes to this alarm will be discarded."
+            "value" : "You will lose unsaved changes to this alarm."
           }
         },
         "es" : {
@@ -2050,7 +2050,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "App Settings"
+            "value" : "App settings"
           }
         },
         "es" : {
@@ -2290,7 +2290,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Are you sure you want to clear the alarms?"
+            "value" : "Delete all alarms?"
           }
         },
         "es" : {
@@ -2708,7 +2708,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Check out this cool alarm app"
+            "value" : "Try Math Alarm. Solve math problems to dismiss your alarm."
           }
         },
         "es" : {
@@ -3185,7 +3185,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Choose whether alarms appear by when they were created or by the time they go off."
+            "value" : "Sort alarms by creation time or alarm time."
           }
         },
         "es" : {
@@ -3305,7 +3305,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Clear Alarms"
+            "value" : "Clear alarms"
           }
         },
         "es" : {
@@ -3425,7 +3425,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Clear Alarms"
+            "value" : "Clear alarms"
           }
         },
         "es" : {
@@ -3544,7 +3544,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Color Theme"
+            "value" : "Color theme"
           }
         },
         "es" : {
@@ -3664,7 +3664,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn’t dismiss alarm. Try again."
+            "value" : "Couldn't dismiss alarm. Try again."
           }
         },
         "es" : {
@@ -3723,7 +3723,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn’t open the requested action. Try again."
+            "value" : "Couldn't open the requested action. Try again."
           }
         },
         "es" : {
@@ -3783,7 +3783,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn’t prepare this challenge. Try again."
+            "value" : "Couldn't prepare this challenge. Try again."
           }
         },
         "es" : {
@@ -3843,7 +3843,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn’t save alarm. Try again."
+            "value" : "Couldn't save alarm. Try again."
           }
         },
         "es" : {
@@ -3903,7 +3903,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn’t schedule alarm. Save it again."
+            "value" : "Couldn't schedule alarm. Save it again."
           }
         },
         "es" : {
@@ -3962,7 +3962,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn’t send feedback. Try again."
+            "value" : "Couldn't send feedback. Try again."
           }
         },
         "es" : {
@@ -4022,7 +4022,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn’t snooze alarm. Try again."
+            "value" : "Couldn't snooze alarm. Try again."
           }
         },
         "es" : {
@@ -4082,7 +4082,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn’t update alarm. Try again."
+            "value" : "Couldn't update alarm. Try again."
           }
         },
         "es" : {
@@ -4141,7 +4141,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn’t update preferences. Try again."
+            "value" : "Couldn't update preferences. Try again."
           }
         },
         "es" : {
@@ -4200,7 +4200,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn’t update settings. Try again."
+            "value" : "Couldn't update settings. Try again."
           }
         },
         "es" : {
@@ -4258,7 +4258,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Creation Order"
+            "value" : "Creation order"
           }
         },
         "es" : {
@@ -4556,7 +4556,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alarm Tone (Default)"
+            "value" : "Default alarm tone"
           }
         },
         "es" : {
@@ -4676,7 +4676,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete All"
+            "value" : "Delete all"
           }
         },
         "es" : {
@@ -4736,7 +4736,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delete All"
+            "value" : "Delete all"
           }
         },
         "es" : {
@@ -4796,7 +4796,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Are you sure you want to clear the alarms?"
+            "value" : "Delete all alarms?"
           }
         },
         "es" : {
@@ -4856,7 +4856,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Delivery could not be decoded. It remains queued for retry."
+            "value" : "Could not read the alarm details. They are saved for another attempt."
           }
         },
         "es" : {
@@ -5873,7 +5873,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Empty Alarm List"
+            "value" : "No alarms"
           }
         },
         "es" : {
@@ -6350,7 +6350,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Explore the latest features"
+            "value" : "New alarm settings"
           }
         },
         "es" : {
@@ -7127,7 +7127,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Alarm Title"
+            "value" : "Alarm title"
           }
         },
         "es" : {
@@ -7305,7 +7305,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Make mornings count."
+            "value" : "Solve math problems to dismiss your alarm."
           }
         },
         "es" : {
@@ -8022,7 +8022,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "More ways to wake up"
+            "value" : "Custom math challenges"
           }
         },
         "es" : {
@@ -9263,7 +9263,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "No Upcoming Alarms"
+            "value" : "No upcoming alarms"
           }
         },
         "es" : {
@@ -9502,7 +9502,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Nothing to see here"
+            "value" : "Add an alarm to get started."
           }
         },
         "es" : {
@@ -10221,7 +10221,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Permission Required"
+            "value" : "Permission required"
           }
         },
         "es" : {
@@ -10760,7 +10760,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Questions are presented from easiest to hardest."
+            "value" : "Questions go from easiest to hardest."
           }
         },
         "es" : {
@@ -11000,7 +11000,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Repeat Weekly"
+            "value" : "Repeat weekly"
           }
         },
         "es" : {
@@ -11060,7 +11060,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Repeat Weekly"
+            "value" : "Repeat weekly"
           }
         },
         "es" : {
@@ -11480,7 +11480,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Select Hour"
+            "value" : "Select hour"
           }
         },
         "es" : {
@@ -11719,7 +11719,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Send Email"
+            "value" : "Send email"
           }
         },
         "es" : {
@@ -11778,7 +11778,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Send Feedback"
+            "value" : "Send feedback"
           }
         },
         "es" : {
@@ -12312,7 +12312,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Snooze on your terms"
+            "value" : "Snooze limits and duration"
           }
         },
         "es" : {
@@ -12551,7 +12551,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Solve up to %@ questions. Mix difficulties or build a custom challenge that works for you."
+            "value" : "Solve up to %@ questions. Mix difficulties or create a custom challenge."
           }
         },
         "es" : {
@@ -12730,7 +12730,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Stop Alarm"
+            "value" : "Stop alarm"
           }
         },
         "es" : {
@@ -13028,7 +13028,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Test Alarm"
+            "value" : "Test alarm"
           }
         },
         "es" : {
@@ -13208,7 +13208,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Empty Alarm List"
+            "value" : "No alarms"
           }
         },
         "es" : {
@@ -13506,7 +13506,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tone Unavailable"
+            "value" : "Tone unavailable"
           }
         },
         "es" : {
@@ -13566,7 +13566,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Tone preview was interrupted by an alarm."
+            "value" : "An alarm interrupted the sound preview."
           }
         },
         "es" : {
@@ -13924,7 +13924,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Unable to retain delivery acknowledgement. Try again."
+            "value" : "Could not save the alarm delivery status. Try again."
           }
         },
         "es" : {
@@ -13984,7 +13984,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Couldn’t save alarm. Try again."
+            "value" : "Couldn't save alarm. Try again."
           }
         },
         "es" : {
@@ -14463,7 +14463,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "What’s new"
+            "value" : "What's new"
           }
         },
         "es" : {
@@ -14582,7 +14582,7 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Your changes haven’t been saved."
+            "value" : "Your changes haven't been saved."
           }
         },
         "es" : {

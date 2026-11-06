@@ -16,7 +16,7 @@ appId: com.timilehinaregbesola.mathalarm
     commands:
       - tapOn: "More"
 - tapOn: "Settings"
-- assertVisible: "App Settings"
+- assertVisible: "App settings"
 - scrollUntilVisible:
     element:
       id: privacyPolicyLink

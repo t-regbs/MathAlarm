@@ -7,7 +7,7 @@ appId: com.timilehinaregbesola.mathalarm
 - assertVisible: "Alarms"
 - tapOn: "Add alarm"
 - assertVisible: "TEST ALARM"
-- tapOn: "Alarm Title"
+- tapOn: "Alarm title"
 - inputText: 'Maestro "Wake" draft'
 - pressKey: Enter
 - assertVisible: "TEST ALARM"

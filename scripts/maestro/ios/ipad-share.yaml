@@ -2,7 +2,7 @@ appId: com.timilehinaregbesola.mathalarm
 ---
 - launchApp
 - tapOn: "gearshape"
-- assertVisible: "App Settings"
+- assertVisible: "App settings"
 - scrollUntilVisible:
     element: "Share"
     direction: DOWN
@@ -11,4 +11,4 @@ appId: com.timilehinaregbesola.mathalarm
 - takeScreenshot: ipad-share-popover
 - tapOn:
     point: "10%,20%"
-- assertVisible: "App Settings"
+- assertVisible: "App settings"

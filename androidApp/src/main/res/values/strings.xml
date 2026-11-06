@@ -1,21 +1,21 @@
 <resources>
-    <string name="time_picker_title">Set Alarm Time:</string>
+    <string name="time_picker_title">Set alarm time</string>
 
-    <string name="settings_time_title">Set Alarm Time</string>
+    <string name="settings_time_title">Set alarm time</string>
 
-    <string name="settings_day_title">Set On</string>
+    <string name="settings_day_title">Alarm days</string>
 
     <string name="settings_repeat_title">Repeat</string>
-    <string name="settings_repeat_text">Repeat Weekly</string>
-    <string name="settings_setting_title">Alarm Settings</string>
+    <string name="settings_repeat_text">Repeat weekly</string>
+    <string name="settings_setting_title">Alarm settings</string>
     <string name="settings_vibrate_text">Vibrate</string>
-    <string name="settings_tone_text">Alarm Tone</string>
+    <string name="settings_tone_text">Alarm tone</string>
     <string name="settings_snooze_text">Snooze (0 = OFF)</string>
     <string name="minutes">minute(s)</string>
-    <string name="settings_math_difficulty_text">Math Difficulty</string>
-    <string name="settings_test">Test Alarm</string>
+    <string name="settings_math_difficulty_text">Math difficulty</string>
+    <string name="settings_test">Test alarm</string>
 
-    <string name="menu_add_alarm">Add Alarm</string>
+    <string name="menu_add_alarm">Add alarm</string>
     <string name="menu_settings_done">Set</string>
     <string name="menu_settings_delete">Delete</string>
 
@@ -44,11 +44,11 @@
 
     <string name="snooze_off">No snooze allowed</string>
 
-    <string name="empty">Empty!</string>
+    <string name="empty">No alarms</string>
     <string name="add_alarm">\nTap to\n add an\n alarm</string>
 
     <string name="android_cd">Android</string>
-    <string name="bubble_cd">Speech Bubble</string>
+    <string name="bubble_cd">Speech bubble</string>
     <string name="message_cd">Message</string>
 
     <string name="alarm_duplicate_toast_text">Duplicate alarm detected</string>
@@ -62,22 +62,22 @@
     <string name="alarm_days">days,</string>
     <string name="tone_not_available">Alarm tone not available.</string>
     <string name="ok">OK</string>
-    <string name="clear_alarms">Clear Alarms</string>
+    <string name="clear_alarms">Clear alarms</string>
     <string name="alarm_notification_channel_id">alarm_channel</string>
     <string name="notification_title">Math Alarm</string>
-    <string name="math_alarm">Math Alarm!!</string>
+    <string name="math_alarm">Math Alarm</string>
     <string name="details_no_ringtone_picker">No ringtone picker</string>
-    <string name="default_alarm_tone">Alarm Tone (Default)</string>
+    <string name="default_alarm_tone">Default alarm tone</string>
     <string name="alert">Ringtone</string>
-    <string name="permissions_external_storage_text">It seems that we cannot play %s, probably because a permission is required. If you want, you can grant the permission. Alternatively, select a different sound. This decision can be changed in System Settings.</string>
+    <string name="permissions_external_storage_text">Cannot play %s. Allow access to the sound or choose another one. You can change permissions in your device settings.</string>
 
     <string name="channel_alarm_name">Math alarms</string>
     <string name="channel_alarm_description">Notifications for alarms</string>
-    <string name="channel_update_name">App Updates</string>
+    <string name="channel_update_name">App updates</string>
     <string name="channel_update_description">Notifications about new app versions</string>
 
     <string name="notification_action_completed">Done</string>
-    <string name="notification_action_snooze">In a few mins</string>
+    <string name="notification_action_snooze">Snooze</string>
 
     <string name="pref_theme_light">Light</string>
     <string name="pref_theme_dark">Dark</string>
@@ -87,10 +87,10 @@
     <string name="pref_theme_dark_value" translatable="false">dark</string>
     <string name="pref_theme_system_value" translatable="false">system</string>
 
-    <!-- We default using the system default -->
+    <!-- Follow the device theme until the user chooses another theme. -->
     <string name="pref_theme_default_value" translatable="false">@string/pref_theme_system_value</string>
     <string name="task_alarm_permission_dialog_title">Alarms</string>
-    <string name="task_alarm_permission_dialog_text">" In order for alarms to work, Math alarm needs the permission to set alarms. If this permission is not granted, the existing alarms will not work as well."</string>
+    <string name="task_alarm_permission_dialog_text">Allow Math Alarm to set alarms. Without this permission, new and existing alarms cannot ring.</string>
     <string name="task_alarm_permission_dialog_confirm">Grant</string>
     <string name="task_alarm_permission_dialog_cancel">Not now</string>
 </resources>
