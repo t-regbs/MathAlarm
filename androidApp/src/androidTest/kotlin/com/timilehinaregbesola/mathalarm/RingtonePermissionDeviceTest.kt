@@ -37,8 +37,10 @@ class RingtonePermissionDeviceTest {
             context.checkSelfPermission(Manifest.permission.READ_EXTERNAL_STORAGE))
 
         ActivityScenario.launch(MainActivity::class.java).use { scenario ->
+            instrumentation.waitForIdleSync()
             scenario.onActivity { activity ->
                 checkRingtonePermissions(
+                    activity,
                     listOf("content://com.mathalarm.missing/audio/404"),
                     "Ringtone access check",
                 ) { "Cannot open $it" }

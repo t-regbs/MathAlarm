@@ -8,6 +8,10 @@ import android.content.Context
 import android.media.Ringtone
 import android.media.RingtoneManager
 import android.net.Uri
+import android.os.Looper
+import io.mockk.every
+import io.mockk.mockk
+import io.mockk.verify
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
@@ -41,6 +45,7 @@ class RingtonePermissionTest {
 
     @Before
     fun setUp() {
+        UnavailableRingtoneTitle.ringtone = null
         activity = Robolectric.buildActivity(Activity::class.java).setup().get()
         shadowOf(RuntimeEnvironment.getApplication()).denyPermissions(Manifest.permission.READ_EXTERNAL_STORAGE)
         ShadowMediaPlayer.setCreateListener { _, player -> players += player }
@@ -63,6 +68,7 @@ class RingtonePermissionTest {
         assertNotNull("The live activity must receive the permission dialog", dialog)
         assertTrue(shadowOf(dialog).message.toString().contains(tone))
         dialog.getButton(AlertDialog.BUTTON_POSITIVE).performClick()
+        shadowOf(Looper.getMainLooper()).idle()
         assertArrayEquals(arrayOf(Manifest.permission.READ_EXTERNAL_STORAGE),
             shadowOf(activity).lastRequestedPermission.requestedPermissions)
         assertEquals(3, shadowOf(activity).lastRequestedPermission.requestCode)
@@ -124,13 +130,66 @@ class RingtonePermissionTest {
 
         val dialog = ShadowAlertDialog.getLatestAlertDialog()
         dialog.getButton(AlertDialog.BUTTON_NEGATIVE).performClick()
+        shadowOf(Looper.getMainLooper()).idle()
 
         assertFalse(dialog.isShowing)
         assertNull(shadowOf(activity).lastRequestedPermission)
     }
 
+    @Test
+    fun `unplayable tone title lookup releases its ringtone`() {
+        configureContext(activity)
+        rejectTone()
+        val ringtone = mockk<Ringtone>(relaxed = true)
+        every { ringtone.getTitle(activity) } returns "Selected tone"
+        UnavailableRingtoneTitle.ringtone = ringtone
+
+        checkTone()
+
+        assertTrue(shadowOf(ShadowAlertDialog.getLatestAlertDialog()).message.toString().contains("Selected tone"))
+        verify(exactly = 1) { ringtone.stop() }
+    }
+
+    @Test
+    fun `failed title lookup releases its ringtone and retains URI`() {
+        configureContext(activity)
+        rejectTone()
+        val ringtone = mockk<Ringtone>(relaxed = true)
+        every { ringtone.getTitle(activity) } throws SecurityException("Denied")
+        UnavailableRingtoneTitle.ringtone = ringtone
+
+        checkTone()
+
+        assertTrue(shadowOf(ShadowAlertDialog.getLatestAlertDialog()).message.toString().contains(tone))
+        verify(exactly = 1) { ringtone.stop() }
+    }
+
+    @Test
+    fun `display title lookup releases its ringtone`() {
+        configureContext(activity)
+        val ringtone = mockk<Ringtone>(relaxed = true)
+        every { ringtone.getTitle(activity) } returns "Selected tone"
+        UnavailableRingtoneTitle.ringtone = ringtone
+
+        assertEquals("Selected tone", getRingtoneTitle(tone))
+
+        verify(exactly = 1) { ringtone.stop() }
+    }
+
+    @Test
+    fun `failed display title lookup releases its ringtone`() {
+        configureContext(activity)
+        val ringtone = mockk<Ringtone>(relaxed = true)
+        every { ringtone.getTitle(activity) } throws SecurityException("Denied")
+        UnavailableRingtoneTitle.ringtone = ringtone
+
+        assertEquals("", getRingtoneTitle(tone))
+
+        verify(exactly = 1) { ringtone.stop() }
+    }
+
     private fun checkTone() {
-        checkRingtonePermissions(listOf(tone), "Ringtone") { "Cannot play $it" }
+        checkRingtonePermissions(activity, listOf(tone), "Ringtone") { "Cannot play $it" }
     }
 
     private fun configureContext(context: Context) {
@@ -145,8 +204,11 @@ class RingtonePermissionTest {
 @Implements(RingtoneManager::class)
 class UnavailableRingtoneTitle {
     companion object {
+        var ringtone: Ringtone? = null
+
         @JvmStatic
         @Implementation
-        fun getRingtone(context: Context, uri: Uri): Ringtone? = throw SecurityException("Title inaccessible")
+        fun getRingtone(context: Context, uri: Uri): Ringtone? =
+            ringtone ?: throw SecurityException("Title inaccessible")
     }
 }
