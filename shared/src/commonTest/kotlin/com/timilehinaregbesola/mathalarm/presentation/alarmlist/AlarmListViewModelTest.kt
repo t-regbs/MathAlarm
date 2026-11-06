@@ -10,7 +10,6 @@ import com.timilehinaregbesola.mathalarm.framework.Usecases
 import com.timilehinaregbesola.mathalarm.interactors.AlarmInteractor
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
-import com.timilehinaregbesola.mathalarm.presentation.appsettings.AppThemeOptionsMapper
 import com.timilehinaregbesola.mathalarm.provider.AlarmTimeCalculatorImpl
 import com.timilehinaregbesola.mathalarm.usecases.*
 import com.timilehinaregbesola.mathalarm.utils.AlarmErrorMessage
@@ -133,11 +132,7 @@ class AlarmListViewModelTest {
         notificationInteractor = NotificationInteractorFake()
         dateTimeProvider = DateTimeProviderFake()
         permission = AlarmPermissionFake()
-        preferences = AlarmPreferencesImpl(
-            mapper = AppThemeOptionsMapper(),
-            logger = Logger.withTag("AlarmPreferencesImplTest"),
-            settings = MapSettings()
-        )
+        preferences = AlarmPreferencesImpl(MapSettings())
         
         val alarmTimeCalculator = AlarmTimeCalculatorFake()
         val scheduleNextAlarm = ScheduleNextAlarm(alarmInteractor, alarmTimeCalculator)

@@ -18,7 +18,6 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewMod
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.AlarmMathViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AlarmSettingsViewModel
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
-import com.timilehinaregbesola.mathalarm.presentation.appsettings.AppThemeOptionsMapper
 import com.timilehinaregbesola.mathalarm.provider.AlarmTimeCalculator
 import com.timilehinaregbesola.mathalarm.provider.AlarmTimeCalculatorImpl
 import com.timilehinaregbesola.mathalarm.provider.DateTimeProvider
@@ -47,7 +46,6 @@ import org.koin.dsl.module
 val commonModule = module {
     // Mappers
     single { AlarmMapper() }
-    single { AppThemeOptionsMapper() }
     
     // Coroutine Scope - replaces GlobalScope usage
     single { AppCoroutineScope(kotlinx.coroutines.Dispatchers.Main.immediate) }
@@ -70,8 +68,6 @@ val commonModule = module {
     single { ReviewEligibilityStore(get()) }
     single {
         AlarmPreferencesImpl(
-            get<AppThemeOptionsMapper>(),
-            getWith("AlarmPreferencesImpl"),
             get<Settings>()
         )
     }

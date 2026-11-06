@@ -1,15 +1,13 @@
 package com.timilehinaregbesola.mathalarm.presentation.whatsnew
 
-import co.touchlab.kermit.Logger
 import com.russhwolf.settings.MapSettings
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
-import com.timilehinaregbesola.mathalarm.presentation.appsettings.AppThemeOptionsMapper
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class AnnouncementMigrationTest {
     private fun preferences(settings: MapSettings) =
-        AlarmPreferencesImpl(AppThemeOptionsMapper(), Logger.withTag("test"), settings)
+        AlarmPreferencesImpl(settings)
 
     @Test
     fun oldMathAcknowledgementShowsLaterFeatures() {

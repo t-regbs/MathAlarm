@@ -11,7 +11,6 @@ import com.timilehinaregbesola.mathalarm.framework.app.di.appModule
 import com.timilehinaregbesola.mathalarm.platform.applyPlatformNightMode
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
-import com.timilehinaregbesola.mathalarm.presentation.appsettings.DataStoreTheme
 import kotlinx.coroutines.InternalCoroutinesApi
 import org.koin.android.ext.koin.androidContext
 import org.koin.core.context.startKoin
@@ -34,13 +33,9 @@ class AlarmApplication : Application() {
     private fun applySavedNightMode() {
         val themeId = Settings().getInt(
             AlarmPreferencesImpl.APP_THEME_OPTION,
-            DataStoreTheme.SYSTEM.id
+            AlarmPreferences.Theme.SYSTEM.storageId
         )
-        val theme = when (themeId) {
-            DataStoreTheme.LIGHT.id -> AlarmPreferences.Theme.LIGHT
-            DataStoreTheme.DARK.id -> AlarmPreferences.Theme.DARK
-            else -> AlarmPreferences.Theme.SYSTEM
-        }
+        val theme = AlarmPreferences.Theme.fromStorageId(themeId)
         applyPlatformNightMode(this, theme)
     }
 }

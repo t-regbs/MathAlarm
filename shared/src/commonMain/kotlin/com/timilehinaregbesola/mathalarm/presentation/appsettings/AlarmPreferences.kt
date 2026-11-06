@@ -39,10 +39,14 @@ interface AlarmPreferences {
      */
     fun loadAlarmSortOrder(): AlarmSortOrder
 
-    enum class Theme {
-        LIGHT,
-        DARK,
-        SYSTEM
+    enum class Theme(val storageId: Int) {
+        LIGHT(0),
+        DARK(1),
+        SYSTEM(2);
+
+        companion object {
+            fun fromStorageId(id: Int): Theme = entries.firstOrNull { it.storageId == id } ?: SYSTEM
+        }
     }
 
     enum class AlarmSortOrder {
