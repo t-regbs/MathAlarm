@@ -18,9 +18,6 @@ class RoomAlarmDataSource(
         return alarmDao.addAlarm(mapper.mapFromDomainModel(alarm))
     }
 
-    override suspend fun deleteAlarm(alarm: Alarm) =
-        alarmDao.deleteAlarm(mapper.mapFromDomainModel(alarm))
-
     override suspend fun deleteAlarmFromId(id: Long) {
         alarmDao.deleteAlarmWithId(id)
     }

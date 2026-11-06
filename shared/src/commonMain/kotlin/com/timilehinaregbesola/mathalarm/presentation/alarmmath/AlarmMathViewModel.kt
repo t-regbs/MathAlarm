@@ -1,13 +1,8 @@
 package com.timilehinaregbesola.mathalarm.presentation.alarmmath
 
-import co.touchlab.kermit.Logger
-import com.timilehinaregbesola.mathalarm.analytics.AnalyticsTracker
-import com.timilehinaregbesola.mathalarm.analytics.NoopAnalyticsTracker
 import com.timilehinaregbesola.mathalarm.application.ChallengeCoordinator
 import com.timilehinaregbesola.mathalarm.application.ChallengeSession
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
-import com.timilehinaregbesola.mathalarm.framework.Usecases
-import com.timilehinaregbesola.mathalarm.interactors.AudioPlayer
 import com.timilehinaregbesola.mathalarm.presentation.SharedFeatureViewModel
 import com.rickclephas.kmp.observableviewmodel.MutableStateFlow
 import com.rickclephas.kmp.observableviewmodel.coroutineScope
@@ -19,12 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 
 /** Observation adapter over the application session; no durable work belongs to its scope. */
 class AlarmMathViewModel internal constructor(
-    usecases: Usecases,
-    audioPlayer: AudioPlayer,
-    logger: Logger,
-    progressStore: ChallengeProgressStore,
-    analytics: AnalyticsTracker = NoopAnalyticsTracker,
-    private val coordinator: ChallengeCoordinator = ChallengeCoordinator(usecases, audioPlayer, logger, progressStore, analytics),
+    private val coordinator: ChallengeCoordinator,
 ) : SharedFeatureViewModel() {
     private val mutable = MutableStateFlow(viewModelScope, ChallengeState())
     @NativeCoroutinesState

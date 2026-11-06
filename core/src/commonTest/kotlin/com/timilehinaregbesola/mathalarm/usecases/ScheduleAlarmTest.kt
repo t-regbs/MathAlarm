@@ -34,6 +34,32 @@ class ScheduleAlarmTest {
     }
 
     @Test
+    fun `unsaved identity cannot schedule or change another stored alarm`() = runTest {
+        val first = Alarm(alarmId = 11, hour = 6, minute = 30, isSaved = true)
+        val latest = Alarm(alarmId = 12, hour = 8, minute = 45, isSaved = true)
+        addAlarmUseCase(first)
+        addAlarmUseCase(latest)
+        kotlin.test.assertFailsWith<IllegalArgumentException> {
+            scheduleAlarmUseCase(Alarm(hour = 9, minute = 15), reschedule = true)
+        }
+        assertEquals(first, findAlarmUseCase(first.alarmId))
+        assertEquals(latest, findAlarmUseCase(latest.alarmId))
+        assertEquals(emptyMap(), alarmInteractor.getScheduledAlarms())
+    }
+
+    @Test
+    fun `negative fixture identity schedules only its own persisted row`() = runTest {
+        val fixture = Alarm(alarmId = -42, hour = 6, minute = 30, isSaved = true)
+        val unrelated = Alarm(alarmId = 12, hour = 8, minute = 45, isSaved = true)
+        addAlarmUseCase(fixture)
+        addAlarmUseCase(unrelated)
+        scheduleAlarmUseCase(fixture, reschedule = false)
+        assertEquals(setOf(fixture.alarmId), alarmInteractor.getScheduledAlarms().keys)
+        assertEquals(alarmTimeCalculator.calculateAlarmTimes(fixture).sorted(), findAlarmUseCase(-42)?.pendingTimes)
+        assertEquals(unrelated, findAlarmUseCase(unrelated.alarmId))
+    }
+
+    @Test
     fun `test if alarm is scheduled`() = runTest {
         val newAlarm = Alarm(alarmId = 2, vibrate = true)
         val reschedule = false

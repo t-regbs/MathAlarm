@@ -8,8 +8,6 @@ import kotlinx.coroutines.flow.Flow
 interface AlarmDataSource {
     suspend fun addAlarm(alarm: Alarm): Long
 
-    suspend fun deleteAlarm(alarm: Alarm)
-
     suspend fun deleteAlarmFromId(id: Long)
 
     suspend fun updateAlarm(alarm: Alarm)

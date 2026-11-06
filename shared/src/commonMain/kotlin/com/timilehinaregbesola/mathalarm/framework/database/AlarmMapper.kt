@@ -83,7 +83,4 @@ class AlarmMapper : DomainMapper<AlarmEntity, Alarm> {
         return initial.map { mapToDomainModel(it) }
     }
 
-    fun fromDomainList(initial: List<Alarm>): List<AlarmEntity> {
-        return initial.map { mapFromDomainModel(it) }
-    }
 }

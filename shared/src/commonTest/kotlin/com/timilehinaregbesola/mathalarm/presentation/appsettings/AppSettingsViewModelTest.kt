@@ -1,6 +1,5 @@
 package com.timilehinaregbesola.mathalarm.presentation.appsettings
 
-import co.touchlab.kermit.Logger
 import com.russhwolf.settings.MapSettings
 import com.russhwolf.settings.Settings
 import kotlinx.coroutines.Dispatchers
@@ -27,7 +26,7 @@ class AppSettingsViewModelTest {
                 persisted.putString(key, value)
             }
         }
-        val preferences = AlarmPreferencesImpl(AppThemeOptionsMapper(), Logger.withTag("batchRetry"), storage)
+        val preferences = AlarmPreferencesImpl(storage)
         val model = AppSettingsViewModel(preferences, listOf("math-challenges-v1", "snooze-settings-v1"))
         try {
             val failure = model.state.value.failures.single()
@@ -60,7 +59,7 @@ class AppSettingsViewModelTest {
         // A frozen manual batch and per-feature seen records are separate persisted formats.
         persisted.putString("mathalarm_announcement_catalog", "math-challenges-v1\nsnooze-settings-v1")
         persisted.putString("mathalarm_announcement_batch", "snooze-settings-v1")
-        val preferences = AlarmPreferencesImpl(AppThemeOptionsMapper(), Logger.withTag("announcement"), storage)
+        val preferences = AlarmPreferencesImpl(storage)
         val model = AppSettingsViewModel(preferences, listOf("math-challenges-v1", "snooze-settings-v1"))
         try {
             assertEquals(listOf("snooze-settings-v1"), model.state.value.announcementIds)
@@ -94,7 +93,7 @@ class AppSettingsViewModelTest {
                 persisted.putInt(key, value)
             }
         }
-        val preferences = AlarmPreferencesImpl(AppThemeOptionsMapper(), Logger.withTag("test"), storage)
+        val preferences = AlarmPreferencesImpl(storage)
         val model = AppSettingsViewModel(preferences)
         try {
             model.selectTheme(AlarmPreferences.Theme.DARK)
@@ -105,7 +104,7 @@ class AppSettingsViewModelTest {
             model.selectTheme(AlarmPreferences.Theme.DARK)
             advanceUntilIdle()
             assertEquals(AlarmPreferences.Theme.DARK, model.state.value.theme)
-            assertEquals(AlarmPreferences.Theme.DARK, AlarmPreferencesImpl(AppThemeOptionsMapper(), Logger.withTag("restored"), persisted).loadAppTheme())
+            assertEquals(AlarmPreferences.Theme.DARK, AlarmPreferencesImpl(persisted).loadAppTheme())
             assertEquals(listOf(failure), model.state.value.failures)
             model.acknowledgeFailure(failure.id)
             assertEquals(emptyList(), model.state.value.failures)
@@ -119,7 +118,7 @@ class AppSettingsViewModelTest {
     fun `settings observe preference changes and acknowledgement survives recreation`() = runTest {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         val storage = MapSettings()
-        val preferences = AlarmPreferencesImpl(AppThemeOptionsMapper(), Logger.withTag("test"), storage)
+        val preferences = AlarmPreferencesImpl(storage)
         val model = AppSettingsViewModel(preferences, listOf("math-challenges-v1", "snooze-settings-v1"))
         try {
             preferences.updateAlarmSortOrder(AlarmPreferences.AlarmSortOrder.TIME)
@@ -129,7 +128,7 @@ class AppSettingsViewModelTest {
             assertEquals(AlarmPreferences.Theme.DARK, model.state.value.theme)
             model.acknowledgeAnnouncement("math-challenges-v1")
             assertFalse("math-challenges-v1" in model.state.value.unseenAnnouncementIds)
-            val restored = AlarmPreferencesImpl(AppThemeOptionsMapper(), Logger.withTag("test"), storage)
+            val restored = AlarmPreferencesImpl(storage)
             assertEquals(true, restored.hasSeenAnnouncement("math-challenges-v1"))
             assertEquals(AlarmPreferences.Theme.DARK, restored.themeState.value)
             assertEquals(AlarmPreferences.AlarmSortOrder.TIME, restored.alarmSortOrderState.value)

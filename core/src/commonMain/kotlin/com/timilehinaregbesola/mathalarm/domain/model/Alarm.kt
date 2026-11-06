@@ -7,11 +7,8 @@ import kotlin.time.Clock
 
 data class Alarm(
     val alarmId: Long = 0L,
-    val newDateTime: LocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault()),
-    val newHour: Int = newDateTime.hour,
-    val newMinute: Int = newDateTime.minute,
-    val hour: Int = newHour,
-    val minute: Int = newMinute,
+    val hour: Int = 0,
+    val minute: Int = 0,
     val repeat: Boolean = false,
     val repeatDays: String = "FFFFFFF",
     val isOn: Boolean = false,
@@ -53,6 +50,9 @@ data class Alarm(
         get() = isOn && skippedDate == null && (repeat || repeatDays.count { it == 'T' } > 1)
 
     companion object {
+        fun newAlarm(now: LocalDateTime = Clock.System.now().toLocalDateTime(TimeZone.currentSystemDefault())): Alarm =
+            Alarm(hour = now.hour, minute = now.minute)
+
         // Retain the persisted value for alarms saved by schema version 5.
         const val SCHEDULING_IN_PROGRESS = "Scheduling has not completed"
     }

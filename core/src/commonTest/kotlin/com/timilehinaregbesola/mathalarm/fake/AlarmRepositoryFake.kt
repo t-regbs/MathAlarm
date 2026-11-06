@@ -22,9 +22,6 @@ class AlarmRepositoryFake : AlarmDataSource {
         return id
     }
 
-    override suspend fun deleteAlarm(alarm: Alarm) {
-        alarmMap.remove(alarm.alarmId)
-    }
 
     override suspend fun deleteAlarmFromId(id: Long) {
         alarmMap.remove(id)

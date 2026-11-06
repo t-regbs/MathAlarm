@@ -2,7 +2,6 @@ package com.timilehinaregbesola.mathalarm.presentation.appsettings
 
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import co.touchlab.kermit.Logger
 import com.russhwolf.settings.Settings
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.AlarmSortOrder
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferences.Theme
@@ -10,8 +9,6 @@ import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferenc
 @OptIn(kotlin.experimental.ExperimentalObjCRefinement::class)
 @kotlin.native.HiddenFromObjC
 class AlarmPreferencesImpl(
-    private val mapper: AppThemeOptionsMapper,
-    private val logger: Logger,
     private val settings: Settings
 ) : AlarmPreferences {
     companion object {
@@ -61,7 +58,7 @@ class AlarmPreferencesImpl(
     override val alarmSortOrderState = sortOrder.asStateFlow()
 
     override fun updateAppTheme(theme: Theme) {
-        settings.putInt(APP_THEME_OPTION, mapper.toDataStore(theme).id)
+        settings.putInt(APP_THEME_OPTION, theme.storageId)
         this.theme.value = theme
     }
 
@@ -75,9 +72,8 @@ class AlarmPreferencesImpl(
     override fun loadAlarmSortOrder(): AlarmSortOrder = alarmSortOrderState.value
 
     private fun loadAppThemeFromStorage(): Theme {
-        val id = settings.getInt(APP_THEME_OPTION, DataStoreTheme.SYSTEM.id)
-        val result = DataStoreTheme.entries.find { it.id == id } ?: DataStoreTheme.SYSTEM
-        return mapper.toRepo(result)
+        val id = settings.getInt(APP_THEME_OPTION, Theme.SYSTEM.storageId)
+        return Theme.fromStorageId(id)
     }
 
     private fun loadAlarmSortOrderFromStorage(): AlarmSortOrder {

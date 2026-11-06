@@ -18,7 +18,6 @@ import com.timilehinaregbesola.mathalarm.presentation.alarmlist.AlarmListViewMod
 import com.timilehinaregbesola.mathalarm.presentation.alarmmath.AlarmMathViewModel
 import com.timilehinaregbesola.mathalarm.presentation.alarmsettings.AlarmSettingsViewModel
 import com.timilehinaregbesola.mathalarm.presentation.appsettings.AlarmPreferencesImpl
-import com.timilehinaregbesola.mathalarm.presentation.appsettings.AppThemeOptionsMapper
 import com.timilehinaregbesola.mathalarm.provider.AlarmTimeCalculator
 import com.timilehinaregbesola.mathalarm.provider.AlarmTimeCalculatorImpl
 import com.timilehinaregbesola.mathalarm.provider.DateTimeProvider
@@ -47,7 +46,6 @@ import org.koin.dsl.module
 val commonModule = module {
     // Mappers
     single { AlarmMapper() }
-    single { AppThemeOptionsMapper() }
     
     // Coroutine Scope - replaces GlobalScope usage
     single { AppCoroutineScope(kotlinx.coroutines.Dispatchers.Main.immediate) }
@@ -70,8 +68,6 @@ val commonModule = module {
     single { ReviewEligibilityStore(get()) }
     single {
         AlarmPreferencesImpl(
-            get<AppThemeOptionsMapper>(),
-            getWith("AlarmPreferencesImpl"),
             get<Settings>()
         )
     }
@@ -105,7 +101,6 @@ val commonModule = module {
             }, onCleanupFailure = cleanupFailure,
             onCleanupSuccess = { com.timilehinaregbesola.mathalarm.application.AlarmApplicationStatus.clearRecoveryFailure(it) }),
             rescheduleFutureAlarms = rescheduleFutureAlarms,
-            scheduleNextAlarm = get(),
             showAlarm = ShowAlarm(get(), get(), get()),
             snoozeAlarm = SnoozeAlarm(get(), get(), get(), get(), onSnoozed = {
                 runCatching { analytics.trackSafely(AnalyticsEvents.alarmSnoozed) }
@@ -122,7 +117,7 @@ val commonModule = module {
     single { ChallengeProgressStore(get()) }
     viewModel { AlarmSettingsViewModel(get(), get(), get()) }
     single { com.timilehinaregbesola.mathalarm.application.ChallengeCoordinator(get(), get(), getWith("ChallengeCoordinator"), get(), get(), { com.timilehinaregbesola.mathalarm.platform.getDefaultAlarmTone() }, { com.timilehinaregbesola.mathalarm.platform.PlatformPreviewVibration() }) }
-    viewModel { AlarmMathViewModel(get(), get(), getWith("AlarmMathViewModel"), get(), get(), get()) }
+    viewModel { AlarmMathViewModel(get()) }
     viewModel { com.timilehinaregbesola.mathalarm.presentation.appsettings.AppSettingsViewModel(get<AlarmPreferencesImpl>(),
         listOf("math-challenges-v1") + (if (com.timilehinaregbesola.mathalarm.platform.supportsSkipNext()) listOf("skip-next-alarm-v1") else emptyList()) + listOf("snooze-settings-v1")) }
 }

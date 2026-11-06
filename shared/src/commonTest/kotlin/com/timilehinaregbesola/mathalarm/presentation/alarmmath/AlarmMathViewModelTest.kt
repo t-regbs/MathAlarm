@@ -6,6 +6,9 @@ import com.timilehinaregbesola.mathalarm.data.AlarmRepository
 import com.timilehinaregbesola.mathalarm.domain.model.Alarm
 import com.timilehinaregbesola.mathalarm.analytics.AnalyticsEvent
 import com.timilehinaregbesola.mathalarm.analytics.AnalyticsTracker
+import com.timilehinaregbesola.mathalarm.analytics.NoopAnalyticsTracker
+import com.timilehinaregbesola.mathalarm.application.ChallengeCoordinator
+import com.timilehinaregbesola.mathalarm.interactors.AudioPlayer
 import com.timilehinaregbesola.mathalarm.fake.AlarmInteractorFake
 import com.timilehinaregbesola.mathalarm.fake.AlarmRepositoryFake
 import com.timilehinaregbesola.mathalarm.fake.AlarmTimeCalculatorFake
@@ -53,6 +56,15 @@ import kotlinx.coroutines.test.setMain
 
 @OptIn(ExperimentalCoroutinesApi::class)
 class AlarmMathViewModelTest {
+    private fun createViewModel(
+        usecases: Usecases,
+        audioPlayer: AudioPlayer,
+        logger: Logger,
+        progressStore: ChallengeProgressStore,
+        analytics: AnalyticsTracker = NoopAnalyticsTracker,
+    ) = AlarmMathViewModel(
+        ChallengeCoordinator(usecases, audioPlayer, logger, progressStore, analytics),
+    )
 
     private lateinit var progressStore: ChallengeProgressStore
     private lateinit var progressSettings: com.russhwolf.settings.MapSettings
@@ -96,13 +108,12 @@ class AlarmMathViewModelTest {
             updateAlarm = UpdateAlarm(repository, alarmInteractor),
             cancelAlarm = CancelAlarm(alarmInteractor),
             clearAlarms = ClearAlarms(repository, DeleteAlarm(repository, alarmInteractor, notificationInteractor)),
-            scheduleNextAlarm = scheduleNextAlarm,
             rescheduleFutureAlarms = rescheduleFutureAlarms,
             snoozeAlarm = SnoozeAlarm(dateTimeProvider, notificationInteractor, alarmInteractor, repository),
             skipNextAlarm = SkipNextAlarm(repository, alarmTimeCalculator, rescheduleFutureAlarms),
         )
         
-        viewModel = AlarmMathViewModel(
+        viewModel = createViewModel(
             usecases = usecases,
             audioPlayer = audioPlayer,
             logger = Logger.withTag("AlarmMathViewModelTest"),
@@ -117,7 +128,7 @@ class AlarmMathViewModelTest {
         val audio = object : com.timilehinaregbesola.mathalarm.interactors.AudioPlayer by audioPlayer {
             override fun startAlarmAudio() { starts++; audioPlayer.startAlarmAudio() }
         }
-        val vm = AlarmMathViewModel(usecases, audio, Logger.withTag("instantPreview"), progressStore)
+        val vm = createViewModel(usecases, audio, Logger.withTag("instantPreview"), progressStore)
         val blocked = kotlinx.coroutines.CompletableDeferred<Unit>()
         val command = launch { usecases.command { blocked.await() } }
         runCurrent()
@@ -185,7 +196,7 @@ class AlarmMathViewModelTest {
         viewModel.questionCount shouldBe 2
     }
 
-    private fun recreatedViewModel() = AlarmMathViewModel(
+    private fun recreatedViewModel() = createViewModel(
         usecases, AudioPlayerFake(), Logger.withTag("restored"), ChallengeProgressStore(progressSettings), analytics
     )
 
@@ -307,7 +318,7 @@ class AlarmMathViewModelTest {
         val alarm = Alarm(alarmId = 991, isOn = true, isSaved = true, activeAt = 1000)
         usecases.addAlarm(alarm)
         val commands = usecases.copy(findAlarm = FindAlarm(AlarmRepository(source)))
-        val vm = AlarmMathViewModel(commands, audioPlayer, Logger.withTag("retry"), progressStore)
+        val vm = createViewModel(commands, audioPlayer, Logger.withTag("retry"), progressStore)
         vm.initializeOccurrence(alarm.alarmId, alarm.activeAt) shouldBe false
         vm.state.value.readiness shouldBe ChallengeReadiness.ERROR
         vm.initializeOccurrence(alarm.alarmId, alarm.activeAt) shouldBe false
@@ -356,7 +367,7 @@ class AlarmMathViewModelTest {
         usecases.addAlarm(first); usecases.addAlarm(later)
         val coordinator = com.timilehinaregbesola.mathalarm.application.ChallengeCoordinator(usecases, audioPlayer,
             Logger.withTag("retained"), progressStore, analytics)
-        fun owner() = AlarmMathViewModel(usecases, audioPlayer, Logger.withTag("owner"), progressStore, analytics, coordinator)
+        fun owner() = AlarmMathViewModel(coordinator)
         val a = owner(); val b = owner(); val queued = owner()
         a.initializeChallenge(first, false) shouldBe true
         val problem = a.currentProblem!!
@@ -426,7 +437,7 @@ class AlarmMathViewModelTest {
         }
         val alarm = Alarm(alarmId = 998, isOn = true, isSaved = true, activeAt = 1000)
         usecases.addAlarm(alarm)
-        val vm = AlarmMathViewModel(usecases, audioPlayer, Logger.withTag("progressRetry"), ChallengeProgressStore(settings))
+        val vm = createViewModel(usecases, audioPlayer, Logger.withTag("progressRetry"), ChallengeProgressStore(settings))
         vm.initializeChallenge(alarm, false) shouldBe false
         val firstFailure = vm.state.value
         firstFailure.problems.isNotEmpty() shouldBe true
@@ -458,7 +469,7 @@ class AlarmMathViewModelTest {
         }
         val alarm = Alarm(alarmId = 1001, isOn = true, isSaved = true, activeAt = 1000, questionCount = 2)
         usecases.addAlarm(alarm)
-        val vm = AlarmMathViewModel(usecases, audioPlayer, Logger.withTag("progressUpdate"), ChallengeProgressStore(settings))
+        val vm = createViewModel(usecases, audioPlayer, Logger.withTag("progressUpdate"), ChallengeProgressStore(settings))
         vm.initializeChallenge(alarm, false) shouldBe true
         val problem = vm.currentProblem!!
         vm.onEvent(MathScreenEvent.EnteredAnswer(problem.answer.toString()))
@@ -488,7 +499,7 @@ class AlarmMathViewModelTest {
         }
         val coordinator = com.timilehinaregbesola.mathalarm.application.ChallengeCoordinator(usecases, audio,
             Logger.withTag("partialAudio"), progressStore, analytics, previewVibrationFactory = { vibration })
-        val vm = AlarmMathViewModel(usecases, audio, Logger.withTag("previewFailure"), progressStore, analytics, coordinator)
+        val vm = AlarmMathViewModel(coordinator)
         vm.initializeChallenge(Alarm(vibrate = true), true) shouldBe true
         vm.state.value.results.last().outcome shouldBe ChallengeOutcome.Failure(AlarmErrorMessage.TONE)
         audioPlayer.isStopped shouldBe true
@@ -507,8 +518,8 @@ class AlarmMathViewModelTest {
         }
         val coordinator = com.timilehinaregbesola.mathalarm.application.ChallengeCoordinator(usecases, audio,
             Logger.withTag("audioOwner"), progressStore, analytics)
-        val preview = AlarmMathViewModel(usecases, audio, Logger.withTag("preview"), progressStore, analytics, coordinator)
-        val real = AlarmMathViewModel(usecases, audio, Logger.withTag("real"), progressStore, analytics, coordinator)
+        val preview = AlarmMathViewModel(coordinator)
+        val real = AlarmMathViewModel(coordinator)
         preview.initializeChallenge(Alarm(), true) shouldBe true
         audioPlayer.isPlaying shouldBe true
         val alarm = Alarm(alarmId = 999, isOn = true, isSaved = true, activeAt = 1000)
@@ -539,7 +550,7 @@ class AlarmMathViewModelTest {
         }
         val commands = usecases.copy(completeAlarm =
             CompleteAlarm(faultRepository, backend, notificationInteractor, dateTimeProvider))
-        val vm = AlarmMathViewModel(commands, audioPlayer, Logger.withTag("finalWriteRetry"), progressStore)
+        val vm = createViewModel(commands, audioPlayer, Logger.withTag("finalWriteRetry"), progressStore)
         val alarm = Alarm(alarmId = 1010, activeAt = 1000, isOn = true, isSaved = true)
         commands.addAlarm(alarm)
         vm.initializeChallenge(alarm, false) shouldBe true
@@ -622,7 +633,7 @@ class AlarmMathViewModelTest {
         val commands = usecases.copy(completeAlarm = CompleteAlarm(repository, backend, notificationInteractor, dateTimeProvider))
         val coordinator = com.timilehinaregbesola.mathalarm.application.ChallengeCoordinator(commands, audio,
             Logger.withTag("orderedIsolation"), progressStore, analytics)
-        fun owner() = AlarmMathViewModel(commands, audio, Logger.withTag("orderedOwner"), progressStore, analytics, coordinator)
+        fun owner() = AlarmMathViewModel(coordinator)
         val first = Alarm(alarmId = 1012, activeAt = 1000, isOn = true, isSaved = true, questionCount = 2)
         val second = first.copy(alarmId = 1013, activeAt = 2000)
         commands.addAlarm(first); commands.addAlarm(second)
@@ -695,7 +706,7 @@ class AlarmMathViewModelTest {
         val commands = usecases.copy(
             snoozeAlarm = SnoozeAlarm(dateTimeProvider, notificationInteractor, backend, repository)
         )
-        viewModel = AlarmMathViewModel(commands, audioPlayer, Logger.withTag("ErrorTest"), progressStore)
+        viewModel = createViewModel(commands, audioPlayer, Logger.withTag("ErrorTest"), progressStore)
         val alarm = Alarm(alarmId = 804, isOn = true, isSaved = true, snooze = 5, activeAt = 1000, questionCount = 3)
         commands.addAlarm(alarm)
         viewModel.initializeChallenge(alarm, preview = false)
@@ -1076,7 +1087,7 @@ class AlarmMathViewModelTest {
             val audio = object : com.timilehinaregbesola.mathalarm.interactors.AudioPlayer by audioPlayer {
                 override fun stop() { stops++; audioPlayer.stop() }
             }
-            val vm = AlarmMathViewModel(commands, audio, Logger.withTag("postAcceptanceRead"), progressStore)
+            val vm = createViewModel(commands, audio, Logger.withTag("postAcceptanceRead"), progressStore)
             val alarm = Alarm(alarmId = if (snooze) 4007 else 4006, isOn = true, isSaved = true, activeAt = 1000)
             commands.addAlarm(alarm)
             vm.initializeChallenge(alarm, false) shouldBe true

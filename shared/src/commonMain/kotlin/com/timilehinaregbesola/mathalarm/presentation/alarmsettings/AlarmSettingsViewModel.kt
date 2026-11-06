@@ -159,8 +159,7 @@ class AlarmSettingsViewModel internal constructor(
             else -> AlarmEditorValidation.NONE
         }
         val dirty = initialDraft?.let { initial ->
-            createAlarm().copy(newDateTime = initial.newDateTime,
-                newHour = initial.newHour, newMinute = initial.newMinute) != initial
+            createAlarm() != initial
         } ?: false
         mutableState.update { it.copy(validation = validation, hasUnsavedChanges = dirty) }
     }

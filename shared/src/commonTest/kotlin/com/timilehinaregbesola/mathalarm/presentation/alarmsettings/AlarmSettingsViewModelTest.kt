@@ -512,7 +512,6 @@ class AlarmSettingsViewModelTest {
             updateAlarm = UpdateAlarm(repository, alarmInteractor),
             cancelAlarm = CancelAlarm(alarmInteractor),
             clearAlarms = ClearAlarms(repository, DeleteAlarm(repository, alarmInteractor, notificationInteractor)),
-            scheduleNextAlarm = scheduleNextAlarm,
             rescheduleFutureAlarms = rescheduleFutureAlarms,
             snoozeAlarm = SnoozeAlarm(dateTimeProvider, notificationInteractor, alarmInteractor, repository),
             skipNextAlarm = SkipNextAlarm(repository, alarmTimeCalculator, rescheduleFutureAlarms),
