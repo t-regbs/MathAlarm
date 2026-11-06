@@ -116,6 +116,13 @@ telemetry success cannot close those gates. Preserve the evidence root before
 cleaning build artifacts; remove only task-owned fixtures/devices after recording
 their results.
 
+## Supported native build targets
+
+The iOS app links the `app` framework from `shared`, which exports `core`.
+Both modules build Kotlin libraries for `iosArm64` and `iosSimulatorArm64`.
+The Xcode project excludes Intel simulator builds. There is no standalone
+`appcoreKit` framework or published core library in this repository.
+
 ## Fast checks (every PR)
 
 Repository verification scripts support Python 3.9 or newer. Python 3.14 is the
