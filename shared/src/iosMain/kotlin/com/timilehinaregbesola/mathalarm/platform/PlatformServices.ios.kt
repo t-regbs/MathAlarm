@@ -12,21 +12,15 @@ import platform.UIKit.UIImpactFeedbackStyle
 @OptIn(ExperimentalForeignApi::class)
 actual class PlatformVibrator actual constructor() {
     private val feedbackGenerator = UIImpactFeedbackGenerator(style = UIImpactFeedbackStyle.UIImpactFeedbackStyleHeavy)
-    private var isVibrating = false
 
     actual fun startWaveform(pattern: LongArray, repeat: Int) {
-        isVibrating = true
-        // Use system vibration
         AudioServicesPlaySystemSound(kSystemSoundID_Vibrate)
-        // Also trigger haptic feedback for modern devices
         feedbackGenerator.prepare()
         feedbackGenerator.impactOccurred()
     }
 
     actual fun cancel() {
-        isVibrating = false
-        // iOS doesn't have a way to cancel vibration mid-vibrate
-        // but we can stop the loop by setting flag
+        // System vibration and impact feedback are one-shot and cannot be cancelled.
     }
 }
 

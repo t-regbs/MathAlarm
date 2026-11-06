@@ -196,11 +196,6 @@ object IosAlarmAudioManager {
         }
     }
     
-    /**
-     * Check if alarm is currently active
-     */
-    fun isPlaying(): Boolean = isAlarmActive
-
     /** Silent PiP still needs a playback session. Real alarms and tone previews win. */
     fun beginSettingsGuideAudio(ownerId: String, onInterrupted: () -> Unit): Boolean {
         require(ownerId.isNotBlank())

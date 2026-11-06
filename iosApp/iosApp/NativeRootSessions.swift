@@ -218,10 +218,6 @@ final class NativeWindowSessions: ObservableObject {
         selectedEditorID == id && navigationObservers[id] == observer
     }
 
-    func endNavigation(id: String, observer: Int) {
-        if navigationObservers[id] == observer { navigationObservers.removeValue(forKey: id) }
-    }
-
     func setEditorPath(_ path: [NativeEditorDestination], id: String, observer: Int? = nil) {
         // SwiftUI can write an outgoing stack binding during detail teardown.
         // An old observer must not clear the retained path of an inactive draft.
