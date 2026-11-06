@@ -56,8 +56,7 @@ enum NativeSettingsVerification {
         let seedResult = first.model.state.results.first { $0.event is AlarmSettingsViewModel.UiEventTestAlarm }!
         let seed = (seedResult.event as! AlarmSettingsViewModel.UiEventTestAlarm).alarm
         first.model.acknowledgeResult(id: seedResult.id)
-        let secondAlarm = seed.doCopy(alarmId: -6001, newDateTime: seed.newDateTime,
-            newHour: seed.newHour, newMinute: seed.newMinute, hour: seed.hour, minute: seed.minute,
+        let secondAlarm = seed.doCopy(alarmId: -6001, hour: seed.hour, minute: seed.minute,
             repeat: seed.repeat, repeatDays: seed.repeatDays, isOn: seed.isOn, difficulty: seed.difficulty,
             questionCount: seed.questionCount, challengeOperations: seed.challengeOperations,
             additionRange: seed.additionRange, factorRange: seed.factorRange, difficultyMix: seed.difficultyMix,

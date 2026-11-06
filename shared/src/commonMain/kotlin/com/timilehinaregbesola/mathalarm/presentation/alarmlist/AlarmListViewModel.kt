@@ -88,7 +88,7 @@ class AlarmListViewModel internal constructor(
         if (isClosed) return
         when (event) {
             is AlarmListEvent.OnEditAlarmClick -> sendUiEvent(Navigate(event.alarm))
-            is AlarmListEvent.OnAddAlarmClick -> sendUiEvent(Navigate(Alarm()))
+            is AlarmListEvent.OnAddAlarmClick -> sendUiEvent(Navigate(Alarm.newAlarm()))
             is AlarmListEvent.OnAlarmOnChange -> setEnabled(event.alarm, event.isOn)
             is AlarmListEvent.OnSkipNextClick -> launchCommand {
                 if (!skipNextSupported) return@launchCommand

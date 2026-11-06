@@ -343,7 +343,7 @@ fun NavGraph(
                 announcementIds = null
                 when (feature) {
                     AnnouncementFeature.MATH_CHALLENGES, AnnouncementFeature.SNOOZE_SETTINGS -> {
-                        val alarmJson = Json.encodeToString(AlarmMapper().mapFromDomainModel(Alarm()))
+                        val alarmJson = Json.encodeToString(AlarmMapper().mapFromDomainModel(Alarm.newAlarm()))
                         backStack.add(SettingsSheet(alarmJson))
                     }
                     AnnouncementFeature.SKIP_NEXT -> {
