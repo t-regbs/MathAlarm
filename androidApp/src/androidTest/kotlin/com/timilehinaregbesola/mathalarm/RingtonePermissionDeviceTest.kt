@@ -9,6 +9,7 @@ import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.matcher.RootMatchers.isDialog
 import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.platform.app.InstrumentationRegistry
@@ -45,8 +46,8 @@ class RingtonePermissionDeviceTest {
                     "Ringtone access check",
                 ) { "Cannot open $it" }
             }
-            onView(withText("Ringtone access check")).check(matches(isDisplayed()))
-            onView(withText(android.R.string.ok)).perform(click())
+            onView(withText("Ringtone access check")).inRoot(isDialog()).check(matches(isDisplayed()))
+            onView(withText(android.R.string.ok)).inRoot(isDialog()).perform(click())
 
             val automation = instrumentation.uiAutomation
             val deadline = SystemClock.uptimeMillis() + 10_000
