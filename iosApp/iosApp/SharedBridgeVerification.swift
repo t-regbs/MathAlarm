@@ -1316,7 +1316,9 @@ enum SharedBridgeVerification {
     private static func waitForDestination(_ destination: NativeEditorDestination, editorID: String,
                                            sessions: NativeWindowSessions, in controller: UIViewController,
                                            window: UIWindow, file: StaticString = #fileID, line: UInt = #line) async {
-        let deadline = ContinuousClock.now + .seconds(5)
+        // Use the same CI rendering budget as wait(_:). Preview initialization
+        // and the native transition can exceed five seconds on hosted runners.
+        let deadline = ContinuousClock.now + .seconds(15)
         while !(sessions.selectedEditorID == editorID && sessions.selectedEditor?.id == editorID &&
                 sessions.editorPaths[editorID]?.last == destination && navigationSettled(in: controller) &&
                 visibleDestination(in: controller, destination: destination)) {

@@ -106,12 +106,14 @@ final class NativeFlowTests: XCTestCase {
         let enabled = app.switches["editor-enabled"]
         XCTAssertTrue(enabled.exists)
         if enabled.value as? String == "1" {
-            // Toggle accessibility frames include the label; target the trailing
-            // switch itself independently of the editor column's width.
-            enabled.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 0.5))
-                .withOffset(CGVector(dx: -25, dy: 0)).tap()
+            // The outer SwiftUI Toggle includes the row's label and padding.
+            // Tap the actual native switch instead of estimating its inset.
+            let control = enabled.switches.firstMatch
+            XCTAssertTrue(control.waitForExistence(timeout: 5), enabled.debugDescription)
+            control.tap()
         }
-        XCTAssertEqual(enabled.value as? String, "0")
+        let disabled = XCTNSPredicateExpectation(predicate: NSPredicate(format: "value == %@", "0"), object: enabled)
+        XCTAssertEqual(XCTWaiter.wait(for: [disabled], timeout: 5), .completed, enabled.debugDescription)
         app.buttons["save-alarm"].tap()
         XCTAssertTrue(alarmButton(name, in: app).waitForExistence(timeout: 10))
         XCTAssertTrue(app.buttons["save-alarm"].waitForNonExistence(timeout: 10))
@@ -429,7 +431,8 @@ final class NativeFlowTests: XCTestCase {
         XCTAssertTrue(sound.isHittable, app.debugDescription)
         sound.tap()
 
-        let navigation = app.navigationBars.firstMatch
+        // iPad also exposes the sidebar navigation bar before the detail bar.
+        let navigation = app.navigationBars["Alarm sound"]
         let back = navigation.buttons["BackButton"].firstMatch
         XCTAssertTrue(back.waitForExistence(timeout: 5))
         XCTAssertEqual(navigation.buttons.count, 1, navigation.debugDescription)

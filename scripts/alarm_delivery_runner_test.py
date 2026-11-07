@@ -1,7 +1,37 @@
 """Failure-path checks for emulator state restoration; no device required."""
 import unittest
+import xml.etree.ElementTree as ET
+from unittest.mock import Mock
 
-from test_alarm_delivery import run_cleanup, apply_idle_test_overrides, idle_test_overrides_applied
+from test_alarm_delivery import run_cleanup, apply_idle_test_overrides, idle_test_overrides_applied, read_delivery_events
+
+
+class DeliveryEventsTest(unittest.TestCase):
+    def test_torn_xml_is_retried_and_failure_events_are_preserved(self):
+        read = Mock(side_effect=["", "<map><string", '<map><string name="events">'
+                    '[{"alarmId":900001,"event":"audio_failed"},'
+                    '{"alarmId":12,"event":"received"}]</string></map>'])
+        pause = Mock()
+        self.assertEqual(read_delivery_events(read, pause=pause),
+                         [{"alarmId": 900001, "event": "audio_failed"}])
+        self.assertEqual(read.call_count, 3)
+        self.assertEqual(pause.call_count, 2)
+
+    def test_persistent_corruption_fails_after_bounded_retries(self):
+        read, pause = Mock(return_value=""), Mock()
+        with self.assertRaises(ET.ParseError):
+            read_delivery_events(read, pause=pause)
+        self.assertEqual(read.call_count, 5)
+        self.assertEqual(pause.call_count, 4)
+
+    def test_adb_and_telemetry_schema_errors_are_not_hidden(self):
+        for value, error in [(RuntimeError("adb failed"), RuntimeError),
+                             ("<map/>", ValueError),
+                             ('<map><string name="events">bad json</string></map>', ValueError)]:
+            read = Mock(side_effect=value) if isinstance(value, Exception) else Mock(return_value=value)
+            with self.assertRaises(error):
+                read_delivery_events(read, pause=Mock())
+            self.assertEqual(read.call_count, 1)
 
 
 class CleanupTest(unittest.TestCase):

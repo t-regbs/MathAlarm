@@ -8,12 +8,13 @@ import UIKit
 private struct NativeNextAlarmSubtitle: ViewModifier {
     let alarms: [app.Alarm]
     let loading: Bool
+    let referenceDate: Date?
     @Environment(\.scenePhase) private var scenePhase
     @State private var now = Date()
     @ScaledMetric(relativeTo: .body) private var subtitleSize = 17
 
     func body(content: Content) -> some View {
-        let subtitle = loading ? "" : NativeAlarmPresentation.nextAlarmSubtitle(alarms, now: now)
+        let subtitle = loading ? "" : NativeAlarmPresentation.nextAlarmSubtitle(alarms, now: referenceDate ?? now)
         content
             .navigationSubtitle(Text(verbatim: subtitle))
             .background(NativeNextAlarmSubtitleStyle(subtitle: subtitle, pointSize: subtitleSize)
@@ -145,6 +146,9 @@ struct NativeAlarmList: View {
     @ObservedObject var sessions: NativeWindowSessions
     let openEditor: (app.Alarm?) -> Void
     let openSettings: () -> Void
+    // Rendered verification can share a fixed clock with its assertions.
+    // Production callers keep the live, minute-updated clock.
+    var referenceDate: Date? = nil
     @State private var clearConfirmation = false
     @State private var errorResult: AlarmListResult?
     @State private var notice: NativeAlarmListNotice?
@@ -164,7 +168,7 @@ struct NativeAlarmList: View {
         }
         .matAlarmContent()
         .navigationTitle("Math Alarm")
-        .modifier(NativeNextAlarmSubtitle(alarms: model.state.alarms, loading: model.state.loading))
+        .modifier(NativeNextAlarmSubtitle(alarms: model.state.alarms, loading: model.state.loading, referenceDate: referenceDate))
         .toolbar {
             listToolbar
         }
@@ -498,7 +502,11 @@ struct NativeEditorStack: View {
                isPresented: Binding(get: { errorResult != nil && sessions.selectedEditorID == errorSessionID
                    && !sessions.deliveryPresented && !permissionNeedsSettings
                    && !sessions.permissionRequests.contains(errorSessionID ?? "") },
-                                    set: { if !$0 && !permissionNeedsSettings { errorResult = nil } })) {
+                                    // SwiftUI can send a delayed dismissal while delivery
+                                    // yields this alert. Only its explicit actions consume
+                                    // the retained result; a framework callback must not
+                                    // clear a result that has just become presentable again.
+                                    set: { _ in })) {
             let presentedSessionID = errorSessionID
             let presentedResultID = errorResult?.id
             if errorResult?.event is AlarmSettingsViewModel.UiEventRequestExactAlarmPermission {
