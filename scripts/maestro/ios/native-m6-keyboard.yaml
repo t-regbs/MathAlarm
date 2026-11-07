@@ -41,6 +41,11 @@ appId: com.timilehinaregbesola.mathalarm
     id: challenge-answer
 - inputText: "-123"
 - assertVisible: "-123"
+# Text injection restores the software keyboard asynchronously. Wait before
+# resolving Clear so Maestro does not tap its pre-keyboard coordinates.
+- assertVisible:
+    id: challenge-keyboard-done
+- waitForAnimationToEnd
 - assertVisible:
     id: challenge-clear
 - tapOn:
