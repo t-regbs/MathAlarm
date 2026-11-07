@@ -53,6 +53,8 @@ enum NativePresentationVerification {
     }
 
     private final class Mount: ObservableObject {
+        // The view and assertions must sample the same instant at minute boundaries.
+        let referenceDate = Date()
         @Published var screen = Screen.editor
         @Published var largeText = false
         var expectedIncreasedContrast = false
@@ -77,7 +79,7 @@ enum NativePresentationVerification {
                 case .list:
                     NavigationStack {
                         NativeAlarmList(model: list, sessions: sessions,
-                            openEditor: { _ in }, openSettings: {})
+                            openEditor: { _ in }, openSettings: {}, referenceDate: mount.referenceDate)
                     }
                 case .settings:
                     NavigationStack {
@@ -383,10 +385,10 @@ enum NativePresentationVerification {
             }
             let nearestRequest = scheduler.registrations.values.min { $0.timeInMillis < $1.timeInMillis }!
             let nearestScheduledTime = nearestRequest.timeInMillis
-            let next = NativeAlarmPresentation.nextAlarmDate(list.state.alarms, now: Date())!
+            let next = NativeAlarmPresentation.nextAlarmDate(list.state.alarms, now: mount.referenceDate)!
             precondition(abs(next.timeIntervalSince1970 * 1_000 - Double(nearestScheduledTime)) < 1,
                          "next-alarm date=\(next) registered=\(nearestScheduledTime) rows=\(list.state.alarms)")
-            let subtitle = NativeAlarmPresentation.nextAlarmSubtitle(list.state.alarms, now: Date())
+            let subtitle = NativeAlarmPresentation.nextAlarmSubtitle(list.state.alarms, now: mount.referenceDate)
             await wait("native next-alarm subtitle \(subtitle)") {
                 visibleNavigation(in: host)?.navigationItem.subtitle == subtitle
             }
@@ -409,9 +411,9 @@ enum NativePresentationVerification {
                 }
                 if index == 0 {
                     let remainingScheduledTime = scheduler.registrations.values.map(\.timeInMillis).min()!
-                    let next = NativeAlarmPresentation.nextAlarmDate(list.state.alarms, now: Date())!
+                    let next = NativeAlarmPresentation.nextAlarmDate(list.state.alarms, now: mount.referenceDate)!
                     precondition(abs(next.timeIntervalSince1970 * 1_000 - Double(remainingScheduledTime)) < 1)
-                    let changedSubtitle = NativeAlarmPresentation.nextAlarmSubtitle(list.state.alarms, now: Date())
+                    let changedSubtitle = NativeAlarmPresentation.nextAlarmSubtitle(list.state.alarms, now: mount.referenceDate)
                     precondition(changedSubtitle != subtitle)
                     await wait("next-alarm subtitle updates after nearest disabled") {
                         visibleNavigation(in: host)?.navigationItem.subtitle == changedSubtitle
