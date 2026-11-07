@@ -51,6 +51,11 @@ appId: com.timilehinaregbesola.mathalarm
           commands:
             - takeScreenshot: native-alarmkit-permission-retry
             - tapOn: "Don’t Allow|Don't Allow"
+# A matching label in the saved alarm list is not a retained editor draft.
+- assertVisible:
+    id: editor-title
+- assertVisible:
+    id: save-alarm
 - assertVisible: "Native M6 permission denial"
 - assertNotVisible: "Permission Required"
 - assertNotVisible: "Enable alarms in Settings"
@@ -79,6 +84,11 @@ appId: com.timilehinaregbesola.mathalarm
       - assertVisible: "Allow alarms"
       - assertNotVisible: "Go to Settings"
       - tapOn: "Keep editing"
+# A matching label in the saved alarm list is not a retained editor draft.
+- assertVisible:
+    id: editor-title
+- assertVisible:
+    id: save-alarm
 - assertVisible: "Native M6 permission denial"
 - tapOn:
     id: discard-draft

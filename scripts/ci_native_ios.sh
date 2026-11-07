@@ -19,7 +19,14 @@ swiftc iosApp/iosApp/PendingDeeplinkStore.swift iosApp/tests/PendingDeeplinkStor
 runtime="${M7_RUNTIME:-com.apple.CoreSimulator.SimRuntime.iOS-27-0}"
 device="${M7_DEVICE:-com.apple.CoreSimulator.SimDeviceType.iPhone-17}"
 udid=$(xcrun simctl create 'MathAlarm M7 CI disposable' "$device" "$runtime")
-cleanup() { xcrun simctl shutdown "$udid" >/dev/null 2>&1 || true; xcrun simctl delete "$udid"; }
+client_udid=""
+cleanup() {
+  for simulator in "$udid" "$client_udid"; do
+    [[ -z "$simulator" ]] && continue
+    xcrun simctl shutdown "$simulator" >/dev/null 2>&1 || true
+    xcrun simctl delete "$simulator" || true
+  done
+}
 trap cleanup EXIT
 printf '%s\n%s\n%s\n' "$udid" "$runtime" "$device" > "$out/simulator.txt"
 xcrun simctl boot "$udid"
@@ -33,8 +40,17 @@ python3 -B scripts/verify_ios_release.py --app "$app" | tee "$out/package-Debug-
 # Keep verify_ios_shared_bridge.py as a standalone diagnostic, not a duplicate CI run.
 python3 -B scripts/verify_ios_native_presentation.py --udid "$udid" --app "$app" --output "$out/presentation"
 python3 -B scripts/native_screenshot_review.py "$out/presentation"
+# The live AlarmKit XCTest grants authorization. Maestro's generic privacy reset
+# does not reset AlarmKit, so denial flows need a fresh OS permission store.
+xcrun simctl shutdown "$udid"
+client_udid=$(xcrun simctl create 'MathAlarm M7 client disposable' "$device" "$runtime")
+mkdir -p "$out/client"
+printf '%s\n%s\n%s\n' "$client_udid" "$runtime" "$device" > "$out/client/simulator.txt"
+xcrun simctl boot "$client_udid"
+xcrun simctl bootstatus "$client_udid" -b
+xcrun simctl install "$client_udid" "$app"
 # Maestro 2.10.0 must be provisioned by CI, never silently use an older driver.
-M7_UDID="$udid" M7_OUTPUT="$out/client" bash scripts/ci_native_client.sh
+M7_UDID="$client_udid" M7_OUTPUT="$out/client" bash scripts/ci_native_client.sh
 for configuration in Debug Release; do
   for platform in 'iOS' 'iOS Simulator'; do
     xcodebuild "${project[@]}" -configuration "$configuration" -destination "generic/platform=$platform" build > "$out/link-$configuration-${platform// /_}.log" 2>&1

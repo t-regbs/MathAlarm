@@ -585,7 +585,7 @@ Preview regressions check readiness before navigation, wrong-answer feedback, re
 entry/exit and literal label preservation. These checks do not establish physical
 delivery or audible output. See the [reliability review](native-ui-reliability-review-2026-10-03.md).
 
-The full local/CI command creates and deletes its own simulator, builds normally,
+The full local/CI command creates and deletes its own disposable simulators, builds normally,
 runs native KMP and XCTest/UI suites (including all retained-harness groups), nine locales on actual
 views, Maestro 2.10.0 client flows, all four Debug/Release SDK links, resource checks
 and an unsigned Release archive:
@@ -595,6 +595,12 @@ M7_OUTPUT=build/native-ui-m7-iphone bash scripts/ci_native_ios.sh
 M7_DEVICE=com.apple.CoreSimulator.SimDeviceType.iPad-Pro-11-inch-M5-12GB \
   M7_OUTPUT=build/native-ui-m7-ipad bash scripts/ci_native_ios.sh
 ```
+
+The client flows use a fresh simulator, separate from XCTest and locale captures.
+The live AlarmKit XCTest grants authorization, and Maestro's generic permission
+reset does not clear AlarmKit's grant. Reusing that simulator would let the denial
+fixture save an enabled alarm instead of retaining an unsaved draft. Both simulator
+identities are recorded (`simulator.txt` and `client/simulator.txt`) and cleaned up.
 
 Set `MAESTRO_BIN` to a pinned 2.10.0 executable if it is not on PATH. The workflow
 verifies the release ZIP checksum. Use a new output directory per run (xcresult
