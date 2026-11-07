@@ -38,10 +38,11 @@ appId: com.timilehinaregbesola.mathalarm
 - assertNotVisible:
     id: save-alarm
 - takeScreenshot: native-disabled-crud-saved
+# The combined alarm label belongs to the edit button inside the row.
 - swipe:
     from:
       text: ".*, ${FIXTURE_TITLE}, .*"
-      id: "alarm-row-.*"
+      id: "edit-alarm-.*"
     direction: LEFT
 - tapOn: Delete
 - assertNotVisible:
@@ -53,7 +54,7 @@ appId: com.timilehinaregbesola.mathalarm
 - swipe:
     from:
       text: ".*, ${FIXTURE_TITLE}, .*"
-      id: "alarm-row-.*"
+      id: "edit-alarm-.*"
     direction: LEFT
 - tapOn: Delete
 - assertNotVisible:
