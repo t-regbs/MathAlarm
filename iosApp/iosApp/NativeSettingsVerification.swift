@@ -187,7 +187,9 @@ enum NativeSettingsVerification {
         verificationCheck(anchor.view.window?.windowScene === window.windowScene)
         verificationCheck(NativeExternalPresentation.shareText == "MathAlarm Clock\nSolve math problems to wake up! https://github.com/t-regbs/MathAlarm")
         external.presentShare()
-        await wait("share controller=\(String(describing: external.presentedController)) anchor presentation=\(String(describing: anchor.presentedViewController)) scene=\(String(describing: anchor.view.window?.windowScene?.activationState))") {
+        // The first activity sheet starts system share/image-provider services.
+        // Cold hosted simulators can exceed the ordinary in-process UI budget.
+        await wait("share presentation settled: \(presentationEvidence(external: external, anchor: anchor, settings: settingsController))", timeout: .seconds(30)) {
             guard let share = external.presentedController as? UIActivityViewController else { return false }
             return anchor.presentedViewController === share && share.viewIfLoaded?.window === window &&
                 !share.isBeingPresented && share.transitionCoordinator == nil
@@ -201,7 +203,7 @@ enum NativeSettingsVerification {
         }
         verificationCheck(external.failure == nil && requestedURLs.isEmpty)
         external.presentShare()
-        await wait("second share presentation settled: \(presentationEvidence(external: external, anchor: anchor, settings: settingsController))") {
+        await wait("second share presentation settled: \(presentationEvidence(external: external, anchor: anchor, settings: settingsController))", timeout: .seconds(30)) {
             guard let share = external.presentedController as? UIActivityViewController else { return false }
             return anchor.presentedViewController === share && share.viewIfLoaded?.window === window &&
                 !share.isBeingPresented && share.transitionCoordinator == nil
@@ -263,8 +265,9 @@ enum NativeSettingsVerification {
         VerificationResults.shared.pass("fresh process restores theme/sort and announcement acknowledgement while latest batch remains reopenable")
     }
 
-    private static func wait(_ context: @autoclosure () -> String = "condition", _ condition: () -> Bool) async {
-        let deadline = ContinuousClock.now + .seconds(8)
+    private static func wait(_ context: @autoclosure () -> String = "condition", timeout: Duration = .seconds(8),
+                             _ condition: () -> Bool) async {
+        let deadline = ContinuousClock.now + timeout
         while !condition() {
             if ContinuousClock.now >= deadline {
                 failureCapture?()
