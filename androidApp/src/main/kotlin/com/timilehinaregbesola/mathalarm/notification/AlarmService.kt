@@ -7,8 +7,7 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.graphics.BitmapFactory
-import android.media.AudioAttributes
-import android.media.MediaPlayer
+import com.timilehinaregbesola.mathalarm.interactors.AndroidAudioPlayback
 import android.media.RingtoneManager
 import android.os.Build
 import android.os.Handler
@@ -61,7 +60,7 @@ class AlarmService : Service() {
     private val analytics: AnalyticsTracker by inject()
     private val logger = Logger.withTag("AlarmService")
     
-    private var mediaPlayer: MediaPlayer? = null
+    private val audioPlayback by lazy { AndroidAudioPlayback(this) }
     private var wakeLock: PowerManager.WakeLock? = null
     private var currentAlarm: Alarm? = null
     private val queuedAlarms = linkedMapOf<Long, Alarm>()
@@ -324,59 +323,23 @@ class AlarmService : Service() {
             RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)?.toString(),
             "android.resource://$packageName/${R.raw.alarm_fallback}"
         ).distinct()
-        playCandidate(alarm, candidates, 0)
-    }
-
-    private fun playCandidate(alarm: Alarm, candidates: List<String>, index: Int) {
-        if (index >= candidates.size) {
-            AlarmDeliveryLog.record(this, "audio_failed", alarm.alarmId, alarm.activeAt, "All audio sources failed")
-            return
-        }
-        val player = MediaPlayer()
-        mediaPlayer = player
-        try {
-            player.setAudioAttributes(AudioAttributes.Builder()
-                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC).setUsage(AudioAttributes.USAGE_ALARM).build())
-            player.setWakeMode(this, PowerManager.PARTIAL_WAKE_LOCK)
-            player.isLooping = true
-            player.setOnPreparedListener {
-                if (mediaPlayer === it && currentAlarm?.alarmId == alarm.alarmId) {
-                    it.start()
-                    AlarmDeliveryLog.record(this, "audio_started", alarm.alarmId, alarm.activeAt)
-                }
-            }
-            player.setOnErrorListener { failed, what, extra ->
-                if (mediaPlayer === failed) {
-                    mediaPlayer = null
-                    failed.release()
-                    AlarmDeliveryLog.record(this, "audio_source_failed", alarm.alarmId, alarm.activeAt, "$what/$extra")
-                    playCandidate(alarm, candidates, index + 1)
-                }
-                true
-            }
-            player.setDataSource(this, candidates[index].toUri())
-            player.prepareAsync()
-        } catch (e: Exception) {
-            player.release()
-            mediaPlayer = null
-            AlarmDeliveryLog.record(this, "audio_source_failed", alarm.alarmId, alarm.activeAt, e.message)
-            playCandidate(alarm, candidates, index + 1)
-        }
+        audioPlayback.play(candidates,
+            onStarted = {
+                AlarmDeliveryLog.record(this, "audio_started", alarm.alarmId, alarm.activeAt)
+            },
+            onSourceFailed = { error ->
+                AlarmDeliveryLog.record(this, "audio_source_failed", alarm.alarmId, alarm.activeAt, error.message)
+            },
+            onFailure = {
+                AlarmDeliveryLog.record(this, "audio_failed", alarm.alarmId, alarm.activeAt, "All audio sources failed")
+            },
+        )
     }
 
     private fun stopAudioPlayback() {
         alarmVibrator?.cancel()
         alarmVibrator = null
-        try {
-            mediaPlayer?.run {
-                if (isPlaying) stop()
-                release()
-            }
-        } catch (e: Exception) {
-            logger.w("Error stopping media player", e)
-        } finally {
-            mediaPlayer = null
-        }
+        audioPlayback.stop()
     }
 
     private fun buildNotification(alarm: Alarm, isPaused: Boolean = false, launchFullScreen: Boolean = true): NotificationCompat.Builder {
@@ -481,6 +444,7 @@ class AlarmService : Service() {
         timingController = null
         
         stopAudioPlayback()
+        audioPlayback.close()
         
         try {
             wakeLock?.let {

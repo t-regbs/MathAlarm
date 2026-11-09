@@ -1,67 +1,37 @@
 package com.timilehinaregbesola.mathalarm.interactors
 
 import android.content.Context
-import android.media.AudioAttributes
-import android.media.MediaPlayer
-import androidx.core.net.toUri
+import android.media.RingtoneManager
 import co.touchlab.kermit.Logger
 
 class PlayerWrapper(
-    val context: Context,
-    private val logger: Logger
+    context: Context,
+    private val logger: Logger,
+    private val bundledTone: String,
 ) : AudioPlayer {
+    private val context = context.applicationContext
+    private var playback: AndroidAudioPlayback? = null
+    private var source = ""
 
-    private var player: MediaPlayer? = null
-        private set
-    override fun init() {
-        player = MediaPlayer().apply {
-            setOnErrorListener { mp, _, _ ->
-                logger.e("Error occurred while playing audio.")
-                mp.stop()
-                mp.release()
-                player = null
-                true
-            }
-        }
+    override fun init() = stop()
+    override fun reset() { stop(); source = "" }
+    override fun setDataSourceFromString(alarmtone: String) { source = alarmtone }
+
+    override fun startAlarmAudio() = startAlarmAudio { error ->
+        logger.e(error) { "Unable to play alarm preview" }
     }
 
-    override fun startAlarmAudio() {
-        player?.runCatching {
-            setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .setUsage(AudioAttributes.USAGE_ALARM)
-                    .build(),
-            )
-            prepare()
-            isLooping = true
-            start()
-        }
+    override fun startAlarmAudio(onFailure: (Throwable) -> Unit) {
+        val owner = playback ?: AndroidAudioPlayback(context).also { playback = it }
+        owner.play(
+            listOfNotNull(source, RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM)?.toString(), bundledTone),
+            onSourceFailed = { logger.w(it) { "Preview audio source unavailable" } },
+            onFailure = onFailure,
+        )
     }
 
-    /**
-     * Stops alarm audio
-     */
     override fun stop() {
-        try {
-            player?.run {
-                if (isPlaying) stop()
-                release()
-            }
-        } finally {
-            player = null
-        }
-    }
-
-    override fun reset() {
-        player?.reset()
-    }
-
-    override fun setDataSourceFromString(alarmtone: String) {
-        try {
-            player?.setDataSource(context, alarmtone.toUri())
-        } catch (e: Exception) {
-            logger.e(e) { "Failed to parse alarm tone URI: $alarmtone" }
-        }
+        playback?.close()
+        playback = null
     }
 }

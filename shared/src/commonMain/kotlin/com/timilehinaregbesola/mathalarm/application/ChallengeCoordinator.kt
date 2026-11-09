@@ -245,7 +245,13 @@ internal class ChallengeCoordinator(
             audio.stop(); audio.init(); audio.reset()
             audio.setDataSourceFromString(alarm.alarmTone.ifEmpty(defaultTone))
             audio.setVibrate(alarm.vibrate)
-            audio.startAlarmAudio()
+            audio.startAlarmAudio { error ->
+                if (audioOwner === session) {
+                    logger.e(error) { "Challenge audio failed asynchronously" }
+                    releaseAudio(session)
+                    session.result(ChallengeOutcome.Failure(AlarmErrorMessage.TONE))
+                }
+            }
         } catch (error: Exception) {
             logger.e(error) { "Challenge audio failed" }
             releaseAudio(session)

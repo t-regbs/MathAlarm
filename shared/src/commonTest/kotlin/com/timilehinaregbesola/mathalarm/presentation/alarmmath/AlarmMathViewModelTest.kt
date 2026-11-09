@@ -126,7 +126,7 @@ class AlarmMathViewModelTest {
     fun `preview maths is ready synchronously without storage or audio and presentation starts playback once`() = runTest {
         var starts = 0
         val audio = object : com.timilehinaregbesola.mathalarm.interactors.AudioPlayer by audioPlayer {
-            override fun startAlarmAudio() { starts++; audioPlayer.startAlarmAudio() }
+            override fun startAlarmAudio(onFailure: (Throwable) -> Unit) { starts++; audioPlayer.startAlarmAudio() }
         }
         val vm = createViewModel(usecases, audio, Logger.withTag("instantPreview"), progressStore)
         val blocked = kotlinx.coroutines.CompletableDeferred<Unit>()
@@ -508,6 +508,59 @@ class AlarmMathViewModelTest {
         vm.close()
         vibrationStops shouldBe vibrationStarts
         progressStore.load(0, 1000) shouldBe null
+    }
+
+    @Test
+    fun `asynchronous preview failure stops audio and vibration and reports tone error`() = runTest {
+        var failed: ((Throwable) -> Unit)? = null
+        var vibrationStops = 0
+        val audio = object : com.timilehinaregbesola.mathalarm.interactors.AudioPlayer by audioPlayer {
+            override fun startAlarmAudio(onFailure: (Throwable) -> Unit) {
+                audioPlayer.startAlarmAudio()
+                failed = onFailure
+            }
+        }
+        val vibration = object : com.timilehinaregbesola.mathalarm.platform.PreviewVibration {
+            override fun start() = Unit
+            override fun stop() { vibrationStops++ }
+        }
+        val coordinator = com.timilehinaregbesola.mathalarm.application.ChallengeCoordinator(usecases, audio,
+            Logger.withTag("asyncAudio"), progressStore, analytics, previewVibrationFactory = { vibration })
+        val vm = AlarmMathViewModel(coordinator)
+        vm.initializeChallenge(Alarm(vibrate = true), true) shouldBe true
+        failed!!(IllegalStateException("All tones unavailable"))
+        runCurrent()
+        audioPlayer.isStopped shouldBe true
+        vm.state.value.results.last().outcome shouldBe ChallengeOutcome.Failure(AlarmErrorMessage.TONE)
+        if (!com.timilehinaregbesola.mathalarm.platform.isIosPlatform()) vibrationStops shouldBe 1
+        val results = vm.state.value.results
+        failed!!(IllegalStateException("Late duplicate"))
+        runCurrent()
+        vm.state.value.results shouldBe results
+        vm.close()
+    }
+
+    @Test
+    fun `late preview failure cannot stop its replacement session`() = runTest {
+        val failures = mutableListOf<(Throwable) -> Unit>()
+        val audio = object : com.timilehinaregbesola.mathalarm.interactors.AudioPlayer by audioPlayer {
+            override fun startAlarmAudio(onFailure: (Throwable) -> Unit) {
+                audioPlayer.startAlarmAudio()
+                failures += onFailure
+            }
+        }
+        val coordinator = com.timilehinaregbesola.mathalarm.application.ChallengeCoordinator(usecases, audio,
+            Logger.withTag("lateAudio"), progressStore, analytics)
+        val first = AlarmMathViewModel(coordinator)
+        first.initializeChallenge(Alarm(), true) shouldBe true
+        first.close()
+        val second = AlarmMathViewModel(coordinator)
+        second.initializeChallenge(Alarm(), true) shouldBe true
+        failures.first()(IllegalStateException("Old failure"))
+        runCurrent()
+        audioPlayer.isPlaying shouldBe true
+        second.state.value.results.isEmpty() shouldBe true
+        second.close()
     }
 
     @Test

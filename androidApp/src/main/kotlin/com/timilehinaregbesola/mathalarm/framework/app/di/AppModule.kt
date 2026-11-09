@@ -111,7 +111,8 @@ val androidModule = module {
 
     // Android Audio Player
     single<AudioPlayer> {
-        PlayerWrapper(androidContext(), get { parametersOf("PlayerWrapper") })
+        PlayerWrapper(androidContext(), get { parametersOf("PlayerWrapper") },
+            "android.resource://${androidContext().packageName}/${com.timilehinaregbesola.mathalarm.R.raw.alarm_fallback}")
     }
 
     // Permission abstractions

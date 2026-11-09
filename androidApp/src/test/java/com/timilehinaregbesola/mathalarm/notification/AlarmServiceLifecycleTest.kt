@@ -17,14 +17,18 @@ import org.robolectric.annotation.Config
     androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.ui.ExperimentalComposeUiApi::class,
     kotlinx.coroutines.InternalCoroutinesApi::class, androidx.compose.animation.ExperimentalAnimationApi::class)
 @RunWith(RobolectricTestRunner::class)
-@Config(sdk = [30], application = TestApplication::class)
+@Config(sdk = [30], application = TestApplication::class,
+    shadows = [com.timilehinaregbesola.mathalarm.audio.RecordingMediaPlayer::class])
 class AlarmServiceLifecycleTest {
     private val controller = Robolectric.buildService(AlarmService::class.java).create()
     private val service = controller.get()
     private val savedAlarms = mutableMapOf<Long, Alarm>()
+    private val players = java.util.concurrent.CopyOnWriteArrayList<org.robolectric.shadows.ShadowMediaPlayer>()
     private var lookupGate: kotlinx.coroutines.CompletableDeferred<Unit>? = null
 
     @org.junit.Before fun setupRepository() {
+        com.timilehinaregbesola.mathalarm.audio.RecordingMediaPlayer.calls.clear()
+        org.robolectric.shadows.ShadowMediaPlayer.setCreateListener { _, shadow -> players += shadow }
         val find = io.mockk.mockk<com.timilehinaregbesola.mathalarm.usecases.FindAlarm>()
         io.mockk.coEvery { find.invoke(any()) } coAnswers {
             lookupGate?.await()
@@ -67,8 +71,7 @@ class AlarmServiceLifecycleTest {
             if (saved != null) savedAlarms[9] = saved
             deliverStart(snapshot)
             assertFalse(ActiveAlarmManager.hasActiveAlarm())
-            val player = AlarmService::class.java.getDeclaredField("mediaPlayer").apply { isAccessible = true }
-            assertNull(player.get(service))
+            assertTrue(players.isEmpty())
         }
     }
 
@@ -190,11 +193,32 @@ class AlarmServiceLifecycleTest {
             org.robolectric.shadows.ShadowMediaPlayer.MediaInfo(20_000, 0))
         start(1)
         org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
-        val field = AlarmService::class.java.getDeclaredField("mediaPlayer").apply { isAccessible = true }
-        val player = field.get(service) as android.media.MediaPlayer
-        assertTrue(player.isPlaying)
+        awaitAudio { players.any { it.isReallyPlaying } }
         assertEquals(org.robolectric.shadows.util.DataSource.toDataSource(service, uri),
-            org.robolectric.Shadows.shadowOf(player).dataSource)
+            players.single { it.isReallyPlaying }.dataSource)
     }
 
+    @Test fun serviceMediaCallsAndReleaseDoNotBlockMainThread() {
+        val uri = android.net.Uri.parse("android.resource://${service.packageName}/${com.timilehinaregbesola.mathalarm.R.raw.alarm_fallback}")
+        org.robolectric.shadows.ShadowMediaPlayer.addMediaInfo(
+            org.robolectric.shadows.util.DataSource.toDataSource(service, uri),
+            org.robolectric.shadows.ShadowMediaPlayer.MediaInfo(20_000, 0))
+        start(1)
+        awaitAudio { players.any { it.isReallyPlaying } }
+        dismiss(1)
+        awaitAudio { players.all { it.state == org.robolectric.shadows.ShadowMediaPlayer.State.END } }
+        val calls = com.timilehinaregbesola.mathalarm.audio.RecordingMediaPlayer.calls
+        assertTrue(calls.any { it.first == "setDataSource" })
+        assertTrue(calls.any { it.first == "release" })
+        assertFalse("Media calls on main: $calls", calls.any { it.second })
+    }
+
+    private fun awaitAudio(condition: () -> Boolean) {
+        val deadline = System.nanoTime() + 2_000_000_000
+        while (!condition() && System.nanoTime() < deadline) {
+            org.robolectric.Shadows.shadowOf(android.os.Looper.getMainLooper()).idle()
+            Thread.sleep(10)
+        }
+        assertTrue("Timed out waiting for service audio", condition())
+    }
 }

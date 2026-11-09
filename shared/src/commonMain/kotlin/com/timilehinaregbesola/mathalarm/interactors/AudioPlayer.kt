@@ -4,6 +4,7 @@ package com.timilehinaregbesola.mathalarm.interactors
 interface AudioPlayer {
     fun init()
     fun startAlarmAudio()
+    fun startAlarmAudio(onFailure: (Throwable) -> Unit) { startAlarmAudio() }
     fun stop()
     fun reset()
     fun setDataSourceFromString(alarmtone: String)
